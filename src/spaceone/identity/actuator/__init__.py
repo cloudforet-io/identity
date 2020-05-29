@@ -1,0 +1,1 @@
+from spaceone.identity.actuator import health
