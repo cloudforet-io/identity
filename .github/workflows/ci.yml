@@ -1,5 +1,4 @@
 name: SpaceONE CI
-
 on:
   pull_request:
     branches:
