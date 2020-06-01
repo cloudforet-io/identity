@@ -11,11 +11,18 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Set environment virables
+      env:
+        # 이 곳에서 환경변수를 통해 설정 관리
+        SERVICE: identity
+        IMAGE_PREFIX: spaceone # optional for Docker upload
+        # LOCATION points the parent directory
+        LOCATION_DOCKERFILE: .
+        LOCATION_VERSION: src
       run: |
-        echo "::set-env name=IMAGE_PREFIX::spaceone"
         echo "::set-env name=SERVICE::identity"
+        echo "::set-env name=IMAGE_PREFIX::spaceone"
         echo "::set-env name=LOCATION_DOCKERFILE::."
-        version=$(cat src/VERSION)-${{ github.run_id }}
+        version=$(cat $LOCATION_VERSION/VERSION)-${{ github.run_id }}
         echo "::set-env name=VERSION::$version"
 
     - name: Upload docker
