@@ -24,6 +24,7 @@ jobs:
           IMAGE_PREFIX: spaceone 
           IS_SUDO: false
         run: |
+          cat <<EOF>set_env.sh
           echo "::set-env name=SERVICE::$SERVICE"
           echo "::set-env name=PYPI_UPLOAD::$PYPI_UPLOAD"
           echo "::set-env name=DOCKER_UPLOAD::$DOCKER_UPLOAD"
@@ -32,6 +33,19 @@ jobs:
           echo "::set-env name=LOCATION_DOCKERFILE::$LOCATION_DOCKERFILE"
           echo "::set-env name=IMAGE_PREFIX::$IMAGE_PREFIX"
           echo "::set-env name=IS_SUDO::$IS_SUDO"
+          echo "::set-env name=VERSION::$(cat $LOCATION_VERSION/VERSION)-${{ github.run_id }}"
+          echo "$(cat $LOCATION_VERSION/VERSION)-${{ github.run_id }}">$LOCATION_VERSION/VERSION
+          EOF
+
+          bash set_env.sh
+      - name: save envs
+        uses: actions/upload-artifact@v2
+        with:
+          name: set_env.sh
+          path: set_env.sh
+      - run: |
+          cat set_env.sh
+
       - name: Clone master branch
         uses: actions/checkout@v2
         with:
@@ -51,31 +65,38 @@ jobs:
           cmp --silent master_branch/$LOCATION_VERSION/VERSION $LOCATION_VERSION/VERSION || \
           echo "::set-env name=IS_NEW_VERSION::true"
 
-          version=$(cat $LOCATION_VERSION/VERSION)-${{ github.run_id }}
-          echo "::set-env name=VERSION::$version"
   pypi:
     needs: initialize
     runs-on: ubuntu-latest
-    if: env.PYPI_UPLOAD == 'true'
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: set_env.sh
+
+      - name: Set environment variables
+        run: |
+          bash set_env.sh
 
       - name: Set up Python
+        if: env.PYPI_UPLOAD == 'true'
         uses: actions/setup-python@v2
         with:
           python-version: '3.8'
-          - name: Install dependencies
-            run: |
-              if [ $IS_SUDO = true ]
-                then
-                  sudo python -m pip install --upgrade pip
-                  sudo pip install setuptools wheel twine
-                else
-                  python -m pip install --upgrade pip
-                  pip install setuptools wheel twine
-              fi
+      - name: Install dependencies
+        if: env.PYPI_UPLOAD == 'true'
+        run: |
+          if [ $IS_SUDO = true ]
+            then
+              sudo python -m pip install --upgrade pip
+              sudo pip install setuptools wheel twine
+            else
+              python -m pip install --upgrade pip
+              pip install setuptools wheel twine
+          fi
               
       - name: Build
+        if: env.PYPI_UPLOAD == 'true'
         run: |
           if test -f "Makefile"; then
             make all
@@ -88,6 +109,7 @@ jobs:
               python setup.py sdist bdist_wheel
           fi
       - name: Upload Pypi
+        if: env.PYPI_UPLOAD == 'true'
         id: upload
         run: |
           cd $LOCATION_SETUP_PY
@@ -101,11 +123,18 @@ jobs:
   docker:
     needs: initialize
     runs-on: ubuntu-latest
-    if: env.DOCKER_UPLOAD == 'true'
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: set_env.sh
+
+      - name: Set environment variables
+        run: |
+          bash set_env.sh
 
       - name: Upload docker
+        if: env.DOCKER_UPLOAD == 'true'
         uses: docker/build-push-action@v1
         with:
           repository: ${{ env.IMAGE_PREFIX }}/${{ env.SERVICE }}
