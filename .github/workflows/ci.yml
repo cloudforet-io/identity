@@ -20,6 +20,7 @@ jobs:
           LOCATION_SETUP_PY: dist/python # optional. for pypi upload
           LOCATION_VERSION: . # the location for VERSION file (ex- . means the location of VERSION is ./VERSION)
           LOCATION_DOCKERFILE: .
+          IMAGE_PREFIX: spaceone 
           IS_SUDO: false
         run: |
           echo "::set-env name=SERVICE::$SERVICE"
@@ -28,6 +29,7 @@ jobs:
           echo "::set-env name=LOCATION_SETUP_PY::$LOCATION_SETUP_PY"
           echo "::set-env name=LOCATION_VERSION::$LOCATION_VERSION"
           echo "::set-env name=LOCATION_DOCKERFILE::$LOCATION_DOCKERFILE"
+          echo "::set-env name=IMAGE_PREFIX::$IMAGE_PREFIX"
           echo "::set-env name=IS_SUDO::$IS_SUDO"
       - name: Clone master branch
           uses: actions/checkout@v2
