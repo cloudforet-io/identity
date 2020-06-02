@@ -36,22 +36,22 @@ jobs:
         with:
           ref: master
           path: master_branch
-          - name: Compare version
-            run: |
-              echo "MASTER BRANCH VERSION"
-              cat master_branch/$LOCATION_VERSION/VERSION
-              echo -e "\n\n"
+      - name: Compare version
+        run: |
+          echo "MASTER BRANCH VERSION"
+          cat master_branch/$LOCATION_VERSION/VERSION
+          echo -e "\n\n"
 
-              echo "PR VERSION"
-              cat $LOCATION_VERSION/VERSION
-              echo -e "\n\n"
+          echo "PR VERSION"
+          cat $LOCATION_VERSION/VERSION
+          echo -e "\n\n"
 
-              echo "::set-env name=IS_NEW_VERSION::false"
-              cmp --silent master_branch/$LOCATION_VERSION/VERSION $LOCATION_VERSION/VERSION || \
-              echo "::set-env name=IS_NEW_VERSION::true"
+          echo "::set-env name=IS_NEW_VERSION::false"
+          cmp --silent master_branch/$LOCATION_VERSION/VERSION $LOCATION_VERSION/VERSION || \
+          echo "::set-env name=IS_NEW_VERSION::true"
 
-              version=$(cat $LOCATION_VERSION/VERSION)-${{ github.run_id }}
-              echo "::set-env name=VERSION::$version"
+          version=$(cat $LOCATION_VERSION/VERSION)-${{ github.run_id }}
+          echo "::set-env name=VERSION::$version"
   pypi:
     needs: initialize
     runs-on: ubuntu-latest
