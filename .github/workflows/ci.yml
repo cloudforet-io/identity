@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+
 jobs:
   initialize:
     runs-on: ubuntu-latest
@@ -73,6 +74,7 @@ jobs:
                   python -m pip install --upgrade pip
                   pip install setuptools wheel twine
               fi
+              
       - name: Build
         run: |
           if test -f "Makefile"; then
