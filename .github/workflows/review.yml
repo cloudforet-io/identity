@@ -1,11 +1,11 @@
-name: SpaceONE CI
+name: SpaceONE Review
 
 on:
   pull_request:
     branches:
       - master
 jobs:
-  ci:
+  review:
     runs-on: ubuntu-latest
 
     steps:
