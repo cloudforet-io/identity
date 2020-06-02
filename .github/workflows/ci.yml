@@ -1,4 +1,4 @@
-name: SpaceONE Docker upload
+name: SpaceONE CI
 
 on:
   push:
