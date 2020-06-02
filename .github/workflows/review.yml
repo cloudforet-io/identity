@@ -14,7 +14,7 @@ jobs:
     - name: Set environment virables
       env:
         # LOCATION points the parent directory
-        LOCATION_SETUP_PY: dist/python # optional. for pypi upload
+        LOCATION_SETUP_PY: src # optional. for pypi upload
         IS_SUDO: false
       run: |
         echo "::set-env name=LOCATION_SETUP_PY::$LOCATION_SETUP_PY"
