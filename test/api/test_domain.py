@@ -211,6 +211,24 @@ class TestDomain(unittest.TestCase):
 
         print(result)
 
+    def test_stat_domain_distinct(self):
+        self.test_list_domains()
+
+        params = {
+            'query': {
+                'distinct': 'name',
+                'page': {
+                    'start': 2,
+                    'limit': 3
+                }
+            }
+        }
+
+        result = self.identity_v1.Domain.stat(
+            params, metadata=(('token', self.owner_token),))
+
+        print(result)
+
 
 if __name__ == "__main__":
     unittest.main(testRunner=RichTestRunner)
