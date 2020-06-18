@@ -41,7 +41,8 @@ class TokenManager(BaseManager, ABC):
         token_conf = identity_conf.get('token', {})
         self.CONST_TOKEN_TIMEOUT = token_conf.get('token_timeout', 1800)
         self.CONST_REFRESH_TIMEOUT = token_conf.get('refresh_timeout', 3600)
-        self.CONST_REFRESH_TTL = token_conf.get('refresh_ttl', 6)
+        self.CONST_REFRESH_TTL = token_conf.get('refresh_ttl', -1)
+        self.CONST_REFRESH_ONCE = token_conf.get('refresh_once', True)
 
 
 class JWTManager(TokenManager, metaclass=ABCMeta):
@@ -60,10 +61,11 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         raise NotImplementedError('TokenManager.authenticate not implemented!')
 
     def check_refreshable(self, refresh_key, ttl):
-        if cache.is_set() and cache.get(f'refresh-token:{refresh_key}') is None:
-            raise ERROR_INVALID_REFRESH_TOKEN()
+        if self.CONST_REFRESH_ONCE:
+            if cache.is_set() and cache.get(f'refresh-token:{refresh_key}') is None:
+                raise ERROR_INVALID_REFRESH_TOKEN()
 
-        if ttl <= 0:
+        if ttl == 0:
             raise ERROR_REFRESH_COUNT()
 
         self.is_authenticated = True
@@ -103,7 +105,9 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         }
 
         encoded = JWTUtil.encode(payload, private_jwk)
-        self._set_refresh_token_cache(refresh_key)
+
+        if self.CONST_REFRESH_ONCE:
+            self._set_refresh_token_cache(refresh_key)
 
         return encoded
 
