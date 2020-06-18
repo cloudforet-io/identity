@@ -78,7 +78,7 @@ DEFAULT_PROVIDERS = [{
         }
     },
     'capability': {
-        'supported_schema': ['google_api_key', 'google_oauth_client_id']
+        'supported_schema': ['google_oauth_client_id']
     },
     'tags': {
         'color': '#4285F4',
