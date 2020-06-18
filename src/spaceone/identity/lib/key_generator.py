@@ -30,6 +30,7 @@ class KeyGenerator:
 
         payload = {
             'cat': 'API_KEY',
+            'user_type': 'USER',
             'did': self.domain_id,
             'aud': self.aud_id,
             'iat': int(time.time()),
