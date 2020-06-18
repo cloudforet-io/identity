@@ -243,15 +243,6 @@ class TestUser(unittest.TestCase):
                 metadata=(('token', self.token),)
             )
 
-    def test_update_duplicate_user(self):
-        name = utils.random_string()[0:10]
-        self.test_create_user(name=name)
-
-        with self.assertRaises(Exception) as e:
-            self.test_update_user(name=name)
-
-        self.assertIn("ERROR_NOT_UNIQUE_KEYS", str(e.exception))
-
     def test_delete_non_existing_user(self):
         params = {
             'user_id': 'hello',
