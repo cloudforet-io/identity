@@ -23,7 +23,8 @@ IDENTITY = {
     'token': {
         'token_timeout': 1800,
         'refresh_timeout': 3600,
-        'refresh_ttl': 6
+        'refresh_ttl': -1,
+        'refresh_once': False
     }
 }
 
