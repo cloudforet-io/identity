@@ -200,6 +200,7 @@ class ProjectService(BaseService):
 
     @transaction
     @check_required(['project_id', 'domain_id'])
+    @change_only_key({'project_group_info': 'project_group'})
     def get(self, params):
         """ Get project
 
@@ -218,6 +219,7 @@ class ProjectService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
+    @change_only_key({'project_group_info': 'project_group'}, key_path='query.only')
     @append_query_filter(['project_id', 'name', 'project_group_id', 'domain_id'])
     @append_keyword_filter(['project_id', 'name'])
     def list(self, params):
