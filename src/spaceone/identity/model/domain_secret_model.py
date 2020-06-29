@@ -4,11 +4,11 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class DomainSecret(MongoModel):
-    domain_id = StringField(max_length=40, unique=True)
-    created_at = DateTimeField(auto_now_add=True)
+    domain_key = StringField()
     pub_jwk = DictField(required=True)
     prv_jwk = DictField(required=True)
-    domain_key = StringField()
+    domain_id = StringField(max_length=40, unique=True)
+    created_at = DateTimeField(auto_now_add=True)
 
     meta = {
         'updatable_fields': [
@@ -23,7 +23,3 @@ class DomainSecret(MongoModel):
             'domain_id'
         ]
     }
-
-    @classmethod
-    def create(cls, data):
-        return super().create(data)
