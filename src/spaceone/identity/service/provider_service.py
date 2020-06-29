@@ -13,7 +13,7 @@ class ProviderService(BaseService):
         self.provider_mgr: ProviderManager = self.locator.get_manager('ProviderManager')
 
     @transaction
-    @check_required(['provider', 'name'])
+    @check_required(['provider', 'name', 'domain_id'])
     def create_provider(self, params):
         """
         Args:
@@ -23,7 +23,8 @@ class ProviderService(BaseService):
                 'template': 'dict',
                 'metadata': 'dict',
                 'capability': 'dict',
-                'tags': 'dict'
+                'tags': 'dict',
+                'domain_id': 'str'
             }
 
         Returns:
@@ -35,7 +36,7 @@ class ProviderService(BaseService):
         return self.provider_mgr.create_provider(params)
 
     @transaction
-    @check_required(['provider'])
+    @check_required(['provider', 'domain_id'])
     def update_provider(self, params):
         """
         Args:
@@ -45,7 +46,8 @@ class ProviderService(BaseService):
                 'template': 'dict',
                 'metadata': 'dict',
                 'capability': 'dict',
-                'tags': 'dict'
+                'tags': 'dict',
+                'domain_id': 'str'
             }
 
         Returns:
@@ -57,12 +59,13 @@ class ProviderService(BaseService):
         return self.provider_mgr.update_provider(params)
 
     @transaction
-    @check_required(['provider'])
+    @check_required(['provider', 'domain_id'])
     def delete_provider(self, params):
         """
         Args:
             params (dict): {
-                'provider': 'str'
+                'provider': 'str',
+                'domain_id': 'str'
             }
 
         Returns:
@@ -72,13 +75,14 @@ class ProviderService(BaseService):
         self.provider_mgr.delete_provider(params['provider'])
 
     @transaction
-    @check_required(['provider'])
+    @check_required(['provider', 'domain_id'])
     def get_provider(self, params):
         """
         Args:
             params (dict): {
                 'provider': 'str',
-                'only': 'list'
+                'only': 'list',
+                'domain_id': 'str'
             }
 
         Returns:
@@ -89,15 +93,17 @@ class ProviderService(BaseService):
         return self.provider_mgr.get_provider(params['provider'], params.get('only'))
 
     @transaction
+    @check_required(['domain_id'])
     @append_query_filter(['provider', 'name'])
     @append_keyword_filter(['provider', 'name'])
     def list_providers(self, params):
         """
         Args:
             params (dict): {
+                    'query': 'dict (spaceone.api.core.v1.Query)',
                     'provider': 'str',
                     'name': 'str',
-                    'query': 'dict (spaceone.api.core.v1.Query)'
+                    'domain_id': 'str'
                 }
 
         Returns:
@@ -109,13 +115,13 @@ class ProviderService(BaseService):
         return self.provider_mgr.list_providers(params.get('query', {}))
 
     @transaction
-    @check_required(['query'])
+    @check_required(['query', 'domain_id'])
     def stat(self, params):
         """
         Args:
             params (dict): {
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'domain_id': 'str'
             }
 
         Returns:

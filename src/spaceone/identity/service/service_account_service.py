@@ -106,6 +106,7 @@ class ServiceAccountService(BaseService):
 
     @transaction
     @check_required(['service_account_id', 'domain_id'])
+    @change_only_key({'project_info': 'project'})
     def get_service_account(self, params):
         """
         Args:
@@ -124,6 +125,7 @@ class ServiceAccountService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
+    @change_only_key({'project_info': 'project'}, key_path='query.only')
     @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id'])
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def list_service_accounts(self, params):
