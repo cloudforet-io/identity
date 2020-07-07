@@ -71,6 +71,12 @@ class ServiceAccountManager(BaseManager):
         for secret_info in secrets:
             secret_connector.release_secret_project(secret_info['secret_id'], domain_id)
 
+    def delete_service_account_secrets(self, service_account_id, domain_id):
+        secret_connector: SecretConnector = self.locator.get_connector('SecretConnector')
+        response = secret_connector.list_secrets(self._get_secret_query(service_account_id), domain_id)
+        for secret_info in response.get('results', []):
+            secret_connector.delete_secret(secret_info['secret_id'], domain_id)
+
     def check_service_account_secrets(self, service_account_id, domain_id):
         secret_connector: SecretConnector = self.locator.get_connector('SecretConnector')
         response = secret_connector.list_secrets(self._get_secret_query(service_account_id), domain_id)

@@ -101,7 +101,8 @@ class ServiceAccountService(BaseService):
         service_account_id = params['service_account_id']
         domain_id = params['domain_id']
 
-        self.service_account_mgr.check_service_account_secrets(service_account_id, domain_id)
+        # self.service_account_mgr.check_service_account_secrets(service_account_id, domain_id)
+        self.service_account_mgr.delete_service_account_secrets(service_account_id, domain_id)
         self.service_account_mgr.delete_service_account(service_account_id, domain_id)
 
     @transaction
