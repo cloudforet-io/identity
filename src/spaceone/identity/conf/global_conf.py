@@ -21,10 +21,10 @@ CACHES = {
 
 IDENTITY = {
     'token': {
-        'token_timeout': 1800,
-        'refresh_timeout': 3600,
-        'refresh_ttl': -1,
-        'refresh_once': False
+        'token_timeout': 20,
+        'refresh_timeout': 30,
+        'refresh_ttl': 12,
+        'refresh_once': True
     }
 }
 
