@@ -12,3 +12,4 @@ venv
 local-conf.yml
 test/reports
 test/_trial_temp
+/test/api/config.yml
