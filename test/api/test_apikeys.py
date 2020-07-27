@@ -1,13 +1,12 @@
 import os
 import unittest
 
-from spaceone.core import config, utils
-from spaceone.core import pygrpc
+from spaceone.core import utils, pygrpc
 from spaceone.core.auth.jwt.jwt_util import JWTUtil
 
 
 class TestAPIKeys(unittest.TestCase):
-    config = config.load_config(
+    config = utils.load_yaml_from_file(
         os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
     domain = None
     identity_v1 = None
