@@ -3,10 +3,9 @@ import uuid
 import random
 import unittest
 import pprint
-from langcodes import Language
 
 from google.protobuf.json_format import MessageToDict
-from spaceone.core import config, utils, pygrpc
+from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
 
 
@@ -15,7 +14,7 @@ def random_string():
 
 
 class TestAuthorization(unittest.TestCase):
-    config = config.load_config(
+    config = utils.load_yaml_from_file(
         os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
 
     pp = pprint.PrettyPrinter(indent=4)

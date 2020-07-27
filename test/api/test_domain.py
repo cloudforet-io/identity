@@ -3,15 +3,12 @@ import unittest
 
 from google.protobuf.json_format import MessageToDict
 
-from spaceone.core import config
-from spaceone.core import pygrpc
-from spaceone.core import utils
-from spaceone.core.pygrpc.message_type import change_struct_type
+from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
 
 
 class TestDomain(unittest.TestCase):
-    config = config.load_config(
+    config = utils.load_yaml_from_file(
         os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
 
     @classmethod
