@@ -55,16 +55,6 @@ class Project(MongoModel):
                     'from': 'project_group',
                     # 'localField': 'project_group',
                     # 'foreignField': '_id'
-                },
-                'project_member': {
-                    'from': 'project_member_map',
-                    'localField': '_id',
-                    'foreignField': 'project'
-                },
-                'project_member.user': {
-                    'from': 'user',
-                    # 'localField': 'project_member.user',
-                    # 'foreignField': '_id'
                 }
             }
         }

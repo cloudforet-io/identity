@@ -20,7 +20,7 @@ class TestProviderService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config.init_conf(service='identity')
+        config.init_conf(package='spaceone.identity')
         connect('test', host='mongomock://localhost')
         cls.transaction = Transaction({
             'service': 'identity',
