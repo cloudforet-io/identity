@@ -37,19 +37,7 @@ class ProjectGroup(MongoModel):
             'project_group_id',
             'parent_project_group',
             'domain_id'
-        ],
-        'aggregate': {
-            'lookup': {
-                'project_group_member': {
-                    'from': 'project_group_member_map',
-                    'localField': '_id',
-                    'foreignField': 'project_group'
-                },
-                'project_group_member.user': {
-                    'from': 'user'
-                }
-            }
-        }
+        ]
     }
 
     def append(self, key, data):

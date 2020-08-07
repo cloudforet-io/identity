@@ -1,16 +1,14 @@
 import os
 import unittest
 
-from spaceone.core import config
-from spaceone.core import pygrpc
-from spaceone.core import utils
+from spaceone.core import utils, pygrpc
 from spaceone.core.auth.jwt.jwt_util import JWTUtil
 from spaceone.core.unittest.runner import RichTestRunner
 
 
 class TestToken(unittest.TestCase):
-    config = config.load_config(
-        os.environ.get('SPACEONE_TEST_CONFIG_FILE', "./config.yml"))
+    config = utils.load_yaml_from_file(
+        os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
     identity_v1 = None
     domain = None
     token = None
@@ -284,18 +282,14 @@ class TestToken(unittest.TestCase):
             {},
             metadata=(('token', self.token.refresh_token),)
         )
-        self.identity_v1.Token.refresh(
-            {},
-            metadata=(('token', self.token.refresh_token),)
-        )
 
-        # with self.assertRaises(Exception) as e:
-        #     self.identity_v1.Token.refresh(
-        #         {},
-        #         metadata=(('token', self.token.refresh_token),)
-        #     )
-        #
-        # self.assertIn("ERROR_INVALID_REFRESH_TOKEN", str(e.exception))
+        with self.assertRaises(Exception) as e:
+            self.identity_v1.Token.refresh(
+                {},
+                metadata=(('token', self.token.refresh_token),)
+            )
+
+        self.assertIn("ERROR_INVALID_REFRESH_TOKEN", str(e.exception))
 
     def test_exceeded_maximum_refresh_count(self):
         self.test_issue_token()

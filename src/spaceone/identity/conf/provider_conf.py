@@ -50,7 +50,7 @@ DEFAULT_PROVIDERS = [{
     },
     'tags': {
         'color': '#FF9900',
-        'icon': 'https://assets-console-cloudone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg',
+        'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg',
         'external_link_template': 'https://{{data.account_id}}.signin.aws.amazon.com/console'
     }
 }, {
@@ -82,7 +82,7 @@ DEFAULT_PROVIDERS = [{
     },
     'tags': {
         'color': '#4285F4',
-        'icon': 'https://assets-console-cloudone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg'
+        'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg'
     }
 }, {
     'provider': 'azure',
@@ -112,7 +112,7 @@ DEFAULT_PROVIDERS = [{
     },
     'tags': {
         'color': '#00BCF2',
-        'icon': 'https://assets-console-cloudone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
+        'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
     }
 }]
 

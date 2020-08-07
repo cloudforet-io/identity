@@ -4,14 +4,12 @@ import unittest
 
 from langcodes import Language
 
-from spaceone.core import config
-from spaceone.core import pygrpc
-from spaceone.core import utils
+from spaceone.core import utils, pygrpc
 from spaceone.core.auth.jwt import JWTUtil
 
 
 class TestAuthentication(unittest.TestCase):
-    config = config.load_config(
+    config = utils.load_yaml_from_file(
         os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
     domain = None
     api_key = None
