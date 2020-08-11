@@ -36,7 +36,7 @@ jobs:
           echo "::set-env name=LOCATION_VERSION::$LOCATION_VERSION"
           echo "::set-env name=LOCATION_DOCKERFILE::$LOCATION_DOCKERFILE"
 
-          echo "::set-env name=VERSION::$(cat $LOCATION_VERSION/VERSION).${{ steps.getTag.outputs.tag }}"
+          echo "::set-env name=VERSION::${{ steps.getTag.outputs.tag }}"
           echo "${{ steps.getTag.outputs.tag }}">$LOCATION_VERSION/VERSION
 
           # LATEST_TAG true or false
