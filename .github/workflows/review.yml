@@ -1,4 +1,4 @@
-name: SpaceONE Review
+name: SpaceONE PR Review
 
 on:
   pull_request:
