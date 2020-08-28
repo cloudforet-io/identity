@@ -295,7 +295,6 @@ class TestToken(unittest.TestCase):
         self.test_issue_token()
         decoded = JWTUtil.unverified_decode(self.token.refresh_token)
         refresh_limit = decoded['ttl']
-        refresh_limit = 10
 
         for i in range(refresh_limit):
             self.token = self.identity_v1.Token.refresh(
@@ -303,13 +302,13 @@ class TestToken(unittest.TestCase):
                 metadata=(('token', self.token.refresh_token),)
             )
 
-        # with self.assertRaises(Exception) as e:
-        #     self.identity_v1.Token.refresh(
-        #         {},
-        #         metadata=(('token', self.token.refresh_token),)
-        #     )
-        #
-        # self.assertIn("ERROR_REFRESH_COUNT", str(e.exception))
+        with self.assertRaises(Exception) as e:
+            self.identity_v1.Token.refresh(
+                {},
+                metadata=(('token', self.token.refresh_token),)
+            )
+
+        self.assertIn("ERROR_REFRESH_COUNT", str(e.exception))
 
 
 if __name__ == "__main__":
