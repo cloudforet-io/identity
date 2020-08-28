@@ -25,7 +25,8 @@ DEFAULT_PROVIDERS = [{
                     'options': {
                         'markdown': {
                             'en': (
-                                '## Help for AWS Users\n\n'
+                                '## Help for AWS Users\n'
+                                '&nbsp;\n'
                                 '#### Finding Your AWS Account ID\n'
                                 'You can find your account ID in the AWS Management Console, or using the AWS CLI or AWS API.\n'
                                 '#### Finding your account ID (Console)\n'
