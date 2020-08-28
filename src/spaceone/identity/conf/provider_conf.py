@@ -25,7 +25,8 @@ DEFAULT_PROVIDERS = [{
                     'options': {
                         'markdown': {
                             'en': (
-                                '### Finding Your AWS Account ID\n'
+                                '## Help for AWS Users\n\n'
+                                '#### Finding Your AWS Account ID\n'
                                 'You can find your account ID in the AWS Management Console, or using the AWS CLI or AWS API.\n'
                                 '#### Finding your account ID (Console)\n'
                                 'In the navigation bar, choose **Support**, and then **Support Center**. '
@@ -113,6 +114,21 @@ DEFAULT_PROVIDERS = [{
     'tags': {
         'color': '#00BCF2',
         'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
+    }
+}, {
+    'provider': 'megazone',
+    'name': 'MEGAZONE',
+    'template': {
+        'service_account': {
+            'schema': {}
+        }
+    },
+    'capability': {
+        'supported_schema': []
+    },
+    'tags': {
+        'color': '#000000',
+        'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/megazone.svg'
     }
 }]
 
