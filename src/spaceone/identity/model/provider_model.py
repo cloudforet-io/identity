@@ -1,6 +1,7 @@
 from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
 
+
 class Provider(MongoModel):
     provider = StringField(max_length=40, unique=True)
     name = StringField(max_length=255)
@@ -25,7 +26,7 @@ class Provider(MongoModel):
             'provider',
             'name'
         ],
-        'ordering': ['name'],
+        'ordering': ['created_at'],
         'indexes': [
             'provider'
         ]
