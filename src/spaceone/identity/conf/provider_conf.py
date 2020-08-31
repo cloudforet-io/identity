@@ -64,11 +64,6 @@ DEFAULT_PROVIDERS = [{
             'schema': {
                 'type': 'object',
                 'properties': {
-                    'sa_name': {
-                        'title': 'Service Account',
-                        'type': 'string',
-                        'minLength': 4
-                    },
                     'project_id': {
                         'title': 'Project ID',
                         'type': 'string',
