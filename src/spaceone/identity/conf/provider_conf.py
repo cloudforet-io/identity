@@ -70,7 +70,7 @@ DEFAULT_PROVIDERS = [{
                         'minLength': 4
                     }
                 },
-                'required': ['sa_name', 'project_id']
+                'required': ['project_id']
             }
         }
     },
