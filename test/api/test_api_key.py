@@ -1,13 +1,17 @@
 import os
 import unittest
+import pprint
+from google.protobuf.json_format import MessageToDict
 
 from spaceone.core import utils, pygrpc
 from spaceone.core.auth.jwt.jwt_util import JWTUtil
 
 
-class TestAPIKeys(unittest.TestCase):
+class TestAPIKey(unittest.TestCase):
     config = utils.load_yaml_from_file(
         os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
+
+    pp = pprint.PrettyPrinter(indent=4)
     domain = None
     identity_v1 = None
     owner_id = None
@@ -17,7 +21,7 @@ class TestAPIKeys(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        super(TestAPIKeys, cls).setUpClass()
+        super(TestAPIKey, cls).setUpClass()
         endpoints = cls.config.get('ENDPOINTS', {})
         cls.identity_v1 = pygrpc.client(endpoint=endpoints.get('identity', {}).get('v1'),
                                         version='v1')
@@ -28,7 +32,7 @@ class TestAPIKeys(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
-        super(TestAPIKeys, cls).tearDownClass()
+        super(TestAPIKey, cls).tearDownClass()
         cls.identity_v1.User.delete(
             {
                 'user_id': cls.user.user_id,
@@ -123,8 +127,12 @@ class TestAPIKeys(unittest.TestCase):
                 'domain_id': self.domain.domain_id
             })
 
-    def test_init(self):
-        ...
+    def _print_data(self, message, description=None):
+        print()
+        if description:
+            print(f'[ {description} ]')
+
+        self.pp.pprint(MessageToDict(message, preserving_proto_field_name=True))
 
     def test_create_api_key(self, domain_id=None):
         param = {
@@ -283,8 +291,17 @@ class TestAPIKeys(unittest.TestCase):
                 'aggregate': {
                     'group': {
                         'keys': [{
-                            'key': 'api_key_id',
-                            'name': 'Id'
+                            'key': 'created_at',
+                            'name': 'Year',
+                            'date_format': '%Y'
+                        }, {
+                            'key': 'created_at',
+                            'name': 'Month',
+                            'date_format': '%m'
+                        }, {
+                            'key': 'created_at',
+                            'name': 'Day',
+                            'date_format': '%d'
                         }],
                         'fields': [{
                             'operator': 'count',
@@ -302,4 +319,4 @@ class TestAPIKeys(unittest.TestCase):
         result = self.identity_v1.APIKey.stat(
             params, metadata=(('token', self.token),))
 
-        print(result)
+        self._print_data(result, 'test_stat_api_key')
