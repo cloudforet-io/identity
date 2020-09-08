@@ -32,7 +32,7 @@ jobs:
               fi
             fi
           fi
-      - name: Latest Update - update version file
+      - name: Latest Update - update version file & tagging
         if: ${{ env.LATEST_TAG }} == 'true'
         uses: actions/checkout@v2
       - run: |
