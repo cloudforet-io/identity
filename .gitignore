@@ -7,6 +7,7 @@ build
 *.whl
 *.log
 .idea
+.DS_Store
 __pycache__
 venv
 local-conf.yml
