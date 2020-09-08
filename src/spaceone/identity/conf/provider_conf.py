@@ -53,7 +53,7 @@ DEFAULT_PROVIDERS = [{
     'tags': {
         'color': '#FF9900',
         'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg',
-        'external_link_template': 'https://{{data.account_id}}.signin.aws.amazon.com/console'
+        'external_link_template': 'https://<%- data.account_id %>.signin.aws.amazon.com/console'
     }
 }, {
     'provider': 'google_cloud',
