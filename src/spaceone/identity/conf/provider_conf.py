@@ -27,20 +27,34 @@ DEFAULT_PROVIDERS = [{
                             'en': (
                                 '## Help for AWS Users\n'
                                 '&nbsp;\n'
-                                '#### Finding Your AWS Account ID\n'
-                                'You can find your account ID in the AWS Management Console, or using the AWS CLI or AWS API.\n'
-                                '#### Finding your account ID (Console)\n'
-                                'In the navigation bar, choose **Support**, and then **Support Center**. '
-                                'Your currently signed-in 12-digit account number (ID) appears in the **Support Center** title bar.\n'
-                                '#### Finding your account ID (AWS CLI)\n'
-                                'To view your user ID, account ID, and your user ARN:\n'
-                                '- [aws sts get-caller-identity](https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html)\n\n'
-                                '#### Finding your account ID (AWS API)\n'
-                                'To view your user ID, account ID, and your user ARN:\n'
-                                '- [GetCallerIdentity](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html)\n\n'
-                                '#### References\n'
-                                '- [AWS Guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html)\n'
-                            )
+                                '#### Find Your AWS Account ID\n'
+                                'Get your AWS Account ID.\n'
+                                '- [AWS Account ID](https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html)\n\n'
+                                '&nbsp;\n'
+                                '#### Get Your Assume role'
+                                'Granting permissions to create temporary security credentials.\n'
+                                '- [AWS Assume Role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_permissions-to-switch.html)\n\n'
+                                '&nbsp;\n'
+                                '#### Issue AWS Access Key \n'
+                                'Get your AWS Access Key & AWS Secret Key\n'
+                                '- [AWS Access Key & AWS Secret Key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)\n\n'
+                            ),
+                            'ko': (
+                                '## AWS 이용자 가이드\n'
+                                '&nbsp;\n'
+                                '#### AWS 어카운트 아이디(Account ID) 찾기\n'
+                                '사용자의 AWS 어카운트 아이디 AWS 콘솔(Console)에서 확인하기\n'
+                                '- [AWS Account ID](https://docs.aws.amazon.com/ko_kr/IAM/latest/UserGuide/console_account-alias.html)\n\n'
+                                '&nbsp;\n'
+                                '#### Assume role 획득하기'
+                                '임시 보안 자격증명을 만들 수있는 권한을 부여하기.\n'
+                                '- [AWS Assume Role](https://docs.aws.amazon.com/ko_kr/IAM/latest/UserGuide/id_roles_use_permissions-to-switch.html)\n\n'
+                                '&nbsp;\n'
+                                '#### AWS Access Key 발급하기\n'
+                                'AWS Access Key & AWS Secret Key 발급하기\n'
+                                '- [AWS Access Key & AWS Secret Key](https://docs.aws.amazon.com/ko_kr/IAM/latest/UserGuide/id_credentials_access-keys.html#Using_CreateAccessKey)\n\n'
+                            ),
+
                         }
                     }
                 }
@@ -71,6 +85,43 @@ DEFAULT_PROVIDERS = [{
                     }
                 },
                 'required': ['project_id']
+            }
+        }
+    },
+    'metadata': {
+        'view': {
+            'layouts': {
+                'help:service_account:create': {
+                    'name': 'Creation Help',
+                    'type': 'markdown',
+                    'options': {
+                        'markdown': {
+                            'en': (
+                                '## Getting started with Google Cloud\n'
+                                '&nbsp;\n'
+                                '#### Identifying Your Project\n'
+                                'Get your Project infos (Project Name, Project ID and Project number)\n'
+                                '- [Project Info](https://cloud.google.com/resource-manager/docs/creating-managing-projects#identifying_projects)\n\n'
+                                '&nbsp;\n'
+                                '#### Get Your Service Account Key(JSON)\n'
+                                'Generate Your a JSON Service Account Key.\n'
+                                '- [Service Account Key](https://cloud.google.com/docs/authentication/getting-started)\n\n'
+                            ),
+                            'ko': (
+                                '## Google Cloud 시작 가이드\n'
+                                '&nbsp;\n'
+                                '#### Project 정보 확인하기\n'
+                                '프로젝트 명, 프로젝트 아이디 프로젝트 번호등등의 프로젝트 정보 확인하기\n'
+                                '- [Project Info](https://cloud.google.com/resource-manager/docs/creating-managing-projects?hl=ko#identifying_projects)\n\n'
+                                '&nbsp;\n'
+                                '#### 서비스 어카운트 키(JSON) 받기\n'
+                                'JSON 포멧의 서비스 어카운트 키를 생성하기.\n'
+                                '- [Service Account Key](https://cloud.google.com/docs/authentication/getting-started?hl=ko)\n\n'
+                            ),
+
+                        }
+                    }
+                }
             }
         }
     },
