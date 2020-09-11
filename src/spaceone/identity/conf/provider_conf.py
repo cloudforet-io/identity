@@ -130,7 +130,8 @@ DEFAULT_PROVIDERS = [{
     },
     'tags': {
         'color': '#4285F4',
-        'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg'
+        'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg',
+        'external_link_template': 'https://console.cloud.google.com/home/dashboard?project=<%- data.project_id %>'
     }
 }, {
     'provider': 'azure',
