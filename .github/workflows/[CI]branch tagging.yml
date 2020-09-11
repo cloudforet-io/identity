@@ -1,4 +1,4 @@
-name: "[CI]branch tagging"
+name: "[CI] branch tagging"
 on:
   workflow_dispatch:
     inputs:
