@@ -1,5 +1,8 @@
-name: "[CI]branch tagging"
+name: "[CI]tag push"
 on:
+  push:
+    tags:
+      - "**"
   workflow_dispatch:
     inputs:
       tag:
@@ -8,7 +11,7 @@ on:
         default: 1.2.3
 
 env:
-  SERVICE: identity
+  SERVICE: ${{ github.repository }}
 
 jobs:
   
@@ -20,6 +23,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: if master, exit
         run: |
+          echo ${{ github.event_name }}
           if [ ${{ github.ref }} = refs/heads/master ]
             then exit 1
           fi
@@ -100,6 +104,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: set service env
+        run: |
+          echo "::set-env name=SERVICE::$(echo ${{ env.SERVICE }} | cut -c 14-)"
       - name: versioning by the convetion
         run: |
           echo "::set-env name=VERSION::$(echo ${{ github.event.inputs.tag }} | sed -e 's/-//g')"

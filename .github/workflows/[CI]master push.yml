@@ -3,11 +3,13 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+     - '.github/workflows/*'
   workflow_dispatch:
 
 env:
   ORGANIZATION: pyengine
-  SERVICE: identity
+  SERVICE: ${{ github.repository }}
 
 
 jobs:
@@ -34,6 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: set service env
+        run: |
+          echo "::set-env name=SERVICE::$(echo ${{ env.SERVICE }} | cut -c 14-)"
       - name: Upload docker
         uses: docker/build-push-action@v1
         with:
