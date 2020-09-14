@@ -5,7 +5,7 @@ on:
   # workflow_dispatch:
   #   inputs:
   #     tag:
-  #       description: ' `x.y.z` 형태로 버전을 입력해주세요. v접두사와 -rc0 접미사는 자동으로 첨가됩니다.'
+  #       description: ' `x.y.z` 형태로 버전을 입력해주세요. v접두사와 -dev0 접미사는 자동으로 첨가됩니다.'
   #       required: true
   #       default: 1.2.3
 
@@ -13,7 +13,7 @@ jobs:
   create_branch:
     needs: condition_check
     env:
-      VERSION: v${{ github.event.client_payload.version }}-rc0
+      VERSION: v${{ github.event.client_payload.version }}-dev0
       BRANCH: release-${{ github.event.client_payload.version }}
     runs-on: ubuntu-latest
     steps:

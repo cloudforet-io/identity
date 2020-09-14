@@ -13,7 +13,7 @@ jobs:
       - name: get existing official version
         run: |
           echo "::set-env name=current::$(echo src/VERSION | cut -c 2-6)"
-          echo "::set-env name=new_ver::$(echo ${{ env.VERSION }} | cut -c 1-5)"
+          echo "::set-env name=new_ver::$(echo ${{ env.VERSION }} | cut -c 2-6)"
       - name: Is new_ver is latest?
         run: |
           if [ $(echo ${{ env.current }} | cut -c 1) \> $(echo ${{ env.new_ver }} | cut -c 1) ]

@@ -2,11 +2,11 @@ name: "[CI]tag push"
 on:
   push:
     tags:
-      - "**"
+      - "v1.*"
   workflow_dispatch:
     inputs:
       tag:
-        description: '`x.y.z-릴리즈` 형태로 버전을 입력해주세요. `x.y.z`도 가능합니다. v접두사는 자동으로 첨가됩니다.'
+        description: '`vx.y.z-릴리즈` 형태로 버전을 입력해주세요. `vx.y.z`도 가능합니다.'
         required: true
         default: 1.2.3
 
@@ -22,23 +22,35 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: if master, exit
+        if: github.event_name == "workflow_dispatch" 
         run: |
-          echo ${{ github.event_name }}
           if [ ${{ github.ref }} = refs/heads/master ]
             then exit 1
           fi
       - name: if not same branch, exit
+        if: github.event_name == "workflow_dispatch" 
         run: |
-          if [ $(echo ${{ github.event.inputs.tag }} | cut -c 1-5) != $(cat src/VERSION | cut -c 2-6) ]
+          if [ $(echo ${{ github.event.inputs.tag }} | cut -c 2-6) != $(cat src/VERSION | cut -c 2-6) ]
             then exit 1
           fi
       - name: totally same version, redeploy dockerhub
         id: job1
         run: |
-          if [ $(cat src/VERSION) = v${{ github.event.inputs.tag }} ]
-            then echo "::set-output name=not_first_tag::true"
-            else echo "::set-output name=not_first_tag::false"
+          if [ ${{github.event_name}} == "workflow_dispatch" ]
+            then
+              echo "::set-output name=TAG::${{ github.event.inputs.tag }}"
+              if [ $(cat src/VERSION) = ${{ github.event.inputs.tag }} ]
+                then echo "::set-output name=not_first_tag::true"
+                else echo "::set-output name=not_first_tag::false"
+              fi
+            else
+              echo "::set-output name=TAG::${{ github.event.client_payload.version }}"
+              if [ $(cat src/VERSION) = ${{ github.event.client_payload.version }} ]
+                then echo "::set-output name=not_first_tag::true"
+                else echo "::set-output name=not_first_tag::false"
+              fi
           fi
+          
 
   update_master_branch_version_file:
     needs: condition_check
@@ -50,36 +62,44 @@ jobs:
         with:
           token: ${{ secrets.PAT_TOKEN }}
           event-type: update_master_version
-          client-payload: '{"version": "${{ github.event.inputs.tag }}"}'
+          client-payload: '{"version": "${{ needs.condition_check.outputs.TAG }}"}'
 
   update_local_version_file:
     needs: condition_check
     runs-on: ubuntu-latest
     if: ${{ needs.condition_check.outputs.NOT_FIRST.TAG }} = 'false'
     env:
-      VERSION: v${{ github.event.inputs.tag }}
+      VERSION: ${{ needs.condition_check.outputs.TAG }}
     steps:
+      - name: set branch env
+        run: |
+          echo "::set-env name=BRANCH::$(echo ${{ env.VERSION }}| cut -c 2-6 | awk '{print "release-"$1}')"
+          echo "::set-output name=BRANCH::$(echo ${{ env.VERSION }}| cut -c 2-6 | awk '{print "release-"$1}')"
       - name: task
         uses: actions/checkout@v2
       - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git pull
+          git checkout ${{ github.ref }}
           echo ${{ env.VERSION }} > src/VERSION
           git add .
           git commit -m "[CI/CD] release version ${{ env.VERSION }}"
-          git tag ${{ env.VERSION }} ${{ github.ref }} 
-          git push --atomic origin ${{ github.ref }} ${{ env.VERSION }}
+          git tag ${{ env.VERSION }} 
+          git push --atomic origin ${{ env.BRANCH }} ${{ env.VERSION }}
 
   pypi:
-    if: github.repository_owner == 'spaceone-dev'
+    if: github.repository_owner == 'spaceone-dev' && ${{ needs.condition_check.outputs.NOT_FIRST.TAG }} = 'false'
     needs: [condition_check, update_local_version_file]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: |
+          git pull
+          git checkout ${{ needs.update_local_version_file.outputs.BRANCH }}
       - name: set version
         run: |
-          echo ${{ github.event.inputs.tag }} | sed -e 's/-//g' > src/VERSION
+          echo ${{ needs.condition_check.outputs.TAG }} | cut -c 2- |sed -e 's/-//g' > src/VERSION
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -104,17 +124,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: |
+          git pull
+          git checkout ${{ needs.update_local_version_file.outputs.BRANCH }}
       - name: set service env
         run: |
           echo "::set-env name=SERVICE::$(echo ${{ env.SERVICE }} | cut -c 14-)"
       - name: versioning by the convetion
         run: |
-          echo "::set-env name=VERSION::$(echo ${{ github.event.inputs.tag }} | sed -e 's/-//g')"
+          echo "::set-env name=VERSION::$(echo ${{ needs.condition_check.outputs.TAG }} | cut -c 2- | sed -e 's/-//g')"
+      - name: set version file
+        run: |
+          echo ${{ env.VERSION }} > src/VERSION
+      - name: set repo env
+        run: |
+          if [ $VERSION =~ ^[0-9]\.[0-9]\.[0-9]dev(.*)$ ]
+            then echo "::set-env name=ORGANIZATION::pyengine"
+            else echo "::set-env name=ORGANIZATION::spaceone"
+          fi
       - name: Upload docker
         uses: docker/build-push-action@v1
         with:
           path: .
-          repository: spaceone/${{ env.SERVICE }}
+          repository: ${{ env.ORGANIZATION }}/${{ env.SERVICE }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           tags: ${{ env.VERSION }}
