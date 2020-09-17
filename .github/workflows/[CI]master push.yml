@@ -1,15 +1,15 @@
 name: "[CI]master push"
 on:
   push:
+    paths-ignore:
+      - '.github/**'
     branches:
       - master
-    paths-ignore:
-     - '.github/workflows/*'
+
   workflow_dispatch:
 
 env:
   ORGANIZATION: pyengine
-  SERVICE: ${{ github.repository }}
 
 
 jobs:
@@ -31,14 +31,14 @@ jobs:
   docker:
     if: github.repository_owner == 'spaceone-dev'
     needs: versioning
+    runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.versioning.outputs.version }}
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: set service env
+      - name: get service name
         run: |
-          echo "::set-env name=SERVICE::$(echo ${{ env.SERVICE }} | cut -c 14-)"
+          echo "::set-env name=SERVICE::$(echo ${{ github.repository }} | cut -c 14-)"
       - name: Upload docker
         uses: docker/build-push-action@v1
         with:
