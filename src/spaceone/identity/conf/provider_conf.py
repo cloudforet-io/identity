@@ -163,21 +163,21 @@ DEFAULT_PROVIDERS = [{
         'color': '#00BCF2',
         'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
     }
-}, {
-    'provider': 'megazone',
-    'name': 'MEGAZONE',
-    'template': {
-        'service_account': {
-            'schema': {}
-        }
-    },
-    'capability': {
-        'supported_schema': []
-    },
-    'tags': {
-        'color': '#000000',
-        'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/megazone.svg'
-    }
+# }, {
+#     'provider': 'megazone',
+#     'name': 'MEGAZONE',
+#     'template': {
+#         'service_account': {
+#             'schema': {}
+#         }
+#     },
+#     'capability': {
+#         'supported_schema': []
+#     },
+#     'tags': {
+#         'color': '#000000',
+#         'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/megazone.svg'
+#     }
 }]
 
 aws_access_key = {
