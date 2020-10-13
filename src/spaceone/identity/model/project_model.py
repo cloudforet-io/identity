@@ -53,7 +53,7 @@ class Project(MongoModel):
             'lookup': {
                 'ref_project_group': {
                     'from': 'project_group',
-                    # 'localField': 'ref_project_group',
+                    'localField': 'project_group',
                     # 'foreignField': '_id'
                 }
             }
