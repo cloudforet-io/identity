@@ -38,7 +38,8 @@ setup(
         'bcrypt==3.1.6',
         'redis',
         'jinja2',
-        'fakeredis'
+        'fakeredis',
+        'mongomock'
     ],
     zip_safe=False,
 )
