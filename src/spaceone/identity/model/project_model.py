@@ -51,9 +51,9 @@ class Project(MongoModel):
         ],
         'aggregate': {
             'lookup': {
-                'ref_project_group': {
+                'project_group': {
                     'from': 'project_group',
-                    'localField': 'project_group',
+                    # 'localField': 'project_group',
                     # 'foreignField': '_id'
                 }
             }

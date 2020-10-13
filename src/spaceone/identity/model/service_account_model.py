@@ -45,9 +45,8 @@ class ServiceAccount(MongoModel):
         ],
         'aggregate': {
             'lookup': {
-                'ref_project': {
-                    'from': 'project',
-                    'localField': 'project',
+                'project': {
+                    'from': 'project'
                 }
             }
         }
