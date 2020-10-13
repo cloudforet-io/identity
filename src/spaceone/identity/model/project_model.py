@@ -48,16 +48,7 @@ class Project(MongoModel):
             'state',
             'project_group',
             'domain_id'
-        ],
-        'aggregate': {
-            'lookup': {
-                'project_group': {
-                    'from': 'project_group',
-                    # 'localField': 'project_group',
-                    # 'foreignField': '_id'
-                }
-            }
-        }
+        ]
     }
 
     def append(self, key, data):
