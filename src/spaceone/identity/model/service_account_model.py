@@ -42,12 +42,5 @@ class ServiceAccount(MongoModel):
             'provider',
             'project',
             'domain_id'
-        ],
-        'aggregate': {
-            'lookup': {
-                'project': {
-                    'from': 'project'
-                }
-            }
-        }
+        ]
     }
