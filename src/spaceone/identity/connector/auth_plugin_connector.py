@@ -55,6 +55,19 @@ class AuthPluginConnector(BaseConnector):
 
         return user_info
 
+    def init(self, options):
+        params = {
+            'options': options
+        }
+        try:
+            plugin_info = self.client.Auth.init(params)
+            return MessageToDict(plugin_info)
+        except ERROR_BASE as e:
+            raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(message=e.message)
+        except Exception as e:
+            raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(messsage=str(e))
+
+
     def verify(self, options, secret_data):
         params = {
             'options': options,
