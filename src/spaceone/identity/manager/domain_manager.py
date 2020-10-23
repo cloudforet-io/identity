@@ -25,7 +25,7 @@ class DomainManager(BaseManager):
             plugin_svc_conn: PluginServiceConnector = self.locator.get_connector('PluginServiceConnector')
             plugin_id = plugin_info['plugin_id']
             version = plugin_info['version']
-            endpoint = plugin_svc_conn.get_plugin_endpoint(plugin_id, version)
+            #endpoint = plugin_svc_conn.get_plugin_endpoint(plugin_id, version)
             #_LOGGER.debug('endpoint: %s' % endpoint)
 
         domain_vo: Domain = self.domain_model.create(params)
