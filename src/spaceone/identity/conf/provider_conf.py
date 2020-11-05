@@ -200,7 +200,7 @@ DEFAULT_PROVIDERS = [{
                                 '## Azure 테넌트 아이디(Tenant ID) 찾기\n'
                                 'CLI에서 사용자의 테넌트 아이디 확인하기.\n'
                                 '[Azure Tenant CLI](https://docs.microsoft.com/en-us/cli/azure/ext/account/account/tenant?view=azure-cli-latest)\n'
-                                'PowerShell에서 사용자의 테넌 아이디 확인하기.\n'
+                                'PowerShell에서 사용자의 테넌트 아이디 확인하기.\n'
                                 '[Azure Tenant PowerShell](https://docs.microsoft.com/en-us/powershell/module/az.accounts/get-aztenant?view=azps-5.0.0)\n\n'
                                 '\n'
                                 '## 사용자의 클라이언트 시크릿 정보(Client Secret&ID) 가져오기\n'
