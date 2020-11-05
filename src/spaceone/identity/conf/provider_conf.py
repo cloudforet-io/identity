@@ -156,6 +156,65 @@ DEFAULT_PROVIDERS = [{
             }
         }
     },
+    'metadata': {
+        'view': {
+            'layouts': {
+                'help:service_account:create': {
+                    'name': 'Creation Help',
+                    'type': 'markdown',
+                    'options': {
+                        'markdown': {
+                            'en': (
+                                '# Help for Azure Users\n'
+                                '\n'
+                                '## Find Your Azure Subscription ID\n'
+                                'Azure Subscription ID via CLI.\n'
+                                '[Azure Subscription CLI](https://docs.microsoft.com/en-us/cli/azure/ext/account/account/subscription?view=azure-cli-latest)\n'
+                                'Azure Subscription ID via PowerShell.\n'
+                                '[Azure Subscription PowerShell](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-authenticate-service-principal-powershell)\n'
+                                'Create Azure Subscription via Portal.\n'
+                                '[Azure Subscription Portal(https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal)\n\n'
+                                '\n'
+                                '## Find Your Azure Tenant ID\n'
+                                'Azure Tenant ID via CLI.\n'
+                                '[Azure Tenant CLI](https://docs.microsoft.com/en-us/cli/azure/ext/account/account/tenant?view=azure-cli-latest)\n'
+                                'Azure Tenant ID via PowerShell.\n'
+                                '[Azure Tenant PowerShell](https://docs.microsoft.com/en-us/powershell/module/az.accounts/get-aztenant?view=azps-5.0.0)\n\n'
+                                '\n'
+                                '## Get Your Client Secret and ID\n'
+                                'Check Client Secret via Portal.\n'
+                                '[Azure Client Secret Portal](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal)\n\n'
+                                '\n'
+                            ),
+                            'ko': (
+                                '# Azure 이용자 가이\n'
+                                '\n'
+                                '## Azure 구독 아이디(Subscription ID) 찾\n'
+                                'CLI에서 사용자의 구독 아이디 확인하기.\n'
+                                '[Azure Subscription CLI](https://docs.microsoft.com/en-us/cli/azure/ext/account/account/subscription?view=azure-cli-latest)\n'
+                                'PowerShell에서 사용자의 구독 아이디 확인하기.\n'
+                                '[Azure Subscription PowerShell](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-authenticate-service-principal-powershell)\n'
+                                '포에서 사용자의 구독 아이디 확인하기.\n'
+                                '[Azure Subscription Portal(https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal)\n\n'
+                                '\n'
+                                '## Azure 테넌트 아이디(Tenant ID) 찾기\n'
+                                'CLI에서 사용자의 테넌트 아이디 확인하기.\n'
+                                '[Azure Tenant CLI](https://docs.microsoft.com/en-us/cli/azure/ext/account/account/tenant?view=azure-cli-latest)\n'
+                                'PowerShell에서 사용자의 테넌 아이디 확인하기.\n'
+                                '[Azure Tenant PowerShell](https://docs.microsoft.com/en-us/powershell/module/az.accounts/get-aztenant?view=azps-5.0.0)\n\n'
+                                '\n'
+                                '## 사용자의 클라이언트 시크릿 정보(Client Secret&ID) 가져오기\n'
+                                '포에서 사용자의 클라이언트 시크릿 정보 확인하기.\n'
+                                '[Azure Client Secret Portal](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal)\n\n'
+                                '\n'
+                            ),
+
+                        }
+                    }
+                }
+            }
+        }
+    },
     'capability': {
         'supported_schema': ['azure_client_secret']
     },
