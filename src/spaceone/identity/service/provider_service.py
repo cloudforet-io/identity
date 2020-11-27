@@ -1,6 +1,7 @@
 from spaceone.core import cache
 from spaceone.core.service import *
 from spaceone.identity.manager.provider_manager import ProviderManager
+from spaceone.identity.conf.provider_conf import DEFAULT_PROVIDERS
 
 
 @authentication_handler
@@ -135,7 +136,7 @@ class ProviderService(BaseService):
     @cache.cacheable(key='provider:default:init', expire=300)
     def _create_default_provider(self):
         provider_vos, total_count = self.provider_mgr.list_providers()
-        if total_count == 0:
-            self.provider_mgr.create_default_providers()
+        installed_providers = [provider_vo.provider for provider_vo in provider_vos]
+        self.provider_mgr.create_default_providers(installed_providers)
 
         return True

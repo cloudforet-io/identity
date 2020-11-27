@@ -13,3 +13,4 @@ from spaceone.identity.info.domain_owner_info import *
 from spaceone.identity.info.find_user_info import *
 from spaceone.identity.info.provider_info import *
 from spaceone.identity.info.service_account_info import *
+from spaceone.identity.info.endpoint_info import *

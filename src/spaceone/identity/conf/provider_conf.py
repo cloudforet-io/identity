@@ -126,7 +126,7 @@ DEFAULT_PROVIDERS = [{
         }
     },
     'capability': {
-        'supported_schema': ['google_oauth_client_id']
+        'supported_schema': ['google_oauth2_credentials']
     },
     'tags': {
         'color': '#4285F4',
@@ -222,21 +222,31 @@ DEFAULT_PROVIDERS = [{
         'color': '#00BCF2',
         'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
     }
-# }, {
-#     'provider': 'megazone',
-#     'name': 'MEGAZONE',
-#     'template': {
-#         'service_account': {
-#             'schema': {}
-#         }
-#     },
-#     'capability': {
-#         'supported_schema': []
-#     },
-#     'tags': {
-#         'color': '#000000',
-#         'icon': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/megazone.svg'
-#     }
+}, {
+    'provider': 'spaceone',
+    'name': 'SpaceONE',
+    'template': {
+        'service_account': {
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'tenant_id': {
+                        'title': 'User ID',
+                        'type': 'string',
+                        'minLength': 4
+                    }
+                },
+                'required': ['user_id']
+            }
+        }
+    },
+    'capability': {
+        'supported_schema': ['spaceone_api_key']
+    },
+    'tags': {
+        'color': '#6638B6',
+        'icon': 'https://spaceone.console.doodle.spaceone.dev/img/brand_logo.42208bb4.svg'
+    }
 }]
 
 aws_access_key = {
@@ -252,14 +262,6 @@ aws_access_key = {
                 'title': 'AWS Access Key',
                 'type': 'string',
                 'minLength': 4
-            },
-            'region_name': {
-                'title': 'Region',
-                'type': 'string',
-                'minLength': 4,
-                'examples': [
-                    'ap-northeast-2'
-                ]
             },
             'aws_secret_access_key': {
                 'type': 'string',
@@ -294,14 +296,6 @@ aws_assume_role = {
                 'title': 'AWS Access Key',
                 'type': 'string',
                 'minLength': 4
-            },
-            'region_name': {
-                'title': 'Region',
-                'type': 'string',
-                'minLength': 4,
-                'examples': [
-                    'ap-northeast-2'
-                ]
             },
             'aws_secret_access_key': {
                 'type': 'string',
@@ -339,93 +333,10 @@ google_api_key = {
     }
 }
 
-google_oauth_client_id = {
-    'name': 'google_oauth_client_id',
+google_oauth2_credentials = {
+    'name': 'google_oauth2_credentials',
     'service_type': 'secret.credentials',
     'schema': {
-        'properties': {
-            'auth_provider_x509_cert_url': {
-                'title': 'Auth Provider Cert URL',
-                'type': 'string',
-                'minLength': 4,
-                'default': 'https://www.googleapis.com/oauth2/v1/certs'
-            },
-            'client_id': {
-                'title': 'Client ID',
-                'type': 'string',
-                'minLength': 4,
-                'examples': [
-                    '10118252.....'
-                ]
-            },
-            'token_uri': {
-                'type': 'string',
-                'minLength': 4,
-                'default': 'https://oauth2.googleapis.com/token',
-                'title': 'Token URI'
-            },
-            'zone': {
-                'type': 'string',
-                'minLength': 4,
-                'examples': [
-                    'asia-northeast3'
-                ],
-                'title': 'Region'
-            },
-            'client_x509_cert_url': {
-                'type': 'string',
-                'minLength': 4,
-                'examples': [
-                    'https://www.googleapis.com/...'
-                ],
-                'title': 'client_x509_cert_url'
-            },
-            'project_id': {
-                'type': 'string',
-                'minLength': 4,
-                'examples': [
-                    'project-id'
-                ],
-                'title': 'Project ID'
-            },
-            'private_key_id': {
-                'type': 'string',
-                'minLength': 4,
-                'examples': [
-                    '771823abcd...'
-                ],
-                'title': 'Private Key ID'
-            },
-            'auth_uri': {
-                'type': 'string',
-                'minLength': 4,
-                'default': 'https://acounts.google.com/o/oauth2/auth',
-                'title': 'Auth URI'
-            },
-            'type': {
-                'default': 'service_account',
-                'title': 'Type',
-                'type': 'string',
-                'minLength': 4
-            },
-            'client_email': {
-                'type': 'string',
-                'minLength': 4,
-                'exmaples': [
-                    '<api-name>api@project-id.iam.gserviceaccount.com'
-                ],
-                'title': 'Client Email'
-            },
-            'private_key': {
-                'type': 'string',
-                'minLength': 4,
-                'examples': [
-                    '-----BEGIN'
-                ],
-                'title': 'Private Key'
-            }
-        },
-        'type': 'object',
         'required': [
             'type',
             'project_id',
@@ -437,7 +348,64 @@ google_oauth_client_id = {
             'token_uri',
             'auth_provider_x509_cert_url',
             'client_x509_cert_url'
-        ]
+        ],
+        'properties': {
+            'type': {
+                'title': 'Type',
+                'type': 'string',
+                'minLength': 4,
+                'default': 'service_account'
+            },
+            'project_id': {
+                'title': 'Project ID',
+                'type': 'string',
+                'minLength': 4
+            },
+            'private_key_id': {
+                'title': 'Private Key ID',
+                'type': 'string',
+                'minLength': 4
+            },
+            'private_key': {
+                'title': 'Private Key',
+                'type': 'string',
+                'minLength': 4
+            },
+            'client_email': {
+                'title': 'Client Email',
+                'type': 'string',
+                'minLength': 4
+            },
+            'client_id': {
+                'title': 'Client ID',
+                'type': 'string',
+                'minLength': 4
+            },
+            'auth_uri': {
+                'title': 'Auth URI',
+                'type': 'string',
+                'minLength': 4,
+                'default': 'https://acounts.google.com/o/oauth2/auth'
+            },
+            'token_uri': {
+                'title': 'Token URI',
+                'type': 'string',
+                'minLength': 4,
+                'default': 'https://oauth2.googleapis.com/token'
+            },
+            'auth_provider_x509_cert_url': {
+                'title': 'Auth Provider Cert URL',
+                'type': 'string',
+                'minLength': 4,
+                'default': 'https://www.googleapis.com/oauth2/v1/certs'
+            },
+            'client_x509_cert_url': {
+                'title': 'Client X509 Cert URL',
+                'type': 'string',
+                'minLength': 4
+            }
+        },
+        'type': 'object'
     },
     'labels': ['Google Cloud', 'GCP', 'OAuth2.0'],
     'tags': {
@@ -482,5 +450,39 @@ azure_client_secret = {
     'labels': ['Azure'],
     'tags': {
         'description': 'Azure Client Secret'
+    }
+}
+
+spaceone_api_key = {
+    'name': 'spaceone_api_key',
+    'service_type': 'secret.credentials',
+    'schema': {
+        'required': [
+            'api_key_id',
+            'api_key',
+            'endpoint'
+        ],
+        'properties': {
+            'api_key_id': {
+                'title': 'API Key ID',
+                'type': 'string',
+                'minLength': 4
+            },
+            'api_key': {
+                'title': 'API Key',
+                'type': 'string',
+                'minLength': 4
+            },
+            'endpoint': {
+                'title': 'Identity Service Endpoint',
+                'type': 'string',
+                'minLength': 4
+            }
+        },
+        'type': 'object'
+    },
+    'labels': ['SpaceONE'],
+    'tags': {
+        'description': 'SpaceONE API Key'
     }
 }

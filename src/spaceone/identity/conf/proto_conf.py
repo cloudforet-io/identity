@@ -1,6 +1,7 @@
 PROTO = {
     'spaceone.identity.api.v1.domain': ['Domain'],
     'spaceone.identity.api.v1.domain_owner': ['DomainOwner'],
+    'spaceone.identity.api.v1.endpoint': ['Endpoint'],
     'spaceone.identity.api.v1.provider': ['Provider'],
     'spaceone.identity.api.v1.service_account': ['ServiceAccount'],
     'spaceone.identity.api.v1.project_group': ['ProjectGroup'],
