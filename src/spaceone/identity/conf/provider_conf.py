@@ -337,6 +337,18 @@ google_oauth2_credentials = {
     'name': 'google_oauth2_credentials',
     'service_type': 'secret.credentials',
     'schema': {
+        'required': [
+            'type',
+            'project_id',
+            'private_key_id',
+            'private_key',
+            'client_email',
+            'client_id',
+            'auth_uri',
+            'token_uri',
+            'auth_provider_x509_cert_url',
+            'client_x509_cert_url'
+        ],
         'properties': {
             'type': {
                 'title': 'Type',
@@ -393,19 +405,7 @@ google_oauth2_credentials = {
                 'minLength': 4
             }
         },
-        'type': 'object',
-        'required': [
-            'type',
-            'project_id',
-            'private_key_id',
-            'private_key',
-            'client_email',
-            'client_id',
-            'auth_uri',
-            'token_uri',
-            'auth_provider_x509_cert_url',
-            'client_x509_cert_url'
-        ]
+        'type': 'object'
     },
     'labels': ['Google Cloud', 'GCP', 'OAuth2.0'],
     'tags': {
