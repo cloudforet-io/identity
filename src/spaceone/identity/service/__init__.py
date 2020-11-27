@@ -10,3 +10,4 @@ from spaceone.identity.service.policy_service import PolicyService
 from spaceone.identity.service.token_service import TokenService
 from spaceone.identity.service.project_group_service import ProjectGroupService
 from spaceone.identity.service.project_service import ProjectService
+from spaceone.identity.service.endpoint_service import EndpointService

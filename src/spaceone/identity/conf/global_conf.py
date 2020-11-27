@@ -61,6 +61,12 @@ CONNECTORS = {
     },
 }
 
-ENDPOINTS = {}
+ENDPOINTS = [
+    # {
+    #     'service': 'identity',
+    #     'name': 'Identity Service',
+    #     'endpoint': 'grpc://<endpoint>>:<port>/v1'
+    # },
+]
 
 LOG = {}

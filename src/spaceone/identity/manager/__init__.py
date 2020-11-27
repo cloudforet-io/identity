@@ -13,3 +13,4 @@ from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.token_manager.default_token_manager import DefaultTokenManager
 from spaceone.identity.manager.token_manager.plugin_token_manager import PluginTokenManager
 from spaceone.identity.manager.token_manager.domain_owner_token_manager import DomainOwnerTokenManager
+from spaceone.identity.manager.endpoint_manager import EndpointManager
