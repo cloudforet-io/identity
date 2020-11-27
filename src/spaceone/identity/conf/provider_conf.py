@@ -394,7 +394,7 @@ google_oauth2_credentials = {
                 "default": "https://oauth2.googleapis.com/token"
             },
             "auth_provider_x509_cert_url": {
-                "title": "Auth Provider Cert URL",
+                "title": "Auth Provider X509 Cert URL",
                 "type": "string",
                 "minLength": 4,
                 "default": "https://www.googleapis.com/oauth2/v1/certs"
