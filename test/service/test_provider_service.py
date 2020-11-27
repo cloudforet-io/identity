@@ -3,6 +3,7 @@ from unittest.mock import patch
 from mongoengine import connect, disconnect
 
 from spaceone.core.error import *
+from spaceone.core import utils
 from spaceone.core.unittest.result import print_data
 from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.core import config
@@ -22,6 +23,7 @@ class TestProviderService(unittest.TestCase):
     def setUpClass(cls):
         config.init_conf(package='spaceone.identity')
         connect('test', host='mongomock://localhost')
+        cls.domain_id = utils.generate_id('domain')
         cls.transaction = Transaction({
             'service': 'identity',
             'api_class': 'Provider'
@@ -85,7 +87,8 @@ class TestProviderService(unittest.TestCase):
             },
             'tags': {
                 'key': 'value'
-            }
+            },
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'create'
@@ -107,7 +110,8 @@ class TestProviderService(unittest.TestCase):
     def test_create_duplicated_provider(self, *args):
         params = {
             'provider': 'duplicated_provider',
-            'name': 'Duplicated Provider'
+            'name': 'Duplicated Provider',
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'create'
@@ -130,7 +134,8 @@ class TestProviderService(unittest.TestCase):
             },
             'tags': {
                 'update_key': 'update_value'
-            }
+            },
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'update'
@@ -151,7 +156,8 @@ class TestProviderService(unittest.TestCase):
     def test_delete_provider(self, *args):
         new_provider_vo = ProviderFactory()
         params = {
-            'provider': new_provider_vo.provider
+            'provider': new_provider_vo.provider,
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'delete'
@@ -164,7 +170,8 @@ class TestProviderService(unittest.TestCase):
     def test_get_provider(self, *args):
         new_provider_vo = ProviderFactory()
         params = {
-            'provider': new_provider_vo.provider
+            'provider': new_provider_vo.provider,
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'get'
@@ -179,7 +186,8 @@ class TestProviderService(unittest.TestCase):
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_generate_default_provider_by_list_providers_method(self, *args):
         params = {
-            'provider': 'aws'
+            'provider': 'aws',
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
@@ -199,7 +207,8 @@ class TestProviderService(unittest.TestCase):
         list(map(lambda vo: vo.save(), provider_vos))
 
         params = {
-            'provider': provider_vos[0].provider
+            'provider': provider_vos[0].provider,
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
@@ -218,7 +227,8 @@ class TestProviderService(unittest.TestCase):
         list(map(lambda vo: vo.save(), provider_vos))
 
         params = {
-            'name': provider_vos[0].name
+            'name': provider_vos[0].name,
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
@@ -244,7 +254,8 @@ class TestProviderService(unittest.TestCase):
                     'v': 'tag_value',
                     'o': 'eq'
                 }]
-            }
+            },
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
@@ -280,7 +291,8 @@ class TestProviderService(unittest.TestCase):
                     'name': 'Count',
                     'desc': True
                 }
-            }
+            },
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'stat'

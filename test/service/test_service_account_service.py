@@ -14,6 +14,7 @@ from spaceone.identity.model.service_account_model import ServiceAccount
 from spaceone.identity.model.project_model import Project
 from spaceone.identity.info.service_account_info import *
 from spaceone.identity.info.common_info import StatisticsInfo
+from spaceone.identity.connector import SecretConnector
 from test.factory.service_account_factory import ServiceAccountFactory
 from test.factory.provider_factory import ProviderFactory
 from test.factory.project_factory import ProjectFactory
@@ -179,6 +180,9 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(params['tags'], service_account_vo.tags)
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SecretConnector, 'update_secret_project', return_value=None)
     def test_update_service_account_project(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id)
         params = {
@@ -199,6 +203,9 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(service_account_vo.project.project_id, params['project_id'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SecretConnector, 'release_secret_project', return_value=None)
     def test_release_service_account_project(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id, project=self.project_vo)
         params = {
@@ -218,6 +225,9 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsNone(service_account_vo.project)
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SecretConnector, 'delete_secret', return_value=None)
     def test_delete_service_account(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id)
         params = {
@@ -232,6 +242,9 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SecretConnector, 'delete_secret', return_value=None)
     def test_delete_project_exist_service_account(self, *args):
         params = {
             'name': 'SpaceONE',
