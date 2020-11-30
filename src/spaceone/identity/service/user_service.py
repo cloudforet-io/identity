@@ -82,6 +82,7 @@ class UserService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @append_keyword_filter(['user_id', 'name', 'email', 'mobile', 'group'])
     def stat(self, params):
         """
         Args:

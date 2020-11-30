@@ -267,6 +267,7 @@ class ProjectService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @append_keyword_filter(['project_id', 'name'])
     def stat(self, params):
         """
         Args:

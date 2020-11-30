@@ -154,6 +154,7 @@ class ServiceAccountService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def stat(self, params):
         """
         Args:

@@ -78,6 +78,7 @@ class DomainService(BaseService):
 
     @transaction
     @check_required(['query'])
+    @append_keyword_filter(['domain_id', 'name'])
     def stat(self, params):
         """
         Args:
