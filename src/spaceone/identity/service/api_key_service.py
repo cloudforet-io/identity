@@ -52,6 +52,7 @@ class APIKeyService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @append_keyword_filter(['api_key_id', 'user_id'])
     def stat(self, params):
         """
         Args:

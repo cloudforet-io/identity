@@ -46,12 +46,9 @@ class TestDomainOwner(unittest.TestCase):
 
     def _create_domain(self):
         name = utils.random_string()
-        param = {'name': name,
-                 'tags': {utils.random_string(): utils.random_string(), utils.random_string(): utils.random_string()},
-                 'config': {
-                     'aaa': 'bbbb'
-                 }
-                 }
+        param = {
+            'name': name
+        }
         self.domain = self.identity_v1.Domain.create(param)
 
     def test_create_owner(self):
@@ -64,7 +61,7 @@ class TestDomainOwner(unittest.TestCase):
             'password': 'qwerty123',
             'name': 'Steven' + utils.random_string()[0:5],
             'language': language.__str__(),
-            'timezone': 'utc+9',
+            'timezone': 'Asia/Seoul',
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'mobile': '+821026671234',
             'domain_id': self.domain.domain_id

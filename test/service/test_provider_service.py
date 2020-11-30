@@ -85,9 +85,12 @@ class TestProviderService(unittest.TestCase):
             'capability': {
                 'supported_schema': ['schema-aaa', 'schema-bbb']
             },
-            'tags': {
-                'key': 'value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'domain_id': self.domain_id
         }
 
@@ -104,7 +107,7 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['template'], provider_vo.template)
         self.assertEqual(params['metadata'], provider_vo.metadata)
         self.assertEqual(params['capability'], provider_vo.capability)
-        self.assertEqual(params['tags'], provider_vo.tags)
+        self.assertEqual(params['tags'], provider_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_duplicated_provider(self, *args):
@@ -132,9 +135,12 @@ class TestProviderService(unittest.TestCase):
             },
             'metadata': {
             },
-            'tags': {
-                'update_key': 'update_value'
-            },
+            'tags': [
+                {
+                    'key': 'update_key',
+                    'value': 'update_value'
+                }
+            ],
             'domain_id': self.domain_id
         }
 
@@ -150,7 +156,7 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['name'], provider_vo.name)
         self.assertEqual(params['template'], provider_vo.template)
         self.assertEqual(params['metadata'], provider_vo.metadata)
-        self.assertEqual(params['tags'], provider_vo.tags)
+        self.assertEqual(params['tags'], provider_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_provider(self, *args):
@@ -243,15 +249,15 @@ class TestProviderService(unittest.TestCase):
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_providers_by_tag(self, *args):
-        ProviderFactory(tags={'tag_key': 'tag_value'})
+        ProviderFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}])
         provider_vos = ProviderFactory.build_batch(9)
         list(map(lambda vo: vo.save(), provider_vos))
 
         params = {
             'query': {
                 'filter': [{
-                    'k': 'tags.tag_key',
-                    'v': 'tag_value',
+                    'k': 'tags.tag_key_1',
+                    'v': 'tag_value_1',
                     'o': 'eq'
                 }]
             },

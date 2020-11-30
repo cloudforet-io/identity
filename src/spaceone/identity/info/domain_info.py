@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-
 import functools
 import json
 
 from spaceone.api.core.v1 import handler_pb2
+from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import domain_pb2
 
 from spaceone.core.pygrpc.message_type import *
@@ -25,7 +24,7 @@ def DomainInfo(domain_vo: Domain, minimal=False):
             'config': change_struct_type(domain_vo.config),
             'created_at': change_timestamp_type(domain_vo.created_at),
             'deleted_at': change_timestamp_type(domain_vo.deleted_at),
-            'tags': change_struct_type(domain_vo.tags)
+            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in domain_vo.tags]
         })
 
     return domain_pb2.DomainInfo(**info)

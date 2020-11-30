@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import functools
 from spaceone.api.identity.v1 import api_key_pb2
 from spaceone.core.pygrpc.message_type import *

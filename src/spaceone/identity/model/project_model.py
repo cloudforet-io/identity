@@ -1,8 +1,12 @@
-from datetime import datetime
 from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
 from spaceone.identity.model.user_model import User
 from spaceone.identity.model.project_group_model import ProjectGroup
+
+
+class ProjectTag(EmbeddedDocument):
+    key = StringField(max_length=255)
+    value = StringField(max_length=255)
 
 
 class Project(MongoModel):
@@ -10,7 +14,7 @@ class Project(MongoModel):
     name = StringField(max_length=40)
     state = StringField(max_length=20, default='ACTIVE')
     project_group = ReferenceField('ProjectGroup', reverse_delete_rule=DENY)
-    tags = DictField()
+    tags = ListField(EmbeddedDocumentField(ProjectTag))
     domain_id = StringField(max_length=255)
     created_by = StringField(max_length=255, null=True)
     created_at = DateTimeField(auto_now_add=True)
@@ -21,8 +25,6 @@ class Project(MongoModel):
             'name',
             'state',
             'project_group',
-            # TODO: Template service is NOT be implemented yet
-            # 'template',
             'tags',
             'deleted_at'
         ],
@@ -47,7 +49,9 @@ class Project(MongoModel):
             'project_id',
             'state',
             'project_group',
-            'domain_id'
+            'domain_id',
+            'tags.key',
+            'tags.value',
         ]
     }
 

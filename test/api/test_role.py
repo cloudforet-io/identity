@@ -158,9 +158,13 @@ class TestRole(unittest.TestCase):
             'policies': list(map(lambda policy: {
                 'policy_id': policy.policy_id,
                 'policy_type': 'CUSTOM'}, self.policies)),
-            'tags': {
-                'tag_key': 'tag_value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+
+            ],
             'domain_id': self.domain.domain_id
         }
 
@@ -182,9 +186,12 @@ class TestRole(unittest.TestCase):
         """ Update Role
         """
         update_name = 'Role-' + random_string()[0:5]
-        update_tags = {
-            'update_key': 'update_value'
-        }
+        update_tags = [
+            {
+                'key': 'update_key',
+                'value': 'update_value'
+            }
+        ]
 
         self.test_create_role()
 
@@ -199,8 +206,10 @@ class TestRole(unittest.TestCase):
         )
 
         self._print_data(self.role, 'test_update_role')
+        role_data = MessageToDict(self.role)
+
         self.assertEqual(self.role.name, update_name)
-        self.assertEqual(MessageToDict(self.role.tags), update_tags)
+        self.assertEqual(role_data['tags'], update_tags)
 
     def test_update_role_policies(self):
         """ Update Role Policies

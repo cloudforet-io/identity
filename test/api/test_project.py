@@ -209,8 +209,7 @@ class TestProject(unittest.TestCase):
             'password': 'qwerty123',
             'name': name + utils.random_string()[0:5],
             'language': language.__str__(),
-            'timezone': 'utc+9',
-            'tags': {'aa': 'bb'},
+            'timezone': 'Asia/Seoul',
             'email': name + utils.random_string()[0:5] + '@mz.co.kr',
             'mobile': '+821026671234',
             'group': 'group-id'
@@ -238,10 +237,15 @@ class TestProject(unittest.TestCase):
         name = f'pg-{utils.random_string()[0:5]}'
         params = {
             'name': name,
-            'tags': {
-                 utils.random_string(): utils.random_string(),
-                 utils.random_string(): utils.random_string()
-            },
+            'tags': [
+                {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }, {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }
+            ],
             'domain_id': self.domain.domain_id
         }
 
@@ -259,10 +263,15 @@ class TestProject(unittest.TestCase):
         name = f'prj-{utils.random_string()[0:5]}'
         params = {
             'name': name,
-            'tags': {
-                 utils.random_string(): utils.random_string(),
-                 utils.random_string(): utils.random_string()
-            },
+            'tags': [
+                {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }, {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }
+            ],
             'domain_id': self.domain.domain_id
         }
 
@@ -298,9 +307,12 @@ class TestProject(unittest.TestCase):
     def test_update_project_tags(self):
         self.test_create_project()
 
-        tags = {
-            'test': 'is good'
-        }
+        tags = [
+            {
+                'key': 'test',
+                'value': 'is good'
+            }
+        ]
 
         params = {
             'project_id': self.project.project_id,
@@ -313,7 +325,8 @@ class TestProject(unittest.TestCase):
             metadata=(('token', self.token),)
         )
 
-        self.assertEqual(MessageToDict(project.tags), tags)
+        project_info = MessageToDict(project)
+        self.assertEqual(project_info['tags'], tags)
 
     def test_update_project_project_group(self):
         self.test_create_project()

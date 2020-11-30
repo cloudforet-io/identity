@@ -1,8 +1,11 @@
 from mongoengine import *
-
-from spaceone.core.error import *
 from spaceone.core.model.mongo_model import MongoModel
 from spaceone.identity.model.role_model import Role
+
+
+class UserTag(EmbeddedDocument):
+    key = StringField(max_length=255)
+    value = StringField(max_length=255)
 
 
 class User(MongoModel):
@@ -16,7 +19,7 @@ class User(MongoModel):
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='Etc/GMT')
     roles = ListField(ReferenceField('Role', reverse_delete_rule=DENY))
-    tags = DictField()
+    tags = ListField(EmbeddedDocumentField(UserTag))
     domain_id = StringField(max_length=40)
     last_accessed_at = DateTimeField(auto_now_add=True)
     created_at = DateTimeField(auto_now_add=True)
@@ -52,6 +55,8 @@ class User(MongoModel):
         'ordering': ['name'],
         'indexes': [
             'user_id',
-            'domain_id'
+            'domain_id',
+            'tags.key',
+            'tags.value'
         ]
     }

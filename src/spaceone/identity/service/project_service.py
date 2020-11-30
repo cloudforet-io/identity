@@ -26,8 +26,7 @@ class ProjectService(BaseService):
         Args:
             params (dict): {
                 'name': 'str',
-                'template_data': 'dict',
-                'tags': 'dict',
+                'tags': 'list',
                 'project_group_id': 'str',
                 'domain_id': 'str'
             }
@@ -43,10 +42,6 @@ class ProjectService(BaseService):
             params['project_group'] = project_group_mgr.get_project_group(params['project_group_id'],
                                                                           params['domain_id'])
 
-        if 'template_data' in params:
-            # TODO: Template service is NOT be implemented yet
-            pass
-
         return self.project_mgr.create_project(params)
 
     @transaction
@@ -58,8 +53,7 @@ class ProjectService(BaseService):
             params (dict): {
                 'project_id': 'str',
                 'name': 'str',
-                'template_data': 'dict',
-                'tags': 'dict',
+                'tags': 'list',
                 'project_group_id': 'str',
                 'domain_id': 'str'
             }
@@ -75,10 +69,6 @@ class ProjectService(BaseService):
         if 'project_group_id' in params:
             project_group_mgr: ProjectGroupManager = self.locator.get_manager('ProjectGroupManager')
             params['project_group'] = project_group_mgr.get_project_group(params['project_group_id'], domain_id)
-
-        if 'template_id' in params:
-            # TODO: Template service is NOT be implemented yet
-            pass
 
         return self.project_mgr.update_project_by_vo(params, project_vo)
 
@@ -277,6 +267,7 @@ class ProjectService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @append_keyword_filter(['project_id', 'name'])
     def stat(self, params):
         """
         Args:

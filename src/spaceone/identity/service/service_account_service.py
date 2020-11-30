@@ -26,7 +26,7 @@ class ServiceAccountService(BaseService):
                 'data': 'dict',
                 'provider': 'str',
                 'project_id': 'str',
-                'tags': 'dict',
+                'tags': 'list',
                 'domain_id': 'str'
             }
 
@@ -51,7 +51,7 @@ class ServiceAccountService(BaseService):
                 'name': 'str',
                 'data': 'dict',
                 'project_id': 'str',
-                'tags': 'dict',
+                'tags': 'list',
                 'release_project': 'bool',
                 'domain_id': 'str'
             }
@@ -128,6 +128,7 @@ class ServiceAccountService(BaseService):
     @check_required(['domain_id'])
     @change_only_key({'project_info': 'project'}, key_path='query.only')
     @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def list_service_accounts(self, params):
         """
@@ -146,11 +147,14 @@ class ServiceAccountService(BaseService):
             total_count (int)
 
         """
+
+        print(params)
         return self.service_account_mgr.list_service_accounts(params.get('query', {}))
 
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def stat(self, params):
         """
         Args:

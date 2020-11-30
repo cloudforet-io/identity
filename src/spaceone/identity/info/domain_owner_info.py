@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from spaceone.api.identity.v1 import domain_owner_pb2
 
 from spaceone.core.pygrpc.message_type import *

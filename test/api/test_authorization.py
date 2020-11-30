@@ -240,8 +240,8 @@ class TestAuthorization(unittest.TestCase):
 
         params = {
             'service': 'identity',
-            'api_class': 'User',
-            'method': 'get',
+            'resource': 'User',
+            'verb': 'get',
             'parameter': {
                 'domain_id': self.domain.domain_id,
                 'test': 1,
