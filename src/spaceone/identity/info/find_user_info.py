@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import functools
 
 from spaceone.api.identity.v1 import user_pb2

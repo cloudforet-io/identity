@@ -24,7 +24,7 @@ class ProviderService(BaseService):
                 'template': 'dict',
                 'metadata': 'dict',
                 'capability': 'dict',
-                'tags': 'dict',
+                'tags': 'list',
                 'domain_id': 'str'
             }
 
@@ -47,7 +47,7 @@ class ProviderService(BaseService):
                 'template': 'dict',
                 'metadata': 'dict',
                 'capability': 'dict',
-                'tags': 'dict',
+                'tags': 'list',
                 'domain_id': 'str'
             }
 
@@ -96,6 +96,7 @@ class ProviderService(BaseService):
     @transaction
     @check_required(['domain_id'])
     @append_query_filter(['provider', 'name'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['provider', 'name'])
     def list_providers(self, params):
         """

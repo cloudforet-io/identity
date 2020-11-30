@@ -1,4 +1,5 @@
 import functools
+from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import project_group_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.identity.model.project_model import Project
@@ -23,16 +24,11 @@ def ProjectGroupInfo(project_group_vo: ProjectGroup, minimal=False):
             })
 
         info.update({
-            'tags': change_struct_type(project_group_vo.tags),
+            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in project_group_vo.tags],
             'domain_id': project_group_vo.domain_id,
             'created_by': project_group_vo.created_by,
             'created_at': change_timestamp_type(project_group_vo.created_at)
         })
-
-        # info.update({
-        #       'template_id': ''   TODO: Template service is NOT be implemented yet
-        #       'fields': [],       TODO: Template service is NOT be implemented yet
-        # })
 
     return project_group_pb2.ProjectGroupInfo(**info)
 
@@ -63,7 +59,6 @@ def ProjectGroupProjectInfo(project_vo: Project, minimal=False):
     info = {
         'project_id': project_vo.project_id,
         'name': project_vo.name
-
     }
 
     if not minimal:
@@ -74,16 +69,12 @@ def ProjectGroupProjectInfo(project_vo: Project, minimal=False):
 
         info.update({
             'state': project_vo.state,
-            'tags': change_struct_type(project_vo.tags),
+            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in project_vo.tags],
             'domain_id': project_vo.domain_id,
             'created_by': project_vo.created_by,
             'created_at': change_timestamp_type(project_vo.created_at),
             'deleted_at': change_timestamp_type(project_vo.deleted_at)
         })
-
-        # info.update({
-        #       'template_data': '',        TODO: Template service is NOT be implemented yet
-        #  })
 
     return project_group_pb2.ProjectGroupProjectInfo(**info)
 

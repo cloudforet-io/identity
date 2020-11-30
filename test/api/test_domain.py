@@ -46,7 +46,7 @@ class TestDomain(unittest.TestCase):
             'owner_id': self.owner_id,
             'password': self.owner_pw,
             'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'utc+9',
+            'timezone': 'Asia/Seoul',
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'mobile': '+821026671234',
             'domain_id': self.domain.domain_id
@@ -73,12 +73,18 @@ class TestDomain(unittest.TestCase):
         """ Create Domain
         """
         name = utils.random_string()
-        param = {'name': name,
-                 'tags': {utils.random_string(): utils.random_string(), utils.random_string(): utils.random_string()},
-                 'config': {
-                     'aaa': 'bbbb'
-                 }
-                 }
+        param = {
+            'name': name,
+            'tags': [
+                {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }, {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }
+            ]
+        }
         self.domain = self.identity_v1.Domain.create(param)
         self.assertEqual(self.domain.name, name)
 
@@ -90,7 +96,12 @@ class TestDomain(unittest.TestCase):
         """
         self.test_create_domain()
 
-        tags = {'a': '123'}
+        tags = [
+            {
+                'key': 'a',
+                'value': '123'
+            }
+        ]
         param = {'domain_id': self.domain.domain_id, 'tags': tags}
         self.domain = self.identity_v1.Domain.update(
             param,

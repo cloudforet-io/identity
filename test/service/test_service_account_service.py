@@ -74,9 +74,12 @@ class TestServiceAccountService(unittest.TestCase):
             'data': {
                 'account_id': '000321654'
             },
-            'tags': {
-                'key': 'value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'domain_id': utils.generate_id('domain')
         }
 
@@ -92,7 +95,7 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(params['provider'], service_account_vo.provider)
         self.assertEqual(params['domain_id'], service_account_vo.domain_id)
         self.assertEqual(params.get('data', {}), service_account_vo.data)
-        self.assertEqual(params.get('tags', {}), service_account_vo.tags)
+        self.assertEqual(params.get('tags', {}), service_account_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_invalid_data(self, *args):
@@ -160,9 +163,12 @@ class TestServiceAccountService(unittest.TestCase):
             'data': {
                 'account_id': 'update-1234'
             },
-            'tags': {
-                'update_key': 'update_value'
-            },
+            'tags': [
+                {
+                    'key': 'update_key',
+                    'value': 'update_value'
+                }
+            ],
             'domain_id': self.domain_id
         }
 
@@ -177,7 +183,7 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(new_service_account_vo.service_account_id, service_account_vo.service_account_id)
         self.assertEqual(params['name'], service_account_vo.name)
         self.assertEqual(params['data'], service_account_vo.data)
-        self.assertEqual(params['tags'], service_account_vo.tags)
+        self.assertEqual(params['tags'], service_account_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
@@ -347,7 +353,7 @@ class TestServiceAccountService(unittest.TestCase):
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_service_accounts_by_tag(self, *args):
-        ServiceAccountFactory(tags={'tag_key': 'tag_value'}, domain_id=self.domain_id)
+        ServiceAccountFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}], domain_id=self.domain_id)
         service_account_vos = ServiceAccountFactory.build_batch(9, project=None,
                                                                 domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), service_account_vos))
@@ -355,8 +361,8 @@ class TestServiceAccountService(unittest.TestCase):
         params = {
             'query': {
                 'filter': [{
-                    'k': 'tags.tag_key',
-                    'v': 'tag_value',
+                    'k': 'tags.tag_key_1',
+                    'v': 'tag_value_1',
                     'o': 'eq'
                 }]
             },

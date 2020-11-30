@@ -50,11 +50,7 @@ class TestAuthentication(unittest.TestCase):
     def _create_domain(cls):
         name = utils.random_string()
         param = {
-            'name': name,
-            'tags': {utils.random_string(): utils.random_string(), utils.random_string(): utils.random_string()},
-            'config': {
-                'aaa': 'bbbb'
-            }
+            'name': name
         }
         cls.domain = cls.identity_v1.Domain.create(param)
 
@@ -76,7 +72,7 @@ class TestAuthentication(unittest.TestCase):
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
             'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'utc+9',
+            'timezone': 'Asia/Seoul',
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'mobile': '+821026671234',
             'domain_id': cls.domain.domain_id
@@ -124,8 +120,7 @@ class TestAuthentication(unittest.TestCase):
             'password': 'qwerty123',
             'name': 'Steven' + utils.random_string()[0:5],
             'language': Language.get('jp').__str__(),
-            'timezone': 'utc+9',
-            'tags': {'aa': 'bb'},
+            'timezone': 'Asia/Seoul',
             'domain_id': self.domain.domain_id,
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'mobile': '+821026671234',

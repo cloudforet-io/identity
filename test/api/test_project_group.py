@@ -219,8 +219,7 @@ class TestProjectGroup(unittest.TestCase):
             'password': 'qwerty123',
             'name': name + utils.random_string()[0:5],
             'language': language.__str__(),
-            'timezone': 'utc+9',
-            'tags': {'aa': 'bb'},
+            'timezone': 'Asia/Seoul',
             'email': name + utils.random_string()[0:5] + '@mz.co.kr',
             'mobile': '+821026671234',
             'group': 'group-id'
@@ -250,10 +249,15 @@ class TestProjectGroup(unittest.TestCase):
         name = f'prj-{utils.random_string()[0:5]}'
         params = {
             'name': name,
-            'tags': {
-                 utils.random_string(): utils.random_string(),
-                 utils.random_string(): utils.random_string()
-            },
+            'tags': [
+                {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }, {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }
+            ],
             'domain_id': self.domain.domain_id
         }
 
@@ -275,10 +279,15 @@ class TestProjectGroup(unittest.TestCase):
 
         params = {
             'name': name,
-            'tags': {
-                utils.random_string(): utils.random_string(),
-                utils.random_string(): utils.random_string()
-            },
+            'tags': [
+                {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }, {
+                    'key': utils.random_string(),
+                    'value': utils.random_string()
+                }
+            ],
             'domain_id': self.domain.domain_id
         }
 

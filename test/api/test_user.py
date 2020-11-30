@@ -173,7 +173,12 @@ class TestUser(unittest.TestCase):
             'password': 'qwerty123',
             'name': name,
             'language': language.__str__(),
-            'tags': {'key': 'value'},
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'mobile': '+821026671234',
             'group': 'group-id',
@@ -257,9 +262,12 @@ class TestUser(unittest.TestCase):
         self.test_create_user()
         params = {
             'user_id': self.user.user_id,
-            'tags': {
-                'update_key': 'update_value'
-            },
+            'tags': [
+                {
+                    'key': 'update_key',
+                    'value': 'update_value'
+                }
+            ],
             'domain_id': self.domain.domain_id
         }
         self.user = self.identity_v1.User.update(
@@ -267,7 +275,8 @@ class TestUser(unittest.TestCase):
             metadata=(('token', self.token),)
         )
 
-        self.assertEqual(self.user.tags, params['tags'])
+        user_data = MessageToDict(self.user)
+        self.assertEqual(user_data['tags'], params['tags'])
 
     def test_enable_user(self):
         self.test_create_user()

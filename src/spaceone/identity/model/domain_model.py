@@ -12,13 +12,19 @@ class PluginInfo(EmbeddedDocument):
     secret_id = StringField(max_length=40, null=True)
     auto_upgrade = BooleanField(default=True)
 
+
+class DomainTag(EmbeddedDocument):
+    key = StringField(max_length=255)
+    value = StringField(max_length=255)
+
+
 class Domain(MongoModel):
     domain_id = StringField(max_length=40, generate_id='domain', unique=True)
     name = StringField(max_length=255)
     state = StringField(max_length=20, default='ENABLED')
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
     config = DictField()
-    tags = DictField()
+    tags = ListField(EmbeddedDocumentField(DomainTag))
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
 
@@ -43,7 +49,9 @@ class Domain(MongoModel):
         'ordering': ['name'],
         'indexes': [
             'domain_id',
-            'state'
+            'state',
+            'tags.key',
+            'tags.value'
         ]
     }
 

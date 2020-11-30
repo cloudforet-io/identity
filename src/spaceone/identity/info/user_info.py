@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import functools
+from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import user_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.identity.model.user_model import User
@@ -25,7 +24,7 @@ def UserInfo(user_vo: User, minimal=False):
             'language': user_vo.language,
             'timezone': user_vo.timezone,
             'roles': list(map(lambda role: RoleInfo(role, minimal=True), user_vo.roles)),
-            'tags': change_struct_type(user_vo.tags),
+            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in user_vo.tags],
             'last_accessed_at': change_timestamp_type(user_vo.last_accessed_at),
             'created_at': change_timestamp_type(user_vo.created_at)
         })

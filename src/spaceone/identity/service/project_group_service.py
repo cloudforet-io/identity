@@ -27,8 +27,7 @@ class ProjectGroupService(BaseService):
         Args:
             params (dict): {
                 'name': 'str',
-                'template_id': 'str',
-                'tags': 'dict',
+                'tags': 'list',
                 'parent_project_group_id': 'str',
                 'domain_id': 'str'
             }
@@ -45,10 +44,6 @@ class ProjectGroupService(BaseService):
         else:
             params['parent_project_group'] = None
 
-        if 'template_id' in params:
-            # TODO: Template service is NOT be implemented yet
-            pass
-
         return self.project_group_mgr.create_project_group(params)
 
     @transaction
@@ -60,8 +55,7 @@ class ProjectGroupService(BaseService):
             params (dict): {
                 'project_group_id': 'str',
                 'name': 'str',
-                'template_id': 'str',
-                'tags': 'dict',
+                'tags': 'list',
                 'release_parent_project_group': 'bool',
                 'parent_project_group_id': 'str',
                 'domain_id': 'str'
@@ -82,10 +76,6 @@ class ProjectGroupService(BaseService):
             if 'parent_project_group_id' in params:
                 params['parent_project_group'] = self._get_parent_project_group(
                     params['parent_project_group_id'], params['domain_id'], params['project_group_id'])
-
-        if 'template_id' in params:
-            # TODO: Template service is NOT be implemented yet
-            pass
 
         return self.project_group_mgr.update_project_group_by_vo(params, project_group_vo)
 
@@ -226,7 +216,7 @@ class ProjectGroupService(BaseService):
     @transaction
     @check_required(['domain_id'])
     @change_only_key({'parent_project_group_info': 'parent_project_group'}, key_path='query.only')
-    @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'template_id', 'domain_id'])
+    @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id'])
     @append_keyword_filter(['project_group_id', 'name'])
     def list(self, params):
         """ List projects
@@ -236,7 +226,6 @@ class ProjectGroupService(BaseService):
                 'project_group_id': 'str',
                 'name': 'str',
                 'parent_project_group_id': 'str',
-                'template_id': 'str',
                 'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)'
             }

@@ -126,9 +126,12 @@ class TestPolicy(unittest.TestCase):
                 'identity.User.get',
                 'identity.User.update',
             ],
-            'tags': {
-                'tag_key': 'tag_value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'domain_id': self.domain.domain_id
         }
 
@@ -150,9 +153,12 @@ class TestPolicy(unittest.TestCase):
         """ Update Policy
         """
         update_name = 'Policy-' + random_string()[0:5]
-        update_tags = {
-            'update_key': 'update_value'
-        }
+        update_tags = [
+            {
+                'key': 'update_key',
+                'value': 'update_value'
+            }
+        ]
 
         self.test_create_policy()
 
@@ -167,8 +173,9 @@ class TestPolicy(unittest.TestCase):
         )
 
         self._print_data(self.policy, 'test_update_policy')
+        policy_data = MessageToDict(self.policy)
         self.assertEqual(self.policy.name, update_name)
-        self.assertEqual(MessageToDict(self.policy.tags), update_tags)
+        self.assertEqual(policy_data['tags'], update_tags)
 
     def test_update_policy_permissions(self):
         """ Update Policy Rules
