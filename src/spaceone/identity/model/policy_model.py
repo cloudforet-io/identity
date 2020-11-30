@@ -34,7 +34,6 @@ class Policy(MongoModel):
         'indexes': [
             'policy_id',
             'domain_id',
-            'tags.key',
-            'tags.value'
+            ('tags.key', 'tags.value')
         ]
     }

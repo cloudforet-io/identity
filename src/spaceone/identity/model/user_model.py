@@ -56,7 +56,6 @@ class User(MongoModel):
         'indexes': [
             'user_id',
             'domain_id',
-            'tags.key',
-            'tags.value'
+            ('tags.key', 'tags.value')
         ]
     }
