@@ -50,8 +50,7 @@ class Domain(MongoModel):
         'indexes': [
             'domain_id',
             'state',
-            'tags.key',
-            'tags.value'
+            ('tags.key', 'tags.value')
         ]
     }
 

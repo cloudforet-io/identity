@@ -43,7 +43,6 @@ class Role(MongoModel):
             'role_id',
             'role_type',
             'domain_id',
-            'tags.key',
-            'tags.value'
+            ('tags.key', 'tags.value')
         ]
     }

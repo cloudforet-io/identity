@@ -48,7 +48,6 @@ class ServiceAccount(MongoModel):
             'provider',
             'project',
             'domain_id',
-            'tags.key',
-            'tags.value'
+            ('tags.key', 'tags.value')
         ]
     }

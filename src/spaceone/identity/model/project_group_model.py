@@ -42,8 +42,7 @@ class ProjectGroup(MongoModel):
             'project_group_id',
             'parent_project_group',
             'domain_id',
-            'tags.key',
-            'tags.value'
+            ('tags.key', 'tags.value')
         ]
     }
 

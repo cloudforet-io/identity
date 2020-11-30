@@ -50,8 +50,7 @@ class Project(MongoModel):
             'state',
             'project_group',
             'domain_id',
-            'tags.key',
-            'tags.value',
+            ('tags.key', 'tags.value')
         ]
     }
 
