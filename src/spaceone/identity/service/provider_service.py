@@ -118,6 +118,7 @@ class ProviderService(BaseService):
 
     @transaction
     @check_required(['query', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['provider', 'name'])
     def stat(self, params):
         """

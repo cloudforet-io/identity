@@ -34,6 +34,7 @@ class PolicyService(BaseService):
     @transaction
     @check_required(['domain_id'])
     @append_query_filter(['policy_id', 'name', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['policy_id', 'name'])
     def list_policies(self, params):
         return self.policy_mgr.list_policies(params.get('query', {}))
@@ -41,6 +42,7 @@ class PolicyService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['policy_id', 'name'])
     def stat(self, params):
         """

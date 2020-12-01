@@ -74,6 +74,7 @@ class UserService(BaseService):
     @check_required(['domain_id'])
     @append_query_filter(['user_id', 'name', 'state', 'email', 'mobile', 'group',
                           'role_id', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['user_id', 'name', 'email', 'mobile', 'group'])
     def list_users(self, params):
         query: dict = params.get('query', {})
@@ -82,6 +83,7 @@ class UserService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['user_id', 'name', 'email', 'mobile', 'group'])
     def stat(self, params):
         """

@@ -211,6 +211,7 @@ class ProjectService(BaseService):
     @check_required(['domain_id'])
     @change_only_key({'project_group_info': 'project_group'}, key_path='query.only')
     @append_query_filter(['project_id', 'name', 'project_group_id', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def list(self, params):
         """ List projects
@@ -267,6 +268,7 @@ class ProjectService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def stat(self, params):
         """
