@@ -217,9 +217,10 @@ class ProjectGroupService(BaseService):
     @check_required(['domain_id'])
     @change_only_key({'parent_project_group_info': 'parent_project_group'}, key_path='query.only')
     @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['project_group_id', 'name'])
     def list(self, params):
-        """ List projects
+        """ List project groups
 
         Args:
             params (dict): {
@@ -238,26 +239,8 @@ class ProjectGroupService(BaseService):
 
     @transaction
     @check_required(['project_group_id', 'domain_id'])
-    @append_query_filter(['user_id'])
-    @append_keyword_filter(['user_id', 'user_name', 'email', 'mobile'])
-    def list_members(self, params):
-        query = params.get('query', {})
-
-        project_group_vo = self.project_group_mgr.get_project_group(params['project_group_id'], params['domain_id'])
-
-        if 'filter' not in query:
-            query['filter'] = []
-
-        query['filter'].append({
-            'k': 'project_group',
-            'v': project_group_vo,
-            'o': 'eq'
-        })
-
-        return self.project_group_mgr.list_project_group_members(query)
-
-    @transaction
-    @check_required(['project_group_id', 'domain_id'])
+    @append_keyword_filter(['project_id', 'name'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def list_projects(self, params):
         project_group_id = params['project_group_id']
@@ -286,8 +269,29 @@ class ProjectGroupService(BaseService):
         return self.project_mgr.list_projects(query)
 
     @transaction
+    @check_required(['project_group_id', 'domain_id'])
+    @append_query_filter(['user_id'])
+    @append_keyword_filter(['user_id', 'user_name', 'email', 'mobile'])
+    def list_members(self, params):
+        query = params.get('query', {})
+
+        project_group_vo = self.project_group_mgr.get_project_group(params['project_group_id'], params['domain_id'])
+
+        if 'filter' not in query:
+            query['filter'] = []
+
+        query['filter'].append({
+            'k': 'project_group',
+            'v': project_group_vo,
+            'o': 'eq'
+        })
+
+        return self.project_group_mgr.list_project_group_members(query)
+
+    @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def stat(self, params):
         """

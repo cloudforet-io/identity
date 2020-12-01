@@ -71,6 +71,7 @@ class DomainService(BaseService):
 
     @transaction
     @append_query_filter(['domain_id', 'name'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])
     def list_domains(self, params):
         query = params.get('query', {})
@@ -78,6 +79,7 @@ class DomainService(BaseService):
 
     @transaction
     @check_required(['query'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])
     def stat(self, params):
         """

@@ -38,6 +38,7 @@ class RoleService(BaseService):
     @transaction
     @check_required(['domain_id'])
     @append_query_filter(['role_id', 'name', 'role_type', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['role_id', 'name'])
     def list_roles(self, params):
         return self.role_mgr.list_roles(params.get('query', {}))
@@ -45,6 +46,7 @@ class RoleService(BaseService):
     @transaction
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['role_id', 'name'])
     def stat(self, params):
         """
