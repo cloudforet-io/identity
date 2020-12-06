@@ -12,41 +12,117 @@ class APIKeyService(BaseService):
 
     @transaction
     @check_required(['user_id', 'domain_id'])
-    def create_api_key(self, params):
+    def create(self, params):
+        """ Create api key
+
+        Args:
+            params (dict): {
+                'user_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            api_key_vo
+        """
+
         user_id = params['user_id']
         domain_id = params['domain_id']
 
         # Check user is exists.
         user_mgr: UserManager = self.locator.get_manager('UserManager')
-        user_mgr.get_user(user_id=user_id, domain_id=domain_id)
+        user_vo = user_mgr.get_user(user_id=user_id, domain_id=domain_id)
 
-        return self.api_key_mgr.create_api_key(user_id=user_id, domain_id=domain_id)
-
-    @transaction
-    @check_required(['api_key_id', 'domain_id'])
-    def delete_api_key(self, params):
-        self.api_key_mgr.delete_api_key(params['api_key_id'], params['domain_id'])
+        return self.api_key_mgr.create_api_key(user_vo, domain_id)
 
     @transaction
     @check_required(['api_key_id', 'domain_id'])
-    def enable_api_key(self, params):
+    def enable(self, params):
+        """ Enable api key
+
+        Args:
+            params (dict): {
+                'api_key_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            api_key_vo
+        """
+
         return self.api_key_mgr.enable_api_key(params['api_key_id'], params['domain_id'])
 
     @transaction
     @check_required(['api_key_id', 'domain_id'])
-    def disable_api_key(self, params):
+    def disable(self, params):
+        """ Disable api key
+
+        Args:
+            params (dict): {
+                'api_key_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            api_key_vo
+        """
+
         return self.api_key_mgr.disable_api_key(params['api_key_id'], params['domain_id'])
 
     @transaction
     @check_required(['api_key_id', 'domain_id'])
-    def get_api_key(self, params):
+    def delete(self, params):
+        """ Delete api key
+
+        Args:
+            params (dict): {
+                'api_key_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            api_key_vo
+        """
+
+        self.api_key_mgr.delete_api_key(params['api_key_id'], params['domain_id'])
+
+    @transaction
+    @check_required(['api_key_id', 'domain_id'])
+    def get(self, params):
+        """ Get api key
+
+        Args:
+            params (dict): {
+                'api_key_id': 'str',
+                'domain_id': 'str',
+                'only': 'list'
+            }
+
+        Returns:
+            api_key_vo
+        """
+
         return self.api_key_mgr.get_api_key(params['api_key_id'], params['domain_id'], params.get('only'))
 
     @transaction
     @check_required(['domain_id'])
     @append_query_filter(['api_key_id', 'state', 'api_key_type', 'user_id', 'domain_id'])
     @append_keyword_filter(['api_key_id', 'user_id'])
-    def list_api_keys(self, params):
+    def list(self, params):
+        """ List api keys
+
+        Args:
+            params (dict): {
+                'api_key_id': 'str',
+                'state': 'str',
+                'user_id': 'str',
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
+            }
+
+        Returns:
+            project_vos
+        """
+
         return self.api_key_mgr.list_api_keys(params.get('query', {}))
 
     @transaction

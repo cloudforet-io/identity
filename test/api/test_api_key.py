@@ -65,7 +65,6 @@ class TestAPIKey(unittest.TestCase):
             'name': 'Steven' + utils.random_string()[0:5],
             'timezone': 'Asia/Seoul',
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
             'domain_id': cls.domain.domain_id
         }
 
@@ -85,8 +84,6 @@ class TestAPIKey(unittest.TestCase):
             'name': 'Steven' + utils.random_string()[0:5],
             'timezone': 'Asia/Seoul',
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
-            'group': 'group-id',
             'domain_id': cls.domain.domain_id
         }
 
@@ -112,7 +109,7 @@ class TestAPIKey(unittest.TestCase):
     def setUp(self) -> None:
         self.api_key = None
         self.api_keys = []
-        self.versions = ['2020-03-04']
+        self.versions = ['2020-12-07']
 
     def tearDown(self) -> None:
         for api_key in self.api_keys:
@@ -149,7 +146,7 @@ class TestAPIKey(unittest.TestCase):
 
         self.assertEqual(api_key_vo.user_id, param['user_id'])
         self.assertIn(decoded['ver'], self.versions)
-        self.assertIsNotNone(decoded['key'])
+        self.assertIsNotNone(decoded['api_key_id'])
 
     def test_create_api_key_no_domain(self):
         param = {
