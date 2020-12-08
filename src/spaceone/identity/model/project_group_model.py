@@ -81,8 +81,7 @@ class ProjectGroupMemberMap(MongoModel):
             'project_group_name': 'project_group.name',
             'user_id': 'user.user_id',
             'user_name': 'user.name',
-            'email': 'user.email',
-            'mobile': 'user.mobile',
+            'email': 'user.email',\
             'language': 'user.language',
             'timezone': 'user.timezone'
         },

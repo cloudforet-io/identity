@@ -14,8 +14,6 @@ class User(MongoModel):
     name = StringField(max_length=128)
     state = StringField(max_length=20, choices=('ENABLED', 'DISABLED', 'UNIDENTIFIED'))
     email = StringField(max_length=255, default=None, null=True)
-    mobile = StringField(max_length=24, default=None, null=True)
-    group = StringField(max_length=255, default=None, null=True)
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='Etc/GMT')
     roles = ListField(ReferenceField('Role', reverse_delete_rule=DENY))
@@ -30,8 +28,6 @@ class User(MongoModel):
             'name',
             'state',
             'email',
-            'mobile',
-            'group',
             'language',
             'timezone',
             'roles',
@@ -55,6 +51,8 @@ class User(MongoModel):
         'ordering': ['name'],
         'indexes': [
             'user_id',
+            'state',
+            'roles',
             'domain_id',
             ('tags.key', 'tags.value')
         ]

@@ -9,7 +9,6 @@ class DomainOwner(MongoModel):
     password = BinaryField()
     name = StringField(max_length=128)
     email = StringField(max_length=255, default=None, null=True)
-    mobile = StringField(max_length=24, default=None, null=True)
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='Etc/GMT')
     domain_id = StringField(max_length=40)
@@ -21,10 +20,8 @@ class DomainOwner(MongoModel):
             'password',
             'name',
             'email',
-            'mobile',
             'language',
-            'timezone',
-            'state'
+            'timezone'
         ],
         'exact_fields': [
             'owner_id',
@@ -32,12 +29,12 @@ class DomainOwner(MongoModel):
         ],
         'minimal_fields': [
             'owner_id',
-            'name',
-            'state'
+            'name'
         ],
         'ordering': ['name'],
         'indexes': [
             'owner_id',
+            'email',
             'domain_id'
         ]
     }

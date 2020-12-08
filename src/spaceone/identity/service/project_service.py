@@ -234,7 +234,7 @@ class ProjectService(BaseService):
     @transaction
     @check_required(['project_id', 'domain_id'])
     @append_query_filter(['user_id'])
-    @append_keyword_filter(['user_id', 'user_name', 'email', 'mobile'])
+    @append_keyword_filter(['user_id', 'user_name', 'email'])
     def list_members(self, params):
         """ List project members
 

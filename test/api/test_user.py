@@ -180,8 +180,6 @@ class TestUser(unittest.TestCase):
                 }
             ],
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
-            'group': 'group-id',
             'domain_id': self.domain.domain_id
         }
 
@@ -432,7 +430,6 @@ class TestUser(unittest.TestCase):
         self.test_create_user()
 
         response = self.identity_v1.User.list({
-            'group': 'group-id',
             'domain_id': self.domain.domain_id
         }, metadata=(('token', self.token),)
         )

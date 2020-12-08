@@ -210,9 +210,7 @@ class TestProject(unittest.TestCase):
             'name': name + utils.random_string()[0:5],
             'language': language.__str__(),
             'timezone': 'Asia/Seoul',
-            'email': name + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
-            'group': 'group-id'
+            'email': name + utils.random_string()[0:5] + '@mz.co.kr'
         }
 
         self.user = self.identity_v1.User.create(

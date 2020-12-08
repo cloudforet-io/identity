@@ -74,7 +74,6 @@ class TestAuthentication(unittest.TestCase):
             'name': 'Steven' + utils.random_string()[0:5],
             'timezone': 'Asia/Seoul',
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
             'domain_id': cls.domain.domain_id
         }
 
@@ -122,9 +121,7 @@ class TestAuthentication(unittest.TestCase):
             'language': Language.get('jp').__str__(),
             'timezone': 'Asia/Seoul',
             'domain_id': self.domain.domain_id,
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
-            'group': 'group-id',
+            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr'
         }
         self.user = self.identity_v1.User.create(
             self.user_param,

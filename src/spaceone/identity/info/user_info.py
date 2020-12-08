@@ -19,8 +19,6 @@ def UserInfo(user_vo: User, minimal=False):
     if not minimal:
         info.update({
             'email': user_vo.email,
-            'mobile': user_vo.mobile,
-            'group': user_vo.group,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
             'roles': list(map(lambda role: RoleInfo(role, minimal=True), user_vo.roles)),

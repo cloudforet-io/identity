@@ -90,7 +90,6 @@ class ProjectMemberMap(MongoModel):
             'user_id': 'user.user_id',
             'user_name': 'user.name',
             'email': 'user.email',
-            'mobile': 'user.mobile',
             'language': 'user.language',
             'timezone': 'user.timezone'
         },

@@ -63,7 +63,6 @@ class TestDomainOwner(unittest.TestCase):
             'language': language.__str__(),
             'timezone': 'Asia/Seoul',
             'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
             'domain_id': self.domain.domain_id
         }
 

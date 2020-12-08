@@ -72,10 +72,9 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    @append_query_filter(['user_id', 'name', 'state', 'email', 'mobile', 'group',
-                          'role_id', 'domain_id'])
+    @append_query_filter(['user_id', 'name', 'state', 'email', 'role_id', 'domain_id'])
     @change_tag_filter('tags')
-    @append_keyword_filter(['user_id', 'name', 'email', 'mobile', 'group'])
+    @append_keyword_filter(['user_id', 'name', 'email'])
     def list_users(self, params):
         query: dict = params.get('query', {})
         return self.user_mgr.list_users(query)
@@ -84,7 +83,7 @@ class UserService(BaseService):
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
     @change_tag_filter('tags')
-    @append_keyword_filter(['user_id', 'name', 'email', 'mobile', 'group'])
+    @append_keyword_filter(['user_id', 'name', 'email'])
     def stat(self, params):
         """
         Args:

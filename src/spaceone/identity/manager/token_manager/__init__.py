@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import time
 from abc import abstractmethod, ABC, ABCMeta
@@ -11,6 +10,8 @@ from spaceone.identity.error.error_authentication import *
 
 
 __all__ = ['TokenManager', 'JWTManager']
+_LOGGER = logging.getLogger(__name__)
+
 
 class TokenManager(BaseManager, ABC):
 
