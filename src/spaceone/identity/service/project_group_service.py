@@ -33,7 +33,7 @@ class ProjectGroupService(BaseService):
             }
 
         Returns:
-            project_group_vo
+            project_group_vo (object)
         """
 
         params['created_by'] = self.transaction.get_meta('user_id')
@@ -62,7 +62,7 @@ class ProjectGroupService(BaseService):
             }
 
         Returns:
-            project_vo
+            project_group_vo (object)
         """
 
         domain_id = params['domain_id']
@@ -82,11 +82,11 @@ class ProjectGroupService(BaseService):
     @transaction
     @check_required(['project_group_id', 'domain_id'])
     def delete(self, params):
-        """ Delete project
+        """ Delete project group
 
         Args:
             params (dict): {
-                'project_id': 'str',
+                'project_group_id': 'str',
                 'domain_id': 'str'
             }
 
@@ -115,7 +115,7 @@ class ProjectGroupService(BaseService):
             }
 
         Returns:
-            project_group_member_vo
+            project_group_member_vo (object)
         """
 
         domain_id = params['domain_id']
@@ -149,7 +149,7 @@ class ProjectGroupService(BaseService):
             }
 
         Returns:
-            project_group_member_vo
+            project_group_member_vo (object)
         """
 
         domain_id = params['domain_id']
@@ -181,7 +181,7 @@ class ProjectGroupService(BaseService):
             }
 
         Returns:
-            project_group_member_vo
+            None
         """
 
         domain_id = params['domain_id']
@@ -227,12 +227,14 @@ class ProjectGroupService(BaseService):
                 'project_group_id': 'str',
                 'name': 'str',
                 'parent_project_group_id': 'str',
+                'user_id': 'str',
                 'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)'
             }
 
         Returns:
-            project_group_vos
+            results (list): 'list of project_group_vo'
+            total_count (int)
         """
 
         return self.project_group_mgr.list_project_groups(params.get('query', {}))
@@ -243,6 +245,21 @@ class ProjectGroupService(BaseService):
     @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def list_projects(self, params):
+        """ List projects in project group
+
+        Args:
+            params (dict): {
+                'project_group_id': 'str',
+                'recursive': 'bool',
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
+            }
+
+        Returns:
+            results (list): 'list of project_vo'
+            total_count (int)
+        """
+
         project_group_id = params['project_group_id']
         domain_id = params['domain_id']
         recursive = params.get('recursive', False)
@@ -273,6 +290,21 @@ class ProjectGroupService(BaseService):
     @append_query_filter(['user_id'])
     @append_keyword_filter(['user_id', 'user_name', 'email'])
     def list_members(self, params):
+        """ List users in project group
+
+        Args:
+            params (dict): {
+                'project_group_id': 'str',
+                'user_id': 'str',
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
+            }
+
+        Returns:
+            results (list): 'list of project_group_member_vo'
+            total_count (int)
+        """
+
         query = params.get('query', {})
 
         project_group_vo = self.project_group_mgr.get_project_group(params['project_group_id'], params['domain_id'])
@@ -302,8 +334,8 @@ class ProjectGroupService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

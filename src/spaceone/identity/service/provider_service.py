@@ -30,7 +30,6 @@ class ProviderService(BaseService):
 
         Returns:
             provider_vo (object)
-
         """
         # TODO: validate a template data
         # TODO: validate a capability data
@@ -53,7 +52,6 @@ class ProviderService(BaseService):
 
         Returns:
             provider_vo (object)
-
         """
         # TODO: validate a template data
         # TODO: validate a capability data
@@ -71,7 +69,6 @@ class ProviderService(BaseService):
 
         Returns:
             None
-
         """
         self.provider_mgr.delete_provider(params['provider'])
 
@@ -88,7 +85,6 @@ class ProviderService(BaseService):
 
         Returns:
             provider_vo (object)
-
         """
         self._create_default_provider()
         return self.provider_mgr.get_provider(params['provider'], params.get('only'))
@@ -109,9 +105,8 @@ class ProviderService(BaseService):
                 }
 
         Returns:
-            results (list)
+            results (list): 'list of provider_vo'
             total_count (int)
-
         """
         self._create_default_provider()
         return self.provider_mgr.list_providers(params.get('query', {}))
@@ -129,8 +124,8 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

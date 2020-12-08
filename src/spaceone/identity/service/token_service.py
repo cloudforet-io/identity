@@ -16,6 +16,24 @@ class TokenService(BaseService):
     @transaction
     @check_required(['credentials', 'domain_id'])
     def issue_token(self, params):
+        """ Issue token
+
+        Args:
+            params (dict): {
+                'credentials': {
+                    'user_type': 'str',
+                    ...
+                },
+                'domain_id': 'str'
+            }
+
+        Returns:
+            result (dict): {
+                'access_token': 'str',
+                'refresh_token': 'str'
+            }
+        """
+
         user_type = params['credentials'].get('user_type', 'USER')
 
         domain_secret_mgr: DomainSecretManager = self.locator.get_manager('DomainSecretManager')
@@ -28,6 +46,18 @@ class TokenService(BaseService):
 
     @transaction
     def refresh_token(self, params):
+        """ Issue token
+
+        Args:
+            params (dict): {}
+
+        Returns:
+            result (dict): {
+                'access_token': 'str',
+                'refresh_token': 'str'
+            }
+        """
+
         refresh_token = self.transaction.get_meta('token')
         domain_id = _extract_domain_id(refresh_token)
 

@@ -23,8 +23,7 @@ class EndpointService(BaseService):
                 }
 
         Returns:
-            results (list)
+            results (list): list of endpoint_vo
             total_count (int)
-
         """
         return self.endpoint_mgr.list_endpoints(params.get('query', {}))

@@ -32,8 +32,8 @@ class ServiceAccountService(BaseService):
 
         Returns:
             service_account_vo (object)
-
         """
+
         self._check_data(params['data'], params['provider'])
 
         if 'project_id' in params:
@@ -58,8 +58,8 @@ class ServiceAccountService(BaseService):
 
         Returns:
             service_account_vo (object)
-
         """
+
         service_account_id = params['service_account_id']
         domain_id = params['domain_id']
         project_id = params.get('project_id')
@@ -96,8 +96,8 @@ class ServiceAccountService(BaseService):
 
         Returns:
             None
-
         """
+
         service_account_id = params['service_account_id']
         domain_id = params['domain_id']
 
@@ -119,8 +119,8 @@ class ServiceAccountService(BaseService):
 
         Returns:
             service_account_vo (object)
-
         """
+
         return self.service_account_mgr.get_service_account(params['service_account_id'], params['domain_id'],
                                                             params.get('only'))
 
@@ -143,9 +143,8 @@ class ServiceAccountService(BaseService):
                 }
 
         Returns:
-            results (list)
+            results (list): 'list of service_account_vo'
             total_count (int)
-
         """
 
         print(params)
@@ -165,8 +164,8 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

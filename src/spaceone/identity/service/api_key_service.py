@@ -22,7 +22,7 @@ class APIKeyService(BaseService):
             }
 
         Returns:
-            api_key_vo
+            api_key_vo (object)
         """
 
         user_id = params['user_id']
@@ -46,7 +46,7 @@ class APIKeyService(BaseService):
             }
 
         Returns:
-            api_key_vo
+            api_key_vo (object)
         """
 
         return self.api_key_mgr.enable_api_key(params['api_key_id'], params['domain_id'])
@@ -63,7 +63,7 @@ class APIKeyService(BaseService):
             }
 
         Returns:
-            api_key_vo
+            api_key_vo (object)
         """
 
         return self.api_key_mgr.disable_api_key(params['api_key_id'], params['domain_id'])
@@ -80,7 +80,7 @@ class APIKeyService(BaseService):
             }
 
         Returns:
-            api_key_vo
+            None
         """
 
         self.api_key_mgr.delete_api_key(params['api_key_id'], params['domain_id'])
@@ -98,7 +98,7 @@ class APIKeyService(BaseService):
             }
 
         Returns:
-            api_key_vo
+            api_key_vo (object)
         """
 
         return self.api_key_mgr.get_api_key(params['api_key_id'], params['domain_id'], params.get('only'))
@@ -120,7 +120,8 @@ class APIKeyService(BaseService):
             }
 
         Returns:
-            project_vos
+            results (list): 'list of api_key_vo'
+            total_count (int)
         """
 
         return self.api_key_mgr.list_api_keys(params.get('query', {}))
@@ -138,8 +139,8 @@ class APIKeyService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

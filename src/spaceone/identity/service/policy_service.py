@@ -14,21 +14,75 @@ class PolicyService(BaseService):
     @transaction
     @check_required(['name', 'permissions', 'domain_id'])
     def create_policy(self, params):
+        """ Create policy
+
+        Args:
+            params (dict): {
+                'name': 'str',
+                'permissions': 'list',
+                'tags': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            policy_vo (object)
+        """
+
         return self.policy_mgr.create_policy(params)
 
     @transaction
     @check_required(['policy_id', 'domain_id'])
     def update_policy(self, params):
+        """ Update policy
+
+        Args:
+            params (dict): {
+                'policy_id': 'str',
+                'name': 'str',
+                'permissions': 'list',
+                'tags': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            policy_vo (object)
+        """
+
         return self.policy_mgr.update_policy(params)
 
     @transaction
     @check_required(['policy_id', 'domain_id'])
     def delete_policy(self, params):
+        """ Delete policy
+
+        Args:
+            params (dict): {
+                'policy_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
         self.policy_mgr.delete_policy(params['policy_id'], params['domain_id'])
 
     @transaction
     @check_required(['policy_id', 'domain_id'])
     def get_policy(self, params):
+        """ Get policy
+
+        Args:
+            params (dict): {
+                'policy_id': 'str',
+                'domain_id': 'str',
+                'only': 'list'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.policy_mgr.get_policy(params['policy_id'], params['domain_id'], params.get('only'))
 
     @transaction
@@ -37,6 +91,21 @@ class PolicyService(BaseService):
     @change_tag_filter('tags')
     @append_keyword_filter(['policy_id', 'name'])
     def list_policies(self, params):
+        """ List polices
+
+        Args:
+            params (dict): {
+                'policy_id': 'str',
+                'name': 'str',
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
+            }
+
+        Returns:
+            results (list): 'list of policy_vo'
+            total_count (int)
+        """
+
         return self.policy_mgr.list_policies(params.get('query', {}))
 
     @transaction
@@ -53,8 +122,8 @@ class PolicyService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

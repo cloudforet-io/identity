@@ -7,7 +7,7 @@ from spaceone.identity.model import Domain
 
 
 # @authentication_handler(exclude=[
-#     'list_domains', 'get_public_key', 'get_domain_key'
+#     'list_domains', 'get_public_key'
 # ])
 #@authorization_handler
 @event_handler
@@ -20,6 +20,20 @@ class DomainService(BaseService):
     @transaction
     @check_required(['name'])
     def create_domain(self, params):
+        """ Create domain
+
+        Args:
+            params (dict): {
+                'name': 'str',
+                'config': 'dict',
+                'plugin_info': 'dict',
+                'tags': 'list'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         # Create Domain
         domain_vo: Domain = self.domain_mgr.create_domain(params)
 
@@ -32,11 +46,35 @@ class DomainService(BaseService):
     @transaction
     @check_required(['domain_id'])
     def update_domain(self, params):
+        """ Update domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'config': 'dict',
+                'tags': 'list'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.domain_mgr.update_domain(params)
 
     @transaction
     @check_required(['domain_id'])
     def delete_domain(self, params):
+        """ Delete domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
         self.domain_mgr.delete_domain(params['domain_id'])
 
         # domain_secret_mgr: DomainSecretManager = self._get_domain_secret_manager()
@@ -45,21 +83,69 @@ class DomainService(BaseService):
     @transaction
     @check_required(['domain_id'])
     def enable_domain(self, params):
+        """ Enable domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.domain_mgr.enable_domain(params['domain_id'])
 
     @transaction
     @check_required(['domain_id'])
     def disable_domain(self, params):
+        """ Disable domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.domain_mgr.disable_domain(params['domain_id'])
 
     @transaction
     @check_required(['domain_id'])
     def get_domain(self, params):
+        """ Disable domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'only': 'list'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.domain_mgr.get_domain(params['domain_id'], params.get('only'))
 
     @transaction
     @check_required(['domain_id'])
     def get_public_key(self, params):
+        """ Get domain's public key for authentication
+
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+
+        Returns:
+            result (dict): {
+                'pub_jwk': 'str',
+                'domain_id': 'str'
+            }
+        """
+
         domain_id = params['domain_id']
         domain_secret_mgr: DomainSecretManager = self._get_domain_secret_manager()
         pub_jwk = domain_secret_mgr.get_domain_public_key(domain_id=domain_id)
@@ -74,6 +160,20 @@ class DomainService(BaseService):
     @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])
     def list_domains(self, params):
+        """ List api keys
+
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'name': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
+            }
+
+        Returns:
+            results (list): 'list of domain_vo'
+            total_count (int)
+        """
+
         query = params.get('query', {})
         return self.domain_mgr.list_domains(query)
 
@@ -89,8 +189,8 @@ class DomainService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})
