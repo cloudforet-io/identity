@@ -69,10 +69,3 @@ class Domain(BaseAPI, domain_pb2_grpc.DomainServicer):
         with self.locator.get_service('DomainService', metadata) as domain_svc:
             data = domain_svc.get_public_key(params)
             return self.locator.get_info('DomainPublicKeyInfo', data['pub_jwk'], data['domain_id'])
-
-    def get_domain_key(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.get_domain_key(params)
-            return self.locator.get_info('DomainKeyResponse', data)
