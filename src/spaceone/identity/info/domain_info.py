@@ -8,7 +8,7 @@ from spaceone.api.identity.v1 import domain_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.identity.model.domain_model import Domain
 
-__all__ = ['DomainInfo', 'DomainsInfo', 'DomainPublicKeyInfo', 'DomainKeyInfo']
+__all__ = ['DomainInfo', 'DomainsInfo', 'DomainPublicKeyInfo']
 
 
 def DomainInfo(domain_vo: Domain, minimal=False):
@@ -54,11 +54,3 @@ def DomainPublicKeyInfo(public_key, domain_id):
         'domain_id': domain_id
     }
     return handler_pb2.AuthenticationResponse(**info)
-
-
-def DomainKeyInfo(domain_key, domain_id):
-    info = {
-        'domain_key': str(domain_key),
-        'domain_id': domain_id
-    }
-    return domain_pb2.DomainKeyResponse(**info)
