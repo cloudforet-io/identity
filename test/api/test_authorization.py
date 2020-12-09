@@ -1,16 +1,10 @@
 import os
-import uuid
-import random
 import unittest
 import pprint
 
 from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
-
-
-def random_string():
-    return uuid.uuid4().hex
 
 
 class TestAuthorization(unittest.TestCase):

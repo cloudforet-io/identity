@@ -1,18 +1,10 @@
 import os
-import uuid
-import random
 import unittest
 import pprint
-from langcodes import Language
 
 from google.protobuf.json_format import MessageToDict
-from spaceone.core.error import *
 from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
-
-
-def random_string():
-    return uuid.uuid4().hex
 
 
 class TestProject(unittest.TestCase):
@@ -63,8 +55,8 @@ class TestProject(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string()
+        cls.owner_pw = utils.generate_password()
 
         owner = cls.identity_v1.DomainOwner.create({
             'owner_id': cls.owner_id,
@@ -154,7 +146,7 @@ class TestProject(unittest.TestCase):
 
     def _test_create_policy(self, permissions=None):
         params = {
-            'name': 'Policy-' + random_string()[0:5],
+            'name': 'Policy-' + utils.random_string(),
             'permissions': permissions or [
                 'identity.Domain.get',
                 'identity.Domain.list',
@@ -178,7 +170,7 @@ class TestProject(unittest.TestCase):
             self._test_create_policy()
 
         params = {
-            'name': 'Role-' + random_string()[0:5],
+            'name': 'Role-' + utils.random_string(),
             'role_type': role_type,
             'policies': policies or [{
                 'policy_type': 'CUSTOM',
@@ -193,24 +185,20 @@ class TestProject(unittest.TestCase):
 
         self.roles.append(self.role)
 
-    def _test_create_user(self, name='test', user_id=None):
+    def _test_create_user(self, name=None, user_id=None):
         if self.role is None:
             self._test_create_role()
 
         if user_id is None:
-            user_id = utils.random_string()[0:10]
-
-        lang_code = random.choice(['zh-hans', 'jp', 'ko', 'en', 'es'])
-        language = Language.get(lang_code)
+            user_id = utils.random_string() + '@mz.co.kr'
 
         params = {
             'user_id': user_id,
             'domain_id': self.domain.domain_id,
-            'password': 'qwerty123',
-            'name': name + utils.random_string()[0:5],
-            'language': language.__str__(),
+            'password': utils.generate_password(),
+            'name': name or 'test' + utils.random_string(),
             'timezone': 'Asia/Seoul',
-            'email': name + utils.random_string()[0:5] + '@mz.co.kr'
+            'email': user_id
         }
 
         self.user = self.identity_v1.User.create(
@@ -232,7 +220,7 @@ class TestProject(unittest.TestCase):
         return self.user
 
     def test_create_project_group(self):
-        name = f'pg-{utils.random_string()[0:5]}'
+        name = f'pg-{utils.random_string()}'
         params = {
             'name': name,
             'tags': [
@@ -258,7 +246,7 @@ class TestProject(unittest.TestCase):
         if project_group_id is None:
             self.test_create_project_group()
 
-        name = f'prj-{utils.random_string()[0:5]}'
+        name = f'project-{utils.random_string()}'
         params = {
             'name': name,
             'tags': [

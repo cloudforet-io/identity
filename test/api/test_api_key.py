@@ -56,34 +56,31 @@ class TestAPIKey(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string() + '@mz.co.kr'
+        cls.owner_pw = utils.generate_password()
 
-        param = {
+        params = {
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
-            'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'domain_id': cls.domain.domain_id
         }
 
         owner = cls.identity_v1.DomainOwner.create(
-            param
+            params
         )
         cls.domain_owner = owner
 
     @classmethod
     def _create_user(cls, user_id=None):
         if user_id is None:
-            user_id = utils.random_string()[0:10]
+            user_id = utils.random_string() + '@mz.co.kr'
 
         param = {
             'user_id': user_id,
-            'password': 'qwerty123',
-            'name': 'Steven' + utils.random_string()[0:5],
+            'password': utils.generate_password(),
+            'name': 'Steven' + utils.random_string(),
             'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
+            'email': user_id,
             'domain_id': cls.domain.domain_id
         }
 

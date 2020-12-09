@@ -2,7 +2,6 @@ import json
 import os
 import unittest
 import pprint
-from langcodes import Language
 
 from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
@@ -19,7 +18,7 @@ class TestAuthentication(unittest.TestCase):
     api_key_obj = None
     identity_v1 = None
     owner_id = None
-    owner_pw = 'qwerty'
+    owner_pw = utils.generate_password()
     owner_token = None
 
     @classmethod
@@ -68,14 +67,11 @@ class TestAuthentication(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
+        cls.owner_id = utils.random_string()
 
         param = {
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
-            'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'domain_id': cls.domain.domain_id
         }
 
@@ -124,15 +120,13 @@ class TestAuthentication(unittest.TestCase):
 
     def _create_user(self, user_type=None, backend=None):
         self.user_params = {
-            'user_id': (utils.random_string()[0:10]),
-            'password': 'qwerty123',
-            'name': 'Steven' + utils.random_string()[0:5],
-            'language': Language.get('jp').__str__(),
+            'user_id': utils.random_string() + '@mz.co.kr',
+            'password': utils.generate_password(),
+            'name': 'Steven' + utils.random_string(),
             'timezone': 'Asia/Seoul',
             'user_type': user_type or 'USER',
             'backend': backend or 'LOCAL',
-            'domain_id': self.domain.domain_id,
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr'
+            'domain_id': self.domain.domain_id
         }
         self.user = self.identity_v1.User.create(
             self.user_params,

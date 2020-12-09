@@ -47,15 +47,12 @@ class TestToken(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string()
+        cls.owner_pw = utils.generate_password()
 
         param = {
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
-            'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'domain_id': cls.domain.domain_id
         }
 
@@ -124,7 +121,7 @@ class TestToken(unittest.TestCase):
 
     def _create_policy(self, permissions):
         params = {
-            'name': 'Policy-' + utils.random_string()[0:5],
+            'name': 'Policy-' + utils.random_string(),
             'permissions': permissions,
             'domain_id': self.domain.domain_id
         }
@@ -136,7 +133,7 @@ class TestToken(unittest.TestCase):
 
     def _create_role(self, policies, role_type='DOMAIN'):
         params = {
-            'name': 'Role-' + utils.random_string()[0:5],
+            'name': 'Role-' + utils.random_string(),
             'role_type': role_type,
             'policies': policies,
             'domain_id': self.domain.domain_id
@@ -147,18 +144,18 @@ class TestToken(unittest.TestCase):
             metadata=(('token', self.owner_token),))
 
     def _create_user(self, user_type=None, backend=None):
-        user_id = utils.random_string()[0:10]
-        self.pw = 'qwerty123'
+        user_id = utils.random_string() + '@mz.co.kr'
+        self.pw = utils.generate_password()
         user_param = {
             'user_id': user_id,
             'password': self.pw,
-            'name': 'Steven' + utils.random_string()[0:5],
+            'name': 'Steven' + utils.random_string(),
             'user_type': user_type or 'USER',
             'backend': backend or 'LOCAL',
             'language': 'en',
             'timezone': 'Asia/Seoul',
             'domain_id': self.domain.domain_id,
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr'
+            'email': user_id
         }
         self.user = self.identity_v1.User.create(
             user_param,

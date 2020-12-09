@@ -1,5 +1,4 @@
 import os
-import uuid
 import random
 import unittest
 import pprint
@@ -8,10 +7,6 @@ from langcodes import Language
 from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
-
-
-def random_string():
-    return uuid.uuid4().hex
 
 
 class TestUser(unittest.TestCase):
@@ -62,8 +57,8 @@ class TestUser(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string()
+        cls.owner_pw = utils.generate_password()
 
         owner = cls.identity_v1.DomainOwner.create({
             'owner_id': cls.owner_id,
@@ -133,7 +128,7 @@ class TestUser(unittest.TestCase):
 
     def _test_create_policy(self, permissions):
         params = {
-            'name': 'Policy-' + random_string()[0:5],
+            'name': 'Policy-' + utils.random_string(),
             'permissions': permissions,
             'domain_id': self.domain.domain_id
         }
@@ -147,7 +142,7 @@ class TestUser(unittest.TestCase):
 
     def _test_create_role(self, policies, role_type='PROJECT'):
         params = {
-            'name': 'Role-' + random_string()[0:5],
+            'name': 'Role-' + utils.random_string(),
             'role_type': role_type,
             'policies': policies,
             'domain_id': self.domain.domain_id
@@ -159,19 +154,20 @@ class TestUser(unittest.TestCase):
 
         self.roles.append(self.role)
 
-    def test_create_user(self, user_id=None, name=None):
+    def test_create_user(self, user_id=None, name=None, user_type=None, backend=None):
         lang_code = random.choice(['zh-hans', 'jp', 'ko', 'en', 'es'])
         language = Language.get(lang_code)
         if user_id is None:
-            user_id = utils.random_string()[0:10]
+            user_id = utils.random_string() + '@mz.co.kr'
 
         if name is None:
-            name = 'Steven' + utils.random_string()[0:5]
+            name = 'Steven' + utils.random_string()
 
         params = {
             'user_id': user_id,
-            'password': 'qwerty123',
+            'password': utils.generate_password(),
             'name': name,
+            'email': user_id,
             'language': language.__str__(),
             'tags': [
                 {
@@ -179,7 +175,6 @@ class TestUser(unittest.TestCase):
                     'value': 'tag_value'
                 }
             ],
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'domain_id': self.domain.domain_id
         }
 
@@ -193,7 +188,7 @@ class TestUser(unittest.TestCase):
         self.assertEqual(self.user.name, params['name'])
 
     def test_create_duplicate_user(self):
-        user_id = utils.random_string()[0:10]
+        user_id = utils.random_string() + '@mz.co.kr'
         self.test_create_user(user_id=user_id)
 
         with self.assertRaises(Exception) as e:
@@ -205,7 +200,7 @@ class TestUser(unittest.TestCase):
         self.test_create_user()
 
         if name is None:
-            name = 'Steven' + utils.random_string()[0:5]
+            name = 'Steven' + utils.random_string()
 
         params = {
             'user_id': self.user.user_id,
@@ -449,10 +444,10 @@ class TestUser(unittest.TestCase):
         self.assertEqual(len(self.users), response.total_count)
 
     def test_user_id_must_unique_in_domain(self):
-        self.test_create_user('user-id-john')
+        self.test_create_user('user-id-john@mz.co.kr')
 
         with self.assertRaises(Exception):
-            self.test_create_user('user-id-john')
+            self.test_create_user('user-id-john@mz.co.kr')
 
     def test_find_user(self):
         token_param = {

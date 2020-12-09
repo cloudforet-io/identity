@@ -2,7 +2,6 @@ import os
 import unittest
 
 from google.protobuf.json_format import MessageToDict
-
 from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
 
@@ -26,7 +25,7 @@ class TestDomain(unittest.TestCase):
 
         self.domain = None
         self.owner_id = 'DomainOwner'
-        self.owner_pw = 'qwerty'
+        self.owner_pw = utils.generate_password()
         self.owner = None
         self.owner_token = None
 
@@ -45,9 +44,6 @@ class TestDomain(unittest.TestCase):
         param = {
             'owner_id': self.owner_id,
             'password': self.owner_pw,
-            'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
             'domain_id': self.domain.domain_id
         }
 
@@ -76,11 +72,11 @@ class TestDomain(unittest.TestCase):
             'name': name,
             'tags': [
                 {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
+                    'key': utils.random_string(4),
+                    'value': utils.random_string(4)
                 }, {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
+                    'key': utils.random_string(4),
+                    'value': utils.random_string(4)
                 }
             ]
         }
