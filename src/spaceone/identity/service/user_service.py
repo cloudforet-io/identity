@@ -38,10 +38,29 @@ class UserService(BaseService):
             user_vo (object)
         """
 
-        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
-        domain: Domain = domain_mgr.get_domain(params['domain_id'])
+        user_type = params.get('user_type', 'USER')
+        backend = params.get('backend', 'LOCAL')
+        domain_id = params['domain_id']
 
-        return self.user_mgr.create_user(params, domain)
+        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
+        domain_vo: Domain = domain_mgr.get_domain(domain_id)
+
+        # Check User Type and Backend
+        if user_type == 'API_USER':
+            if backend == 'EXTERNAL':
+                raise ERROR_EXTERNAL_USER_NOT_ALLOWED_API_USER()
+
+            params['password'] = None
+
+        # Check External Authentication from Domain
+        if backend == 'EXTERNAL':
+            if not domain_vo.plugin_info:
+                raise ERROR_NOT_ALLOWED_EXTERNAL_AUTHENTICATION()
+
+        params['user_type'] = user_type
+        params['backend'] = backend
+
+        return self.user_mgr.create_user(params, domain_vo)
 
     @transaction
     @check_required(['user_id', 'domain_id'])
@@ -192,7 +211,7 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    @append_query_filter(['user_id', 'name', 'state', 'email', 'role_id', 'domain_id'])
+    @append_query_filter(['user_id', 'name', 'state', 'email', 'user_type', 'backend', 'role_id', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['user_id', 'name', 'email'])
     def list_users(self, params):

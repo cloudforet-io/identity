@@ -13,12 +13,14 @@ def UserInfo(user_vo: User, minimal=False):
         'user_id': user_vo.user_id,
         'name': user_vo.name,
         'state': user_vo.state,
+        'user_type': user_vo.user_type,
         'domain_id': user_vo.domain_id
     }
 
     if not minimal:
         info.update({
             'email': user_vo.email,
+            'backend': user_vo.backend,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
             'roles': list(map(lambda role: RoleInfo(role, minimal=True), user_vo.roles)),

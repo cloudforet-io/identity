@@ -10,10 +10,12 @@ class UserTag(EmbeddedDocument):
 
 class User(MongoModel):
     user_id = StringField(max_length=40, unique_with='domain_id', required=True)
-    password = BinaryField()
+    password = BinaryField(default=None)
     name = StringField(max_length=128)
     state = StringField(max_length=20, choices=('ENABLED', 'DISABLED', 'UNIDENTIFIED'))
     email = StringField(max_length=255, default=None, null=True)
+    user_type = StringField(max_length=20, choices=('USER', 'API_USER'))
+    backend = StringField(max_length=20, choices=('LOCAL', 'EXTERNAL'))
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='Etc/GMT')
     roles = ListField(ReferenceField('Role', reverse_delete_rule=DENY))
@@ -35,6 +37,8 @@ class User(MongoModel):
         ],
         'exact_fields': [
             'user_id',
+            'user_type',
+            'backend',
             'domain_id'
         ],
         'minimal_fields': [
@@ -50,10 +54,11 @@ class User(MongoModel):
         },
         'ordering': ['name'],
         'indexes': [
-            'user_id',
             'state',
+            'user_type',
+            'backend',
             'roles',
-            'domain_id',
+            ('user_id', 'domain_id'),
             ('tags.key', 'tags.value')
         ]
     }
