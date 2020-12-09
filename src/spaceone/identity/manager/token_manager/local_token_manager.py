@@ -10,14 +10,14 @@ from spaceone.identity.model import User
 _LOGGER = logging.getLogger(__name__)
 
 
-class DefaultTokenManager(JWTManager):
+class LocalTokenManager(JWTManager):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user_mgr: UserManager = self.locator.get_manager('UserManager')
 
-    def authenticate(self, credentials, domain_id):
-        user_id, pw_to_check = self._parse_user_id_and_password(credentials)
+    def authenticate(self, user_id, domain_id, credentials):
+        pw_to_check = self._parse_password(credentials)
 
         self.user = self.user_mgr.get_user(user_id, domain_id)
 
@@ -51,16 +51,18 @@ class DefaultTokenManager(JWTManager):
 
         return self.issue_token(**kwargs)
 
-    def _parse_user_id_and_password(self, credentials):
-        # Get User
-        user_id = credentials.get('user_id', None)
+    @staticmethod
+    def _parse_password(credentials):
         pw_to_check = credentials.get('password', None)
 
-        if user_id is None or pw_to_check is None:
+        if pw_to_check is None:
             raise ERROR_INVALID_CREDENTIALS()
 
-        return user_id, pw_to_check
+        return pw_to_check
 
     def _check_user_state(self):
+        if self.user.user_type == 'API_USER':
+            raise ERROR_NOT_ALLOWED_ISSUE_TOKEN_API_USER(user_id=self.user.user_id)
+
         if self.user.state != 'ENABLED':
             raise ERROR_USER_STATUS_CHECK_FAILURE(user_id=self.user.user_id)

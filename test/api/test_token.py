@@ -67,9 +67,9 @@ class TestToken(unittest.TestCase):
     @classmethod
     def _issue_token(cls):
         token_param = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
@@ -81,7 +81,6 @@ class TestToken(unittest.TestCase):
     @classmethod
     def _create_api_key(cls):
         param = {
-            'api_key_type': 'USER',
             'domain_id': cls.domain.domain_id
         }
         api_key_vo = cls.identity_v1.APIKey.create(param)
@@ -94,8 +93,6 @@ class TestToken(unittest.TestCase):
         self.policy = None
         self.role = None
         self.pw = None
-        self._create_user()
-        self._update_domain_role()
 
     def tearDown(self):
         if self.user:
@@ -149,13 +146,15 @@ class TestToken(unittest.TestCase):
             params,
             metadata=(('token', self.owner_token),))
 
-    def _create_user(self):
+    def _create_user(self, user_type=None, backend=None):
         user_id = utils.random_string()[0:10]
         self.pw = 'qwerty123'
         user_param = {
             'user_id': user_id,
             'password': self.pw,
             'name': 'Steven' + utils.random_string()[0:5],
+            'user_type': user_type or 'USER',
+            'backend': backend or 'LOCAL',
             'language': 'en',
             'timezone': 'Asia/Seoul',
             'domain_id': self.domain.domain_id,
@@ -183,9 +182,13 @@ class TestToken(unittest.TestCase):
         )
 
     def test_issue_token(self):
+        if not self.user:
+            self._create_user()
+
         token_param = {
+            'user_id': self.user.user_id,
+            'user_type': 'USER',
             'credentials': {
-                'user_id': self.user.user_id,
                 'password': self.pw
             },
             'domain_id': self.domain.domain_id
@@ -203,6 +206,8 @@ class TestToken(unittest.TestCase):
         self.assertEqual(self.user.user_id, decoded['aud'])
 
     def test_issue_token_disabled_user(self):
+        self._create_user()
+
         self.user = self.identity_v1.User.disable(
             {
                 'user_id': self.user.user_id,
@@ -217,6 +222,7 @@ class TestToken(unittest.TestCase):
         self.assertIn("ERROR_USER_STATUS_CHECK_FAILURE", str(e.exception))
 
     def test_refresh_token_disabled_user(self):
+        self._create_user()
         self.test_issue_token()
 
         self.user = self.identity_v1.User.disable(
@@ -236,22 +242,48 @@ class TestToken(unittest.TestCase):
         self.assertIn("ERROR_USER_STATUS_CHECK_FAILURE", str(e.exception))
 
     def test_issue_token_not_existing_user(self):
+        self._create_user()
+
         token_param = {
             'user_id': 'mzc',
-            'password': 'pwd',
+            'user_type': 'USER',
+            'credentials': {
+                'password': 'pwd'
+            },
             'domain_id': self.domain.domain_id
         }
         with self.assertRaises(Exception):
             self.identity_v1.Token.issue(token_param)
 
     def test_issue_token_with_wrong_password(self):
+        self._create_user()
+
         token_param = {
             'user_id': self.user.user_id,
-            'password': 'pwd',
+            'user_type': 'USER',
+            'credentials': {
+                'password': 'pwd'
+            },
             'domain_id': self.domain.domain_id
         }
         with self.assertRaises(Exception):
             self.identity_v1.Token.issue(token_param)
+
+    def test_issue_token_api_user(self):
+        self._create_user(user_type='API_USER')
+
+        token_param = {
+            'user_id': self.user.user_id,
+            'user_type': 'USER',
+            'credentials': {
+                'password': 'pwd'
+            },
+            'domain_id': self.domain.domain_id
+        }
+        with self.assertRaises(Exception) as ctx:
+            self.identity_v1.Token.issue(token_param)
+
+        self.assertIn("ERROR_NOT_ALLOWED_ISSUE_TOKEN_API_USER", str(ctx.exception))
 
     def test_refresh_token(self):
         self.test_issue_token()

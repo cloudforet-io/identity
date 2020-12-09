@@ -16,8 +16,8 @@ class DomainOwnerTokenManager(JWTManager):
         super().__init__(*args, **kwargs)
         self.domain_owner_mgr: DomainOwnerManager = self.locator.get_manager('DomainOwnerManager')
 
-    def authenticate(self, credentials, domain_id):
-        user_id, pw_to_check = self._parse_user_id_and_password(credentials)
+    def authenticate(self, user_id, domain_id, credentials):
+        pw_to_check = self._parse_password(credentials)
 
         self.user = self.domain_owner_mgr.get_owner(owner_id=user_id, domain_id=domain_id)
 
@@ -46,12 +46,11 @@ class DomainOwnerTokenManager(JWTManager):
         self.user = self.domain_owner_mgr.get_owner(owner_id=user_id, domain_id=domain_id)
         return self.issue_token(**kwargs)
 
-    def _parse_user_id_and_password(self, credentials):
-        # Get User
-        user_id = credentials.get('user_id', None)
+    @staticmethod
+    def _parse_password(credentials):
         pw_to_check = credentials.get('password', None)
 
-        if user_id is None or pw_to_check is None:
+        if pw_to_check is None:
             raise ERROR_INVALID_CREDENTIALS()
 
-        return user_id, pw_to_check
+        return pw_to_check

@@ -30,7 +30,7 @@ class TokenManager(BaseManager, ABC):
         pass
 
     @abstractmethod
-    def authenticate(self, credentials, domain_id):
+    def authenticate(self, user_id, domain_id, credentials):
         pass
 
     @abstractmethod
@@ -58,7 +58,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
     def refresh_token(self, user_id, domain_id, **kwargs):
         raise NotImplementedError('TokenManager.refresh_token not implemented!')
 
-    def authenticate(self, credentials, domain_id):
+    def authenticate(self, user_id, domain_id, credentials):
         raise NotImplementedError('TokenManager.authenticate not implemented!')
 
     def check_refreshable(self, refresh_key, ttl):
