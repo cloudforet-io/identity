@@ -13,7 +13,7 @@ class PolicyService(BaseService):
 
     @transaction
     @check_required(['name', 'permissions', 'domain_id'])
-    def create_policy(self, params):
+    def create(self, params):
         """ Create policy
 
         Args:
@@ -32,7 +32,7 @@ class PolicyService(BaseService):
 
     @transaction
     @check_required(['policy_id', 'domain_id'])
-    def update_policy(self, params):
+    def update(self, params):
         """ Update policy
 
         Args:
@@ -52,7 +52,7 @@ class PolicyService(BaseService):
 
     @transaction
     @check_required(['policy_id', 'domain_id'])
-    def delete_policy(self, params):
+    def delete(self, params):
         """ Delete policy
 
         Args:
@@ -69,7 +69,7 @@ class PolicyService(BaseService):
 
     @transaction
     @check_required(['policy_id', 'domain_id'])
-    def get_policy(self, params):
+    def get(self, params):
         """ Get policy
 
         Args:
@@ -90,7 +90,7 @@ class PolicyService(BaseService):
     @append_query_filter(['policy_id', 'name', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['policy_id', 'name'])
-    def list_policies(self, params):
+    def list(self, params):
         """ List polices
 
         Args:

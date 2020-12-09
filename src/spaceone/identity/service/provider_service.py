@@ -15,7 +15,7 @@ class ProviderService(BaseService):
 
     @transaction
     @check_required(['provider', 'name', 'domain_id'])
-    def create_provider(self, params):
+    def create(self, params):
         """
         Args:
             params (dict): {
@@ -37,7 +37,7 @@ class ProviderService(BaseService):
 
     @transaction
     @check_required(['provider', 'domain_id'])
-    def update_provider(self, params):
+    def update(self, params):
         """
         Args:
             params (dict): {
@@ -59,7 +59,7 @@ class ProviderService(BaseService):
 
     @transaction
     @check_required(['provider', 'domain_id'])
-    def delete_provider(self, params):
+    def delete(self, params):
         """
         Args:
             params (dict): {
@@ -74,7 +74,7 @@ class ProviderService(BaseService):
 
     @transaction
     @check_required(['provider', 'domain_id'])
-    def get_provider(self, params):
+    def get(self, params):
         """
         Args:
             params (dict): {
@@ -94,7 +94,7 @@ class ProviderService(BaseService):
     @append_query_filter(['provider', 'name'])
     @change_tag_filter('tags')
     @append_keyword_filter(['provider', 'name'])
-    def list_providers(self, params):
+    def list(self, params):
         """
         Args:
             params (dict): {

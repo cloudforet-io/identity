@@ -11,14 +11,14 @@ class DomainOwner(BaseAPI, domain_owner_pb2_grpc.DomainOwnerServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('DomainOwnerService', metadata) as domain_owner_svc:
-            data = domain_owner_svc.create_owner(params)
+            data = domain_owner_svc.create(params)
             return self.locator.get_info('DomainOwnerInfo', data)
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('DomainOwnerService', metadata) as domain_owner_svc:
-            data = domain_owner_svc.update_owner(params)
+            data = domain_owner_svc.update(params)
             return self.locator.get_info('DomainOwnerInfo', data)
 
     def delete(self, request, context):
@@ -26,12 +26,12 @@ class DomainOwner(BaseAPI, domain_owner_pb2_grpc.DomainOwnerServicer):
 
         with self.locator.get_service('DomainOwnerService', metadata) as domain_owner_svc:
             # TODO: block delete when users, projects, inventories are existing.
-            data = domain_owner_svc.delete_owner(params)
+            data = domain_owner_svc.delete(params)
             return self.locator.get_info('EmptyInfo')
 
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('DomainOwnerService', metadata) as domain_owner_svc:
-            data = domain_owner_svc.get_owner(params)
+            data = domain_owner_svc.get(params)
             return self.locator.get_info('DomainOwnerInfo', data)

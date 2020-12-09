@@ -19,7 +19,7 @@ class DomainService(BaseService):
 
     @transaction
     @check_required(['name'])
-    def create_domain(self, params):
+    def create(self, params):
         """ Create domain
 
         Args:
@@ -45,7 +45,7 @@ class DomainService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    def update_domain(self, params):
+    def update(self, params):
         """ Update domain
 
         Args:
@@ -63,7 +63,7 @@ class DomainService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    def delete_domain(self, params):
+    def delete(self, params):
         """ Delete domain
 
         Args:
@@ -82,7 +82,7 @@ class DomainService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    def enable_domain(self, params):
+    def enable(self, params):
         """ Enable domain
 
         Args:
@@ -98,7 +98,7 @@ class DomainService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    def disable_domain(self, params):
+    def disable(self, params):
         """ Disable domain
 
         Args:
@@ -114,7 +114,7 @@ class DomainService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    def get_domain(self, params):
+    def get(self, params):
         """ Disable domain
 
         Args:
@@ -159,7 +159,7 @@ class DomainService(BaseService):
     @append_query_filter(['domain_id', 'name'])
     @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])
-    def list_domains(self, params):
+    def list(self, params):
         """ List api keys
 
         Args:

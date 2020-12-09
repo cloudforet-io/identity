@@ -22,7 +22,7 @@ class TokenService(BaseService):
 
     @transaction
     @check_required(['user_id', 'credentials', 'domain_id'])
-    def issue_token(self, params):
+    def issue(self, params):
         """ Issue token
 
         Args:
@@ -52,7 +52,7 @@ class TokenService(BaseService):
         return token_manager.issue_token(private_jwk=private_key)
 
     @transaction
-    def refresh_token(self, params):
+    def refresh(self, params):
         """ Refresh token
 
         Args:

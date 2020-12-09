@@ -15,7 +15,7 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['user_id', 'domain_id'])
-    def create_user(self, params):
+    def create(self, params):
         """ Create user
 
         Args:
@@ -49,7 +49,7 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['user_id', 'domain_id'])
-    def update_user(self, params):
+    def update(self, params):
         """ Update user
 
         Args:
@@ -72,7 +72,7 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['user_id', 'domain_id'])
-    def enable_user(self, params):
+    def enable(self, params):
         """ Enable user
 
         Args:
@@ -89,7 +89,7 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['user_id', 'domain_id'])
-    def disable_user(self, params):
+    def disable(self, params):
         """ Disable user
 
         Args:
@@ -106,7 +106,7 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['user_id', 'domain_id'])
-    def delete_user(self, params):
+    def delete(self, params):
         """ Delete user
 
         Args:
@@ -123,7 +123,7 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['search', 'domain_id'])
-    def find_user(self, params):
+    def find(self, params):
         """ Disable user
 
         Args:
@@ -179,7 +179,7 @@ class UserService(BaseService):
 
     @transaction
     @check_required(['user_id', 'domain_id'])
-    def get_user(self, params):
+    def get(self, params):
         """ Get user
 
         Args:
@@ -200,7 +200,7 @@ class UserService(BaseService):
     @append_query_filter(['user_id', 'name', 'state', 'email', 'user_type', 'backend', 'role_id', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['user_id', 'name', 'email'])
-    def list_users(self, params):
+    def list(self, params):
         """ List users
 
         Args:

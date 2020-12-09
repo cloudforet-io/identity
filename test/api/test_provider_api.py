@@ -18,19 +18,19 @@ from test.factory.provider_factory import ProviderFactory
 
 class _MockProviderService(BaseService):
 
-    def create_provider(self, params):
+    def create(self, params):
         return ProviderFactory(**params)
 
-    def update_provider(self, params):
+    def update(self, params):
         return ProviderFactory(**params)
 
-    def delete_provider(self, params):
+    def delete(self, params):
         pass
 
-    def get_provider(self, params):
+    def get(self, params):
         return ProviderFactory(**params)
 
-    def list_providers(self, params):
+    def list(self, params):
         return ProviderFactory.build_batch(10, **params), 10
 
 

@@ -16,7 +16,7 @@ class DomainOwnerService(BaseService):
 
     @transaction
     @check_required(['owner_id', 'password', 'domain_id'])
-    def create_owner(self, params):
+    def create(self, params):
         """ Create domain owner
 
         Args:
@@ -38,7 +38,7 @@ class DomainOwnerService(BaseService):
 
     @transaction
     @check_required(['owner_id', 'domain_id'])
-    def update_owner(self, params):
+    def update(self, params):
         """ Update domain owner
 
         Args:
@@ -59,7 +59,7 @@ class DomainOwnerService(BaseService):
 
     @transaction
     @check_required(['domain_id', 'owner_id'])
-    def delete_owner(self, params):
+    def delete(self, params):
         """ Delete domain owner
 
         Args:
@@ -75,7 +75,7 @@ class DomainOwnerService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    def get_owner(self, params):
+    def get(self, params):
         """ Delete domain owner
 
         Args:

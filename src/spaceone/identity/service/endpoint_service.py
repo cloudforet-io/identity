@@ -13,7 +13,7 @@ class EndpointService(BaseService):
     @check_required(['domain_id'])
     @append_query_filter(['service'])
     @append_keyword_filter(['service'])
-    def list_endpoints(self, params):
+    def list(self, params):
         """
         Args:
             params (dict): {

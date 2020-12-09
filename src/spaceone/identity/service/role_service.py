@@ -13,7 +13,7 @@ class RoleService(BaseService):
 
     @transaction
     @check_required(['name', 'role_type', 'policies', 'domain_id'])
-    def create_role(self, params):
+    def create(self, params):
         """ Create role
 
         Args:
@@ -34,7 +34,7 @@ class RoleService(BaseService):
 
     @transaction
     @check_required(['role_id', 'domain_id'])
-    def update_role(self, params):
+    def update(self, params):
         """ Update role
 
         Args:
@@ -57,7 +57,7 @@ class RoleService(BaseService):
 
     @transaction
     @check_required(['role_id', 'domain_id'])
-    def delete_role(self, params):
+    def delete(self, params):
         """ Delete role
 
         Args:
@@ -74,7 +74,7 @@ class RoleService(BaseService):
 
     @transaction
     @check_required(['role_id', 'domain_id'])
-    def get_role(self, params):
+    def get(self, params):
         """ Get role
 
         Args:
@@ -95,7 +95,7 @@ class RoleService(BaseService):
     @append_query_filter(['role_id', 'name', 'role_type', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['role_id', 'name'])
-    def list_roles(self, params):
+    def list(self, params):
         """ List roles
 
         Args:
