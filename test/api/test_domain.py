@@ -57,9 +57,9 @@ class TestDomain(unittest.TestCase):
 
     def _issue_token(self):
         token_param = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': self.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': self.owner_id,
                 'password': self.owner_pw
             },
             'domain_id': self.domain.domain_id

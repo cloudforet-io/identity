@@ -79,9 +79,9 @@ class TestProject(unittest.TestCase):
     @classmethod
     def _issue_owner_token(cls):
         token_params = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
