@@ -95,9 +95,9 @@ class TestAPIKey(unittest.TestCase):
     @classmethod
     def _issue_token(cls):
         token_param = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
@@ -150,7 +150,6 @@ class TestAPIKey(unittest.TestCase):
 
     def test_create_api_key_no_domain(self):
         param = {
-            'api_key_type': 'USER',
             'user_id': self.user.user_id
         }
         with self.assertRaises(Exception):
@@ -159,7 +158,6 @@ class TestAPIKey(unittest.TestCase):
 
     # def test_create_api_key_unknown_type(self):
     #     param = {
-    #         'api_key_type': 'hello',
     #         'user_id': self.user.user_id,
     #         'domain_id': 'domain-id-'
     #     }
@@ -168,7 +166,6 @@ class TestAPIKey(unittest.TestCase):
 
     def test_create_api_key_no_user_id(self):
         param = {
-            'api_key_type': 'USER',
             'domain_id': 'domain-id'
         }
         with self.assertRaises(Exception):

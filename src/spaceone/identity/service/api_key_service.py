@@ -105,7 +105,7 @@ class APIKeyService(BaseService):
 
     @transaction
     @check_required(['domain_id'])
-    @append_query_filter(['api_key_id', 'state', 'api_key_type', 'user_id', 'domain_id'])
+    @append_query_filter(['api_key_id', 'state', 'user_id', 'domain_id'])
     @append_keyword_filter(['api_key_id', 'user_id'])
     def list(self, params):
         """ List api keys
