@@ -1,7 +1,5 @@
 from spaceone.core.service import *
 from spaceone.identity.error.error_user import *
-from spaceone.identity.error import ERROR_UNSUPPORTED_API
-from spaceone.identity.error.error_user import ERROR_NOT_ALLOWED_ROLE_TYPE
 from spaceone.identity.model import Domain
 from spaceone.identity.manager import UserManager, RoleManager, DomainManager
 
@@ -38,27 +36,14 @@ class UserService(BaseService):
             user_vo (object)
         """
 
-        user_type = params.get('user_type', 'USER')
-        backend = params.get('backend', 'LOCAL')
+        params['user_type'] = params.get('user_type', 'USER')
+        params['backend'] = params.get('backend', 'LOCAL')
         domain_id = params['domain_id']
 
         domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
         domain_vo: Domain = domain_mgr.get_domain(domain_id)
 
-        # Check User Type and Backend
-        if user_type == 'API_USER':
-            if backend == 'EXTERNAL':
-                raise ERROR_EXTERNAL_USER_NOT_ALLOWED_API_USER()
-
-            params['password'] = None
-
-        # Check External Authentication from Domain
-        if backend == 'EXTERNAL':
-            if not domain_vo.plugin_info:
-                raise ERROR_NOT_ALLOWED_EXTERNAL_AUTHENTICATION()
-
-        params['user_type'] = user_type
-        params['backend'] = backend
+        self._check_user_type_and_backend(params['user_type'], params['backend'], domain_vo)
 
         return self.user_mgr.create_user(params, domain_vo)
 
@@ -165,8 +150,9 @@ class UserService(BaseService):
         domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
         domain_vo: Domain = domain_mgr.get_domain(params['domain_id'])
 
+        # Check External Authentication from Domain
         if not domain_vo.plugin_info:
-            raise ERROR_UNSUPPORTED_API(reason='Your domain does not use external authentication plugin.')
+            raise ERROR_NOT_ALLOWED_EXTERNAL_AUTHENTICATION()
 
         return self.user_mgr.find_user(params['search'], domain_vo)
 
@@ -258,6 +244,18 @@ class UserService(BaseService):
 
         query = params.get('query', {})
         return self.user_mgr.stat_users(query)
+
+    @staticmethod
+    def _check_user_type_and_backend(user_type, backend, domain_vo):
+        # Check User Type and Backend
+        if user_type == 'API_USER':
+            if backend == 'EXTERNAL':
+                raise ERROR_EXTERNAL_USER_NOT_ALLOWED_API_USER()
+
+        # Check External Authentication from Domain
+        if backend == 'EXTERNAL':
+            if not domain_vo.plugin_info:
+                raise ERROR_NOT_ALLOWED_EXTERNAL_AUTHENTICATION()
 
     @staticmethod
     def _check_role_type(role_vos):

@@ -12,7 +12,7 @@ class User(MongoModel):
     user_id = StringField(max_length=40, unique_with='domain_id', required=True)
     password = BinaryField(default=None)
     name = StringField(max_length=128)
-    state = StringField(max_length=20, choices=('ENABLED', 'DISABLED', 'UNIDENTIFIED'))
+    state = StringField(max_length=20, choices=('ENABLED', 'DISABLED', 'PENDING'))
     email = StringField(max_length=255, default=None, null=True)
     user_type = StringField(max_length=20, choices=('USER', 'API_USER'))
     backend = StringField(max_length=20, choices=('LOCAL', 'EXTERNAL'))
