@@ -33,8 +33,8 @@ class APIKeyManager(BaseManager):
         key_gen = KeyGenerator(prv_jwk=prv_jwk,
                                domain_id=domain_id,
                                audience=user_vo.user_id)
-        # TODO: Add user type argument from user_vo.user_type
-        api_key = key_gen.generate_api_key(api_key_vo.api_key_id, 'USER')
+
+        api_key = key_gen.generate_api_key(api_key_vo.api_key_id, user_vo.user_type)
         return api_key_vo, api_key
 
     def delete_api_key(self, api_key_id, domain_id):
