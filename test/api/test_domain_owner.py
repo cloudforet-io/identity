@@ -1,8 +1,6 @@
-import logging
 import os
 import random
 import unittest
-
 from langcodes import Language
 
 from spaceone.core import utils, pygrpc
@@ -43,7 +41,6 @@ class TestDomainOwner(unittest.TestCase):
             print(f'[TearDown] Delete domain. (domain_id: {self.domain.domain_id})')
             self.identity_v1.Domain.delete({'domain_id': self.domain.domain_id})
 
-
     def _create_domain(self):
         name = utils.random_string()
         param = {
@@ -54,16 +51,15 @@ class TestDomainOwner(unittest.TestCase):
     def test_create_owner(self):
         lang_code = random.choice(['zh-hans', 'jp', 'ko', 'en', 'es'])
         language = Language.get(lang_code)
-        owner_id = utils.random_string()[0:10]
+        owner_id = utils.random_string()
 
         param = {
             'owner_id': owner_id,
-            'password': 'qwerty123',
-            'name': 'Steven' + utils.random_string()[0:5],
+            'password': utils.generate_password(),
+            'name': 'Steven' + utils.random_string(),
             'language': language.__str__(),
             'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
+            'email': 'Steven' + utils.random_string() + '@mz.co.kr',
             'domain_id': self.domain.domain_id
         }
 

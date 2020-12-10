@@ -28,10 +28,7 @@ IDENTITY = {
     }
 }
 
-SYSTEM_METHODS = []
-
 HANDLERS = {
-    # TODO: add system key authentication handler
     'authentication': [{
         'backend': 'spaceone.core.handler.authentication_handler.AuthenticationGRPCHandler',
         'uri': 'grpc://localhost:50051/v1/Domain/get_public_key'
@@ -68,5 +65,3 @@ ENDPOINTS = [
     #     'endpoint': 'grpc://<endpoint>>:<port>/v1'
     # },
 ]
-
-LOG = {}

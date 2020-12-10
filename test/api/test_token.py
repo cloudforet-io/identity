@@ -1,6 +1,8 @@
 import os
 import unittest
+import pprint
 
+from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
 from spaceone.core.auth.jwt.jwt_util import JWTUtil
 from spaceone.core.unittest.runner import RichTestRunner
@@ -9,6 +11,7 @@ from spaceone.core.unittest.runner import RichTestRunner
 class TestToken(unittest.TestCase):
     config = utils.load_yaml_from_file(
         os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
+    pp = pprint.PrettyPrinter(indent=4)
     identity_v1 = None
     domain = None
     token = None
@@ -37,6 +40,13 @@ class TestToken(unittest.TestCase):
         })
         cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
 
+    def _print_data(self, message, description=None):
+        print()
+        if description:
+            print(f'[ {description} ]')
+
+        self.pp.pprint(MessageToDict(message, preserving_proto_field_name=True))
+
     @classmethod
     def _create_domain(cls):
         name = utils.random_string()
@@ -47,16 +57,12 @@ class TestToken(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string()
+        cls.owner_pw = utils.generate_password()
 
         param = {
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
-            'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
             'domain_id': cls.domain.domain_id
         }
 
@@ -68,9 +74,9 @@ class TestToken(unittest.TestCase):
     @classmethod
     def _issue_token(cls):
         token_param = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
@@ -82,7 +88,6 @@ class TestToken(unittest.TestCase):
     @classmethod
     def _create_api_key(cls):
         param = {
-            'api_key_type': 'USER',
             'domain_id': cls.domain.domain_id
         }
         api_key_vo = cls.identity_v1.APIKey.create(param)
@@ -95,8 +100,6 @@ class TestToken(unittest.TestCase):
         self.policy = None
         self.role = None
         self.pw = None
-        self._create_user()
-        self._update_domain_role()
 
     def tearDown(self):
         if self.user:
@@ -128,7 +131,7 @@ class TestToken(unittest.TestCase):
 
     def _create_policy(self, permissions):
         params = {
-            'name': 'Policy-' + utils.random_string()[0:5],
+            'name': 'Policy-' + utils.random_string(),
             'permissions': permissions,
             'domain_id': self.domain.domain_id
         }
@@ -140,7 +143,7 @@ class TestToken(unittest.TestCase):
 
     def _create_role(self, policies, role_type='DOMAIN'):
         params = {
-            'name': 'Role-' + utils.random_string()[0:5],
+            'name': 'Role-' + utils.random_string(),
             'role_type': role_type,
             'policies': policies,
             'domain_id': self.domain.domain_id
@@ -150,19 +153,19 @@ class TestToken(unittest.TestCase):
             params,
             metadata=(('token', self.owner_token),))
 
-    def _create_user(self):
-        user_id = utils.random_string()[0:10]
-        self.pw = 'qwerty123'
+    def _create_user(self, user_type=None, backend=None):
+        user_id = utils.random_string() + '@mz.co.kr'
+        self.pw = utils.generate_password()
         user_param = {
             'user_id': user_id,
             'password': self.pw,
-            'name': 'Steven' + utils.random_string()[0:5],
+            'name': 'Steven' + utils.random_string(),
+            'user_type': user_type or 'USER',
+            'backend': backend or 'LOCAL',
             'language': 'en',
             'timezone': 'Asia/Seoul',
             'domain_id': self.domain.domain_id,
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
-            'group': 'group-id'
+            'email': user_id
         }
         self.user = self.identity_v1.User.create(
             user_param,
@@ -186,9 +189,13 @@ class TestToken(unittest.TestCase):
         )
 
     def test_issue_token(self):
+        if not self.user:
+            self._create_user()
+
         token_param = {
+            'user_id': self.user.user_id,
+            'user_type': 'USER',
             'credentials': {
-                'user_id': self.user.user_id,
                 'password': self.pw
             },
             'domain_id': self.domain.domain_id
@@ -206,6 +213,8 @@ class TestToken(unittest.TestCase):
         self.assertEqual(self.user.user_id, decoded['aud'])
 
     def test_issue_token_disabled_user(self):
+        self._create_user()
+
         self.user = self.identity_v1.User.disable(
             {
                 'user_id': self.user.user_id,
@@ -220,6 +229,7 @@ class TestToken(unittest.TestCase):
         self.assertIn("ERROR_USER_STATUS_CHECK_FAILURE", str(e.exception))
 
     def test_refresh_token_disabled_user(self):
+        self._create_user()
         self.test_issue_token()
 
         self.user = self.identity_v1.User.disable(
@@ -239,22 +249,48 @@ class TestToken(unittest.TestCase):
         self.assertIn("ERROR_USER_STATUS_CHECK_FAILURE", str(e.exception))
 
     def test_issue_token_not_existing_user(self):
+        self._create_user()
+
         token_param = {
             'user_id': 'mzc',
-            'password': 'pwd',
+            'user_type': 'USER',
+            'credentials': {
+                'password': 'pwd'
+            },
             'domain_id': self.domain.domain_id
         }
         with self.assertRaises(Exception):
             self.identity_v1.Token.issue(token_param)
 
     def test_issue_token_with_wrong_password(self):
+        self._create_user()
+
         token_param = {
             'user_id': self.user.user_id,
-            'password': 'pwd',
+            'user_type': 'USER',
+            'credentials': {
+                'password': 'pwd'
+            },
             'domain_id': self.domain.domain_id
         }
         with self.assertRaises(Exception):
             self.identity_v1.Token.issue(token_param)
+
+    def test_issue_token_api_user(self):
+        self._create_user(user_type='API_USER')
+
+        token_param = {
+            'user_id': self.user.user_id,
+            'user_type': 'USER',
+            'credentials': {
+                'password': 'pwd'
+            },
+            'domain_id': self.domain.domain_id
+        }
+        with self.assertRaises(Exception) as ctx:
+            self.identity_v1.Token.issue(token_param)
+
+        self.assertIn("ERROR_NOT_ALLOWED_ISSUE_TOKEN_API_USER", str(ctx.exception))
 
     def test_refresh_token(self):
         self.test_issue_token()

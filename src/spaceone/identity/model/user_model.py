@@ -10,18 +10,18 @@ class UserTag(EmbeddedDocument):
 
 class User(MongoModel):
     user_id = StringField(max_length=40, unique_with='domain_id', required=True)
-    password = BinaryField()
+    password = BinaryField(default=None)
     name = StringField(max_length=128)
-    state = StringField(max_length=20, choices=('ENABLED', 'DISABLED', 'UNIDENTIFIED'))
+    state = StringField(max_length=20, choices=('ENABLED', 'DISABLED', 'PENDING'))
     email = StringField(max_length=255, default=None, null=True)
-    mobile = StringField(max_length=24, default=None, null=True)
-    group = StringField(max_length=255, default=None, null=True)
+    user_type = StringField(max_length=20, choices=('USER', 'API_USER'))
+    backend = StringField(max_length=20, choices=('LOCAL', 'EXTERNAL'))
     language = StringField(max_length=7, default='en')
-    timezone = StringField(max_length=50, default='Etc/GMT')
+    timezone = StringField(max_length=50, default='UTC')
     roles = ListField(ReferenceField('Role', reverse_delete_rule=DENY))
     tags = ListField(EmbeddedDocumentField(UserTag))
     domain_id = StringField(max_length=40)
-    last_accessed_at = DateTimeField(auto_now_add=True)
+    last_accessed_at = DateTimeField(default=None, null=True)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
@@ -30,15 +30,16 @@ class User(MongoModel):
             'name',
             'state',
             'email',
-            'mobile',
-            'group',
             'language',
             'timezone',
             'roles',
-            'tags'
+            'tags',
+            'last_accessed_at'
         ],
         'exact_fields': [
             'user_id',
+            'user_type',
+            'backend',
             'domain_id'
         ],
         'minimal_fields': [
@@ -54,8 +55,12 @@ class User(MongoModel):
         },
         'ordering': ['name'],
         'indexes': [
-            'user_id',
-            'domain_id',
+            'state',
+            'user_type',
+            'backend',
+            'roles',
+            'last_accessed_at',
+            ('user_id', 'domain_id'),
             ('tags.key', 'tags.value')
         ]
     }

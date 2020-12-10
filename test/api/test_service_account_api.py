@@ -18,19 +18,19 @@ from test.factory.service_account_factory import ServiceAccountFactory
 
 class _MockServiceAccountService(BaseService):
 
-    def create_service_account(self, params):
+    def create(self, params):
         return ServiceAccountFactory(**params)
 
-    def update_service_account(self, params):
+    def update(self, params):
         return ServiceAccountFactory(**params)
 
-    def delete_service_account(self, params):
+    def delete(self, params):
         pass
 
-    def get_service_account(self, params):
+    def get(self, params):
         return ServiceAccountFactory(**params)
 
-    def list_service_accounts(self, params):
+    def list(self, params):
         return ServiceAccountFactory.build_batch(10, **params), 10
 
 

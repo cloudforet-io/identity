@@ -1,9 +1,9 @@
 import json
 import os
 import unittest
+import pprint
 
-from langcodes import Language
-
+from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
 from spaceone.core.auth.jwt import JWTUtil
 
@@ -11,12 +11,14 @@ from spaceone.core.auth.jwt import JWTUtil
 class TestAuthentication(unittest.TestCase):
     config = utils.load_yaml_from_file(
         os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
+
+    pp = pprint.PrettyPrinter(indent=4)
     domain = None
     api_key = None
     api_key_obj = None
     identity_v1 = None
     owner_id = None
-    owner_pw = 'qwerty'
+    owner_pw = utils.generate_password()
     owner_token = None
 
     @classmethod
@@ -57,7 +59,6 @@ class TestAuthentication(unittest.TestCase):
     @classmethod
     def _create_api_key(cls):
         param = {
-            'api_key_type': 'USER',
             'domain_id': cls.domain.domain_id
         }
         api_key_vo = cls.identity_v1.APIKey.create(param)
@@ -66,15 +67,11 @@ class TestAuthentication(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
+        cls.owner_id = utils.random_string()
 
         param = {
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
-            'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
             'domain_id': cls.domain.domain_id
         }
 
@@ -86,9 +83,9 @@ class TestAuthentication(unittest.TestCase):
     @classmethod
     def _owner_issue_token(cls):
         token_param = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
@@ -114,45 +111,58 @@ class TestAuthentication(unittest.TestCase):
                 metadata=(('token', self.owner_token),)
             )
 
-    def _create_user(self):
-        self.user_param = {
-            'user_id': (utils.random_string()[0:10]),
-            'password': 'qwerty123',
-            'name': 'Steven' + utils.random_string()[0:5],
-            'language': Language.get('jp').__str__(),
+    def _print_data(self, message, description=None):
+        print()
+        if description:
+            print(f'[ {description} ]')
+
+        self.pp.pprint(MessageToDict(message, preserving_proto_field_name=True))
+
+    def _create_user(self, user_type=None, backend=None):
+        self.user_params = {
+            'user_id': utils.random_string() + '@mz.co.kr',
+            'password': utils.generate_password(),
+            'name': 'Steven' + utils.random_string(),
             'timezone': 'Asia/Seoul',
-            'domain_id': self.domain.domain_id,
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
-            'group': 'group-id',
+            'user_type': user_type or 'USER',
+            'backend': backend or 'LOCAL',
+            'domain_id': self.domain.domain_id
         }
         self.user = self.identity_v1.User.create(
-            self.user_param,
+            self.user_params,
             metadata=(('token', self.owner_token),)
         )
 
+        self._print_data(self.user, '_create_user')
+
     def _issue_token(self):
-        token_param = {
+        params = {
+            'user_id': self.user.user_id,
             'credentials': {
-                'user_id': self.user.user_id,
-                'password': self.user_param['password']
+                'password': self.user_params['password']
             },
             'domain_id': self.domain.domain_id
         }
 
-        self.token = self.identity_v1.Token.issue(token_param)
+        self.token = self.identity_v1.Token.issue(params)
 
         decoded = JWTUtil.unverified_decode(self.token.access_token)
-        print(f'decode: {decoded}')
+        print()
+        print('[ _issue_token: decoded token ]')
+        self.pp.pprint(decoded)
 
     def _get_domain(self):
+        params = {
+            'domain_id': self.domain.domain_id
+        }
+
         domain = self.identity_v1.Domain.get(
-            {'domain_id': self.domain.domain_id},
+            params,
             metadata=(
                 ('token', self.token.access_token),
             )
         )
-        print(f'domain: {domain}')
+        self._print_data(domain, '_get_domain')
 
     def test_id_pw_authentication(self):
         self._create_user()

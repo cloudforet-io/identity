@@ -56,37 +56,31 @@ class TestAPIKey(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string() + '@mz.co.kr'
+        cls.owner_pw = utils.generate_password()
 
-        param = {
+        params = {
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
-            'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
             'domain_id': cls.domain.domain_id
         }
 
         owner = cls.identity_v1.DomainOwner.create(
-            param
+            params
         )
         cls.domain_owner = owner
 
     @classmethod
     def _create_user(cls, user_id=None):
         if user_id is None:
-            user_id = utils.random_string()[0:10]
+            user_id = utils.random_string() + '@mz.co.kr'
 
         param = {
             'user_id': user_id,
-            'password': 'qwerty123',
-            'name': 'Steven' + utils.random_string()[0:5],
+            'password': utils.generate_password(),
+            'name': 'Steven' + utils.random_string(),
             'timezone': 'Asia/Seoul',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
-            'group': 'group-id',
+            'email': user_id,
             'domain_id': cls.domain.domain_id
         }
 
@@ -98,9 +92,9 @@ class TestAPIKey(unittest.TestCase):
     @classmethod
     def _issue_token(cls):
         token_param = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
@@ -112,7 +106,7 @@ class TestAPIKey(unittest.TestCase):
     def setUp(self) -> None:
         self.api_key = None
         self.api_keys = []
-        self.versions = ['2020-03-04']
+        self.versions = ['2020-12-07']
 
     def tearDown(self) -> None:
         for api_key in self.api_keys:
@@ -149,11 +143,10 @@ class TestAPIKey(unittest.TestCase):
 
         self.assertEqual(api_key_vo.user_id, param['user_id'])
         self.assertIn(decoded['ver'], self.versions)
-        self.assertIsNotNone(decoded['key'])
+        self.assertIsNotNone(decoded['api_key_id'])
 
     def test_create_api_key_no_domain(self):
         param = {
-            'api_key_type': 'USER',
             'user_id': self.user.user_id
         }
         with self.assertRaises(Exception):
@@ -162,7 +155,6 @@ class TestAPIKey(unittest.TestCase):
 
     # def test_create_api_key_unknown_type(self):
     #     param = {
-    #         'api_key_type': 'hello',
     #         'user_id': self.user.user_id,
     #         'domain_id': 'domain-id-'
     #     }
@@ -171,7 +163,6 @@ class TestAPIKey(unittest.TestCase):
 
     def test_create_api_key_no_user_id(self):
         param = {
-            'api_key_type': 'USER',
             'domain_id': 'domain-id'
         }
         with self.assertRaises(Exception):

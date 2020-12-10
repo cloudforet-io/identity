@@ -13,7 +13,7 @@ class EndpointService(BaseService):
     @check_required(['domain_id'])
     @append_query_filter(['service'])
     @append_keyword_filter(['service'])
-    def list_endpoints(self, params):
+    def list(self, params):
         """
         Args:
             params (dict): {
@@ -23,8 +23,7 @@ class EndpointService(BaseService):
                 }
 
         Returns:
-            results (list)
+            results (list): list of endpoint_vo
             total_count (int)
-
         """
         return self.endpoint_mgr.list_endpoints(params.get('query', {}))

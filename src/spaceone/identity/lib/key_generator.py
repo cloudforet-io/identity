@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import time
 from typing import Tuple, Any
@@ -12,10 +11,10 @@ _LOGGER = logging.getLogger(__name__)
 
 class KeyGenerator:
 
-    def __init__(self, prv_jwk, domain_id, aud_id):
+    def __init__(self, prv_jwk, domain_id, audience):
         self.prv_jwk = prv_jwk
         self.domain_id = domain_id
-        self.aud_id = aud_id
+        self.audience = audience
 
         self._do_parameter_check()
 
@@ -25,26 +24,25 @@ class KeyGenerator:
         if self.domain_id is None:
             raise ERROR_GENERATE_KEY_FAILURE()
 
-    def generate_api_key(self) -> Tuple[str, Any]:
-        key = utils.random_string()
-
+    def generate_api_key(self, api_key_id: str, user_type: str = 'USER') -> Tuple[str, Any]:
         payload = {
             'cat': 'API_KEY',
-            'user_type': 'USER',
+            'user_type': user_type,
             'did': self.domain_id,
-            'aud': self.aud_id,
+            'aud': self.audience,
             'iat': int(time.time()),
-            'key': key,
-            'ver': '2020-03-04'
+            'api_key_id': api_key_id,
+            'ver': '2020-12-07'
         }
 
         encoded = JWTUtil.encode(payload, self.prv_jwk)
 
         _LOGGER.debug(f'[KeyGenerator] Generated payload. ( '
                       f'cat: {payload.get("cat")}, '
-                      f'ver: {payload.get("ver")}, '
-                      f'key(masked): {payload.get("key")[0:8]}*****, '
+                      f'user_type: {payload.get("user_type")}, '
+                      f'did: {payload.get("did")}, '
                       f'aud: {payload.get("aud")}, '
-                      f'did: {payload.get("did")} )')
+                      f'api_key_id: {payload.get("api_key_id")}, '
+                      f'version: {payload.get("version")} )')
 
-        return key, encoded
+        return encoded

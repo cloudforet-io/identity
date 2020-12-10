@@ -11,32 +11,32 @@ class User(BaseAPI, user_pb2_grpc.UserServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            return self.locator.get_info('UserInfo', user_svc.create_user(params))
+            return self.locator.get_info('UserInfo', user_svc.create(params))
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            return self.locator.get_info('UserInfo', user_svc.update_user(params))
+            return self.locator.get_info('UserInfo', user_svc.update(params))
 
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            user_svc.delete_user(params)
+            user_svc.delete(params)
             return self.locator.get_info('EmptyInfo')
 
     def enable(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            return self.locator.get_info('UserInfo', user_svc.enable_user(params))
+            return self.locator.get_info('UserInfo', user_svc.enable(params))
 
     def disable(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            return self.locator.get_info('UserInfo', user_svc.disable_user(params))
+            return self.locator.get_info('UserInfo', user_svc.disable(params))
 
     def update_role(self, request, context):
         params, metadata = self.parse_request(request, context)
@@ -48,7 +48,7 @@ class User(BaseAPI, user_pb2_grpc.UserServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            users, total_count = user_svc.find_user(params)
+            users, total_count = user_svc.find(params)
             return self.locator.get_info('FindUsersInfo', users, total_count)
 
     def sync(self, request, context):
@@ -63,13 +63,13 @@ class User(BaseAPI, user_pb2_grpc.UserServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            return self.locator.get_info('UserInfo', user_svc.get_user(params))
+            return self.locator.get_info('UserInfo', user_svc.get(params))
 
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            users, total_count = user_svc.list_users(params)
+            users, total_count = user_svc.list(params)
             return self.locator.get_info('UsersInfo', users, total_count,
                                          minimal=self.get_minimal(params))
 

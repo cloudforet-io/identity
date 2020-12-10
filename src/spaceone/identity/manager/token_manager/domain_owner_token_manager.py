@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.lib.cipher import PasswordCipher
@@ -16,8 +17,8 @@ class DomainOwnerTokenManager(JWTManager):
         super().__init__(*args, **kwargs)
         self.domain_owner_mgr: DomainOwnerManager = self.locator.get_manager('DomainOwnerManager')
 
-    def authenticate(self, credentials, domain_id):
-        user_id, pw_to_check = self._parse_user_id_and_password(credentials)
+    def authenticate(self, user_id, domain_id, credentials):
+        pw_to_check = self._parse_password(credentials)
 
         self.user = self.domain_owner_mgr.get_owner(owner_id=user_id, domain_id=domain_id)
 
@@ -37,6 +38,9 @@ class DomainOwnerTokenManager(JWTManager):
         access_token = self.issue_access_token('DOMAIN_OWNER', self.user.owner_id, self.user.domain_id, **kwargs)
         refresh_token = self.issue_refresh_token('DOMAIN_OWNER', self.user.owner_id, self.user.domain_id, **kwargs)
 
+        # Update user's last_accessed_at field
+        self.user.update({'last_accessed_at': datetime.utcnow()})
+
         return {
             'access_token': access_token,
             'refresh_token': refresh_token
@@ -46,12 +50,11 @@ class DomainOwnerTokenManager(JWTManager):
         self.user = self.domain_owner_mgr.get_owner(owner_id=user_id, domain_id=domain_id)
         return self.issue_token(**kwargs)
 
-    def _parse_user_id_and_password(self, credentials):
-        # Get User
-        user_id = credentials.get('user_id', None)
+    @staticmethod
+    def _parse_password(credentials):
         pw_to_check = credentials.get('password', None)
 
-        if user_id is None or pw_to_check is None:
+        if pw_to_check is None:
             raise ERROR_INVALID_CREDENTIALS()
 
-        return user_id, pw_to_check
+        return pw_to_check

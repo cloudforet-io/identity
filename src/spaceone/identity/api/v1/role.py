@@ -11,39 +11,39 @@ class Role(BaseAPI, role_pb2_grpc.RoleServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('RoleService', metadata) as role_svc:
-            data = role_svc.create_role(params)
+            data = role_svc.create(params)
             return self.locator.get_info('RoleInfo', data)
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('RoleService', metadata) as role_svc:
-            data = role_svc.update_role(params)
+            data = role_svc.update(params)
             return self.locator.get_info('RoleInfo', data)
 
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('RoleService', metadata) as role_svc:
-            role_svc.delete_role(params)
+            role_svc.delete(params)
             return self.locator.get_info('EmptyInfo')
 
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('RoleService', metadata) as role_svc:
-            data = role_svc.get_role(params)
+            data = role_svc.get(params)
             return self.locator.get_info('RoleInfo', data)
+
+    def list(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('RoleService', metadata) as role_svc:
+            role_vos, total_count = role_svc.list(params)
+            return self.locator.get_info('RolesInfo', role_vos, total_count, minimal=self.get_minimal(params))
 
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('RoleService', metadata) as role_svc:
             return self.locator.get_info('StatisticsInfo', role_svc.stat(params))
-
-    def list(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('RoleService', metadata) as role_svc:
-            role_vos, total_count = role_svc.list_roles(params)
-            return self.locator.get_info('RolesInfo', role_vos, total_count, minimal=self.get_minimal(params))

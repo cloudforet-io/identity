@@ -10,7 +10,7 @@ from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.domain_owner_manager import DomainOwnerManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.token_manager.default_token_manager import DefaultTokenManager
-from spaceone.identity.manager.token_manager.plugin_token_manager import PluginTokenManager
+from spaceone.identity.manager.token_manager.local_token_manager import LocalTokenManager
+from spaceone.identity.manager.token_manager.external_token_manager import ExternalTokenManager
 from spaceone.identity.manager.token_manager.domain_owner_token_manager import DomainOwnerTokenManager
 from spaceone.identity.manager.endpoint_manager import EndpointManager

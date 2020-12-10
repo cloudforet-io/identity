@@ -32,7 +32,7 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            project_vo
+            project_vo (object)
         """
 
         params['created_by'] = self.transaction.get_meta('user_id')
@@ -59,7 +59,7 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            project_vo
+            project_vo (object)
         """
 
         domain_id = params['domain_id']
@@ -107,7 +107,7 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            project_member_vo
+            project_member_vo (object)
         """
 
         domain_id = params['domain_id']
@@ -142,7 +142,7 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            project_member_vo
+            project_member_vo (object)
         """
 
         domain_id = params['domain_id']
@@ -175,7 +175,7 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            project_member_vo
+            None
         """
 
         domain_id = params['domain_id']
@@ -202,7 +202,7 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            project_vo
+            project_vo (object)
         """
 
         return self.project_mgr.get_project(params['project_id'], params['domain_id'], params.get('only'))
@@ -226,7 +226,8 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            project_vos
+            results (list): 'list of project_vo'
+            total_count (int)
         """
 
         return self.project_mgr.list_projects(params.get('query', {}))
@@ -234,7 +235,7 @@ class ProjectService(BaseService):
     @transaction
     @check_required(['project_id', 'domain_id'])
     @append_query_filter(['user_id'])
-    @append_keyword_filter(['user_id', 'user_name', 'email', 'mobile'])
+    @append_keyword_filter(['user_id', 'user_name', 'email'])
     def list_members(self, params):
         """ List project members
 
@@ -247,7 +248,8 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            project_member_vos
+            results (list): 'list of project_member_vo'
+            total_count (int)
         """
 
         query = params.get('query', {})
@@ -279,8 +281,8 @@ class ProjectService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

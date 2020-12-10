@@ -1,15 +1,10 @@
 import os
-import uuid
 import unittest
 import pprint
 
 from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
-
-
-def random_string():
-    return uuid.uuid4().hex
 
 
 class TestPolicy(unittest.TestCase):
@@ -60,8 +55,8 @@ class TestPolicy(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string()
+        cls.owner_pw = utils.generate_password()
 
         owner = cls.identity_v1.DomainOwner.create({
             'owner_id': cls.owner_id,
@@ -76,9 +71,9 @@ class TestPolicy(unittest.TestCase):
     @classmethod
     def _issue_owner_token(cls):
         token_params = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
@@ -114,7 +109,7 @@ class TestPolicy(unittest.TestCase):
         """
 
         if name is None:
-            name = 'Policy-' + random_string()[0:5]
+            name = 'Policy-' + utils.random_string()
 
         params = {
             'name': name,
@@ -152,7 +147,7 @@ class TestPolicy(unittest.TestCase):
     def test_update_policy(self, name=None):
         """ Update Policy
         """
-        update_name = 'Policy-' + random_string()[0:5]
+        update_name = 'Policy-' + utils.random_string()
         update_tags = [
             {
                 'key': 'update_key',

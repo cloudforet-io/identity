@@ -4,44 +4,34 @@ from spaceone.core.model.mongo_model import MongoModel
 
 class APIKey(MongoModel):
     api_key_id = StringField(max_length=40, generate_id='api-key', unique=True)
-    api_key = StringField()
-    state = StringField(max_length=20,
-                        default='ENABLED',
-                        choices=('ENABLED', 'DISABLED'))
-    api_key_type = StringField(max_length=20,
-                               choices=('USER', 'SYSTEM', 'DELEGATION', 'DOMAIN'))
-    user_id = StringField(max_length=40)
+    state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
+    user_id = StringField(max_length=40, required=True)
     domain_id = StringField(max_length=40, required=True)
-    last_accessed_at = DateTimeField(auto_now_add=True)
+    last_accessed_at = DateTimeField(default=None, null=True)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
         'updatable_fields': [
-            'roles',
-            'allowed_hosts',
-            'state'
+            'state',
+            'last_accessed_at'
         ],
         'exact_fields': [
             'api_key_id',
-            'api_key,'
+            'state,'
             'user_id',
-            'domain_id',
-            'state',
-            'api_key_type'
+            'domain_id'
         ],
         'minimal_fields': [
             'api_key_id',
             'state',
-            'api_key_type'
+            'user_id'
         ],
         'ordering': ['api_key_id'],
         'indexes': [
             'api_key_id',
+            'state',
             'user_id',
-            'domain_id'
+            'domain_id',
+            'last_accessed_at'
         ]
     }
-
-    @classmethod
-    def create(cls, data):
-        return super().create(data)

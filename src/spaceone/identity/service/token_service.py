@@ -1,10 +1,12 @@
 import logging
 
+from spaceone.core.cache import cacheable
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
 from spaceone.core.service import *
 from spaceone.identity.error.error_authentication import *
-from spaceone.identity.manager import DomainManager, DomainSecretManager
-from spaceone.identity.model import Domain
+from spaceone.identity.error.error_domain import *
+from spaceone.identity.manager import DomainManager, DomainSecretManager, UserManager
+from spaceone.identity.model import User, Domain
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,45 +15,100 @@ _LOGGER = logging.getLogger(__name__)
 @event_handler
 class TokenService(BaseService):
 
+    def __init__(self, metadata):
+        super().__init__(metadata)
+        self.user_mgr: UserManager = self.locator.get_manager('UserManager')
+        self.domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
+        self.domain_secret_mgr: DomainSecretManager = self.locator.get_manager('DomainSecretManager')
+
     @transaction
-    @check_required(['credentials', 'domain_id'])
-    def issue_token(self, params):
-        user_type = params['credentials'].get('user_type', 'USER')
+    @check_required(['user_id', 'credentials', 'domain_id'])
+    def issue(self, params):
+        """ Issue token
 
-        domain_secret_mgr: DomainSecretManager = self.locator.get_manager('DomainSecretManager')
-        private_key = domain_secret_mgr.get_domain_private_key(domain_id=params['domain_id'])
+        Args:
+            params (dict): {
+                'user_id': 'str',
+                'credentials': 'dict'
+                'user_type': 'str',
+                'domain_id': 'str'
+            }
 
-        token_manager = self._create_token_manager(params['domain_id'], user_type)
-        token_manager.authenticate(params['credentials'], params['domain_id'])
+        Returns:
+            result (dict): {
+                'access_token': 'str',
+                'refresh_token': 'str'
+            }
+        """
+
+        user_id = params['user_id']
+        user_type = params.get('user_type', 'USER')
+        domain_id = params['domain_id']
+
+        private_key = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
+
+        token_manager = self._get_token_manager(user_id, user_type, domain_id)
+        token_manager.authenticate(user_id, domain_id, params['credentials'])
 
         return token_manager.issue_token(private_jwk=private_key)
 
     @transaction
-    def refresh_token(self, params):
+    def refresh(self, params):
+        """ Refresh token
+
+        Args:
+            params (dict): {}
+
+        Returns:
+            result (dict): {
+                'access_token': 'str',
+                'refresh_token': 'str'
+            }
+        """
+
         refresh_token = self.transaction.get_meta('token')
         domain_id = _extract_domain_id(refresh_token)
 
-        domain_secret_mgr: DomainSecretManager = self.locator.get_manager('DomainSecretManager')
-        public_jwk = domain_secret_mgr.get_domain_public_key(domain_id=domain_id)
-        private_jwk = domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
+        public_jwk = self.domain_secret_mgr.get_domain_public_key(domain_id=domain_id)
+        private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
 
         token_info = _verify_refresh_token(refresh_token, public_jwk)
-        token_mgr = self._create_token_manager(domain_id, token_info['user_type'])
+        token_mgr = self._get_token_manager(token_info['user_id'], token_info['user_type'], domain_id)
         token_mgr.check_refreshable(token_info['key'], token_info['ttl'])
 
         return token_mgr.refresh_token(token_info['user_id'], domain_id,
                                        ttl=token_info['ttl']-1, private_jwk=private_jwk)
 
-    def _create_token_manager(self, domain_id, user_type):
+    def _get_token_manager(self, user_id, user_type, domain_id):
+        self._check_domain_state(domain_id)
+
+        # user_type = USER | API_USER | DOMAIN_OWNER
         if user_type == 'DOMAIN_OWNER':
             return self.locator.get_manager('DomainOwnerTokenManager')
 
-        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
-        domain: Domain = domain_mgr.get_domain(domain_id)
-        if domain.plugin_info is None:
-            return self.locator.get_manager('DefaultTokenManager')
+        user_backend = self._get_user_backend(user_id, domain_id)
+
+        if user_backend == 'LOCAL':
+            return self.locator.get_manager('LocalTokenManager')
         else:
-            return self.locator.get_manager('PluginTokenManager')
+            return self.locator.get_manager('ExternalTokenManager')
+
+    @cacheable(key='user-backend:{domain_id}:{user_id}', expire=600)
+    def _get_user_backend(self, user_id, domain_id):
+        try:
+            user_vo: User = self.user_mgr.get_user(user_id, domain_id)
+        except Exception as e:
+            _LOGGER.error(f'[_get_user_backend] Authentication failure: {getattr(e, "message", e)}')
+            raise ERROR_AUTHENTICATION_FAILURE(user_id=user_id)
+
+        return user_vo.backend
+
+    @cacheable(key='domain-state:{domain_id}', expire=600)
+    def _check_domain_state(self, domain_id):
+        domain_vo: Domain = self.domain_mgr.get_domain(domain_id)
+
+        if domain_vo.state != 'ENABLED':
+            raise ERROR_DOMAIN_STATE(domain_id=domain_vo.domain_id)
 
 
 def _extract_domain_id(token):

@@ -13,13 +13,43 @@ class RoleService(BaseService):
 
     @transaction
     @check_required(['name', 'role_type', 'policies', 'domain_id'])
-    def create_role(self, params):
+    def create(self, params):
+        """ Create role
+
+        Args:
+            params (dict): {
+                'name': 'str',
+                'role_type': 'str',
+                'policies': 'list',
+                'tags': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            role_vo (object)
+        """
+
         params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
         return self.role_mgr.create_role(params)
 
     @transaction
     @check_required(['role_id', 'domain_id'])
-    def update_role(self, params):
+    def update(self, params):
+        """ Update role
+
+        Args:
+            params (dict): {
+                'role_id': 'str',
+                'name': 'str',
+                'policies': 'list',
+                'tags': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            role_vo (object)
+        """
+
         if 'policies' in params:
             params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
 
@@ -27,12 +57,37 @@ class RoleService(BaseService):
 
     @transaction
     @check_required(['role_id', 'domain_id'])
-    def delete_role(self, params):
+    def delete(self, params):
+        """ Delete role
+
+        Args:
+            params (dict): {
+                'role_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
         self.role_mgr.delete_role(params['role_id'], params['domain_id'])
 
     @transaction
     @check_required(['role_id', 'domain_id'])
-    def get_role(self, params):
+    def get(self, params):
+        """ Get role
+
+        Args:
+            params (dict): {
+                'role_id': 'str',
+                'domain_id': 'str',
+                'only': 'list'
+            }
+
+        Returns:
+            role_vo (object)
+        """
+
         return self.role_mgr.get_role(params['role_id'], params['domain_id'], params.get('only'))
 
     @transaction
@@ -40,7 +95,23 @@ class RoleService(BaseService):
     @append_query_filter(['role_id', 'name', 'role_type', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['role_id', 'name'])
-    def list_roles(self, params):
+    def list(self, params):
+        """ List roles
+
+        Args:
+            params (dict): {
+                'role_id': 'str',
+                'name': 'str',
+                'role_type': 'str',
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
+            }
+
+        Returns:
+            results (list): 'list of role_vo'
+            total_count (int)
+        """
+
         return self.role_mgr.list_roles(params.get('query', {}))
 
     @transaction
@@ -57,8 +128,8 @@ class RoleService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

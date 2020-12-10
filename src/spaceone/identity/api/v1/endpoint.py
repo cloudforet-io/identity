@@ -11,6 +11,6 @@ class Endpoint(BaseAPI, endpoint_pb2_grpc.EndpointServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('EndpointService', metadata) as endpoint_svc:
-            endpoint_vos, total_count = endpoint_svc.list_endpoints(params)
+            endpoint_vos, total_count = endpoint_svc.list(params)
             return self.locator.get_info('EndpointsInfo', endpoint_vos,
                                          total_count, minimal=self.get_minimal(params))

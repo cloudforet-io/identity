@@ -249,7 +249,7 @@ DEFAULT_PROVIDERS = [{
             "schema": {
                 "type": "object",
                 "properties": {
-                    "tenant_id": {
+                    "user_id": {
                         "title": "User ID",
                         "type": "string",
                         "minLength": 4
