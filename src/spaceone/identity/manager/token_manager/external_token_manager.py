@@ -78,7 +78,7 @@ class ExternalTokenManager(JWTManager):
         plugin_svc_conn: PluginServiceConnector = self.locator.get_connector('PluginServiceConnector')
         return plugin_svc_conn.get_plugin_endpoint(plugin_id, version, self.domain.domain_id)
 
-    def _check_domain_state(self, user_id):
+    def _check_domain_state(self):
         if not self.domain.plugin_info:
             _LOGGER.error('[_get_token_manager] This domain does not allow external authentication.')
             raise ERROR_AUTHENTICATION_FAILURE(user_id=self.user.user_id)
