@@ -33,7 +33,7 @@ class ExternalTokenManager(JWTManager):
 
         endpoint = self._get_plugin_endpoint()
         auth_user_info = self._authenticate_with_plugin(endpoint, credentials)
-        _LOGGER.info(f'[authenticate] Authentication success. (user_id={auth_user_info.user_id})')
+        _LOGGER.info(f'[authenticate] Authentication success. (user_id={auth_user_info.get("user_id")})')
 
         self._match_user_id(user_id, auth_user_info)
 
