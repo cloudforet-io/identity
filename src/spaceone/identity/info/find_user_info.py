@@ -7,10 +7,9 @@ __all__ = ['FindUserInfo', 'FindUsersInfo']
 
 def FindUserInfo(user_data: dict, minimal=False):
     info = {
-        'user_id': user_data.get('user_id', None),
-        'name': user_data.get('name', None),
-        'email': user_data.get('email', None),
-        'state': user_data.get('state', None)
+        'user_id': user_data.get('user_id'),
+        'name': user_data.get('name'),
+        'email': user_data.get('email')
     }
     if not minimal:
         info.update({
