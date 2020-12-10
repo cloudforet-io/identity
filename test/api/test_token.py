@@ -1,6 +1,8 @@
 import os
 import unittest
+import pprint
 
+from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
 from spaceone.core.auth.jwt.jwt_util import JWTUtil
 from spaceone.core.unittest.runner import RichTestRunner
@@ -9,6 +11,7 @@ from spaceone.core.unittest.runner import RichTestRunner
 class TestToken(unittest.TestCase):
     config = utils.load_yaml_from_file(
         os.environ.get('SPACEONE_TEST_CONFIG_FILE', './config.yml'))
+    pp = pprint.PrettyPrinter(indent=4)
     identity_v1 = None
     domain = None
     token = None
@@ -36,6 +39,13 @@ class TestToken(unittest.TestCase):
             'owner_id': cls.owner_id
         })
         cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+
+    def _print_data(self, message, description=None):
+        print()
+        if description:
+            print(f'[ {description} ]')
+
+        self.pp.pprint(MessageToDict(message, preserving_proto_field_name=True))
 
     @classmethod
     def _create_domain(cls):

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.lib.cipher import PasswordCipher
@@ -36,6 +37,9 @@ class DomainOwnerTokenManager(JWTManager):
         # Issue token
         access_token = self.issue_access_token('DOMAIN_OWNER', self.user.owner_id, self.user.domain_id, **kwargs)
         refresh_token = self.issue_refresh_token('DOMAIN_OWNER', self.user.owner_id, self.user.domain_id, **kwargs)
+
+        # Update user's last_accessed_at field
+        self.user.update({'last_accessed_at': datetime.utcnow()})
 
         return {
             'access_token': access_token,

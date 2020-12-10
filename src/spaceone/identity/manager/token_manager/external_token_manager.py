@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from spaceone.identity.connector import PluginServiceConnector, AuthPluginConnector
 from spaceone.identity.error.error_authentication import *
@@ -49,6 +50,9 @@ class ExternalTokenManager(JWTManager):
         # Issue token
         access_token = self.issue_access_token('USER', self.user.user_id, self.user.domain_id, **kwargs)
         refresh_token = self.issue_refresh_token('USER', self.user.user_id, self.user.domain_id, **kwargs)
+
+        # Update user's last_accessed_at field
+        self.user.update({'last_accessed_at': datetime.utcnow()})
 
         return {
             'access_token': access_token,

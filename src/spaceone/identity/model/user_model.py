@@ -21,7 +21,7 @@ class User(MongoModel):
     roles = ListField(ReferenceField('Role', reverse_delete_rule=DENY))
     tags = ListField(EmbeddedDocumentField(UserTag))
     domain_id = StringField(max_length=40)
-    last_accessed_at = DateTimeField(auto_now_add=True)
+    last_accessed_at = DateTimeField(default=None, null=True)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
@@ -33,7 +33,8 @@ class User(MongoModel):
             'language',
             'timezone',
             'roles',
-            'tags'
+            'tags',
+            'last_accessed_at'
         ],
         'exact_fields': [
             'user_id',
@@ -58,6 +59,7 @@ class User(MongoModel):
             'user_type',
             'backend',
             'roles',
+            'last_accessed_at',
             ('user_id', 'domain_id'),
             ('tags.key', 'tags.value')
         ]

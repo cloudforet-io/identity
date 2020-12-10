@@ -12,7 +12,7 @@ class DomainOwner(MongoModel):
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='UTC')
     domain_id = StringField(max_length=40)
-    last_accessed_at = DateTimeField(auto_now_add=True)
+    last_accessed_at = DateTimeField(default=None, null=True)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
@@ -21,7 +21,8 @@ class DomainOwner(MongoModel):
             'name',
             'email',
             'language',
-            'timezone'
+            'timezone',
+            'last_accessed_at'
         ],
         'exact_fields': [
             'owner_id',
@@ -35,7 +36,8 @@ class DomainOwner(MongoModel):
         'indexes': [
             'owner_id',
             'email',
-            'domain_id'
+            'domain_id',
+            'last_accessed_at'
         ]
     }
 
