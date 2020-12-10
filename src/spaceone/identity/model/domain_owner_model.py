@@ -10,7 +10,7 @@ class DomainOwner(MongoModel):
     name = StringField(max_length=128)
     email = StringField(max_length=255, default=None, null=True)
     language = StringField(max_length=7, default='en')
-    timezone = StringField(max_length=50, default='Etc/GMT')
+    timezone = StringField(max_length=50, default='UTC')
     domain_id = StringField(max_length=40)
     last_accessed_at = DateTimeField(auto_now_add=True)
     created_at = DateTimeField(auto_now_add=True)

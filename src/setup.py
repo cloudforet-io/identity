@@ -39,7 +39,8 @@ setup(
         'redis',
         'jinja2',
         'fakeredis',
-        'mongomock'
+        'mongomock',
+        'pytz'
     ],
     zip_safe=False,
 )

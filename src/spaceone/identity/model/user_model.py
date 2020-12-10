@@ -17,7 +17,7 @@ class User(MongoModel):
     user_type = StringField(max_length=20, choices=('USER', 'API_USER'))
     backend = StringField(max_length=20, choices=('LOCAL', 'EXTERNAL'))
     language = StringField(max_length=7, default='en')
-    timezone = StringField(max_length=50, default='Etc/GMT')
+    timezone = StringField(max_length=50, default='UTC')
     roles = ListField(ReferenceField('Role', reverse_delete_rule=DENY))
     tags = ListField(EmbeddedDocumentField(UserTag))
     domain_id = StringField(max_length=40)

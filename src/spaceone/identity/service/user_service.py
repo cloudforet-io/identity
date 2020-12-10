@@ -1,3 +1,4 @@
+import pytz
 from spaceone.core.service import *
 from spaceone.identity.error.error_user import *
 from spaceone.identity.model import Domain
@@ -45,6 +46,9 @@ class UserService(BaseService):
 
         self._check_user_type_and_backend(params['user_type'], params['backend'], domain_vo)
 
+        if 'timezone' in params:
+            self._check_timezone(params['timezone'])
+
         return self.user_mgr.create_user(params, domain_vo)
 
     @transaction
@@ -67,6 +71,9 @@ class UserService(BaseService):
         Returns:
             user_vo (object)
         """
+
+        if 'timezone' in params:
+            self._check_timezone(params['timezone'])
 
         return self.user_mgr.update_user(params)
 
@@ -244,6 +251,11 @@ class UserService(BaseService):
 
         query = params.get('query', {})
         return self.user_mgr.stat_users(query)
+
+    @staticmethod
+    def _check_timezone(timezone):
+        if timezone not in pytz.all_timezones:
+            raise ERROR_INVALID_PARAMETER(key='timezone', reason='Timezone is invalid.')
 
     @staticmethod
     def _check_user_type_and_backend(user_type, backend, domain_vo):

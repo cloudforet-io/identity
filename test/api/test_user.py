@@ -168,6 +168,7 @@ class TestUser(unittest.TestCase):
             'password': utils.generate_password(),
             'name': name,
             'email': user_id,
+            'timezone': 'Asia/Seoul',
             'language': language.__str__(),
             'tags': [
                 {

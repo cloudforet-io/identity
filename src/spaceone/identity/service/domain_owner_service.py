@@ -1,8 +1,7 @@
-import logging
+import pytz
 from spaceone.core.service import *
-from spaceone.identity.manager import DomainManager, DomainOwnerManager
-from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
-from spaceone.identity.model import Domain
+from spaceone.core.error import *
+from spaceone.identity.manager import DomainOwnerManager
 
 
 #@authentication_handler
@@ -34,6 +33,9 @@ class DomainOwnerService(BaseService):
             domain_owner_vo (object)
         """
 
+        if 'timezone' in params:
+            self._check_timezone(params['timezone'])
+
         return self.domain_owner_mgr.create_owner(params)
 
     @transaction
@@ -55,6 +57,10 @@ class DomainOwnerService(BaseService):
         Returns:
             domain_owner_vo (object)
         """
+
+        if 'timezone' in params:
+            self._check_timezone(params['timezone'])
+
         return self.domain_owner_mgr.update_owner(params)
 
     @transaction
@@ -89,3 +95,8 @@ class DomainOwnerService(BaseService):
             domain_owner_vo (object)
         """
         return self.domain_owner_mgr.get_owner(params['domain_id'], params.get('owner_id'), params.get('only'))
+
+    @staticmethod
+    def _check_timezone(timezone):
+        if timezone not in pytz.all_timezones:
+            raise ERROR_INVALID_PARAMETER(key='timezone', reason='Timezone is invalid.')
