@@ -77,9 +77,6 @@ class DomainService(BaseService):
 
         self.domain_mgr.delete_domain(params['domain_id'])
 
-        # domain_secret_mgr: DomainSecretManager = self._get_domain_secret_manager()
-        # domain_secret_mgr.delete_domain_secret(params['domain_id'])
-
     @transaction
     @check_required(['domain_id'])
     def enable(self, params):

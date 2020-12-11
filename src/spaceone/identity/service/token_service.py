@@ -11,7 +11,6 @@ from spaceone.identity.model import User, Domain
 _LOGGER = logging.getLogger(__name__)
 
 
-@authentication_handler(methods=['refresh_token'])
 @event_handler
 class TokenService(BaseService):
 
@@ -45,12 +44,13 @@ class TokenService(BaseService):
         user_type = params.get('user_type', 'USER')
         domain_id = params['domain_id']
 
-        private_key = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
+        private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
+        refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(domain_id=domain_id)
 
         token_manager = self._get_token_manager(user_id, user_type, domain_id)
         token_manager.authenticate(user_id, domain_id, params['credentials'])
 
-        return token_manager.issue_token(private_jwk=private_key)
+        return token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk)
 
     @transaction
     def refresh(self, params):
@@ -69,15 +69,16 @@ class TokenService(BaseService):
         refresh_token = self.transaction.get_meta('token')
         domain_id = _extract_domain_id(refresh_token)
 
-        public_jwk = self.domain_secret_mgr.get_domain_public_key(domain_id=domain_id)
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
+        refresh_public_jwk = self.domain_secret_mgr.get_domain_refresh_public_key(domain_id=domain_id)
+        refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(domain_id=domain_id)
 
-        token_info = _verify_refresh_token(refresh_token, public_jwk)
+        token_info = _verify_refresh_token(refresh_token, refresh_public_jwk)
         token_mgr = self._get_token_manager(token_info['user_id'], token_info['user_type'], domain_id)
         token_mgr.check_refreshable(token_info['key'], token_info['ttl'])
 
-        return token_mgr.refresh_token(token_info['user_id'], domain_id,
-                                       ttl=token_info['ttl']-1, private_jwk=private_jwk)
+        return token_mgr.refresh_token(token_info['user_id'], domain_id, ttl=token_info['ttl']-1,
+                                       private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk)
 
     def _get_token_manager(self, user_id, user_type, domain_id):
         self._check_domain_state(domain_id)

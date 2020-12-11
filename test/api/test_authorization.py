@@ -55,8 +55,8 @@ class TestAuthorization(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string()
+        cls.owner_pw = utils.generate_password()
 
         owner = cls.identity_v1.DomainOwner.create({
             'owner_id': cls.owner_id,
@@ -71,9 +71,9 @@ class TestAuthorization(unittest.TestCase):
     @classmethod
     def _issue_owner_token(cls):
         token_params = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
@@ -126,7 +126,7 @@ class TestAuthorization(unittest.TestCase):
 
     def _test_create_policy(self, permissions):
         params = {
-            'name': 'Policy-' + random_string()[0:5],
+            'name': 'Policy-' + utils.random_string(),
             'permissions': permissions,
             'domain_id': self.domain.domain_id
         }
@@ -140,7 +140,7 @@ class TestAuthorization(unittest.TestCase):
 
     def _test_create_role(self, policies, role_type='PROJECT'):
         params = {
-            'name': 'Role-' + random_string()[0:5],
+            'name': 'Role-' + utils.random_string(),
             'role_type': role_type,
             'policies': policies,
             'domain_id': self.domain.domain_id
@@ -154,12 +154,14 @@ class TestAuthorization(unittest.TestCase):
 
     def _test_create_user(self, user_id=None):
         if user_id is None:
-            user_id = utils.random_string()[0:10]
+            user_id = utils.random_string() + '@mz.co.kr'
+
+        self.user_password = utils.generate_password()
 
         params = {
             'user_id': user_id,
-            'password': 'qwerty123',
-            'name': utils.random_string()[0:5],
+            'password': self.user_password,
+            'name': utils.random_string(),
             'domain_id': self.domain.domain_id
         }
 
@@ -198,10 +200,10 @@ class TestAuthorization(unittest.TestCase):
 
     def _test_issue_user_token(self):
         token_params = {
+            'user_type': 'USER',
+            'user_id': self.user.user_id,
             'credentials': {
-                'user_type': 'USER',
-                'user_id': self.user.user_id,
-                'password': 'qwerty123'
+                'password': self.user_password
             },
             'domain_id': self.domain.domain_id
         }
@@ -228,7 +230,7 @@ class TestAuthorization(unittest.TestCase):
         """ Verify Authorization
         """
 
-        self._test_create_user('domain_user')
+        self._test_create_user('domain_user@mz.co.kr')
         self._test_update_domain_role()
         self._test_issue_user_token()
 
