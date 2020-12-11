@@ -114,7 +114,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
 
     @staticmethod
     def _generate_refresh_key():
-        return utils.random_string()
+        return utils.random_string(16)
 
     @staticmethod
     def _get_private_jwk(kwargs):
