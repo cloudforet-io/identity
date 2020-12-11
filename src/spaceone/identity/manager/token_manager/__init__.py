@@ -89,7 +89,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         return encoded
 
     def issue_refresh_token(self, user_type, user_id, domain_id, **kwargs):
-        private_jwk = self._get_private_jwk(kwargs)
+        refresh_private_jwk = self._get_refresh_private_jwk(kwargs)
         ttl = kwargs.get('ttl', self.CONST_REFRESH_TTL)
         timeout = kwargs.get('timeout', self.CONST_REFRESH_TIMEOUT)
         refresh_key = self._generate_refresh_key()
@@ -105,7 +105,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
             'ttl': ttl
         }
 
-        encoded = JWTUtil.encode(payload, private_jwk)
+        encoded = JWTUtil.encode(payload, refresh_private_jwk)
 
         if self.CONST_REFRESH_ONCE:
             self._set_refresh_token_cache(refresh_key)
@@ -119,9 +119,16 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
     @staticmethod
     def _get_private_jwk(kwargs):
         if 'private_jwk' not in kwargs:
-            raise ERROR_NOT_FOUND_PRIVATE_KEY()
+            raise ERROR_NOT_FOUND_PRIVATE_KEY(purpose='Access Token')
 
         return kwargs['private_jwk']
+
+    @staticmethod
+    def _get_refresh_private_jwk(kwargs):
+        if 'refresh_private_jwk' not in kwargs:
+            raise ERROR_NOT_FOUND_PRIVATE_KEY(purpose='Refresh Token')
+
+        return kwargs['refresh_private_jwk']
 
     def _set_refresh_token_cache(self, new_refresh_key):
         if cache.is_set():

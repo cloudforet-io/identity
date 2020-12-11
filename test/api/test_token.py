@@ -84,6 +84,7 @@ class TestToken(unittest.TestCase):
 
         issue_token = cls.identity_v1.Token.issue(token_param)
         cls.owner_token = issue_token.access_token
+        cls.owner_refresh_token = issue_token.refresh_token
 
     @classmethod
     def _create_api_key(cls):
@@ -247,6 +248,20 @@ class TestToken(unittest.TestCase):
             )
 
         self.assertIn("ERROR_USER_STATUS_CHECK_FAILURE", str(e.exception))
+
+    def test_get_user_with_refresh_token(self):
+        self._create_user()
+        self.test_issue_token()
+
+        params = {
+            'user_id': self.user.user_id,
+            'domain_id': self.domain.domain_id
+        }
+        with self.assertRaises(Exception) as ctx:
+            self.identity_v1.User.get(
+                params,
+                metadata=(('token', self.token.refresh_token),)
+            )
 
     def test_issue_token_not_existing_user(self):
         self._create_user()

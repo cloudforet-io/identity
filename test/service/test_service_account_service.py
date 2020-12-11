@@ -85,7 +85,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'create'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.create_service_account(params.copy())
+        service_account_vo = service_account_svc.create(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_create_service_account')
         ServiceAccountInfo(service_account_vo)
@@ -112,7 +112,7 @@ class TestServiceAccountService(unittest.TestCase):
         service_account_svc = ServiceAccountService(transaction=self.transaction)
 
         with self.assertRaises(ERROR_INVALID_PARAMETER):
-            service_account_svc.create_service_account(params)
+            service_account_svc.create(params)
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_invalid_data_type(self, *args):
@@ -129,7 +129,7 @@ class TestServiceAccountService(unittest.TestCase):
         service_account_svc = ServiceAccountService(transaction=self.transaction)
 
         with self.assertRaises(ERROR_INVALID_PARAMETER):
-            service_account_svc.create_service_account(params)
+            service_account_svc.create(params)
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_with_project(self, *args):
@@ -145,7 +145,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'create'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.create_service_account(params.copy())
+        service_account_vo = service_account_svc.create(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_create_service_account_with_project')
         ServiceAccountInfo(service_account_vo)
@@ -174,7 +174,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'update'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.update_service_account(params.copy())
+        service_account_vo = service_account_svc.update(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_update_service_account')
         ServiceAccountInfo(service_account_vo)
@@ -199,7 +199,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'update'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.update_service_account(params.copy())
+        service_account_vo = service_account_svc.update(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_update_service_account_project')
         ServiceAccountInfo(service_account_vo)
@@ -222,7 +222,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'update'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.update_service_account(params.copy())
+        service_account_vo = service_account_svc.update(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_release_service_account_project')
         ServiceAccountInfo(service_account_vo)
@@ -243,7 +243,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'delete'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        result = service_account_svc.delete_service_account(params)
+        result = service_account_svc.delete(params)
 
         self.assertIsNone(result)
 
@@ -264,7 +264,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'create'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.create_service_account(params.copy())
+        service_account_vo = service_account_svc.create(params.copy())
         ServiceAccountInfo(service_account_vo)
 
         with self.assertRaises(ERROR_EXIST_RESOURCE):
@@ -280,7 +280,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'get'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.get_service_account(params)
+        service_account_vo = service_account_svc.get(params)
 
         print_data(service_account_vo.to_dict(), 'test_get_service_account')
         ServiceAccountInfo(service_account_vo)
@@ -299,7 +299,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list_service_accounts(params)
+        service_accounts_vos, total_count = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -319,7 +319,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list_service_accounts(params)
+        service_accounts_vos, total_count = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -343,7 +343,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list_service_accounts(params)
+        service_accounts_vos, total_count = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -370,7 +370,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list_service_accounts(params)
+        service_accounts_vos, total_count = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 

@@ -96,7 +96,7 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'create'
         provider_svc = ProviderService(transaction=self.transaction)
-        provider_vo = provider_svc.create_provider(params.copy())
+        provider_vo = provider_svc.create(params.copy())
 
         print_data(provider_vo.to_dict(), 'test_create_provider')
         ProviderInfo(provider_vo)
@@ -119,11 +119,11 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'create'
         provider_svc = ProviderService(transaction=self.transaction)
-        provider_svc.create_provider(params.copy())
+        provider_svc.create(params.copy())
 
         with self.assertRaises(ERROR_NOT_UNIQUE_KEYS) as e:
             provider_svc = ProviderService(transaction=self.transaction)
-            provider_svc.create_provider(params.copy())
+            provider_svc.create(params.copy())
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_provider(self, *args):
@@ -146,7 +146,7 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'update'
         provider_svc = ProviderService(transaction=self.transaction)
-        provider_vo = provider_svc.update_provider(params.copy())
+        provider_vo = provider_svc.update(params.copy())
 
         print_data(provider_vo.to_dict(), 'test_update_provider')
         ProviderInfo(provider_vo)
@@ -168,7 +168,7 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'delete'
         provider_svc = ProviderService(transaction=self.transaction)
-        result = provider_svc.delete_provider(params)
+        result = provider_svc.delete(params)
 
         self.assertIsNone(result)
 
@@ -182,7 +182,7 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'get'
         provider_svc = ProviderService(transaction=self.transaction)
-        provider_vo = provider_svc.get_provider(params)
+        provider_vo = provider_svc.get(params)
 
         print_data(provider_vo.to_dict(), 'test_get_provider')
         ProviderInfo(provider_vo)
@@ -198,7 +198,7 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'list'
         provider_svc = ProviderService(transaction=self.transaction)
-        providers_vos, total_count = provider_svc.list_providers(params)
+        providers_vos, total_count = provider_svc.list(params)
 
         print_data(providers_vos, 'test_generate_default_provider_by_list_providers_method')
         ProvidersInfo(providers_vos, total_count)
@@ -219,7 +219,7 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'list'
         provider_svc = ProviderService(transaction=self.transaction)
-        providers_vos, total_count = provider_svc.list_providers(params)
+        providers_vos, total_count = provider_svc.list(params)
 
         ProvidersInfo(providers_vos, total_count)
 
@@ -239,7 +239,7 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'list'
         provider_svc = ProviderService(transaction=self.transaction)
-        providers_vos, total_count = provider_svc.list_providers(params)
+        providers_vos, total_count = provider_svc.list(params)
 
         ProvidersInfo(providers_vos, total_count)
 
@@ -266,7 +266,7 @@ class TestProviderService(unittest.TestCase):
 
         self.transaction.method = 'list'
         provider_svc = ProviderService(transaction=self.transaction)
-        providers_vos, total_count = provider_svc.list_providers(params)
+        providers_vos, total_count = provider_svc.list(params)
 
         ProvidersInfo(providers_vos, total_count)
 
