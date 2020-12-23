@@ -9,13 +9,9 @@ __all__ = ['RoleInfo', 'RolesInfo']
 
 def RolePolicyInfo(role_policy_vo: RolePolicy):
     role_policy_info = {
-        'policy_type': role_policy_vo.policy_type
+        'policy_type': role_policy_vo.policy_type,
+        'policy_id': role_policy_vo.policy.policy_id
     }
-
-    if role_policy_vo.policy_type == 'CUSTOM':
-        role_policy_info['policy_id'] = role_policy_vo.policy.policy_id
-    else:
-        role_policy_info['url'] = role_policy_info.url
 
     return role_policy_info
 
@@ -25,14 +21,14 @@ def RoleInfo(role_vo: Role, minimal=False):
     info = {
         'role_id': role_vo.role_id,
         'name': role_vo.name,
-        'role_type': role_vo.role_type,
-        'domain_id': role_vo.domain_id
+        'role_type': role_vo.role_type
     }
 
     if not minimal:
         info.update({
             'policies': list(map(lambda policy: RolePolicyInfo(policy), role_vo.policies)),
             'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in role_vo.tags],
+            'domain_id': role_vo.domain_id,
             'created_at': change_timestamp_type(role_vo.created_at)
         })
 

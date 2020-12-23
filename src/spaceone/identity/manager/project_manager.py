@@ -1,6 +1,6 @@
 import logging
 from spaceone.core.manager import BaseManager
-from spaceone.identity.model.project_model import Project, ProjectMemberMap
+from spaceone.identity.model.project_model import Project
 from spaceone.identity.model.project_group_model import ProjectGroup
 
 _LOGGER = logging.getLogger(__name__)
@@ -12,7 +12,6 @@ class ProjectManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.project_model: Project = self.locator.get_model('Project')
         self.project_group_model: ProjectGroup = self.locator.get_model('ProjectGroup')
-        self.project_map_model: ProjectMemberMap = self.locator.get_model('ProjectMemberMap')
 
     def create_project(self, params):
         def _rollback(project_vo):
@@ -53,18 +52,3 @@ class ProjectManager(BaseManager):
 
     def stat_projects(self, query):
         return self.project_model.stat(**query)
-
-    @staticmethod
-    def add_member(project_vo, user_vo, roles, labels):
-        return project_vo.append('members', {
-            'user': user_vo,
-            'roles': roles,
-            'labels': labels
-        })
-
-    @staticmethod
-    def remove_member(project_vo, project_member_vo):
-        project_vo.remove('members', project_member_vo)
-
-    def list_project_members(self, query):
-        return self.project_map_model.query(**query)

@@ -4,10 +4,9 @@ from spaceone.api.identity.v1 import project_group_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.identity.model.project_model import Project
 from spaceone.identity.model.project_group_model import ProjectGroup
-from spaceone.identity.info.user_info import UserInfo
 from spaceone.identity.info.role_info import RoleInfo
 
-__all__ = ['ProjectGroupInfo', 'ProjectGroupsInfo', 'ProjectGroupMemberInfo', 'ProjectGroupMembersInfo',
+__all__ = ['ProjectGroupInfo', 'ProjectGroupsInfo', 'ProjectGroupRoleBindingInfo', 'ProjectGroupRoleBindingsInfo',
            'ProjectGroupProjectsInfo']
 
 
@@ -38,21 +37,27 @@ def ProjectGroupsInfo(project_group_vos, total_count, **kwargs):
     return project_group_pb2.ProjectGroupsInfo(results=results, total_count=total_count)
 
 
-def ProjectGroupMemberInfo(project_group_member_vo):
+def ProjectGroupRoleBindingInfo(role_binding_vo):
+    print(dict(role_binding_vo.to_dict()))
     info = {
-        'project_group_info': ProjectGroupInfo(project_group_member_vo.project_group, minimal=True),
-        'user_info': UserInfo(project_group_member_vo.user),
-        'roles': list(map(lambda role: RoleInfo(role, minimal=True), project_group_member_vo.roles)),
-        'labels': change_list_value_type(project_group_member_vo.labels)
+        'role_binding_id': role_binding_vo.role_binding_id,
+        'resource_type': role_binding_vo.resource_type,
+        'resource_id': role_binding_vo.resource_id,
+        'role_info': RoleInfo(role_binding_vo.role, minimal=True),
+        'project_group_info': ProjectGroupInfo(role_binding_vo.project_group, minimal=True),
+        'labels': role_binding_vo.labels,
+        'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in role_binding_vo.tags],
+        'domain_id': role_binding_vo.domain_id,
+        'created_at': change_timestamp_type(role_binding_vo.created_at)
     }
 
-    return project_group_pb2.ProjectGroupMemberInfo(**info)
+    return project_group_pb2.ProjectGroupRoleBindingInfo(**info)
 
 
-def ProjectGroupMembersInfo(project_group_map_vos, total_count, **kwargs):
-    results = list(map(ProjectGroupMemberInfo, project_group_map_vos))
+def ProjectGroupRoleBindingsInfo(role_binding_vos, total_count, **kwargs):
+    results = list(map(ProjectGroupRoleBindingInfo, role_binding_vos))
 
-    return project_group_pb2.ProjectGroupMembersInfo(results=results, total_count=total_count)
+    return project_group_pb2.ProjectGroupRoleBindingsInfo(results=results, total_count=total_count)
 
 
 def ProjectGroupProjectInfo(project_vo: Project, minimal=False):
@@ -68,12 +73,10 @@ def ProjectGroupProjectInfo(project_vo: Project, minimal=False):
             })
 
         info.update({
-            'state': project_vo.state,
             'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in project_vo.tags],
             'domain_id': project_vo.domain_id,
             'created_by': project_vo.created_by,
-            'created_at': change_timestamp_type(project_vo.created_at),
-            'deleted_at': change_timestamp_type(project_vo.deleted_at)
+            'created_at': change_timestamp_type(project_vo.created_at)
         })
 
     return project_group_pb2.ProjectGroupProjectInfo(**info)

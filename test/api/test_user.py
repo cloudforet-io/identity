@@ -343,59 +343,6 @@ class TestUser(unittest.TestCase):
                 metadata=(('token', self.token),)
             )
 
-    def test_update_role(self, role_types=['DOMAIN', 'DOMAIN']):
-        self.test_create_user()
-        self._test_create_policy([
-                'identity.Domain.get',
-                'identity.Domain.list',
-                'identity.Project.*',
-                'identity.ProjectGroup.*',
-                'identity.User.get',
-                'identity.User.update',
-            ])
-        self._test_create_policy(['inventory.*'])
-
-        self._test_create_role([{
-            'policy_type': 'CUSTOM',
-            'policy_id': self.policies[0].policy_id}], role_types[0])
-        self._test_create_role([{
-            'policy_type': 'CUSTOM',
-            'policy_id': self.policies[1].policy_id}], role_types[1])
-
-        params = {
-            'user_id': self.user.user_id,
-            'domain_id': self.domain.domain_id,
-            'roles': list(map(lambda role: role.role_id, self.roles))
-        }
-        self.user = self.identity_v1.User.update_role(
-            params,
-            metadata=(('token', self.token),)
-        )
-
-        self._print_data(self.user, 'test_update_role')
-        self.assertEqual(len(self.roles), len(self.user.roles))
-
-    def test_update_domain_and_project_role(self):
-        self.test_update_role(['DOMAIN', 'PROJECT'])
-
-    def test_update_system_and_project_role(self):
-        with self.assertRaises(Exception):
-            self.test_update_role(['SYSTEM', 'PROJECT'])
-
-    def test_delete_role_exist_user(self):
-        self.test_update_role(['DOMAIN', 'PROJECT'])
-
-        with self.assertRaises(Exception) as e:
-            self.identity_v1.Role.delete(
-                {
-                    'role_id': self.role.role_id,
-                    'domain_id': self.domain.domain_id
-                },
-                metadata=(('token', self.token),)
-            )
-
-        self.assertIn("ERROR_EXIST_RESOURCE", str(e.exception))
-
     def test_list_user(self):
         self.test_create_user()
         self.test_create_user()
@@ -429,19 +376,6 @@ class TestUser(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }, metadata=(('token', self.token),)
         )
-        self.assertEqual(len(self.users), response.total_count)
-
-    def test_list_user_role_id(self):
-        self.test_update_role()
-
-        response = self.identity_v1.User.list({
-            'role_id': self.role.role_id,
-            'domain_id': self.domain.domain_id
-        }, metadata=(('token', self.token),)
-        )
-
-        self._print_data(response, 'test_list_user_role_id')
-
         self.assertEqual(len(self.users), response.total_count)
 
     def test_user_id_must_unique_in_domain(self):

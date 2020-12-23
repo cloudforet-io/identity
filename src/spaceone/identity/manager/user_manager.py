@@ -105,16 +105,6 @@ class UserManager(BaseManager):
 
         return user_vo
 
-    def update_role(self, params, role_vos):
-        def _rollback(old_data):
-            _LOGGER.info(f'[update_role._rollback] Revert Data : {old_data["user_id"]}')
-            user_vo.update(old_data)
-
-        user_vo: User = self.get_user(params['user_id'], params['domain_id'])
-        self.transaction.add_rollback(_rollback, user_vo.to_dict())
-
-        return user_vo.update({'roles': role_vos})
-
     def get_user(self, user_id, domain_id, only=None):
         return self.user_model.get(user_id=user_id, domain_id=domain_id, only=only)
 

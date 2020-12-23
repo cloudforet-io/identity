@@ -6,16 +6,20 @@ from spaceone.identity.model.api_key_model import APIKey
 __all__ = ['APIKeyInfo', 'APIKeysInfo']
 
 
-def APIKeyInfo(api_key_vo: APIKey, **kwargs):
+def APIKeyInfo(api_key_vo: APIKey, minimal=False, api_key=None, **kwargs):
     info = {
-        'api_key': kwargs.get('api_key'),
+        'api_key': api_key,
         'api_key_id': api_key_vo.api_key_id,
         'state': api_key_vo.state,
-        'user_id': api_key_vo.user_id,
-        'domain_id': api_key_vo.domain_id,
-        'last_accessed_at': change_timestamp_type(api_key_vo.last_accessed_at),
-        'created_at': change_timestamp_type(api_key_vo.created_at)
+        'user_id': api_key_vo.user_id
     }
+
+    if not minimal:
+        info.update({
+            'domain_id': api_key_vo.domain_id,
+            'last_accessed_at': change_timestamp_type(api_key_vo.last_accessed_at),
+            'created_at': change_timestamp_type(api_key_vo.created_at)
+        })
 
     return api_key_pb2.APIKeyInfo(**info)
 

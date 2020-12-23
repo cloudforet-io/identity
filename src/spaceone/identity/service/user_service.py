@@ -218,7 +218,6 @@ class UserService(BaseService):
                 'email': 'str',
                 'user_type': 'str',
                 'backend': 'str',
-                'role_id': 'str',
                 'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)'
             }

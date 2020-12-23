@@ -106,7 +106,8 @@ class PolicyService(BaseService):
             total_count (int)
         """
 
-        return self.policy_mgr.list_policies(params.get('query', {}))
+        query = self._append_policy_type_filter(params.get('query', {}))
+        return self.policy_mgr.list_policies(query)
 
     @transaction
     @check_required(['query', 'domain_id'])
@@ -126,5 +127,16 @@ class PolicyService(BaseService):
             total_count (int)
         """
 
-        query = params.get('query', {})
+        query = self._append_policy_type_filter(params.get('query', {}))
         return self.policy_mgr.stat_policies(query)
+
+    @staticmethod
+    def _append_policy_type_filter(query):
+        query['filter'] = query.get('filter', [])
+        query['filter'].append({
+            'k': 'policy_type',
+            'v': 'CUSTOM',
+            'o': 'eq'
+        })
+
+        return query

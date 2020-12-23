@@ -3,7 +3,6 @@ from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import user_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.identity.model.user_model import User
-from spaceone.identity.info.role_info import RoleInfo
 
 __all__ = ['UserInfo', 'UsersInfo']
 
@@ -13,8 +12,7 @@ def UserInfo(user_vo: User, minimal=False):
         'user_id': user_vo.user_id,
         'name': user_vo.name,
         'state': user_vo.state,
-        'user_type': user_vo.user_type,
-        'domain_id': user_vo.domain_id
+        'user_type': user_vo.user_type
     }
 
     if not minimal:
@@ -23,8 +21,8 @@ def UserInfo(user_vo: User, minimal=False):
             'backend': user_vo.backend,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
-            'roles': list(map(lambda role: RoleInfo(role, minimal=True), user_vo.roles)),
             'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in user_vo.tags],
+            'domain_id': user_vo.domain_id,
             'last_accessed_at': change_timestamp_type(user_vo.last_accessed_at),
             'created_at': change_timestamp_type(user_vo.created_at)
         })

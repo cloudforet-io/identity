@@ -34,7 +34,7 @@ class ServiceAccount(MongoModel):
         'minimal_fields': [
             'service_account_id',
             'name',
-            'domain_id'
+            'provider'
         ],
         'change_query_keys': {
             'project_id': 'project.project_id'

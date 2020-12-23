@@ -8,6 +8,7 @@ PROTO = {
     'spaceone.identity.api.v1.project': ['Project'],
     'spaceone.identity.api.v1.policy': ['Policy'],
     'spaceone.identity.api.v1.role': ['Role'],
+    'spaceone.identity.api.v1.role_binding': ['RoleBinding'],
     'spaceone.identity.api.v1.user': ['User'],
     'spaceone.identity.api.v1.api_key': ['APIKey'],
     'spaceone.identity.api.v1.token': ['Token'],

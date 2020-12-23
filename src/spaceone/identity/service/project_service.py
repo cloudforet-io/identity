@@ -3,8 +3,7 @@ from spaceone.core.service import *
 from spaceone.identity.error.error_project import *
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
-from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,8 +25,8 @@ class ProjectService(BaseService):
         Args:
             params (dict): {
                 'name': 'str',
-                'tags': 'list',
                 'project_group_id': 'str',
+                'tags': 'list',
                 'domain_id': 'str'
             }
 
@@ -53,8 +52,8 @@ class ProjectService(BaseService):
             params (dict): {
                 'project_id': 'str',
                 'name': 'str',
-                'tags': 'list',
                 'project_group_id': 'str',
+                'tags': 'list',
                 'domain_id': 'str'
             }
 
@@ -88,105 +87,7 @@ class ProjectService(BaseService):
         """
 
         project_vo = self.project_mgr.get_project(params['project_id'], params['domain_id'])
-
-        self._check_exist_resource(params)
         self.project_mgr.delete_project_by_vo(project_vo)
-
-    @transaction
-    @check_required(['project_id', 'user_id', 'domain_id'])
-    def add_member(self, params):
-        """ Add project member
-
-        Args:
-            params (dict): {
-                'project_id': 'str',
-                'user_id': 'str',
-                'roles': 'list',
-                'labels': 'list',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            project_member_vo (object)
-        """
-
-        domain_id = params['domain_id']
-        project_id = params['project_id']
-        user_id = params['user_id']
-
-        project_vo = self.project_mgr.get_project(project_id, domain_id)
-
-        user_vo = self._get_user(user_id, domain_id)
-
-        self._check_not_exist_member(project_vo, user_vo)
-
-        roles = self._get_roles(params.get('roles', []), domain_id)
-        labels = list(set(params.get('labels', [])))
-
-        self._check_role_type(user_vo.roles, roles)
-
-        return self.project_mgr.add_member(project_vo, user_vo, roles, labels)
-
-    @transaction
-    @check_required(['project_id', 'user_id', 'domain_id'])
-    def modify_member(self, params):
-        """ Modify project member
-
-        Args:
-            params (dict): {
-                'project_id': 'str',
-                'user_id': 'str',
-                'roles': 'list',
-                'labels': 'list',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            project_member_vo (object)
-        """
-
-        domain_id = params['domain_id']
-        project_id = params['project_id']
-        user_id = params['user_id']
-
-        project_vo = self.project_mgr.get_project(project_id, domain_id)
-        user_vo = self._get_user(user_id, domain_id)
-
-        project_member_vo = self._get_project_member(project_vo, user_vo)
-
-        roles = self._get_roles(params.get('roles', []), domain_id)
-        labels = list(set(params.get('labels', [])))
-
-        self._check_role_type(user_vo.roles, roles)
-
-        self.project_mgr.remove_member(project_vo, project_member_vo)
-        return self.project_mgr.add_member(project_vo, user_vo, roles, labels)
-
-    @transaction
-    @check_required(['project_id', 'user_id', 'domain_id'])
-    def remove_member(self, params):
-        """ Remove project member
-
-        Args:
-            params (dict): {
-                'project_id': 'str',
-                'user_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            None
-        """
-
-        domain_id = params['domain_id']
-        project_id = params['project_id']
-        user_id = params['user_id']
-
-        project_vo = self.project_mgr.get_project(project_id, domain_id)
-        user_vo = self._get_user(user_id, domain_id)
-
-        project_member_vo = self._get_project_member(project_vo, user_vo)
-        self.project_mgr.remove_member(project_vo, project_member_vo)
 
     @transaction
     @check_required(['project_id', 'domain_id'])
@@ -233,9 +134,102 @@ class ProjectService(BaseService):
         return self.project_mgr.list_projects(params.get('query', {}))
 
     @transaction
+    @check_required(['project_id', 'user_id', 'role_id', 'domain_id'])
+    def add_member(self, params):
+        """ Add project member
+
+        Args:
+            params (dict): {
+                'project_id': 'str',
+                'user_id': 'str',
+                'role_id': 'str',
+                'labels': 'list',
+                'tags': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            role_binding_vo (object)
+        """
+
+        params['resource_type'] = 'identity.User'
+        params['resource_id'] = params['user_id']
+        del params['user_id']
+
+        role_binding_mgr: RoleBindingManager = self.locator.get_manager('RoleBindingManager')
+        return role_binding_mgr.create_role_binding(params)
+
+    @transaction
+    @check_required(['project_id', 'user_id', 'domain_id'])
+    def modify_member(self, params):
+        """ Modify project member
+
+        Args:
+            params (dict): {
+                'project_id': 'str',
+                'user_id': 'str',
+                'labels': 'list',
+                'tags': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            role_binding_vo (object)
+        """
+
+        project_id = params['project_id']
+        user_id = params['user_id']
+        domain_id = params['domain_id']
+
+        project_vo = self.project_mgr.get_project(project_id, domain_id)
+
+        role_binding_mgr: RoleBindingManager = self.locator.get_manager('RoleBindingManager')
+        role_binding_vos = role_binding_mgr.get_project_role_binding('identity.User', user_id, domain_id,
+                                                                     project_vo=project_vo)
+
+        if role_binding_vos.count() == 0:
+            raise ERROR_NOT_FOUND(key='user_id', value=user_id)
+
+        return role_binding_mgr.update_role_binding_by_vo(params, role_binding_vos[0])
+
+    @transaction
+    @check_required(['project_id', 'user_id', 'domain_id'])
+    def remove_member(self, params):
+        """ Remove project member
+
+        Args:
+            params (dict): {
+                'project_id': 'str',
+                'user_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
+        project_id = params['project_id']
+        user_id = params['user_id']
+        domain_id = params['domain_id']
+
+        project_vo = self.project_mgr.get_project(project_id, domain_id)
+
+        role_binding_mgr: RoleBindingManager = self.locator.get_manager('RoleBindingManager')
+        role_binding_vos = role_binding_mgr.get_project_role_binding('identity.User', user_id, domain_id,
+                                                                     project_vo=project_vo)
+
+        if role_binding_vos.count() == 0:
+            raise ERROR_NOT_FOUND(key='user_id', value=user_id)
+
+        for role_binding_vo in role_binding_vos:
+            role_binding_mgr.delete_role_binding_by_vo(role_binding_vo)
+
+    @transaction
     @check_required(['project_id', 'domain_id'])
-    @append_query_filter(['user_id'])
-    @append_keyword_filter(['user_id', 'user_name', 'email'])
+    @change_only_key({'project_group_info': 'project_group', 'project_info': 'project', 'role_info': 'role'},
+                     key_path='query.only')
+    @append_query_filter(['project_id', 'user_id', 'role_id'])
+    @append_keyword_filter(['resource_id'])
     def list_members(self, params):
         """ List project members
 
@@ -243,29 +237,26 @@ class ProjectService(BaseService):
             params (dict): {
                 'project_id': 'str',
                 'user_id': 'str',
-                'query': 'dict',
-                'domain_id': 'str'
+                'role_id': 'str',
+                'domain_id': 'str',
+                'include_parent_member': 'bool',
+                'query': 'dict (spaceone.api.core.v1.Query)'
             }
 
         Returns:
-            results (list): 'list of project_member_vo'
+            results (list): 'list of role_binding_vo'
             total_count (int)
         """
 
+        role_binding_mgr: RoleBindingManager = self.locator.get_manager('RoleBindingManager')
+
         query = params.get('query', {})
 
-        project_vo = self.project_mgr.get_project(params['project_id'], params['domain_id'])
+        # TODO: include_parent_member filter
+        query['filter'] = list(map(self._change_filter, query.get('filter', [])))
 
-        if 'filter' not in query:
-            query['filter'] = []
-
-        query['filter'].append({
-            'k': 'project',
-            'v': project_vo,
-            'o': 'eq'
-        })
-
-        return self.project_mgr.list_project_members(query)
+        print(query)
+        return role_binding_mgr.list_role_bindings(query)
 
     @transaction
     @check_required(['query', 'domain_id'])
@@ -288,65 +279,11 @@ class ProjectService(BaseService):
         query = params.get('query', {})
         return self.project_mgr.stat_projects(query)
 
-    def _get_roles(self, role_ids, domain_id):
-        role_mgr: RoleManager = self.locator.get_manager('RoleManager')
-        role_vos, total_count = role_mgr.list_roles({
-            'filter': [{
-                'k': 'role_id',
-                'v': role_ids,
-                'o': 'in'
-            }, {
-                'k': 'domain_id',
-                'v': domain_id,
-                'o': 'eq'
-            }]
-        })
-
-        if len(role_ids) != total_count:
-            raise ERROR_NOT_FOUND(key='roles', value=str(role_ids))
-
-        return role_vos
-
-    def _check_exist_resource(self, params):
-        # TODO: Check exist resource in project group
-        pass
-
-    def _get_user(self, user_id, domain_id):
-        user_mgr: UserManager = self.locator.get_manager('UserManager')
-        return user_mgr.get_user(user_id, domain_id)
-
-    def _check_not_exist_member(self, project_vo, user_vo):
-        project_member_vos, total_count = self._list_project_members(project_vo, user_vo)
-
-        if total_count > 0:
-            raise ERROR_ALREADY_EXIST_USER_IN_PROJECT(user_id=user_vo.user_id,
-                                                      project_id=project_vo.project_id)
-
-    def _get_project_member(self, project_vo, user_vo):
-        project_member_vos, total_count = self._list_project_members(project_vo, user_vo)
-
-        if total_count == 0:
-            raise ERROR_NOT_FOUND_USER_IN_PROJECT(user_id=user_vo.user_id,
-                                                  project_id=project_vo.project_id)
-
-        return project_member_vos[0]
-
-    def _list_project_members(self, project_vo, user_vo):
-        query = {
-            'filter': [
-                {'k': 'project', 'v': project_vo, 'o': 'eq'},
-                {'k': 'user', 'v': user_vo, 'o': 'eq'}
-            ]
-        }
-
-        return self.project_mgr.list_project_members(query)
-
     @staticmethod
-    def _check_role_type(user_role_vos, project_role_vos):
-        for role_vo in user_role_vos:
-            if role_vo.role_type == 'SYSTEM':
-                raise ERROR_SYSTEM_ROLE_USER()
+    def _change_filter(condition):
+        if condition.get('key') == 'user_id':
+            condition['key'] = 'resource_id'
+        elif condition.get('k') == 'user_id':
+            condition['k'] = 'resource_id'
 
-        for role_vo in project_role_vos:
-            if role_vo.role_type != 'PROJECT':
-                raise ERROR_ONLY_PROJECT_ROLE_TYPE_ALLOWED()
+        return condition

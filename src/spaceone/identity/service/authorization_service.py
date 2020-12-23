@@ -9,6 +9,7 @@ from spaceone.identity.manager.role_manager import RoleManager
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @authentication_handler
 @event_handler
 class AuthorizationService(BaseService):

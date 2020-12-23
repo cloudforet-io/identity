@@ -152,7 +152,8 @@ class TestRole(unittest.TestCase):
             'role_type': 'PROJECT',
             'policies': list(map(lambda policy: {
                 'policy_id': policy.policy_id,
-                'policy_type': 'CUSTOM'}, self.policies)),
+                'policy_type': 'CUSTOM'
+            }, self.policies)),
             'tags': [
                 {
                     'key': 'tag_key',
@@ -214,7 +215,8 @@ class TestRole(unittest.TestCase):
 
         update_policies = list(map(lambda policy: {
             'policy_id': policy.policy_id,
-            'policy_type': 'CUSTOM'}, self.policies))
+            'policy_type': 'CUSTOM'
+        }, self.policies))
 
         self.role = self.identity_v1.Role.update(
             {
@@ -229,7 +231,7 @@ class TestRole(unittest.TestCase):
         role_info = MessageToDict(self.role, preserving_proto_field_name=True)
         self.assertEqual(role_info['policies'], update_policies)
 
-    def test_get(self):
+    def test_get_role(self):
         self.test_create_role()
 
         role = self.identity_v1.Role.get(
