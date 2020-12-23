@@ -2,6 +2,7 @@ from spaceone.core.error import *
 from spaceone.core.service import *
 from spaceone.identity.manager import RoleManager, PolicyManager
 
+
 @authentication_handler
 @authorization_handler
 @event_handler
@@ -141,8 +142,8 @@ class RoleService(BaseService):
         change_policies = []
         for policy in policies:
             if policy['policy_type'] == 'MANAGED':
-                # TODO: Check External URL
-                pass
+                policy['policy'] = policy_mgr.get_managed_policy(policy['policy_id'], domain_id)
+                del policy['policy_id']
             elif policy['policy_type'] == 'CUSTOM':
                 policy['policy'] = policy_mgr.get_policy(policy['policy_id'], domain_id)
                 del policy['policy_id']

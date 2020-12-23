@@ -5,8 +5,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 class RolePolicy(EmbeddedDocument):
     policy_type = StringField(max_length=20, choices=('MANAGED', 'CUSTOM'))
-    url = StringField(default=None, null=True)
-    policy = ReferenceField('Policy', default=None, null=True)
+    policy = ReferenceField('Policy')
 
 
 class RoleTag(EmbeddedDocument):
@@ -17,7 +16,7 @@ class RoleTag(EmbeddedDocument):
 class Role(MongoModel):
     role_id = StringField(max_length=40, generate_id='role', unique=True)
     name = StringField(max_length=255, unique_with='domain_id')
-    role_type = StringField(max_length=20)
+    role_type = StringField(max_length=20, choices=('SYSTEM', 'DOMAIN', 'PROJECT'))
     tags = ListField(EmbeddedDocumentField(RoleTag))
     policies = ListField(EmbeddedDocumentField(RolePolicy))
     domain_id = StringField(max_length=40)
@@ -31,7 +30,8 @@ class Role(MongoModel):
         ],
         'exact_fields': [
             'role_id',
-            'role_type'
+            'role_type',
+            'domain_id'
         ],
         'minimal_fields': [
             'role_id',

@@ -1,6 +1,5 @@
 from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
-from spaceone.identity.model.role_model import Role
 
 
 class UserTag(EmbeddedDocument):
@@ -18,7 +17,6 @@ class User(MongoModel):
     backend = StringField(max_length=20, choices=('LOCAL', 'EXTERNAL'))
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='UTC')
-    roles = ListField(ReferenceField('Role', reverse_delete_rule=DENY))
     tags = ListField(EmbeddedDocumentField(UserTag))
     domain_id = StringField(max_length=40)
     last_accessed_at = DateTimeField(default=None, null=True)
@@ -32,7 +30,6 @@ class User(MongoModel):
             'email',
             'language',
             'timezone',
-            'roles',
             'tags',
             'last_accessed_at'
         ],
@@ -45,20 +42,14 @@ class User(MongoModel):
         'minimal_fields': [
             'user_id',
             'name',
-            'state'
+            'state',
+            'user_type'
         ],
-        'change_query_keys': {
-            'role_id': 'roles.role_id'
-        },
-        'reference_query_keys': {
-            'roles': Role
-        },
         'ordering': ['name'],
         'indexes': [
             'state',
             'user_type',
             'backend',
-            'roles',
             'last_accessed_at',
             ('user_id', 'domain_id'),
             ('tags.key', 'tags.value')

@@ -1,6 +1,7 @@
 from spaceone.identity.service.authorization_service import AuthorizationService
 from spaceone.identity.service.user_service import UserService
 from spaceone.identity.service.role_service import RoleService
+from spaceone.identity.service.role_binding_service import RoleBindingService
 from spaceone.identity.service.api_key_service import APIKeyService
 from spaceone.identity.service.domain_service import DomainService
 from spaceone.identity.service.domain_owner_service import DomainOwnerService

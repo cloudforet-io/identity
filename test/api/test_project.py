@@ -206,15 +206,6 @@ class TestProject(unittest.TestCase):
             metadata=(('token', self.token),)
         )
 
-        self.user = self.identity_v1.User.update_role(
-            {
-                'user_id': self.user.user_id,
-                'domain_id': self.domain.domain_id,
-                'roles': [self.role.role_id]
-            },
-            metadata=(('token', self.token),)
-        )
-
         self.users.append(self.user)
 
         return self.user
@@ -481,7 +472,8 @@ class TestProject(unittest.TestCase):
         params = {
             'project_id': project.project_id,
             'user_id': user.user_id,
-            'roles': [self.role.role_id],
+            'role_id': self.role.role_id,
+            'labels': ['aaa', 'bbb'],
             'domain_id': self.domain.domain_id
         }
 
@@ -491,22 +483,27 @@ class TestProject(unittest.TestCase):
         )
 
         self._print_data(project_member, 'test_add_project_member')
-        self.assertEqual(project_member.user_info.user_id, user.user_id)
+        self.assertEqual(project_member.resource_type, 'identity.User')
+        self.assertEqual(project_member.resource_id, user.user_id)
+        self.assertEqual(project_member.role_info.role_id, self.role.role_id)
 
     def test_add_project_member_exist_member(self):
         self.test_add_project_member()
 
         params = {
-            'project_group_id': self.project.project_id,
+            'project_id': self.project.project_id,
             'user_id': self.user.user_id,
+            'role_id': self.role.role_id,
             'domain_id': self.domain.domain_id
         }
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as ctx:
             self.identity_v1.Project.add_member(
                 params,
                 metadata=(('token', self.token),)
             )
+
+        self.assertIn("ERROR_DUPLICATE_RESOURCE_IN_PROJECT", str(ctx.exception))
 
     def test_modify_project_member(self):
         self.test_add_project_member()
@@ -516,7 +513,6 @@ class TestProject(unittest.TestCase):
         params = {
             'project_id': self.project.project_id,
             'user_id': self.user.user_id,
-            'roles': [],
             'labels': labels,
             'domain_id': self.domain.domain_id
         }
@@ -581,33 +577,7 @@ class TestProject(unittest.TestCase):
                 metadata=(('token', self.token),)
             )
 
-    def test_list_project_members(self):
-        self.test_create_project()
-        self._test_create_user()
-        self._test_create_user()
-        self._test_create_user()
-
-        for user in self.users:
-            self.test_add_project_member(self.project, user)
-
-        query = {
-            'filter': [
-                {'k': 'user_name', 'v': 'test', 'o': 'contain'}
-            ]
-        }
-
-        response = self.identity_v1.Project.list_members(
-            {
-                'query': query,
-                'project_id': self.project.project_id,
-                'domain_id': self.domain.domain_id
-            },
-            metadata=(('token', self.token),)
-        )
-
-        self.assertEqual(len(self.users), response.total_count)
-
-    def test_list_project_group_members_with_user_id(self):
+    def test_list_project_members_with_user_id(self):
         self.test_create_project()
         self._test_create_user()
         self._test_create_user()
@@ -629,7 +599,7 @@ class TestProject(unittest.TestCase):
 
         self.assertEqual(1, response.total_count)
 
-    def test_list_project_group_members_not_exist_user(self):
+    def test_list_project_members_not_exist_user(self):
         self.test_create_project()
         self._test_create_user()
         self._test_create_user()

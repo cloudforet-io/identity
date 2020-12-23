@@ -21,7 +21,6 @@ class TestProjectGroup(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        print("SETUPCLASS")
         super(TestProjectGroup, cls).setUpClass()
         endpoints = cls.config.get('ENDPOINTS', {})
         cls.identity_v1 = pygrpc.client(endpoint=endpoints.get('identity', {}).get('v1'), version='v1')
@@ -213,15 +212,6 @@ class TestProjectGroup(unittest.TestCase):
         }
         self.user = self.identity_v1.User.create(
             params,
-            metadata=(('token', self.token),)
-        )
-
-        self.user = self.identity_v1.User.update_role(
-            {
-                'user_id': self.user.user_id,
-                'domain_id': self.domain.domain_id,
-                'roles': [self.role.role_id]
-            },
             metadata=(('token', self.token),)
         )
 
@@ -506,36 +496,45 @@ class TestProjectGroup(unittest.TestCase):
         if user is None:
             user = self._test_create_user()
 
+        self._test_create_role('PROJECT')
+
         if project_group is None:
             project_group = self.test_create_project_group()
 
         params = {
             'project_group_id': project_group.project_group_id,
             'user_id': user.user_id,
+            'role_id': self.role.role_id,
             'domain_id': self.domain.domain_id
         }
 
-        project_group = self.identity_v1.ProjectGroup.add_member(
+        project_group_member = self.identity_v1.ProjectGroup.add_member(
             params,
             metadata=(('token', self.token),)
         )
 
-        self.assertEqual(project_group.user_info.user_id, user.user_id)
+        self._print_data(project_group_member, 'test_add_project_group_member')
+        self.assertEqual(project_group_member.resource_type, 'identity.User')
+        self.assertEqual(project_group_member.resource_id, user.user_id)
+        self.assertEqual(project_group_member.role_info.role_id, self.role.role_id)
 
-    def test_add_project_group_member_exsit_member(self):
+    def test_add_project_group_member_exist_member(self):
         self.test_add_project_group_member()
 
         params = {
             'project_group_id': self.project_group.project_group_id,
             'user_id': self.user.user_id,
+            'role_id': self.role.role_id,
             'domain_id': self.domain.domain_id
         }
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as ctx:
             self.identity_v1.ProjectGroup.add_member(
                 params,
                 metadata=(('token', self.token),)
             )
+
+        self.assertIn("ERROR_DUPLICATE_RESOURCE_IN_PROJECT", str(ctx.exception))
 
     def test_modify_project_group_member(self):
         self.test_add_project_group_member()
@@ -545,7 +544,6 @@ class TestProjectGroup(unittest.TestCase):
         params = {
             'project_group_id': self.project_group.project_group_id,
             'user_id': self.user.user_id,
-            'roles': [],
             'labels': labels,
             'domain_id': self.domain.domain_id
         }
@@ -608,32 +606,6 @@ class TestProjectGroup(unittest.TestCase):
                 params,
                 metadata=(('token', self.token),)
             )
-
-    def test_list_project_group_members(self):
-        self.test_create_project_group()
-        self._test_create_user()
-        self._test_create_user()
-        self._test_create_user()
-
-        for user in self.users:
-            self.test_add_project_group_member(self.project_group, user)
-
-        query = {
-            'filter': [
-                {'k': 'user_name', 'v': 'test', 'o': 'contain'}
-            ]
-        }
-
-        response = self.identity_v1.ProjectGroup.list_members(
-            {
-                'query': query,
-                'project_group_id': self.project_group.project_group_id,
-                'domain_id': self.domain.domain_id
-            },
-            metadata=(('token', self.token),)
-        )
-
-        self.assertEqual(len(self.users), response.total_count)
 
     def test_list_project_group_members_2(self):
         self.test_create_project_group()

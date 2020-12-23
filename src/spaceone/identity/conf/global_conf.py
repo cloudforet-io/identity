@@ -56,6 +56,11 @@ CONNECTORS = {
             'v1': 'grpc://secret:50051'
         }
     },
+    'RepositoryConnector': {
+        'endpoint': {
+            'v1': 'grpc://repository:50051'
+        }
+    },
 }
 
 ENDPOINTS = [
