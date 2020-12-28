@@ -15,7 +15,7 @@ from spaceone.identity.manager.policy_manager import PolicyManager
 _LOGGER = logging.getLogger(__name__)
 
 
-@authentication_handler
+# @authentication_handler
 # @authorization_handler
 @event_handler
 class AuthorizationService(BaseService):
