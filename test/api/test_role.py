@@ -17,7 +17,7 @@ class TestRole(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls):
@@ -32,14 +32,22 @@ class TestRole(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestRole, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -80,8 +88,7 @@ class TestRole(unittest.TestCase):
         }
 
         issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        cls.owner_token = issue_token.access_token
 
     def setUp(self):
         self.policies = []
@@ -93,17 +100,21 @@ class TestRole(unittest.TestCase):
         print()
         for role in self.roles:
             self.identity_v1.Role.delete(
-                {'role_id': role.role_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'role_id': role.role_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete role: {role.name} ({role.role_id})')
 
         for policy in self.policies:
             self.identity_v1.Policy.delete(
-                {'policy_id': policy.policy_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'policy_id': policy.policy_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete policy: {policy.name} ({policy.policy_id})')
 
@@ -133,7 +144,7 @@ class TestRole(unittest.TestCase):
 
         self.policy = self.identity_v1.Policy.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.policies.append(self.policy)
 
@@ -164,7 +175,7 @@ class TestRole(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }
 
-        metadata = (('token', self.token),)
+        metadata = (('token', self.owner_token),)
         ext_meta = kwargs.get('meta')
 
         if ext_meta:
@@ -198,7 +209,7 @@ class TestRole(unittest.TestCase):
                 'tags': update_tags,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.role, 'test_update_role')
@@ -224,7 +235,7 @@ class TestRole(unittest.TestCase):
                 'policies': update_policies,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.policy, 'test_update_role_policies')
@@ -239,7 +250,7 @@ class TestRole(unittest.TestCase):
                 'role_id': self.role.role_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(role.name, self.role.name)
@@ -255,7 +266,7 @@ class TestRole(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.Role.delete(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_list_role_id(self):
@@ -268,7 +279,7 @@ class TestRole(unittest.TestCase):
 
         result = self.identity_v1.Role.list(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(1, result.total_count)
@@ -292,7 +303,7 @@ class TestRole(unittest.TestCase):
         }
 
         result = self.identity_v1.Role.list(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self.assertEqual(len(self.roles), result.total_count)
 
@@ -322,7 +333,7 @@ class TestRole(unittest.TestCase):
         }
 
         result = self.identity_v1.Role.stat(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self._print_data(result, 'test_stat_role')
 

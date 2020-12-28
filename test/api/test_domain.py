@@ -31,28 +31,36 @@ class TestDomain(unittest.TestCase):
 
     def tearDown(self):
         if self.owner:
-            self.identity_v1.DomainOwner.delete({
-                'domain_id': self.domain.domain_id,
-                'owner_id': self.owner_id
-            })
+            self.identity_v1.DomainOwner.delete(
+                {
+                    'domain_id': self.domain.domain_id,
+                    'owner_id': self.owner_id
+                },
+                metadata=(('token', self.owner_token),)
+            )
 
         if self.domain:
             print(f'[TearDown] Delete domain. (domain_id: {self.domain.domain_id}')
-            self.identity_v1.Domain.delete({'domain_id': self.domain.domain_id})
+            self.identity_v1.Domain.delete(
+                {
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
+            )
 
     def _create_domain_owner(self):
-        param = {
+        params = {
             'owner_id': self.owner_id,
             'password': self.owner_pw,
             'domain_id': self.domain.domain_id
         }
 
         self.owner = self.identity_v1.DomainOwner.create(
-            param
+            params
         )
 
-    def _issue_token(self):
-        token_param = {
+    def _issue_owner_token(self):
+        token_params = {
             'user_type': 'DOMAIN_OWNER',
             'user_id': self.owner_id,
             'credentials': {
@@ -61,14 +69,14 @@ class TestDomain(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }
 
-        issue_token = self.identity_v1.Token.issue(token_param)
+        issue_token = self.identity_v1.Token.issue(token_params)
         self.owner_token = issue_token.access_token
 
     def test_create_domain(self):
         """ Create Domain
         """
         name = utils.random_string()
-        param = {
+        params = {
             'name': name,
             'tags': [
                 {
@@ -80,11 +88,11 @@ class TestDomain(unittest.TestCase):
                 }
             ]
         }
-        self.domain = self.identity_v1.Domain.create(param)
+        self.domain = self.identity_v1.Domain.create(params)
         self.assertEqual(self.domain.name, name)
 
         self._create_domain_owner()
-        self._issue_token()
+        self._issue_owner_token()
 
     def test_update_domain_tag(self):
         """ Update domain tag
@@ -97,9 +105,9 @@ class TestDomain(unittest.TestCase):
                 'value': '123'
             }
         ]
-        param = {'domain_id': self.domain.domain_id, 'tags': tags}
+        params = {'domain_id': self.domain.domain_id, 'tags': tags}
         self.domain = self.identity_v1.Domain.update(
-            param,
+            params,
             metadata=(('token', self.owner_token),)
         )
         domain_info = MessageToDict(self.domain)
@@ -110,9 +118,9 @@ class TestDomain(unittest.TestCase):
         """
         self.test_create_domain()
         config = {'TEST': 'BLAH-BLAH'}
-        param = {'domain_id': self.domain.domain_id, 'config': config}
+        params = {'domain_id': self.domain.domain_id, 'config': config}
         self.domain = self.identity_v1.Domain.update(
-            param,
+            params,
             metadata=(('token', self.owner_token),)
         )
         domain_info = MessageToDict(self.domain)
@@ -156,7 +164,7 @@ class TestDomain(unittest.TestCase):
         """
         self.test_create_domain()
 
-        param = {
+        params = {
             'query': {
                 'filter': [
                     {'k': 'state', 'v': 'ENABLED', 'o': 'eq'}
@@ -165,7 +173,7 @@ class TestDomain(unittest.TestCase):
         }
 
         result = self.identity_v1.Domain.list(
-            param,
+            params,
             metadata=(('token', self.owner_token),)
         )
 
@@ -174,12 +182,12 @@ class TestDomain(unittest.TestCase):
     def test_list_domains_query_filter(self):
         self.test_create_domain()
 
-        param = {
+        params = {
             'name': self.domain.name
         }
 
         result = self.identity_v1.Domain.list(
-            param,
+            params,
             metadata=(('token', self.owner_token),)
         )
 

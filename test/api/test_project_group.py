@@ -17,7 +17,7 @@ class TestProjectGroup(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls):
@@ -32,14 +32,22 @@ class TestProjectGroup(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestProjectGroup, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -80,8 +88,7 @@ class TestProjectGroup(unittest.TestCase):
         }
 
         issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        cls.owner_token = issue_token.access_token
 
     def setUp(self):
         self.project = None
@@ -102,49 +109,61 @@ class TestProjectGroup(unittest.TestCase):
         for user in self.users:
             print(f'[tearDown] Delete User. {user.user_id}')
             self.identity_v1.User.delete(
-                {'user_id': user.user_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'user_id': user.user_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
         for role in self.roles:
             print(f'[tearDown] Delete Role. {role.role_id}')
             self.identity_v1.Role.delete(
-                {'role_id': role.role_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'role_id': role.role_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
         for policy in self.policies:
             print(f'[tearDown] Delete Policy. {policy.policy_id}')
             self.identity_v1.Policy.delete(
-                {'policy_id': policy.policy_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'policy_id': policy.policy_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
         for project in self.projects:
             print(f'[tearDown] Delete Project. {project.project_id}')
             self.identity_v1.Project.delete(
-                {'project_id': project.project_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'project_id': project.project_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
-        for project_group in self.project_groups:
+        for project_group in reversed(self.project_groups):
             print(f'[tearDown] Delete Project Group. {project_group.project_group_id}')
             self.identity_v1.ProjectGroup.delete(
-                {'project_group_id': project_group.project_group_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'project_group_id': project_group.project_group_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
         for parent_project_group in list(reversed(self.parent_project_groups)):
             print(f'[tearDown] Delete Project Group. {parent_project_group.project_group_id}')
             self.identity_v1.ProjectGroup.delete(
-                {'project_group_id': parent_project_group.project_group_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'project_group_id': parent_project_group.project_group_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
     def _print_data(self, message, description=None):
@@ -170,7 +189,7 @@ class TestProjectGroup(unittest.TestCase):
 
         self.policy = self.identity_v1.Policy.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.policies.append(self.policy)
@@ -191,7 +210,7 @@ class TestProjectGroup(unittest.TestCase):
 
         self.role = self.identity_v1.Role.create(
             params,
-            metadata=(('token', self.token),))
+            metadata=(('token', self.owner_token),))
 
         self.roles.append(self.role)
 
@@ -212,7 +231,7 @@ class TestProjectGroup(unittest.TestCase):
         }
         self.user = self.identity_v1.User.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.users.append(self.user)
@@ -245,7 +264,7 @@ class TestProjectGroup(unittest.TestCase):
 
         self.project = self.identity_v1.Project.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.projects.append(self.project)
@@ -273,7 +292,7 @@ class TestProjectGroup(unittest.TestCase):
 
         self.project_group = self.identity_v1.ProjectGroup.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.project_groups.append(self.project_group)
         self.assertEqual(self.project_group.name, name)
@@ -292,7 +311,7 @@ class TestProjectGroup(unittest.TestCase):
 
         self.parent_project_group = self.identity_v1.ProjectGroup.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.parent_project_groups.append(self.parent_project_group)
         self.assertEqual(self.parent_project_group.name, name)
@@ -318,7 +337,7 @@ class TestProjectGroup(unittest.TestCase):
 
         self.project_group = self.identity_v1.ProjectGroup.update(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(self.project_group.name, name)
 
@@ -336,7 +355,7 @@ class TestProjectGroup(unittest.TestCase):
 
         self.project_group = self.identity_v1.ProjectGroup.update(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(self.project_group.parent_project_group_info.project_group_id,
@@ -354,7 +373,7 @@ class TestProjectGroup(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.ProjectGroup.update(
                 param,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_delete_project_group_exist_child(self):
@@ -366,7 +385,7 @@ class TestProjectGroup(unittest.TestCase):
                     'project_group_id': self.parent_project_group.project_group_id,
                     'domain_id': self.domain.domain_id
                  },
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
         self.assertIn("ERROR_EXIST_RESOURCE", str(e.exception))
@@ -378,7 +397,7 @@ class TestProjectGroup(unittest.TestCase):
                 'project_group_id': self.project_group.project_group_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(self.project_group.project_group_id,
@@ -393,7 +412,7 @@ class TestProjectGroup(unittest.TestCase):
                     'project_group_id': 'jihyungsong',
                     'domain_id': self.domain.domain_id
                 },
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_list_project_groups_with_parent(self):
@@ -423,7 +442,7 @@ class TestProjectGroup(unittest.TestCase):
 
         project_groups = self.identity_v1.ProjectGroup.list(
             {'query': query, 'domain_id': self.domain.domain_id},
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(parent_num, project_groups.total_count)
@@ -452,7 +471,7 @@ class TestProjectGroup(unittest.TestCase):
 
         project_groups = self.identity_v1.ProjectGroup.list(
             {'query': query, 'domain_id': self.domain.domain_id},
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(num, project_groups.total_count)
@@ -470,7 +489,7 @@ class TestProjectGroup(unittest.TestCase):
         }
         project_group = self.identity_v1.ProjectGroup.list(
             {'query': query, 'domain_id': self.domain.domain_id},
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(num, project_group.total_count)
 
@@ -488,7 +507,7 @@ class TestProjectGroup(unittest.TestCase):
 
         project_group = self.identity_v1.ProjectGroup.list(
             {'query': query, 'domain_id': self.domain.domain_id},
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(num, project_group.total_count)
 
@@ -510,7 +529,7 @@ class TestProjectGroup(unittest.TestCase):
 
         project_group_member = self.identity_v1.ProjectGroup.add_member(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(project_group_member, 'test_add_project_group_member')
@@ -528,13 +547,13 @@ class TestProjectGroup(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }
 
-        with self.assertRaises(Exception) as ctx:
+        with self.assertRaises(Exception) as cm:
             self.identity_v1.ProjectGroup.add_member(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
-        self.assertIn("ERROR_DUPLICATE_RESOURCE_IN_PROJECT", str(ctx.exception))
+        self.assertIn("ERROR_DUPLICATE_RESOURCE_IN_PROJECT", str(cm.exception))
 
     def test_modify_project_group_member(self):
         self.test_add_project_group_member()
@@ -550,7 +569,7 @@ class TestProjectGroup(unittest.TestCase):
 
         project_member = self.identity_v1.ProjectGroup.modify_member(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(project_member, 'test_modify_project_group_member')
@@ -568,7 +587,7 @@ class TestProjectGroup(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.ProjectGroup.modify_member(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_remove_project_group_member(self):
@@ -580,7 +599,7 @@ class TestProjectGroup(unittest.TestCase):
                 'user_id': self.user.user_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         project_members = self.identity_v1.ProjectGroup.list_members(
@@ -588,7 +607,7 @@ class TestProjectGroup(unittest.TestCase):
                 'project_group_id': self.project_group.project_group_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(0, project_members.total_count)
@@ -604,7 +623,7 @@ class TestProjectGroup(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.ProjectGroup.remove_member(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_list_project_group_members_2(self):
@@ -621,7 +640,7 @@ class TestProjectGroup(unittest.TestCase):
                 'project_group_id': self.project_group.project_group_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(len(self.users), response.total_count)
@@ -643,7 +662,7 @@ class TestProjectGroup(unittest.TestCase):
 
         response = self.identity_v1.ProjectGroup.list_members(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(1, response.total_count)
@@ -664,7 +683,7 @@ class TestProjectGroup(unittest.TestCase):
         }
         response = self.identity_v1.ProjectGroup.list_members(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(0, response.total_count)
@@ -685,7 +704,7 @@ class TestProjectGroup(unittest.TestCase):
                 'project_group_id': self.project_groups[0].project_group_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(response, 'test_list_projects_in_project')
@@ -716,7 +735,7 @@ class TestProjectGroup(unittest.TestCase):
                 'project_group_id': self.parent_project_groups[0].project_group_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(response, 'test_list_projects_in_project_recursive')
@@ -755,7 +774,7 @@ class TestProjectGroup(unittest.TestCase):
         }
 
         result = self.identity_v1.ProjectGroup.stat(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self._print_data(result, 'test_stat_project_group')
 

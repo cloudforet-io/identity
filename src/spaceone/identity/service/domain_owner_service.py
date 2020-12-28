@@ -4,8 +4,9 @@ from spaceone.core.error import *
 from spaceone.identity.manager import DomainOwnerManager
 
 
-#@authentication_handler
-#@authorization_handler
+@authentication_handler(exclude=['create'])
+@authorization_handler(exclude=['create'])
+@mutation_handler
 @event_handler
 class DomainOwnerService(BaseService):
 
@@ -38,7 +39,7 @@ class DomainOwnerService(BaseService):
 
         return self.domain_owner_mgr.create_owner(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['owner_id', 'domain_id'])
     def update(self, params):
         """ Update domain owner
@@ -63,7 +64,7 @@ class DomainOwnerService(BaseService):
 
         return self.domain_owner_mgr.update_owner(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id', 'owner_id'])
     def delete(self, params):
         """ Delete domain owner
@@ -79,7 +80,7 @@ class DomainOwnerService(BaseService):
         """
         self.domain_owner_mgr.delete_owner(params['domain_id'], params['owner_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     def get(self, params):
         """ Delete domain owner

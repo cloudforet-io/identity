@@ -17,7 +17,7 @@ class TestAuthorization(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -32,14 +32,22 @@ class TestAuthorization(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         super(TestAuthorization, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -70,7 +78,7 @@ class TestAuthorization(unittest.TestCase):
 
     @classmethod
     def _issue_owner_token(cls):
-        token_params = {
+        token_param = {
             'user_type': 'DOMAIN_OWNER',
             'user_id': cls.owner_id,
             'credentials': {
@@ -79,43 +87,66 @@ class TestAuthorization(unittest.TestCase):
             'domain_id': cls.domain.domain_id
         }
 
-        issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        issue_token = cls.identity_v1.Token.issue(token_param)
+        cls.owner_token = issue_token.access_token
 
     def setUp(self) -> None:
-        self.user = None
-        self.users = []
         self.policy = None
         self.policies = []
         self.role = None
         self.roles = []
+        self.user = None
+        self.users = []
+        self.project_groups = []
+        self.project_group = None
+        self.projects = []
+        self.project = None
+        self.role_binding = None
+        self.role_bindings = []
 
     def tearDown(self) -> None:
         print()
+        for role_binding in self.role_bindings:
+            print(f'[tearDown] Delete Role Binding. {role_binding.role_binding_id}')
+            self.identity_v1.RoleBinding.delete({
+                'role_binding_id': role_binding.role_binding_id,
+                'domain_id': self.domain.domain_id
+            }, metadata=(('token', self.owner_token),))
+
+        for project in self.projects:
+            print(f'>> delete project: {project.name} ({project.project_id})')
+            self.identity_v1.Project.delete({
+                'project_id': project.project_id,
+                'domain_id': self.domain.domain_id
+            }, metadata=(('token', self.owner_token),))
+
+        for project_group in reversed(self.project_groups):
+            print(f'>> delete project group: {project_group.name} ({project_group.project_group_id})')
+            self.identity_v1.ProjectGroup.delete({
+                'project_group_id': project_group.project_group_id,
+                'domain_id': self.domain.domain_id
+            }, metadata=(('token', self.owner_token),))
+
         for user in self.users:
             print(f'[tearDown] Delete User. {user.user_id}')
-            self.identity_v1.User.delete(
-                {'user_id': user.user_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
-            )
+            self.identity_v1.User.delete({
+                'user_id': user.user_id,
+                'domain_id': self.domain.domain_id
+            }, metadata=(('token', self.owner_token),))
 
         for role in self.roles:
             print(f'[tearDown] Delete Role. {role.role_id}')
-            self.identity_v1.Role.delete(
-                {'role_id': role.role_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
-            )
+            self.identity_v1.Role.delete({
+                'role_id': role.role_id,
+                'domain_id': self.domain.domain_id
+            }, metadata=(('token', self.owner_token),))
 
         for policy in self.policies:
             print(f'[tearDown] Delete Policy. {policy.policy_id}')
-            self.identity_v1.Policy.delete(
-                {'policy_id': policy.policy_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
-            )
+            self.identity_v1.Policy.delete({
+                'policy_id': policy.policy_id,
+                'domain_id': self.domain.domain_id
+            }, metadata=(('token', self.owner_token),))
 
     def _print_data(self, message, description=None):
         print()
@@ -133,7 +164,7 @@ class TestAuthorization(unittest.TestCase):
 
         self.policy = self.identity_v1.Policy.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.policies.append(self.policy)
@@ -148,7 +179,7 @@ class TestAuthorization(unittest.TestCase):
 
         self.role = self.identity_v1.Role.create(
             params,
-            metadata=(('token', self.token),))
+            metadata=(('token', self.owner_token),))
 
         self.roles.append(self.role)
 
@@ -165,37 +196,113 @@ class TestAuthorization(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }
 
-        user = self.identity_v1.User.create(
+        self.user = self.identity_v1.User.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
-        self.user = user
-        self.users.append(user)
-        self.assertEqual(self.user.name, params['name'])
+        self.users.append(self.user)
 
-    def _test_update_domain_role(self):
-        self._test_create_policy([
-            'identity.Domain.get',
-            'identity.Domain.list',
-            'identity.Project.*',
-            'identity.ProjectGroup.*',
-            'identity.User.get',
-            'identity.User.update',
-        ])
+    def _test_create_project_group(self, project_group_id=None):
+        params = {
+            'name': utils.random_string(),
+            'domain_id': self.domain.domain_id,
+            'parent_project_group_id': project_group_id
+        }
+
+        self.project_group = self.identity_v1.ProjectGroup.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+
+        self.project_groups.append(self.project_group)
+
+    def _test_create_project(self, project_group_id=None):
+        if project_group_id is None:
+            self._test_create_project_group()
+
+        params = {
+            'name': utils.random_string(),
+            'domain_id': self.domain.domain_id
+        }
+
+        if project_group_id is None:
+            params['project_group_id'] = self.project_group.project_group_id
+        else:
+            params['project_group_id'] = project_group_id
+
+        self.project = self.identity_v1.Project.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+        self.projects.append(self.project)
+
+    def _test_create_domain_role_binding(self, permissions=None):
+        if permissions is None:
+            permissions = ['*']
+
+        self._test_create_policy(permissions)
         self._test_create_role([{
             'policy_type': 'CUSTOM',
             'policy_id': self.policy.policy_id}], 'DOMAIN')
 
         params = {
-            'user_id': self.user.user_id,
+            'resource_type': 'identity.User',
+            'resource_id': self.user.user_id,
             'domain_id': self.domain.domain_id,
-            'roles': list(map(lambda role: role.role_id, self.roles))
+            'role_id': self.role.role_id
         }
-        self.user = self.identity_v1.User.update_role(
+        self.role_binding = self.identity_v1.RoleBinding.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
+        self.role_bindings.append(self.role_binding)
+        self._print_data(self.user, 'test_update_domain_role')
 
+    def _test_create_system_role_binding(self, permissions=None):
+        if permissions is None:
+            permissions = ['*']
+
+        self._test_create_policy(permissions)
+        self._test_create_role([{
+            'policy_type': 'CUSTOM',
+            'policy_id': self.policy.policy_id}], 'SYSTEM')
+
+        params = {
+            'resource_type': 'identity.User',
+            'resource_id': self.user.user_id,
+            'domain_id': self.domain.domain_id,
+            'role_id': self.role.role_id
+        }
+        self.role_binding = self.identity_v1.RoleBinding.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+        self.role_bindings.append(self.role_binding)
+        self._print_data(self.user, 'test_update_domain_role')
+
+    def _test_create_project_role_binding(self, project_id=None, project_group_id=None, permissions=None):
+        if permissions is None:
+            permissions = ['*']
+
+        self._test_create_policy(permissions)
+
+        self._test_create_role([{
+            'policy_type': 'CUSTOM',
+            'policy_id': self.policy.policy_id}], 'PROJECT')
+
+        params = {
+            'resource_type': 'identity.User',
+            'resource_id': self.user.user_id,
+            'domain_id': self.domain.domain_id,
+            'role_id': self.role.role_id,
+            'project_id': project_id,
+            'project_group_id': project_group_id
+        }
+        self.role_binding = self.identity_v1.RoleBinding.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+        self.role_bindings.append(self.role_binding)
         self._print_data(self.user, 'test_update_domain_role')
 
     def _test_issue_user_token(self):
@@ -211,46 +318,508 @@ class TestAuthorization(unittest.TestCase):
         response = self.identity_v1.Token.issue(token_params)
         self.user_token = response.access_token
 
-    def test_check_domain_owner_permissions(self):
-        """ Check Domain Owner Permissions
-        """
-
+    def test_authorization_verify_no_roles(self):
         self._test_create_user()
-        user = self.identity_v1.User.get(
-            {
-                'user_id': self.user.user_id,
-                'domain_id': self.domain.domain_id
-            },
-            metadata=(('token', self.token),)
-        )
-
-        self.assertEqual(user.user_id, self.user.user_id)
-
-    def test_authorization_verify_domain_role(self):
-        """ Verify Authorization
-        """
-
-        self._test_create_user('domain_user@mz.co.kr')
-        self._test_update_domain_role()
         self._test_issue_user_token()
 
         params = {
             'service': 'identity',
             'resource': 'User',
             'verb': 'get',
-            'parameter': {
-                'domain_id': self.domain.domain_id,
-                'test': 1,
-                'test2': 2.0
-            }
+            'scope': 'DOMAIN'
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_domain_role_no_permissions(self):
+        self._test_create_user()
+        self._test_create_domain_role_binding(['identity.Domain.*'])
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN'
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_domain_role_with_no_domain_id(self):
+        self._test_create_user()
+        self._test_create_domain_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN'
         }
 
         response = self.identity_v1.Authorization.verify(
             params,
             metadata=(('token', self.user_token),))
 
-        print(response)
-        self._print_data(response, 'test_authorization_verify')
+        self._print_data(response, 'test_authorization_verify_domain_role_with_no_domain_id')
+        self.assertEqual('DOMAIN', response.role_type)
+
+    def test_authorization_verify_domain_role_with_same_domain_id(self):
+        self._test_create_user()
+        self._test_create_domain_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN',
+            'domain_id': self.domain.domain_id
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_domain_role_with_same_domain_id')
+        self.assertEqual('DOMAIN', response.role_type)
+
+    def test_authorization_verify_domain_role_with_other_domain_id(self):
+        self._test_create_user()
+        self._test_create_domain_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN',
+            'domain_id': utils.generate_id('domain')
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_system_role_no_permissions(self):
+        self._test_create_user()
+        self._test_create_domain_role_binding(['identity.Domain.get_public_key'])
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN'
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_domain_role_access_system_api(self):
+        self._test_create_user()
+        self._test_create_domain_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'SYSTEM',
+            'domain_id': utils.generate_id('domain')
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_domain_role_access_project_api(self):
+        self._test_create_user()
+        self._test_create_domain_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'project_id': utils.generate_id('project')
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_domain_role_access_project_api')
+        self.assertEqual('DOMAIN', response.role_type)
+
+    def test_authorization_verify_system_role_with_no_domain_id(self):
+        self._test_create_user()
+        self._test_create_system_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'SYSTEM'
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_system_role_with_no_domain_id')
+        self.assertEqual('SYSTEM', response.role_type)
+
+    def test_authorization_verify_system_role_with_other_domain_id(self):
+        self._test_create_user()
+        self._test_create_system_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'SYSTEM',
+            'domain_id': utils.generate_id('domain')
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_system_role_with_other_domain_id')
+        self.assertEqual('SYSTEM', response.role_type)
+
+    def test_authorization_verify_system_role_access_domain_api(self):
+        self._test_create_user()
+        self._test_create_system_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN',
+            'domain_id': utils.generate_id('domain')
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_system_role_access_domain_api')
+        self.assertEqual('SYSTEM', response.role_type)
+
+    def test_authorization_verify_system_role_access_project_api(self):
+        self._test_create_user()
+        self._test_create_system_role_binding()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'domain_id': utils.generate_id('domain')
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_system_role_access_project_api')
+        self.assertEqual('SYSTEM', response.role_type)
+
+    def test_authorization_verify_project_role_no_permissions(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id, permissions=['identity.Domain.*'])
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN'
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_project_role_with_no_project_id(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT'
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_project_role_with_no_project_id')
+        self.assertEqual('PROJECT', response.role_type)
+
+    def test_authorization_verify_project_role_with_no_domain_id(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'project_id': self.project.project_id
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_project_role_with_no_domain_id')
+        self.assertEqual('PROJECT', response.role_type)
+
+    def test_authorization_verify_project_role_with_other_domain_id(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'domain_id': utils.generate_id('domain'),
+            'project_id': self.project.project_id
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_project_role_with_other_project_id(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'domain_id': self.domain.domain_id,
+            'project_id': utils.generate_id('project')
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_project_role_with_same_project_id(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'project_id': self.project.project_id
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_project_role_with_same_project_id')
+        self.assertEqual('PROJECT', response.role_type)
+
+    def test_authorization_verify_project_role_with_same_project_group_id(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_group_id=self.project_group.project_group_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'project_group_id': self.project_group.project_group_id
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_project_role_with_same_project_group_id')
+        self.assertEqual('PROJECT', response.role_type)
+
+    def test_authorization_verify_project_role_with_child_project_group_id(self):
+        self._test_create_user()
+        self._test_create_project_group()
+        self._test_create_project_group(self.project_group.project_group_id)
+        self._test_create_project_group(self.project_group.project_group_id)
+        self._test_create_project(self.project_group.project_group_id)
+        self._test_create_project(self.project_group.project_group_id)
+        self._test_create_project(self.project_group.project_group_id)
+        self._test_create_project_role_binding(project_group_id=self.project_groups[0].project_group_id,
+                                               permissions=['identity.User.*'])
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'project_group_id': self.project_group.project_group_id
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_project_role_with_no_domain_id_and_project_id')
+        self.assertEqual('PROJECT', response.role_type)
+
+    def test_authorization_verify_project_role_with_child_project_id(self):
+        self._test_create_user()
+        self._test_create_project_group()
+        self._test_create_project_group(self.project_group.project_group_id)
+        self._test_create_project_group(self.project_group.project_group_id)
+        self._test_create_project(self.project_group.project_group_id)
+        self._test_create_project(self.project_group.project_group_id)
+        self._test_create_project(self.project_group.project_group_id)
+        self._test_create_project_role_binding(project_group_id=self.project_groups[0].project_group_id,
+                                               permissions=['identity.User.*'])
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'PROJECT',
+            'project_id': self.project.project_id
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_project_role_with_no_domain_id_and_project_id')
+        self.assertEqual('PROJECT', response.role_type)
+
+    # def test_authorization_verify_project_role_with_child_override_project_role(self):
+    #     self._test_create_user()
+    #     self._test_create_project_group()
+    #     self._test_create_project_group(self.project_group.project_group_id)
+    #     self._test_create_project_group(self.project_group.project_group_id)
+    #     self._test_create_project(self.project_group.project_group_id)
+    #     self._test_create_project(self.project_group.project_group_id)
+    #     self._test_create_project(self.project_group.project_group_id)
+    #     self._test_create_project_role_binding(project_group_id=self.project_groups[0].project_group_id,
+    #                                            permissions=['identity.User.*'])
+    #     self._test_create_project_role_binding(project_id=self.project.project_id,
+    #                                            permissions=['identity.Domain.*'])
+    #     self._test_issue_user_token()
+    #
+    #     params = {
+    #         'service': 'identity',
+    #         'resource': 'User',
+    #         'verb': 'get',
+    #         'scope': 'PROJECT',
+    #         'project_id': self.project.project_id
+    #     }
+    #
+    #     response = self.identity_v1.Authorization.verify(
+    #         params,
+    #         metadata=(('token', self.user_token),))
+    #
+    #     self._print_data(response, 'test_authorization_verify_project_role_with_child_override_project_role')
+    #     self.assertEqual('PROJECT', response.role_type)
+
+    def test_authorization_verify_project_role_access_system_api(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'SYSTEM',
+            'domain_id': utils.generate_id('domain')
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_project_role_access_domain_api(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN',
+            'domain_id': utils.generate_id('domain')
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_project_role_get_user(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'user_id': self.user.user_id,
+            'domain_id': self.domain.domain_id
+        }
+
+        response = self.identity_v1.User.get(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_project_role_get_user')
 
 
 if __name__ == "__main__":

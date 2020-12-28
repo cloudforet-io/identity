@@ -1,4 +1,5 @@
 import logging
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.identity.model.project_model import Project
 from spaceone.identity.model.project_group_model import ProjectGroup
@@ -34,6 +35,14 @@ class ProjectManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, project_vo.to_dict())
 
+        if 'project_group' in params:
+            domain_id = project_vo.project_group.domain_id
+            new_project_group_id = params['project_group'].project_group_id
+            old_project_group_id = project_vo.project_group.project_group_id
+
+            cache.delete_pattern(f'project-group-children:{domain_id}:{new_project_group_id}')
+            cache.delete_pattern(f'project-group-children:{domain_id}:{old_project_group_id}')
+
         return project_vo.update(params)
 
     def delete_project(self, project_id, domain_id):
@@ -42,7 +51,16 @@ class ProjectManager(BaseManager):
 
     @staticmethod
     def delete_project_by_vo(project_vo):
+        domain_id = project_vo.domain_id
+        if project_vo.project_group:
+            project_group_id = project_vo.project_group.project_group_id
+        else:
+            project_group_id = None
+
         project_vo.delete()
+
+        if project_group_id:
+            cache.delete_pattern(f'project-group-children:{domain_id}:{project_group_id}')
 
     def get_project(self, project_id, domain_id, only=None):
         return self.project_model.get(project_id=project_id, domain_id=domain_id, only=only)

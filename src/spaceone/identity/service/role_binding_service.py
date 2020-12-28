@@ -5,6 +5,7 @@ from spaceone.identity.manager import RoleBindingManager, RoleManager, ProjectMa
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class RoleBindingService(BaseService):
 
@@ -12,7 +13,7 @@ class RoleBindingService(BaseService):
         super().__init__(metadata)
         self.role_binding_mgr: RoleBindingManager = self.locator.get_manager('RoleBindingManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['resource_type', 'resource_id', 'role_id', 'domain_id'])
     def create(self, params):
         """ Create role binding
@@ -35,7 +36,7 @@ class RoleBindingService(BaseService):
 
         return self.role_binding_mgr.create_role_binding(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['role_binding_id', 'domain_id'])
     def update(self, params):
         """ Update role binding
@@ -54,7 +55,7 @@ class RoleBindingService(BaseService):
 
         return self.role_binding_mgr.update_role_binding(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['role_binding_id', 'domain_id'])
     def delete(self, params):
         """ Delete role binding
@@ -71,7 +72,7 @@ class RoleBindingService(BaseService):
 
         self.role_binding_mgr.delete_role_binding(params['role_binding_id'], params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['role_binding_id', 'domain_id'])
     @change_only_key({'project_group_info': 'project_group', 'project_info': 'project', 'role_info': 'role'})
     def get(self, params):
@@ -91,7 +92,7 @@ class RoleBindingService(BaseService):
         return self.role_binding_mgr.get_role_binding(params['role_binding_id'], params['domain_id'],
                                                       params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @change_only_key({'project_group_info': 'project_group', 'project_info': 'project', 'role_info': 'role'},
                      key_path='query.only')
@@ -122,7 +123,7 @@ class RoleBindingService(BaseService):
 
         return self.role_binding_mgr.list_role_bindings(params.get('query', {}))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
     @change_tag_filter('tags')

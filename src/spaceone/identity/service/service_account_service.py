@@ -9,6 +9,7 @@ from spaceone.identity.manager.provider_manager import ProviderManager
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class ServiceAccountService(BaseService):
 
@@ -16,7 +17,7 @@ class ServiceAccountService(BaseService):
         super().__init__(*args, **kwargs)
         self.service_account_mgr: ServiceAccountManager = self.locator.get_manager('ServiceAccountManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['name', 'data', 'provider', 'domain_id'])
     def create(self, params):
         """
@@ -41,7 +42,7 @@ class ServiceAccountService(BaseService):
 
         return self.service_account_mgr.create_service_account(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
     def update(self, params):
         """
@@ -84,7 +85,7 @@ class ServiceAccountService(BaseService):
 
         return service_account_vo
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
     def delete(self, params):
         """
@@ -105,7 +106,7 @@ class ServiceAccountService(BaseService):
         self.service_account_mgr.delete_service_account_secrets(service_account_id, domain_id)
         self.service_account_mgr.delete_service_account(service_account_id, domain_id)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
     @change_only_key({'project_info': 'project'})
     def get(self, params):
@@ -124,7 +125,8 @@ class ServiceAccountService(BaseService):
         return self.service_account_mgr.get_service_account(params['service_account_id'], params['domain_id'],
                                                             params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT',
+                              'mutation.append_parameter': {'project_id': 'authorization.projects'}})
     @check_required(['domain_id'])
     @change_only_key({'project_info': 'project'}, key_path='query.only')
     @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id'])
@@ -150,7 +152,7 @@ class ServiceAccountService(BaseService):
         print(params)
         return self.service_account_mgr.list_service_accounts(params.get('query', {}))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
     @change_tag_filter('tags')

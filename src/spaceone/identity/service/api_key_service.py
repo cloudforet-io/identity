@@ -1,8 +1,10 @@
 from spaceone.core.service import *
 from spaceone.identity.manager import APIKeyManager, UserManager
 
-#@authentication_handler
-#@authorization_handler
+
+@authentication_handler
+@authorization_handler
+@mutation_handler
 @event_handler
 class APIKeyService(BaseService):
 
@@ -10,7 +12,7 @@ class APIKeyService(BaseService):
         super().__init__(metadata)
         self.api_key_mgr: APIKeyManager = self.locator.get_manager('APIKeyManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'domain_id'])
     def create(self, params):
         """ Create api key
@@ -34,7 +36,7 @@ class APIKeyService(BaseService):
 
         return self.api_key_mgr.create_api_key(user_vo, domain_id)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['api_key_id', 'domain_id'])
     def enable(self, params):
         """ Enable api key
@@ -51,7 +53,7 @@ class APIKeyService(BaseService):
 
         return self.api_key_mgr.enable_api_key(params['api_key_id'], params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['api_key_id', 'domain_id'])
     def disable(self, params):
         """ Disable api key
@@ -68,7 +70,7 @@ class APIKeyService(BaseService):
 
         return self.api_key_mgr.disable_api_key(params['api_key_id'], params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['api_key_id', 'domain_id'])
     def delete(self, params):
         """ Delete api key
@@ -85,7 +87,7 @@ class APIKeyService(BaseService):
 
         self.api_key_mgr.delete_api_key(params['api_key_id'], params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['api_key_id', 'domain_id'])
     def get(self, params):
         """ Get api key
@@ -103,7 +105,7 @@ class APIKeyService(BaseService):
 
         return self.api_key_mgr.get_api_key(params['api_key_id'], params['domain_id'], params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['api_key_id', 'state', 'user_id', 'domain_id'])
     @append_keyword_filter(['api_key_id', 'user_id'])
@@ -126,7 +128,7 @@ class APIKeyService(BaseService):
 
         return self.api_key_mgr.list_api_keys(params.get('query', {}))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
     @append_keyword_filter(['api_key_id', 'user_id'])

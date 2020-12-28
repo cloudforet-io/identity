@@ -14,8 +14,8 @@ class TestAuthentication(unittest.TestCase):
 
     pp = pprint.PrettyPrinter(indent=4)
     domain = None
+    api_key_info = None
     api_key = None
-    api_key_obj = None
     identity_v1 = None
     owner_id = None
     owner_pw = utils.generate_password()
@@ -29,59 +29,75 @@ class TestAuthentication(unittest.TestCase):
                                         version='v1')
         cls._create_domain()
         cls._create_domain_owner()
-        cls._owner_issue_token()
+        cls._issue_owner_token()
 
     @classmethod
     def tearDownClass(cls):
         super(TestAuthentication, cls).tearDownClass()
 
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
 
-        if cls.domain:
-            cls.identity_v1.Domain.delete(
-                {'domain_id': cls.domain.domain_id},
-                metadata=(('token', cls.api_key),)
+        cls.identity_v1.Domain.delete(
+            {
+                'domain_id': cls.domain.domain_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
+
+        if cls.api_key_info:
+            cls.identity_v1.APIKey.delete(
+                {
+                    'api_key_id': cls.api_key_info.api_key_id
+                },
+                metadata=(('token', cls.owner_token),)
             )
-        if cls.api_key_obj:
-            cls.identity_v1.APIKey.delete({'api_key_id': cls.api_key_obj.api_key_id})
 
     @classmethod
     def _create_domain(cls):
         name = utils.random_string()
-        param = {
+        params = {
             'name': name
         }
-        cls.domain = cls.identity_v1.Domain.create(param)
+        cls.domain = cls.identity_v1.Domain.create(
+            params,
+            metadata=(('token', cls.owner_token),)
+        )
 
     @classmethod
     def _create_api_key(cls):
-        param = {
+        params = {
             'domain_id': cls.domain.domain_id
         }
-        api_key_vo = cls.identity_v1.APIKey.create(param)
-        cls.api_key_obj = api_key_vo
-        cls.api_key = api_key_vo.api_key
+        api_key_info = cls.identity_v1.APIKey.create(
+            params,
+            metadata=(('token', cls.owner_token),)
+        )
+        cls.api_key_info = api_key_info
+        cls.api_key = api_key_info.api_key
 
     @classmethod
     def _create_domain_owner(cls):
         cls.owner_id = utils.random_string()
 
-        param = {
+        params = {
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
             'domain_id': cls.domain.domain_id
         }
 
         owner = cls.identity_v1.DomainOwner.create(
-            param
+            params
         )
         cls.domain_owner = owner
 
     @classmethod
-    def _owner_issue_token(cls):
+    def _issue_owner_token(cls):
         token_param = {
             'user_type': 'DOMAIN_OWNER',
             'user_id': cls.owner_id,
@@ -94,10 +110,9 @@ class TestAuthentication(unittest.TestCase):
         issue_token = cls.identity_v1.Token.issue(token_param)
         cls.owner_token = issue_token.access_token
 
-
     def setUp(self):
         self.user = None
-        self.user_param = None
+        self.user_params = None
         self.token = None
 
     def tearDown(self):
@@ -171,10 +186,10 @@ class TestAuthentication(unittest.TestCase):
         self._get_domain()
 
     def test_get_public_key(self):
-        param = {
+        params = {
             'domain_id': self.domain.domain_id
         }
-        secret = self.identity_v1.Domain.get_public_key(param)
+        secret = self.identity_v1.Domain.get_public_key(params)
         self.assertEqual(self.domain.domain_id, secret.domain_id)
 
         key = json.loads(secret.public_key)

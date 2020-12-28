@@ -17,7 +17,6 @@ def RolePolicyInfo(role_policy_vo: RolePolicy):
 
 
 def RoleInfo(role_vo: Role, minimal=False):
-
     info = {
         'role_id': role_vo.role_id,
         'name': role_vo.name,

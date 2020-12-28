@@ -34,11 +34,19 @@ class TestToken(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestToken, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
-        cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
+        cls.identity_v1.Domain.delete(
+            {
+                'domain_id': cls.domain.domain_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
 
     def _print_data(self, message, description=None):
         print()
@@ -50,30 +58,30 @@ class TestToken(unittest.TestCase):
     @classmethod
     def _create_domain(cls):
         name = utils.random_string()
-        param = {
+        params = {
             'name': name
         }
-        cls.domain = cls.identity_v1.Domain.create(param)
+        cls.domain = cls.identity_v1.Domain.create(params)
 
     @classmethod
     def _create_domain_owner(cls):
         cls.owner_id = utils.random_string()
         cls.owner_pw = utils.generate_password()
 
-        param = {
+        params = {
             'owner_id': cls.owner_id,
             'password': cls.owner_pw,
             'domain_id': cls.domain.domain_id
         }
 
         owner = cls.identity_v1.DomainOwner.create(
-            param
+            params
         )
         cls.domain_owner = owner
 
     @classmethod
     def _issue_token(cls):
-        token_param = {
+        token_params = {
             'user_type': 'DOMAIN_OWNER',
             'user_id': cls.owner_id,
             'credentials': {
@@ -82,16 +90,16 @@ class TestToken(unittest.TestCase):
             'domain_id': cls.domain.domain_id
         }
 
-        issue_token = cls.identity_v1.Token.issue(token_param)
+        issue_token = cls.identity_v1.Token.issue(token_params)
         cls.owner_token = issue_token.access_token
         cls.owner_refresh_token = issue_token.refresh_token
 
     @classmethod
     def _create_api_key(cls):
-        param = {
+        params = {
             'domain_id': cls.domain.domain_id
         }
-        api_key_vo = cls.identity_v1.APIKey.create(param)
+        api_key_vo = cls.identity_v1.APIKey.create(params)
         cls.api_key_obj = api_key_vo
         cls.token = api_key_vo.api_key
 
@@ -157,7 +165,7 @@ class TestToken(unittest.TestCase):
     def _create_user(self, user_type=None, backend=None):
         user_id = utils.random_string() + '@mz.co.kr'
         self.pw = utils.generate_password()
-        user_param = {
+        params = {
             'user_id': user_id,
             'password': self.pw,
             'name': 'Steven' + utils.random_string(),
@@ -169,7 +177,7 @@ class TestToken(unittest.TestCase):
             'email': user_id
         }
         self.user = self.identity_v1.User.create(
-            user_param,
+            params,
             metadata=(('token', self.owner_token),)
         )
 
@@ -193,7 +201,7 @@ class TestToken(unittest.TestCase):
         if not self.user:
             self._create_user()
 
-        token_param = {
+        token_params = {
             'user_id': self.user.user_id,
             'user_type': 'USER',
             'credentials': {
@@ -202,7 +210,7 @@ class TestToken(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }
 
-        issue_token = self.identity_v1.Token.issue(token_param)
+        issue_token = self.identity_v1.Token.issue(token_params)
 
         self.token = issue_token
         print(f'issued_token: {issue_token}')
@@ -257,7 +265,7 @@ class TestToken(unittest.TestCase):
             'user_id': self.user.user_id,
             'domain_id': self.domain.domain_id
         }
-        with self.assertRaises(Exception) as ctx:
+        with self.assertRaises(Exception) as cm:
             self.identity_v1.User.get(
                 params,
                 metadata=(('token', self.token.refresh_token),)
@@ -266,7 +274,7 @@ class TestToken(unittest.TestCase):
     def test_issue_token_not_existing_user(self):
         self._create_user()
 
-        token_param = {
+        token_params = {
             'user_id': 'mzc',
             'user_type': 'USER',
             'credentials': {
@@ -275,12 +283,12 @@ class TestToken(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }
         with self.assertRaises(Exception):
-            self.identity_v1.Token.issue(token_param)
+            self.identity_v1.Token.issue(token_params)
 
     def test_issue_token_with_wrong_password(self):
         self._create_user()
 
-        token_param = {
+        token_params = {
             'user_id': self.user.user_id,
             'user_type': 'USER',
             'credentials': {
@@ -289,12 +297,12 @@ class TestToken(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }
         with self.assertRaises(Exception):
-            self.identity_v1.Token.issue(token_param)
+            self.identity_v1.Token.issue(token_params)
 
     def test_issue_token_api_user(self):
         self._create_user(user_type='API_USER')
 
-        token_param = {
+        token_params = {
             'user_id': self.user.user_id,
             'user_type': 'USER',
             'credentials': {
@@ -302,10 +310,10 @@ class TestToken(unittest.TestCase):
             },
             'domain_id': self.domain.domain_id
         }
-        with self.assertRaises(Exception) as ctx:
-            self.identity_v1.Token.issue(token_param)
+        with self.assertRaises(Exception) as cm:
+            self.identity_v1.Token.issue(token_params)
 
-        self.assertIn("ERROR_NOT_ALLOWED_ISSUE_TOKEN_API_USER", str(ctx.exception))
+        self.assertIn("ERROR_NOT_ALLOWED_ISSUE_TOKEN_API_USER", str(cm.exception))
 
     def test_refresh_token(self):
         self.test_issue_token()

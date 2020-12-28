@@ -1,10 +1,11 @@
 import logging
 from datetime import datetime
 
-from spaceone.core.error import *
-from spaceone.core.cache import cacheable
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.identity.error.error_role import *
 from spaceone.identity.model.policy_model import Policy
+from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.connector.repository_connector import RepositoryConnector
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,14 +37,23 @@ class PolicyManager(BaseManager):
 
         params['updated_at'] = datetime.utcnow()
         policy_vo = policy_vo.update(params)
+
+        if 'permissions' in params:
+            self._delete_role_cache(policy_vo)
+
         return policy_vo
 
     def delete_policy(self, policy_id, domain_id):
         policy_vo: Policy = self.get_policy(policy_id, domain_id)
+        role_vos = self._get_roles_using_policy(policy_vo)
+
+        for role_vo in role_vos:
+            raise ERROR_POLICY_IS_IN_USE(policy_id=policy_id, role_id=role_vo.role_id)
+
         policy_vo.delete()
 
     def get_policy(self, policy_id, domain_id, only=None):
-        return self.policy_model.get(policy_id=policy_id, domain_id=domain_id, only=only)
+        return self.policy_model.get(policy_id=policy_id, domain_id=domain_id, policy_type='CUSTOM', only=only)
 
     def list_policies(self, query):
         return self.policy_model.query(**query)
@@ -90,9 +100,11 @@ class PolicyManager(BaseManager):
             'updated_at': repo_managed_policy_info.get('updated_at')
         })
 
+        self._delete_role_cache(policy_vo)
+
         return policy_vo
 
-    @cacheable(key='managed-policy:{domain_id}:{policy_id}', expire=600)
+    @cache.cacheable(key='managed-policy:{domain_id}:{policy_id}', expire=600)
     def _get_managed_policy_from_repository(self, policy_id, domain_id):
         repo_connector: RepositoryConnector = self.locator.get_connector('RepositoryConnector')
         try:
@@ -107,3 +119,24 @@ class PolicyManager(BaseManager):
             return managed_policy_vos[0]
         else:
             return None
+
+    def _delete_role_cache(self, policy_vo):
+        role_vos = self._get_roles_using_policy(policy_vo)
+        for role_vo in role_vos:
+            cache.delete_pattern(f'role-permissions:{role_vo.domain_id}:{role_vo.role_id}')
+            cache.delete_pattern(f'user-permissions:{role_vo.domain_id}:*{role_vo.role_id}*')
+
+    def _get_roles_using_policy(self, policy_vo):
+        role_mgr: RoleManager = self.locator.get_manager('RoleManager')
+        query = {
+            'filter': [
+                {
+                    'k': 'policies.policy',
+                    'v': policy_vo,
+                    'o': 'eq'
+                }
+            ]
+        }
+
+        role_vos, total_count = role_mgr.list_roles(query)
+        return role_vos

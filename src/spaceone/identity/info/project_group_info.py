@@ -38,7 +38,6 @@ def ProjectGroupsInfo(project_group_vos, total_count, **kwargs):
 
 
 def ProjectGroupRoleBindingInfo(role_binding_vo):
-    print(dict(role_binding_vo.to_dict()))
     info = {
         'role_binding_id': role_binding_vo.role_binding_id,
         'resource_type': role_binding_vo.resource_type,

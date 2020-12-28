@@ -1,8 +1,7 @@
-import logging
-import string
-import random
 import re
+import logging
 
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.identity.connector import PluginServiceConnector, AuthPluginConnector
 from spaceone.identity.lib.cipher import PasswordCipher
@@ -79,6 +78,8 @@ class UserManager(BaseManager):
         user_vo = self.get_user(user_id, domain_id)
         user_vo.delete()
 
+        cache.delete_pattern(f'user-state:{domain_id}:{user_id}')
+
     def enable_user(self, user_id, domain_id):
         def _rollback(old_data):
             _LOGGER.info(f'[enable_user._rollback] Revert Data : {old_data}')
@@ -89,6 +90,8 @@ class UserManager(BaseManager):
         if user_vo.state != 'ENABLED':
             self.transaction.add_rollback(_rollback, user_vo.to_dict())
             user_vo.update({'state': 'ENABLED'})
+
+            cache.delete_pattern(f'user-state:{domain_id}:{user_id}')
 
         return user_vo
 
@@ -102,6 +105,8 @@ class UserManager(BaseManager):
         if user_vo.state != 'DISABLED':
             self.transaction.add_rollback(_rollback, user_vo.to_dict())
             user_vo.update({'state': 'DISABLED'})
+
+            cache.delete_pattern(f'user-state:{domain_id}:{user_id}')
 
         return user_vo
 

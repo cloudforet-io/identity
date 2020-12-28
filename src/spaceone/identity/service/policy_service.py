@@ -4,6 +4,7 @@ from spaceone.identity.manager import PolicyManager
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class PolicyService(BaseService):
 
@@ -11,7 +12,7 @@ class PolicyService(BaseService):
         super().__init__(metadata)
         self.policy_mgr: PolicyManager = self.locator.get_manager('PolicyManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['name', 'permissions', 'domain_id'])
     def create(self, params):
         """ Create policy
@@ -30,7 +31,7 @@ class PolicyService(BaseService):
 
         return self.policy_mgr.create_policy(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['policy_id', 'domain_id'])
     def update(self, params):
         """ Update policy
@@ -50,7 +51,7 @@ class PolicyService(BaseService):
 
         return self.policy_mgr.update_policy(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['policy_id', 'domain_id'])
     def delete(self, params):
         """ Delete policy
@@ -67,7 +68,7 @@ class PolicyService(BaseService):
 
         self.policy_mgr.delete_policy(params['policy_id'], params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['policy_id', 'domain_id'])
     def get(self, params):
         """ Get policy
@@ -85,7 +86,7 @@ class PolicyService(BaseService):
 
         return self.policy_mgr.get_policy(params['policy_id'], params['domain_id'], params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['policy_id', 'name', 'domain_id'])
     @change_tag_filter('tags')
@@ -109,7 +110,7 @@ class PolicyService(BaseService):
         query = self._append_policy_type_filter(params.get('query', {}))
         return self.policy_mgr.list_policies(query)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
     @change_tag_filter('tags')
