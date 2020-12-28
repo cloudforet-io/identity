@@ -17,7 +17,7 @@ class TestRoleBinding(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls):
@@ -32,14 +32,22 @@ class TestRoleBinding(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestRoleBinding, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -80,8 +88,7 @@ class TestRoleBinding(unittest.TestCase):
         }
 
         issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        cls.owner_token = issue_token.access_token
 
     def setUp(self):
         self.policies = []
@@ -101,49 +108,61 @@ class TestRoleBinding(unittest.TestCase):
         print()
         for role_binding in self.role_bindings:
             self.identity_v1.RoleBinding.delete(
-                {'role_binding_id': role_binding.role_binding_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'role_binding_id': role_binding.role_binding_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete role_binding: {role_binding.role_binding_id}')
 
         for project in self.projects:
             self.identity_v1.Project.delete(
-                {'project_id': project.project_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'project_id': project.project_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete project: {project.name} ({project.project_id})')
 
-        for project_group in self.project_groups:
+        for project_group in reversed(self.project_groups):
             self.identity_v1.ProjectGroup.delete(
-                {'project_group_id': project_group.project_group_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'project_group_id': project_group.project_group_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete project group: {project_group.name} ({project_group.project_group_id})')
 
         for user in self.users:
             self.identity_v1.User.delete(
-                {'user_id': user.user_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'user_id': user.user_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete user: {user.name} ({user.user_id})')
 
         for role in self.roles:
             self.identity_v1.Role.delete(
-                {'role_id': role.role_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'role_id': role.role_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete policy: {role.name} ({role.role_id})')
 
         for policy in self.policies:
             self.identity_v1.Policy.delete(
-                {'policy_id': policy.policy_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'policy_id': policy.policy_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete policy: {policy.name} ({policy.policy_id})')
 
@@ -170,7 +189,7 @@ class TestRoleBinding(unittest.TestCase):
 
         self.policy = self.identity_v1.Policy.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.policies.append(self.policy)
@@ -191,7 +210,7 @@ class TestRoleBinding(unittest.TestCase):
 
         self.role = self.identity_v1.Role.create(
             params,
-            metadata=(('token', self.token),))
+            metadata=(('token', self.owner_token),))
 
         self.roles.append(self.role)
 
@@ -213,7 +232,7 @@ class TestRoleBinding(unittest.TestCase):
 
         self.user = self.identity_v1.User.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.users.append(self.user)
@@ -228,7 +247,7 @@ class TestRoleBinding(unittest.TestCase):
 
         self.project_group = self.identity_v1.ProjectGroup.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.project_groups.append(self.project_group)
@@ -249,13 +268,13 @@ class TestRoleBinding(unittest.TestCase):
 
         self.project = self.identity_v1.Project.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.projects.append(self.project)
 
     def test_create_domain_role_binding(self):
         self._test_create_user()
-        self._test_create_role()
+        self._test_create_role('DOMAIN')
 
         params = {
             'resource_type': 'identity.User',
@@ -267,16 +286,41 @@ class TestRoleBinding(unittest.TestCase):
 
         self.role_binding = self.identity_v1.RoleBinding.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
-        self._print_data(self.role_binding, 'test_create_role_binding')
+        self._print_data(self.role_binding, 'test_create_domain_role_binding')
         self.role_bindings.append(self.role_binding)
         self.assertEqual(self.role_binding.resource_type, 'identity.User')
         self.assertEqual(self.role_binding.resource_id, self.user.user_id)
         self.assertEqual(self.role_binding.role_info.role_id, self.role.role_id)
 
-    def test_create_domain_role_binding(self):
+    def test_create_duplicate_domain_role_binding(self):
+        self._test_create_user()
+        self._test_create_role('DOMAIN')
+
+        params = {
+            'resource_type': 'identity.User',
+            'resource_id': self.user.user_id,
+            'role_id': self.role.role_id,
+            'labels': ['aaa', 'bbb'],
+            'domain_id': self.domain.domain_id
+        }
+
+        self.role_binding = self.identity_v1.RoleBinding.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+
+        self._print_data(self.role_binding, 'test_create_duplicate_domain_role_binding')
+
+        with self.assertRaisesRegex(Exception, 'ERROR_DUPLICATE_ROLE_BOUND'):
+            self.role_binding = self.identity_v1.RoleBinding.create(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
+
+    def test_create_system_role_binding(self):
         self._test_create_user()
         self._test_create_role('SYSTEM')
 
@@ -290,18 +334,43 @@ class TestRoleBinding(unittest.TestCase):
 
         self.role_binding = self.identity_v1.RoleBinding.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
-        self._print_data(self.role_binding, 'test_create_role_binding')
+        self._print_data(self.role_binding, 'test_create_system_role_binding')
         self.role_bindings.append(self.role_binding)
         self.assertEqual(self.role_binding.resource_type, 'identity.User')
         self.assertEqual(self.role_binding.resource_id, self.user.user_id)
         self.assertEqual(self.role_binding.role_info.role_id, self.role.role_id)
+
+    def test_create_duplicate_system_role_binding(self):
+        self._test_create_user()
+        self._test_create_role('SYSTEM')
+
+        params = {
+            'resource_type': 'identity.User',
+            'resource_id': self.user.user_id,
+            'role_id': self.role.role_id,
+            'labels': ['aaa', 'bbb'],
+            'domain_id': self.domain.domain_id
+        }
+
+        self.role_binding = self.identity_v1.RoleBinding.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+
+        self._print_data(self.role_binding, 'test_create_duplicate_system_role_binding')
+
+        with self.assertRaisesRegex(Exception, 'ERROR_DUPLICATE_ROLE_BOUND'):
+            self.role_binding = self.identity_v1.RoleBinding.create(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
     def test_create_project_role_binding_with_project_id(self):
         self._test_create_user()
-        self._test_create_role('SYSTEM')
+        self._test_create_role('PROJECT')
         self._test_create_project()
 
         params = {
@@ -315,15 +384,42 @@ class TestRoleBinding(unittest.TestCase):
 
         self.role_binding = self.identity_v1.RoleBinding.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
-        self._print_data(self.role_binding, 'test_create_role_binding')
+        self._print_data(self.role_binding, 'test_create_project_role_binding_with_project_id')
         self.role_bindings.append(self.role_binding)
         self.assertEqual(self.role_binding.resource_type, 'identity.User')
         self.assertEqual(self.role_binding.resource_id, self.user.user_id)
         self.assertEqual(self.role_binding.role_info.role_id, self.role.role_id)
         self.assertEqual(self.role_binding.project_info.project_id, self.project.project_id)
+
+    def test_create_project_duplicate_project_role_binding(self):
+        self._test_create_user()
+        self._test_create_role('PROJECT')
+        self._test_create_project()
+
+        params = {
+            'resource_type': 'identity.User',
+            'resource_id': self.user.user_id,
+            'role_id': self.role.role_id,
+            'project_id': self.project.project_id,
+            'labels': ['aaa', 'bbb'],
+            'domain_id': self.domain.domain_id
+        }
+
+        self.role_binding = self.identity_v1.RoleBinding.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+
+        self._print_data(self.role_binding, 'test_create_project_duplicate_project_role_binding')
+
+        with self.assertRaisesRegex(Exception, 'ERROR_DUPLICATE_RESOURCE_IN_PROJECT'):
+            self.role_binding = self.identity_v1.RoleBinding.create(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
     def test_create_project_role_binding_with_project_group_id(self):
         self._test_create_user()
@@ -341,15 +437,42 @@ class TestRoleBinding(unittest.TestCase):
 
         self.role_binding = self.identity_v1.RoleBinding.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
-        self._print_data(self.role_binding, 'test_create_role_binding')
+        self._print_data(self.role_binding, 'test_create_project_role_binding_with_project_group_id')
         self.role_bindings.append(self.role_binding)
         self.assertEqual(self.role_binding.resource_type, 'identity.User')
         self.assertEqual(self.role_binding.resource_id, self.user.user_id)
         self.assertEqual(self.role_binding.role_info.role_id, self.role.role_id)
         self.assertEqual(self.role_binding.project_group_info.project_group_id, self.project_group.project_group_id)
+
+    def test_create_project_duplicate_project_group_role_binding(self):
+        self._test_create_user()
+        self._test_create_role('PROJECT')
+        self._test_create_project_group()
+
+        params = {
+            'resource_type': 'identity.User',
+            'resource_id': self.user.user_id,
+            'role_id': self.role.role_id,
+            'project_group_id': self.project_group.project_group_id,
+            'labels': ['aaa', 'bbb'],
+            'domain_id': self.domain.domain_id
+        }
+
+        self.role_binding = self.identity_v1.RoleBinding.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+
+        self._print_data(self.role_binding, 'test_create_project_duplicated_project_group_role_binding')
+
+        with self.assertRaisesRegex(Exception, 'ERROR_DUPLICATE_RESOURCE_IN_PROJECT_GROUP'):
+            self.role_binding = self.identity_v1.RoleBinding.create(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
     def test_update_role_binding(self):
         self.test_create_domain_role_binding()
@@ -362,7 +485,7 @@ class TestRoleBinding(unittest.TestCase):
                 'labels': labels,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.role_binding, 'test_update_role_binding')
@@ -377,7 +500,7 @@ class TestRoleBinding(unittest.TestCase):
                 'role_binding_id': self.role_binding.role_binding_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(role_binding.role_binding_id, self.role_binding.role_binding_id)
@@ -393,7 +516,7 @@ class TestRoleBinding(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.Role.delete(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_list_role_binding_id(self):
@@ -406,7 +529,7 @@ class TestRoleBinding(unittest.TestCase):
 
         result = self.identity_v1.RoleBinding.list(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(1, result.total_count)
@@ -430,7 +553,7 @@ class TestRoleBinding(unittest.TestCase):
         }
 
         result = self.identity_v1.RoleBinding.list(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self.assertEqual(len(self.role_bindings), result.total_count)
 
@@ -460,7 +583,7 @@ class TestRoleBinding(unittest.TestCase):
         }
 
         result = self.identity_v1.RoleBinding.stat(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self._print_data(result, 'test_stat_role_binding')
 

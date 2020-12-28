@@ -1,6 +1,6 @@
 import logging
 
-from spaceone.core.cache import cacheable
+from spaceone.core import cache
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
 from spaceone.core.service import *
 from spaceone.identity.error.error_authentication import *
@@ -94,7 +94,7 @@ class TokenService(BaseService):
         else:
             return self.locator.get_manager('ExternalTokenManager')
 
-    @cacheable(key='user-backend:{domain_id}:{user_id}', expire=600)
+    @cache.cacheable(key='user-backend:{domain_id}:{user_id}', expire=600)
     def _get_user_backend(self, user_id, domain_id):
         try:
             user_vo: User = self.user_mgr.get_user(user_id, domain_id)
@@ -104,7 +104,7 @@ class TokenService(BaseService):
 
         return user_vo.backend
 
-    @cacheable(key='domain-state:{domain_id}', expire=600)
+    @cache.cacheable(key='domain-state:{domain_id}', expire=3600)
     def _check_domain_state(self, domain_id):
         domain_vo: Domain = self.domain_mgr.get_domain(domain_id)
 

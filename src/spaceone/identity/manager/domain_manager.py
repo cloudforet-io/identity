@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.connector import PluginServiceConnector, AuthPluginConnector
@@ -73,6 +74,8 @@ class DomainManager(BaseManager):
         domain_vo: Domain = self.get_domain(domain_id)
         domain_vo.delete()
 
+        cache.delete_pattern(f'domain-state:{domain_id}')
+
     def enable_domain(self, domain_id):
         def _rollback(old_data):
             _LOGGER.info(f'[enable_domain._rollback] Revert Data : {old_data["name"]} ({old_data["domain_id"]})')
@@ -83,6 +86,8 @@ class DomainManager(BaseManager):
         if domain_vo.state != 'ENABLED':
             self.transaction.add_rollback(_rollback, domain_vo.to_dict())
             domain_vo.update({'state': 'ENABLED'})
+
+            cache.delete_pattern(f'domain-state:{domain_id}')
 
         return domain_vo
 
@@ -96,6 +101,8 @@ class DomainManager(BaseManager):
         if domain_vo.state != 'DISABLED':
             self.transaction.add_rollback(_rollback, domain_vo.to_dict())
             domain_vo.update({'state': 'DISABLED'})
+
+            cache.delete_pattern(f'domain-state:{domain_id}')
 
         return domain_vo
 

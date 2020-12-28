@@ -35,7 +35,7 @@ class RepositoryConnector(BaseConnector):
         response = self.client.Policy.get({
             'policy_id': policy_id,
             'domain_id': domain_id
-        }, metadata=self.transaction.get_connection_meta())
+        }, metadata=self.transaction.get_connection_meta(), timeout=5)
 
         return self._change_message(response)
 

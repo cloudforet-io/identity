@@ -6,10 +6,9 @@ from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.model import Domain
 
 
-# @authentication_handler(exclude=[
-#     'list_domains', 'get_public_key'
-# ])
-#@authorization_handler
+@authentication_handler(methods=['update', 'get'])
+@authorization_handler(methods=['update', 'get'])
+@mutation_handler
 @event_handler
 class DomainService(BaseService):
 
@@ -43,7 +42,7 @@ class DomainService(BaseService):
 
         return domain_vo
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     def update(self, params):
         """ Update domain
@@ -109,7 +108,7 @@ class DomainService(BaseService):
 
         return self.domain_mgr.disable_domain(params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     def get(self, params):
         """ Disable domain
@@ -126,7 +125,7 @@ class DomainService(BaseService):
 
         return self.domain_mgr.get_domain(params['domain_id'], params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'auth.scope': 'SYSTEM'})
     @check_required(['domain_id'])
     def get_public_key(self, params):
         """ Get domain's public key for authentication

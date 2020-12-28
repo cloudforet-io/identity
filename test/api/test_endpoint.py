@@ -17,7 +17,7 @@ class TestEndpoint(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls):
@@ -32,14 +32,22 @@ class TestEndpoint(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestEndpoint, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -80,8 +88,7 @@ class TestEndpoint(unittest.TestCase):
         }
 
         issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        cls.owner_token = issue_token.access_token
 
     def setUp(self):
         pass
@@ -97,12 +104,10 @@ class TestEndpoint(unittest.TestCase):
         self.pp.pprint(MessageToDict(message, preserving_proto_field_name=True))
 
     def test_list_endpoints(self):
-        params = {
-            'domain_id': self.domain.domain_id
-        }
+        params = {}
 
         result = self.identity_v1.Endpoint.list(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self._print_data(result, 'test_list_endpoints')
 

@@ -17,7 +17,7 @@ class TestPolicy(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls):
@@ -32,14 +32,22 @@ class TestPolicy(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestPolicy, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -80,8 +88,7 @@ class TestPolicy(unittest.TestCase):
         }
 
         issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        cls.owner_token = issue_token.access_token
 
     def setUp(self):
         self.policies = []
@@ -91,9 +98,11 @@ class TestPolicy(unittest.TestCase):
         print()
         for policy in self.policies:
             self.identity_v1.Policy.delete(
-                {'policy_id': policy.policy_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'policy_id': policy.policy_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete policy: {policy.name} ({policy.policy_id})')
 
@@ -130,7 +139,7 @@ class TestPolicy(unittest.TestCase):
             'domain_id': self.domain.domain_id
         }
 
-        metadata = (('token', self.token),)
+        metadata = (('token', self.owner_token),)
         ext_meta = kwargs.get('meta')
 
         if ext_meta:
@@ -164,7 +173,7 @@ class TestPolicy(unittest.TestCase):
                 'tags': update_tags,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.policy, 'test_update_policy')
@@ -185,7 +194,7 @@ class TestPolicy(unittest.TestCase):
                 'permissions': update_permissions,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.policy, 'test_update_policy_permissions')
@@ -200,7 +209,7 @@ class TestPolicy(unittest.TestCase):
                 'policy_id': self.policy.policy_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(policy.name, self.policy.name)
@@ -214,7 +223,7 @@ class TestPolicy(unittest.TestCase):
                     'policy_id': 'Guido van Rossum',
                     'domain_id': self.domain.dopmain_id
                 },
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_delete_policy_not_exists(self):
@@ -227,7 +236,7 @@ class TestPolicy(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.Policy.delete(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_list_policy_id(self):
@@ -240,7 +249,7 @@ class TestPolicy(unittest.TestCase):
 
         result = self.identity_v1.Policy.list(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(1, result.total_count)
@@ -264,7 +273,7 @@ class TestPolicy(unittest.TestCase):
         }
 
         result = self.identity_v1.Policy.list(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self.assertEqual(len(self.policies), result.total_count)
 
@@ -294,7 +303,7 @@ class TestPolicy(unittest.TestCase):
         }
 
         result = self.identity_v1.Policy.stat(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self._print_data(result, 'test_stat_policy')
 

@@ -19,7 +19,7 @@ class TestUser(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -34,14 +34,22 @@ class TestUser(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         super(TestUser, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -82,8 +90,7 @@ class TestUser(unittest.TestCase):
         }
 
         issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        cls.owner_token = issue_token.access_token
 
     def setUp(self) -> None:
         self.user = None
@@ -98,25 +105,31 @@ class TestUser(unittest.TestCase):
         for user in self.users:
             print(f'[tearDown] Delete User. {user.user_id}')
             self.identity_v1.User.delete(
-                {'user_id': user.user_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'user_id': user.user_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
         for role in self.roles:
             print(f'[tearDown] Delete Role. {role.role_id}')
             self.identity_v1.Role.delete(
-                {'role_id': role.role_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'role_id': role.role_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
         for policy in self.policies:
             print(f'[tearDown] Delete Policy. {policy.policy_id}')
             self.identity_v1.Policy.delete(
-                {'policy_id': policy.policy_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'policy_id': policy.policy_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
 
     def _print_data(self, message, description=None):
@@ -135,7 +148,7 @@ class TestUser(unittest.TestCase):
 
         self.policy = self.identity_v1.Policy.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.policies.append(self.policy)
@@ -150,7 +163,7 @@ class TestUser(unittest.TestCase):
 
         self.role = self.identity_v1.Role.create(
             params,
-            metadata=(('token', self.token),))
+            metadata=(('token', self.owner_token),))
 
         self.roles.append(self.role)
 
@@ -181,7 +194,7 @@ class TestUser(unittest.TestCase):
 
         user = self.identity_v1.User.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.user = user
         self.users.append(user)
@@ -210,7 +223,7 @@ class TestUser(unittest.TestCase):
         }
         self.user = self.identity_v1.User.update(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(self.user.name, params['name'])
 
@@ -225,7 +238,7 @@ class TestUser(unittest.TestCase):
         with self.assertRaises(Exception):
             self.user = self.identity_v1.User.update(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_update_not_exists_enum(self):
@@ -239,7 +252,7 @@ class TestUser(unittest.TestCase):
         with self.assertRaises(Exception):
             self.user = self.identity_v1.User.update(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_delete_non_existing_user(self):
@@ -250,7 +263,7 @@ class TestUser(unittest.TestCase):
 
         with self.assertRaises(Exception):
             self.identity_v1.User.delete(params, self.user.user_id,
-                                         metadata=(('token', self.token),))
+                                         metadata=(('token', self.owner_token),))
 
     def test_update_tags(self):
         self.test_create_user()
@@ -266,7 +279,7 @@ class TestUser(unittest.TestCase):
         }
         self.user = self.identity_v1.User.update(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         user_data = MessageToDict(self.user)
@@ -281,7 +294,7 @@ class TestUser(unittest.TestCase):
 
         user = self.identity_v1.User.enable(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(user.state, 1)
 
@@ -294,7 +307,7 @@ class TestUser(unittest.TestCase):
 
         user = self.identity_v1.User.disable(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(user.state, 2)
 
@@ -307,7 +320,7 @@ class TestUser(unittest.TestCase):
         with self.assertRaises(Exception):
             self.user = self.identity_v1.User.enable(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
         params = {
             'user_id': '',
@@ -316,7 +329,7 @@ class TestUser(unittest.TestCase):
         with self.assertRaises(Exception):
             self.user = self.identity_v1.User.enable(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_get_user(self):
@@ -327,7 +340,7 @@ class TestUser(unittest.TestCase):
         }
         user = self.identity_v1.User.get(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(user.user_id, params['user_id'])
@@ -340,7 +353,7 @@ class TestUser(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.User.get(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_list_user(self):
@@ -363,7 +376,7 @@ class TestUser(unittest.TestCase):
 
         response = self.identity_v1.User.list(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(len(self.users), response.total_count)
 
@@ -374,7 +387,7 @@ class TestUser(unittest.TestCase):
 
         response = self.identity_v1.User.list({
             'domain_id': self.domain.domain_id
-        }, metadata=(('token', self.token),)
+        }, metadata=(('token', self.owner_token),)
         )
         self.assertEqual(len(self.users), response.total_count)
 
@@ -434,7 +447,7 @@ class TestUser(unittest.TestCase):
         }
 
         result = self.identity_v1.User.stat(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self._print_data(result, 'test_stat_user')
 

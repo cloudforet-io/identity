@@ -16,7 +16,7 @@ class TestAPIKey(unittest.TestCase):
     identity_v1 = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
     user = None
 
     @classmethod
@@ -27,7 +27,7 @@ class TestAPIKey(unittest.TestCase):
                                         version='v1')
         cls._create_domain()
         cls._create_domain_owner()
-        cls._issue_token()
+        cls._issue_owner_token()
         cls._create_user()
 
     @classmethod
@@ -38,21 +38,29 @@ class TestAPIKey(unittest.TestCase):
                 'user_id': cls.user.user_id,
                 'domain_id': cls.domain.domain_id
             },
-            metadata=(('token', cls.token),)
+            metadata=(('token', cls.owner_token),)
         )
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
-        cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            }, metadata=(('token', cls.owner_token),)
+        )
+
+        cls.identity_v1.Domain.delete(
+            {
+                'domain_id': cls.domain.domain_id
+            }, metadata=(('token', cls.owner_token),)
+        )
 
     @classmethod
-    def _create_domain(self):
+    def _create_domain(cls):
         name = utils.random_string()
-        param = {
+        params = {
             'name': name
         }
-        self.domain = self.identity_v1.Domain.create(param)
+        cls.domain = cls.identity_v1.Domain.create(params)
 
     @classmethod
     def _create_domain_owner(cls):
@@ -86,11 +94,11 @@ class TestAPIKey(unittest.TestCase):
 
         cls.user = cls.identity_v1.User.create(
             param,
-            metadata=(('token', cls.token),)
+            metadata=(('token', cls.owner_token),)
         )
 
     @classmethod
-    def _issue_token(cls):
+    def _issue_owner_token(cls):
         token_param = {
             'user_type': 'DOMAIN_OWNER',
             'user_id': cls.owner_id,
@@ -101,7 +109,7 @@ class TestAPIKey(unittest.TestCase):
         }
 
         issue_token = cls.identity_v1.Token.issue(token_param)
-        cls.token = issue_token.access_token
+        cls.owner_token = issue_token.access_token
 
     def setUp(self) -> None:
         self.api_key = None
@@ -111,10 +119,13 @@ class TestAPIKey(unittest.TestCase):
     def tearDown(self) -> None:
         for api_key in self.api_keys:
             print(f'[tearDown] Delete API Key. {api_key.api_key_id}')
-            self.identity_v1.APIKey.delete({
-                'api_key_id': api_key.api_key_id,
-                'domain_id': self.domain.domain_id
-            })
+            self.identity_v1.APIKey.delete(
+                {
+                    'api_key_id': api_key.api_key_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
+            )
 
     def _print_data(self, message, description=None):
         print()
@@ -124,122 +135,147 @@ class TestAPIKey(unittest.TestCase):
         self.pp.pprint(MessageToDict(message, preserving_proto_field_name=True))
 
     def test_create_api_key(self, domain_id=None):
-        param = {
+        params = {
             'user_id': self.user.user_id,
             'domain_id': domain_id if domain_id is not None else self.domain.domain_id
         }
 
-        api_key_vo = self.identity_v1.APIKey.create(param)
-        self.api_key = api_key_vo
+        self.api_key = self.identity_v1.APIKey.create(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+
         self.api_keys.append(self.api_key)
 
-        self.assertEqual(api_key_vo.user_id, param['user_id'])
+        self.assertEqual(self.api_key.user_id, params['user_id'])
 
-        api_key = api_key_vo.api_key
+        api_key = self.api_key.api_key
         print(f'api_key: {api_key}')
 
         decoded = JWTUtil.unverified_decode(api_key)
         print(f'api_key(decoded): {decoded}')
 
-        self.assertEqual(api_key_vo.user_id, param['user_id'])
+        self.assertEqual(self.api_key.user_id, params['user_id'])
         self.assertIn(decoded['ver'], self.versions)
         self.assertIsNotNone(decoded['api_key_id'])
 
-    def test_create_api_key_no_domain(self):
-        param = {
-            'user_id': self.user.user_id
-        }
-        with self.assertRaises(Exception):
-            self.identity_v1.APIKey.create(param)
-        # TODO: Unknown domain-id
-
-    # def test_create_api_key_unknown_type(self):
-    #     param = {
-    #         'user_id': self.user.user_id,
-    #         'domain_id': 'domain-id-'
-    #     }
-    #     with self.assertRaises(ValueError):
-    #         self.identity_v1.APIKey.create(param)
-
     def test_create_api_key_no_user_id(self):
-        param = {
+        params = {
             'domain_id': 'domain-id'
         }
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.create(param)
+            self.identity_v1.APIKey.create(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
     def test_delete_api_key_no_key_id(self):
-        param = {
+        params = {
             'api_key_id': None
         }
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.delete(param)
-        param['api_key_id'] = 'no-key'
+            self.identity_v1.APIKey.delete(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
+
+        params['api_key_id'] = 'no-key'
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.delete(param)
+            self.identity_v1.APIKey.delete(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
     def test_enable_api_key(self):
         self.test_create_api_key()
-        param = {
+        params = {
             'api_key_id': self.api_key.api_key_id,
             'domain_id': self.domain.domain_id
         }
-        api_key_vo = self.identity_v1.APIKey.enable(param)
+
+        api_key_vo = self.identity_v1.APIKey.enable(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
 
         self.assertEqual(api_key_vo.state, 1)
 
     def test_enable_api_key_no_exist(self):
-        param = {
+        params = {
             'api_key_id': 'hello',
             'domain_id': self.domain.domain_id
         }
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.enable(param)
+            self.identity_v1.APIKey.enable(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
-        param = {}
+        params = {}
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.enable(param)
+            self.identity_v1.APIKey.enable(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
     def test_disable_api_key(self):
         self.test_create_api_key()
-        param = {
+        params = {
             'api_key_id': self.api_key.api_key_id,
             'domain_id': self.domain.domain_id
         }
-        api_key_vo = self.identity_v1.APIKey.disable(param)
+        api_key_info = self.identity_v1.APIKey.disable(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
 
-        self.assertEqual(2, api_key_vo.state)
+        self.assertEqual(2, api_key_info.state)
 
     def test_disable_api_key_no_exist(self):
-        param = {
+        params = {
             'api_key_id': 'hello',
             'domain_id': self.domain.domain_id
         }
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.disable(param)
+            self.identity_v1.APIKey.disable(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
-        param = {}
+        params = {}
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.disable(param)
+            self.identity_v1.APIKey.disable(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
     def test_get_api_key(self):
         self.test_create_api_key()
-        param = {
+        params = {
             'api_key_id': self.api_key.api_key_id,
             'domain_id': self.domain.domain_id
         }
-        api_key_vo = self.identity_v1.APIKey.get(param)
-        self.assertEqual(self.api_key.api_key_id, api_key_vo.api_key_id)
+        api_key_info = self.identity_v1.APIKey.get(
+            params,
+            metadata=(('token', self.owner_token),)
+        )
+        self.assertEqual(self.api_key.api_key_id, api_key_info.api_key_id)
 
     def test_get_not_existing_api_key(self):
-        param = {
+        params = {
             'api_key_id': 'hello'
         }
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.get(param)
-        param = {}
+            self.identity_v1.APIKey.get(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
+        params = {}
         with self.assertRaises(Exception):
-            self.identity_v1.APIKey.get(param)
+            self.identity_v1.APIKey.get(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
     def test_list_api_keys(self):
         num = 3
@@ -260,10 +296,13 @@ class TestAPIKey(unittest.TestCase):
             ]
         }
 
-        api_keys_vo = self.identity_v1.APIKey.list({
-            'query': query,
-            'domain_id': self.domain.domain_id
-        })
+        api_keys_vo = self.identity_v1.APIKey.list(
+            {
+                'query': query,
+                'domain_id': self.domain.domain_id
+            },
+            metadata=(('token', self.owner_token),)
+        )
         print(f'total_count: {api_keys_vo.total_count}')
 
         self.assertEqual(3, api_keys_vo.total_count)
@@ -303,6 +342,8 @@ class TestAPIKey(unittest.TestCase):
         }
 
         result = self.identity_v1.APIKey.stat(
-            params, metadata=(('token', self.token),))
+            params,
+            metadata=(('token', self.owner_token),)
+        )
 
         self._print_data(result, 'test_stat_api_key')

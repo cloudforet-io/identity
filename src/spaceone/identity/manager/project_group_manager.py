@@ -1,4 +1,5 @@
 import logging
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.identity.model.project_group_model import ProjectGroup
 
@@ -33,11 +34,37 @@ class ProjectGroupManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, project_group_vo.to_dict())
 
+        if 'parent_project_group' in params:
+            domain_id = project_group_vo.domain_id
+            new_parent_project_group_id = params['parent_project_group'].project_group_id
+            if project_group_vo.parent_project_group:
+                old_parent_project_group_id = project_group_vo.parent_project_group.project_group_id
+            else:
+                old_parent_project_group_id = None
+
+            cache.delete_pattern(f'project-group-children:{domain_id}:{new_parent_project_group_id}')
+
+            if old_parent_project_group_id:
+                cache.delete_pattern(f'project-group-children:{domain_id}:{old_parent_project_group_id}')
+
         return project_group_vo.update(params)
 
     def delete_project_group(self, project_group_id, domain_id):
         project_group_vo = self.get_project_group(project_group_id, domain_id)
         self.delete_project_group_by_vo(project_group_vo)
+
+    @staticmethod
+    def delete_project_group_by_vo(project_group_vo):
+        domain_id = project_group_vo.domain_id
+        if project_group_vo.parent_project_group:
+            parent_project_group_id = project_group_vo.parent_project_group.project_group_id
+        else:
+            parent_project_group_id = None
+
+        project_group_vo.delete()
+
+        if parent_project_group_id:
+            cache.delete_pattern(f'project-group-children:{domain_id}:{parent_project_group_id}')
 
     def get_project_group(self, project_group_id, domain_id, only=None):
         return self.project_group_model.get(project_group_id=project_group_id, domain_id=domain_id, only=only)
@@ -47,7 +74,3 @@ class ProjectGroupManager(BaseManager):
 
     def stat_project_groups(self, query):
         return self.project_group_model.stat(**query)
-
-    @staticmethod
-    def delete_project_group_by_vo(project_group_vo):
-        project_group_vo.delete()

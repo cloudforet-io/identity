@@ -1,11 +1,11 @@
 from spaceone.core import cache
 from spaceone.core.service import *
 from spaceone.identity.manager.provider_manager import ProviderManager
-from spaceone.identity.conf.provider_conf import DEFAULT_PROVIDERS
 
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class ProviderService(BaseService):
 
@@ -13,7 +13,7 @@ class ProviderService(BaseService):
         super().__init__(*args, **kwargs)
         self.provider_mgr: ProviderManager = self.locator.get_manager('ProviderManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'name', 'domain_id'])
     def create(self, params):
         """
@@ -35,7 +35,7 @@ class ProviderService(BaseService):
         # TODO: validate a capability data
         return self.provider_mgr.create_provider(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def update(self, params):
         """
@@ -57,7 +57,7 @@ class ProviderService(BaseService):
         # TODO: validate a capability data
         return self.provider_mgr.update_provider(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def delete(self, params):
         """
@@ -72,7 +72,7 @@ class ProviderService(BaseService):
         """
         self.provider_mgr.delete_provider(params['provider'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['provider', 'domain_id'])
     def get(self, params):
         """
@@ -89,7 +89,7 @@ class ProviderService(BaseService):
         self._create_default_provider()
         return self.provider_mgr.get_provider(params['provider'], params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['provider', 'name'])
     @change_tag_filter('tags')
@@ -111,7 +111,7 @@ class ProviderService(BaseService):
         self._create_default_provider()
         return self.provider_mgr.list_providers(params.get('query', {}))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['provider', 'name'])

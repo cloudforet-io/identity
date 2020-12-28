@@ -33,10 +33,13 @@ HANDLERS = {
         'backend': 'spaceone.core.handler.authentication_handler.AuthenticationGRPCHandler',
         'uri': 'grpc://localhost:50051/v1/Domain/get_public_key'
     }],
-    'authorization': [{
-        'backend': 'spaceone.core.handler.authorization_handler.AuthorizationGRPCHandler',
-        'uri': 'grpc://localhost:50051/v1/Authorization/verify'
-    }],
+    # 'authorization': [{
+    #     'backend': 'spaceone.core.handler.authorization_handler.AuthorizationGRPCHandler',
+    #     'uri': 'grpc://localhost:50051/v1/Authorization/verify'
+    # }],
+    # 'mutation': [{
+    #     'backend': 'spaceone.core.handler.mutation_handler.SpaceONEMutationHandler'
+    # }],
     'event': []
 }
 

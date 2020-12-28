@@ -1,4 +1,5 @@
 import logging
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.identity.error.error_role import *
 from spaceone.identity.model.role_binding_model import *
@@ -42,16 +43,17 @@ class RoleBindingManager(BaseManager):
         if role_vo.role_type == 'PROJECT':
             if project_id:
                 project_vo = project_mgr.get_project(project_id, domain_id)
-                self._check_duplicate_project(resource_type, resource_id, project_vo, project_id)
+                self._check_duplicate_project_role(resource_type, resource_id, project_vo, project_id)
                 params['project'] = project_vo
 
             elif project_group_id:
                 project_group_vo = project_group_mgr.get_project_group(project_group_id, domain_id)
-                self._check_duplicate_project_group(resource_type, resource_id, project_group_vo, project_group_id)
+                self._check_duplicate_project_group_role(resource_type, resource_id, project_group_vo, project_group_id)
                 params['project_group'] = project_group_vo
             else:
                 raise ERROR_REQUIRED_PROJECT_OR_PROJECT_GROUP()
         else:
+            self._check_duplicate_domain_or_system_role(resource_type, resource_id, role_vo, role_id)
             if project_id:
                 raise ERROR_NOT_ALLOWED_PROJECT_ID()
             elif project_group_id:
@@ -59,6 +61,9 @@ class RoleBindingManager(BaseManager):
 
         role_binding_vo = self.role_binding_model.create(params)
         self.transaction.add_rollback(_rollback, role_binding_vo)
+
+        cache.delete_pattern(f'user-permissions:{domain_id}:{resource_id}:*')
+        cache.delete_pattern(f'user-scope:{domain_id}:{resource_id}:*')
 
         return role_binding_vo
 
@@ -77,10 +82,17 @@ class RoleBindingManager(BaseManager):
 
     def delete_role_binding(self, role_binding_id, domain_id):
         role_binding_vo = self.get_role_binding(role_binding_id, domain_id)
-        role_binding_vo.delete()
+        self.delete_role_binding_by_vo(role_binding_vo)
 
     def delete_role_binding_by_vo(self, role_binding_vo):
+        resource_id = role_binding_vo.resource_id
+        domain_id = role_binding_vo.domain_id
+
         role_binding_vo.delete()
+
+        cache.delete_pattern(f'role-bindings:{domain_id}:{resource_id}')
+        cache.delete_pattern(f'user-permissions:{domain_id}:{resource_id}:*')
+        cache.delete_pattern(f'user-scope:{domain_id}:{resource_id}:*')
 
     def get_role_binding(self, role_binding_id, domain_id, only=None):
         return self.role_binding_model.get(role_binding_id=role_binding_id, domain_id=domain_id, only=only)
@@ -88,6 +100,9 @@ class RoleBindingManager(BaseManager):
     def get_project_role_binding(self, resource_type, resource_id, domain_id, project_vo=None, project_group_vo=None):
         return self.role_binding_model.filter(resource_type=resource_type, resource_id=resource_id, domain_id=domain_id,
                                               project=project_vo, project_group=project_group_vo)
+
+    def get_user_role_bindings(self, user_id, domain_id):
+        return self.role_binding_model.filter(resource_type='identity.User', resource_id=user_id, domain_id=domain_id)
 
     def list_role_bindings(self, query):
         return self.role_binding_model.query(**query)
@@ -112,14 +127,20 @@ class RoleBindingManager(BaseManager):
                 if role_binding_vo.role.role_type == 'SYSTEM':
                     raise ERROR_NOT_ALLOWED_ROLE_TYPE()
 
-    def _check_duplicate_project(self, resource_type, resource_id, project_vo, project_id):
+    def _check_duplicate_domain_or_system_role(self, resource_type, resource_id, role_vo, role_id):
+        rb_vos = self.role_binding_model.filter(resource_type=resource_type, resource_id=resource_id, role=role_vo)
+
+        if rb_vos.count() > 0:
+            raise ERROR_DUPLICATE_ROLE_BOUND(role_id=role_id, resource_id=resource_id)
+
+    def _check_duplicate_project_role(self, resource_type, resource_id, project_vo, project_id):
         project_rb_vos = self.role_binding_model.filter(resource_type=resource_type, resource_id=resource_id,
                                                         project=project_vo)
 
         if project_rb_vos.count() > 0:
             raise ERROR_DUPLICATE_RESOURCE_IN_PROJECT(project_id=project_id, resource_id=resource_id)
 
-    def _check_duplicate_project_group(self, resource_type, resource_id, project_group_vo, project_group_id):
+    def _check_duplicate_project_group_role(self, resource_type, resource_id, project_group_vo, project_group_id):
         pg_rb_vos = self.role_binding_model.filter(resource_type=resource_type, resource_id=resource_id,
                                                    project_group=project_group_vo)
 
