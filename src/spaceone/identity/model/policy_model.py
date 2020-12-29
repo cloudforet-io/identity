@@ -9,7 +9,7 @@ class PolicyTag(EmbeddedDocument):
 
 
 class Policy(MongoModel):
-    policy_id = StringField(max_length=40, generate_id='policy', unique=True)
+    policy_id = StringField(max_length=40, generate_id='policy', unique_with='domain_id')
     name = StringField(max_length=255, unique_with='domain_id')
     policy_type = StringField(max_length=20, default='CUSTOM', choices=('CUSTOM', 'MANAGED'))
     permissions = ListField(StringField())
