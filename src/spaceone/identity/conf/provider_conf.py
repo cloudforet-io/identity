@@ -238,7 +238,7 @@ DEFAULT_PROVIDERS = [{
             'value': '#00BCF2'
         }, {
             'key': 'icon',
-            'value': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.png'
+            'value': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
         }
     ]
 }, {
