@@ -10,7 +10,7 @@ class PolicyTag(EmbeddedDocument):
 
 class Policy(MongoModel):
     policy_id = StringField(max_length=40, generate_id='policy', unique_with='domain_id')
-    name = StringField(max_length=255, unique_with=['domain_id', 'policy_type'])
+    name = StringField(max_length=255)
     policy_type = StringField(max_length=20, default='CUSTOM', choices=('CUSTOM', 'MANAGED'))
     permissions = ListField(StringField())
     tags = ListField(EmbeddedDocumentField(PolicyTag))
@@ -25,11 +25,6 @@ class Policy(MongoModel):
             'tags',
             'updated_at'
         ],
-        'exact_fields': [
-            'policy_id',
-            'policy_type',
-            'domain_id'
-        ],
         'minimal_fields': [
             'policy_id',
             'name'
@@ -40,5 +35,6 @@ class Policy(MongoModel):
             'policy_type',
             'domain_id',
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }

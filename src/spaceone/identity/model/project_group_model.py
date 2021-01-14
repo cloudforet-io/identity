@@ -22,10 +22,6 @@ class ProjectGroup(MongoModel):
             'parent_project_group',
             'tags'
         ],
-        'exact_fields': [
-            'project_group_id',
-            'domain_id'
-        ],
         'minimal_fields': [
             'project_group_id',
             'name'
@@ -42,5 +38,6 @@ class ProjectGroup(MongoModel):
             'parent_project_group',
             'domain_id',
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }

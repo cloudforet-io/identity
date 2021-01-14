@@ -33,12 +33,6 @@ class User(MongoModel):
             'tags',
             'last_accessed_at'
         ],
-        'exact_fields': [
-            'user_id',
-            'user_type',
-            'backend',
-            'domain_id'
-        ],
         'minimal_fields': [
             'user_id',
             'name',
@@ -53,5 +47,6 @@ class User(MongoModel):
             'last_accessed_at',
             ('user_id', 'domain_id'),
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }

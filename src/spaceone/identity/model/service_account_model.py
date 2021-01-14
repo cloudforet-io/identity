@@ -25,12 +25,6 @@ class ServiceAccount(MongoModel):
             'project',
             'tags'
         ],
-        'exact_fields': [
-            'service_account_id',
-            'provider',
-            'project',
-            'domain_id'
-        ],
         'minimal_fields': [
             'service_account_id',
             'name',
@@ -49,5 +43,6 @@ class ServiceAccount(MongoModel):
             'project',
             'domain_id',
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }
