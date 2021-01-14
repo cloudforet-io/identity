@@ -24,9 +24,6 @@ class Provider(MongoModel):
             'capability',
             'tags'
         ],
-        'exact_fields': [
-            'provider'
-        ],
         'minimal_fields': [
             'provider',
             'name'
@@ -35,5 +32,6 @@ class Provider(MongoModel):
         'indexes': [
             'provider',
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }

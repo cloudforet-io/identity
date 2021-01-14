@@ -28,11 +28,6 @@ class Role(MongoModel):
             'policies',
             'tags'
         ],
-        'exact_fields': [
-            'role_id',
-            'role_type',
-            'domain_id'
-        ],
         'minimal_fields': [
             'role_id',
             'name',
@@ -44,5 +39,6 @@ class Role(MongoModel):
             'role_type',
             'domain_id',
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }

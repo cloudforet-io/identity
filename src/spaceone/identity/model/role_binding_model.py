@@ -30,12 +30,6 @@ class RoleBinding(MongoModel):
             'labels',
             'tags'
         ],
-        'exact_fields': [
-            'role_binding_id',
-            'resource_type',
-            'resource_id',
-            'domain_id'
-        ],
         'minimal_fields': [
             'role_binding_id',
             'resource_type',
@@ -65,5 +59,6 @@ class RoleBinding(MongoModel):
             'project_group',
             'domain_id',
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }

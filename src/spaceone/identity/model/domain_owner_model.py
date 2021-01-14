@@ -24,10 +24,6 @@ class DomainOwner(MongoModel):
             'timezone',
             'last_accessed_at'
         ],
-        'exact_fields': [
-            'owner_id',
-            'domain_id'
-        ],
         'minimal_fields': [
             'owner_id',
             'name'
@@ -38,7 +34,8 @@ class DomainOwner(MongoModel):
             'email',
             'domain_id',
             'last_accessed_at'
-        ]
+        ],
+        'auto_create_index': False
     }
 
     @classmethod

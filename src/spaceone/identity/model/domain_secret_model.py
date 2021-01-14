@@ -20,16 +20,10 @@ class DomainSecret(MongoModel):
             'refresh_prv_jwk',
             'domain'
         ],
-        'exact_fields': [
-            'domain_id',
-            'pub_jwk',
-            'prv_jwk',
-            'refresh_pub_jwk',
-            'refresh_prv_jwk'
-        ],
         'ordering': ['domain_id'],
         'indexes': [
             'domain_id',
             'domain'
-        ]
+        ],
+        'auto_create_index': False
     }

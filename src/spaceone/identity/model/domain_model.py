@@ -37,10 +37,6 @@ class Domain(MongoModel):
             'tags',
             'deleted_at'
         ],
-        'exact_fields': [
-            'domain_id',
-            'state'
-        ],
         'minimal_fields': [
             'domain_id',
             'name',
@@ -51,7 +47,8 @@ class Domain(MongoModel):
             'domain_id',
             'state',
             ('tags.key', 'tags.value')
-        ]
+        ],
+        'auto_create_index': False
     }
 
     @queryset_manager

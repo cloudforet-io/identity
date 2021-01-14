@@ -15,12 +15,6 @@ class APIKey(MongoModel):
             'state',
             'last_accessed_at'
         ],
-        'exact_fields': [
-            'api_key_id',
-            'state,'
-            'user_id',
-            'domain_id'
-        ],
         'minimal_fields': [
             'api_key_id',
             'state',
@@ -33,5 +27,6 @@ class APIKey(MongoModel):
             'user_id',
             'domain_id',
             'last_accessed_at'
-        ]
+        ],
+        'auto_create_index': False
     }
