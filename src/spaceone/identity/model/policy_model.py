@@ -35,6 +35,5 @@ class Policy(MongoModel):
             'policy_type',
             'domain_id',
             ('tags.key', 'tags.value')
-        ],
-        'auto_create_index': False
+        ]
     }

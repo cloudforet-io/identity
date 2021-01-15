@@ -32,6 +32,5 @@ class Provider(MongoModel):
         'indexes': [
             'provider',
             ('tags.key', 'tags.value')
-        ],
-        'auto_create_index': False
+        ]
     }

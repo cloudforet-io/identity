@@ -43,6 +43,5 @@ class ServiceAccount(MongoModel):
             'project',
             'domain_id',
             ('tags.key', 'tags.value')
-        ],
-        'auto_create_index': False
+        ]
     }
