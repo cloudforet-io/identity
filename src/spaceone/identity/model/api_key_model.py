@@ -27,6 +27,5 @@ class APIKey(MongoModel):
             'user_id',
             'domain_id',
             'last_accessed_at'
-        ],
-        'auto_create_index': False
+        ]
     }

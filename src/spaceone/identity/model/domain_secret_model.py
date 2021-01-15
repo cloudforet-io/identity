@@ -24,6 +24,5 @@ class DomainSecret(MongoModel):
         'indexes': [
             'domain_id',
             'domain'
-        ],
-        'auto_create_index': False
+        ]
     }

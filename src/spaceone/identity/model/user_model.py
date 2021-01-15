@@ -47,6 +47,5 @@ class User(MongoModel):
             'last_accessed_at',
             ('user_id', 'domain_id'),
             ('tags.key', 'tags.value')
-        ],
-        'auto_create_index': False
+        ]
     }

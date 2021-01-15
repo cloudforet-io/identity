@@ -47,8 +47,7 @@ class Domain(MongoModel):
             'domain_id',
             'state',
             ('tags.key', 'tags.value')
-        ],
-        'auto_create_index': False
+        ]
     }
 
     @queryset_manager
