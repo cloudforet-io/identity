@@ -12,6 +12,7 @@ class Project(MongoModel):
     project_id = StringField(max_length=40, generate_id='project', unique=True)
     name = StringField(max_length=40)
     project_group = ReferenceField('ProjectGroup', reverse_delete_rule=DENY)
+    project_group_id = StringField(max_length=40)
     tags = ListField(EmbeddedDocumentField(ProjectTag))
     domain_id = StringField(max_length=255)
     created_by = StringField(max_length=255, null=True)
@@ -21,15 +22,13 @@ class Project(MongoModel):
         'updatable_fields': [
             'name',
             'project_group',
+            'project_group_id',
             'tags'
         ],
         'minimal_fields': [
             'project_id',
             'name'
         ],
-        'change_query_keys': {
-            'project_group_id': 'project_group.project_group_id'
-        },
         'reference_query_keys': {
             'project_group': ProjectGroup
         },

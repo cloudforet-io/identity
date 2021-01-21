@@ -72,6 +72,7 @@ class ProjectGroupService(BaseService):
 
         if release_parent_project_group:
             params['parent_project_group'] = None
+            params['parent_project_group_id'] = None
         else:
             if 'parent_project_group_id' in params:
                 params['parent_project_group'] = self._get_parent_project_group(
@@ -140,8 +141,13 @@ class ProjectGroupService(BaseService):
             results (list): 'list of project_group_vo'
             total_count (int)
         """
+        query = params.get('query', {})
 
-        return self.project_group_mgr.list_project_groups(params.get('query', {}))
+        # Temporary code for DB migration
+        if 'only' in query:
+            query['only'] += ['parent_project_group_id']
+
+        return self.project_group_mgr.list_project_groups(query)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_group_id', 'user_id', 'role_id', 'domain_id'])
@@ -317,6 +323,10 @@ class ProjectGroupService(BaseService):
             'v': related_project_groups,
             'o': 'in'
         })
+
+        # Temporary code for DB migration
+        if 'only' in query:
+            query['only'] += ['project_group_id']
 
         return project_mgr.list_projects(query)
 

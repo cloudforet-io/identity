@@ -22,6 +22,8 @@ class TestProviderService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.identity')
+        config.set_service_config()
+        config.set_global(DATABASE_SUPPORT_AWS_DOCUMENT_DB=True)
         connect('test', host='mongomock://localhost')
         cls.domain_id = utils.generate_id('domain')
         cls.transaction = Transaction({
@@ -121,7 +123,7 @@ class TestProviderService(unittest.TestCase):
         provider_svc = ProviderService(transaction=self.transaction)
         provider_svc.create(params.copy())
 
-        with self.assertRaises(ERROR_NOT_UNIQUE_KEYS) as e:
+        with self.assertRaises(ERROR_SAVE_UNIQUE_VALUES) as e:
             provider_svc = ProviderService(transaction=self.transaction)
             provider_svc.create(params.copy())
 

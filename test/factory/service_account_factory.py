@@ -17,6 +17,7 @@ class ServiceAccountFactory(factory.mongoengine.MongoEngineFactory):
     }
     provider = 'aws'
     project = factory.SubFactory(ProjectFactory)
+    project_id = factory.LazyAttribute(lambda o: utils.generate_id('project'))
     tags = [
         {
             'key': 'tag_key',
