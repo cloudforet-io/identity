@@ -38,6 +38,7 @@ class ProjectGroup(MongoModel):
         'indexes': [
             'project_group_id',
             'parent_project_group',
+            'parent_project_group_id',
             'domain_id',
             ('tags.key', 'tags.value')
         ]

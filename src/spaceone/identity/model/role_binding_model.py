@@ -61,6 +61,9 @@ class RoleBinding(MongoModel):
             'role',
             'project',
             'project_group',
+            'role_id',
+            'project_id',
+            'project_group_id',
             'domain_id',
             ('tags.key', 'tags.value')
         ]
