@@ -20,6 +20,9 @@ class RoleBinding(MongoModel):
     project = ReferenceField('Project', null=True, default=None, reverse_delete_rule=CASCADE)
     project_group = ReferenceField('ProjectGroup', null=True, default=None, reverse_delete_rule=CASCADE)
     user = ReferenceField('User', null=True, default=None, reverse_delete_rule=CASCADE)
+    role_id = StringField(max_length=40)
+    project_id = StringField(max_length=40, null=True, default=None)
+    project_group_id = StringField(max_length=40, null=True, default=None)
     labels = ListField(StringField(max_length=255))
     tags = ListField(EmbeddedDocumentField(RoleBindingTag))
     domain_id = StringField(max_length=40)
@@ -28,21 +31,19 @@ class RoleBinding(MongoModel):
     meta = {
         'updatable_fields': [
             'labels',
-            'tags'
+            'tags',
+            'role_id',
+            'project_id',
+            'project_group_id'
         ],
         'minimal_fields': [
             'role_binding_id',
             'resource_type',
             'resource_id',
-            'role',
-            'project',
-            'project_group'
+            'role'
         ],
         'change_query_keys': {
-            'role_id': 'role.role_id',
-            'role_type': 'role.role_type',
-            'project_id': 'project.project_id',
-            'project_group_id': 'project_group.project_group_id'
+            'role_type': 'role.role_type'
         },
         'reference_query_keys': {
             'role': Role,

@@ -25,6 +25,8 @@ class TestServiceAccountService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.identity')
+        config.set_service_config()
+        config.set_global(DATABASE_SUPPORT_AWS_DOCUMENT_DB=True)
         connect('test', host='mongomock://localhost')
         ProviderFactory(provider='aws', name='AWS', template={
             'service_account': {

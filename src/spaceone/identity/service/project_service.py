@@ -133,6 +133,11 @@ class ProjectService(BaseService):
             results (list): 'list of project_vo'
             total_count (int)
         """
+        query = params.get('query', {})
+
+        # Temporary code for DB migration
+        if 'only' in query:
+            query['only'] += ['project_group_id']
 
         return self.project_mgr.list_projects(params.get('query', {}))
 
@@ -264,7 +269,6 @@ class ProjectService(BaseService):
         # TODO: include_parent_member filter
         query['filter'] = list(map(self._change_filter, query.get('filter', [])))
 
-        print(query)
         return role_binding_mgr.list_role_bindings(query)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})

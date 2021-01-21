@@ -14,6 +14,7 @@ class ServiceAccount(MongoModel):
     data = DictField()
     provider = StringField(max_length=40)
     project = ReferenceField('Project', null=True, default=None, reverse_delete_rule=DENY)
+    project_id = StringField(max_length=40)
     tags = ListField(EmbeddedDocumentField(ServiceAccountTag))
     domain_id = StringField(max_length=255)
     created_at = DateTimeField(auto_now_add=True)
@@ -23,6 +24,7 @@ class ServiceAccount(MongoModel):
             'name',
             'data',
             'project',
+            'project_id',
             'tags'
         ],
         'minimal_fields': [

@@ -28,6 +28,10 @@ def ServiceAccountInfo(service_account_vo: ServiceAccount, minimal=False):
                 'project_info': ProjectInfo(service_account_vo.project, minimal=True)
             })
 
+        # Temporary code for DB migration
+        if not service_account_vo.project_id and service_account_vo.project:
+            service_account_vo.update({'project_id': service_account_vo.project.project_id})
+
     return service_account_pb2.ServiceAccountInfo(**info)
 
 

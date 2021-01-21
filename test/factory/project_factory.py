@@ -13,6 +13,7 @@ class ProjectFactory(factory.mongoengine.MongoEngineFactory):
     project_id = factory.LazyAttribute(lambda o: utils.generate_id('project'))
     name = factory.LazyAttribute(lambda o: utils.random_string())
     project_group = factory.SubFactory(ProjectGroupFactory)
+    project_group_id = factory.LazyAttribute(lambda o: utils.generate_id('pg'))
     tags = [
         {
             'key': 'tag_key',

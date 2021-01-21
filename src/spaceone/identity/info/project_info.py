@@ -29,6 +29,10 @@ def ProjectInfo(project_vo: Project, minimal=False):
             'created_at': change_timestamp_type(project_vo.created_at)
         })
 
+        # Temporary code for DB migration
+        if not project_vo.project_group_id and project_vo.project_group:
+            project_vo.update({'project_group_id': project_vo.project_group.project_group_id})
+
     return project_pb2.ProjectInfo(**info)
 
 

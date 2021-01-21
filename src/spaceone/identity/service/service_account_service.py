@@ -73,6 +73,7 @@ class ServiceAccountService(BaseService):
 
         if release_project:
             params['project'] = None
+            params['project_id'] = None
         elif project_id:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
 
@@ -148,9 +149,13 @@ class ServiceAccountService(BaseService):
             results (list): 'list of service_account_vo'
             total_count (int)
         """
+        query = params.get('query', {})
 
-        print(params)
-        return self.service_account_mgr.list_service_accounts(params.get('query', {}))
+        # Temporary code for DB migration
+        if 'only' in query:
+            query['only'] += ['project_id']
+
+        return self.service_account_mgr.list_service_accounts(query)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
