@@ -29,6 +29,9 @@ class Project(MongoModel):
             'project_id',
             'name'
         ],
+        'change_query_keys': {
+            'project_group_id': 'project_group.project_group_id'
+        },
         'reference_query_keys': {
             'project_group': ProjectGroup
         },
