@@ -15,8 +15,7 @@ from spaceone.identity.manager.policy_manager import PolicyManager
 _LOGGER = logging.getLogger(__name__)
 
 
-# @authentication_handler
-# @authorization_handler
+@authentication_handler
 @event_handler
 class AuthorizationService(BaseService):
 
@@ -58,24 +57,27 @@ class AuthorizationService(BaseService):
         self._check_user_state(user_id, domain_id)
         self._check_domain_state(domain_id)
 
+        project_path = self._get_project_path(request_project_id, request_project_group_id, domain_id)
         user_role_type, user_roles, user_projects, user_project_groups = \
-            self._get_user_role_bindings(user_id, domain_id)
-
+            self._get_user_roles_and_projects(user_id, domain_id)
         for project_group_id in user_project_groups[:]:
             child_projects, child_project_groups = self._get_children_in_project_group(project_group_id, domain_id)
             user_projects += child_projects
             user_project_groups += child_project_groups
 
+        request_roles = self._get_request_roles_by_scope(user_role_type, user_roles, project_path, scope)
+
         user_projects = sorted(list(set(user_projects)))
         user_project_groups = sorted(list(set(user_project_groups)))
-        user_roles = sorted(list(set(user_roles)))
+        request_roles = sorted(list(set(request_roles)))
         user_projects_str = ','.join(user_projects)
         user_project_groups_str = ','.join(user_project_groups)
-        user_roles_str = ','.join(user_project_groups)
+        request_roles_str = ','.join(request_roles)
 
-        user_permissions = self._get_permissions(user_roles, domain_id)
+        user_permissions = self._get_permissions(request_roles, domain_id)
 
-        self.auth_mgr.check_permissions(user_id, domain_id, user_permissions, service, resource, verb, user_roles_str)
+        self.auth_mgr.check_permissions(user_id, domain_id, user_permissions, service, resource, verb,
+                                        request_roles_str)
         self.auth_mgr.check_scope_by_role_type(user_id, domain_id, scope, user_role_type, user_projects,
                                                user_project_groups, request_domain_id, request_project_id,
                                                request_project_group_id, user_projects_str, user_project_groups_str)
@@ -113,7 +115,7 @@ class AuthorizationService(BaseService):
             raise ERROR_PERMISSION_DENIED()
 
     @cache.cacheable(key='role-bindings:{domain_id}:{user_id}', expire=3600)
-    def _get_user_role_bindings(self, user_id, domain_id):
+    def _get_user_roles_and_projects(self, user_id, domain_id):
         role_binding_mgr: RoleBindingManager = self.locator.get_manager('RoleBindingManager')
 
         role_binding_vos = role_binding_mgr.get_user_role_bindings(user_id, domain_id)
@@ -122,13 +124,13 @@ class AuthorizationService(BaseService):
         user_roles = {
             'SYSTEM': [],
             'DOMAIN': [],
-            'PROJECT': []
+            'PROJECT': {}
         }
         user_projects = []
         user_project_groups = []
         for role_binding_vo in role_binding_vos:
             rb_role_type = role_binding_vo.role.role_type
-            rb_role_id = role_binding_vo.role.role_id
+            rb_role_id = role_binding_vo.role_id
             if role_type is None:
                 role_type = rb_role_type
             else:
@@ -136,18 +138,81 @@ class AuthorizationService(BaseService):
                     role_type = rb_role_type
 
             if rb_role_type == 'PROJECT':
-                if role_binding_vo.project:
-                    user_projects.append(role_binding_vo.project.project_id)
-                if role_binding_vo.project_group:
-                    user_project_groups.append(role_binding_vo.project_group.project_group_id)
-
-            user_roles[rb_role_type].append(rb_role_id)
+                if role_binding_vo.project_id:
+                    project_id = role_binding_vo.project_id
+                    user_projects.append(project_id)
+                    user_roles[rb_role_type][project_id] = [rb_role_id]
+                elif role_binding_vo.project_group_id:
+                    project_group_id = role_binding_vo.project_group_id
+                    user_project_groups.append(project_group_id)
+                    user_roles[rb_role_type][project_group_id] = [rb_role_id]
+            else:
+                user_roles[rb_role_type].append(rb_role_id)
 
         if role_type:
-            return role_type, user_roles[role_type], user_projects, user_project_groups
+            return role_type, user_roles, user_projects, user_project_groups
         else:
-            _LOGGER.debug(f'[_get_user_role_bindings] User dose not have roles. (user_id={user_id}, domain_id={domain_id})')
+            _LOGGER.debug(f'[_get_user_role_bindings] User does not have a role. (user_id={user_id}, domain_id={domain_id})')
             raise ERROR_PERMISSION_DENIED()
+
+    # @cache.cacheable(key='project-path:{domain_id}:{request_project_id}:{request_project_group_id}', expire=3600)
+    def _get_project_path(self, request_project_id, request_project_group_id, domain_id):
+        project_path = []
+        if request_project_id:
+            try:
+                project_vo = self.project_mgr.get_project(request_project_id, domain_id)
+                project_path = [request_project_id]
+                project_path += self._get_parent_project_path(project_vo.project_group, [])
+            except Exception:
+                _LOGGER.debug(f'[_get_project_path] Project could not be found. (project_id={request_project_id})')
+
+        elif request_project_group_id:
+            try:
+                project_group_vo = self.project_group_mgr.get_project_group(request_project_group_id, domain_id)
+                project_path = [request_project_group_id]
+                project_path += self._get_parent_project_path(project_group_vo.parent_project_group, [])
+            except Exception:
+                _LOGGER.debug(f'[_get_project_path] Project group could not be found. (project_group_id={request_project_group_id})')
+                pass
+
+        return project_path
+
+    def _get_parent_project_path(self, project_group_vo, project_path):
+        project_group_id = project_group_vo.project_group_id
+        project_path.append(project_group_id)
+
+        if project_group_vo.parent_project_group:
+            project_path = self._get_parent_project_path(project_group_vo.parent_project_group, project_path)
+
+        return project_path
+
+    def _get_request_roles_by_scope(self, user_role_type, user_roles, project_path, scope):
+        if user_role_type == 'SYSTEM':
+            return user_roles['SYSTEM']
+        elif user_role_type == 'DOMAIN':
+            if scope == 'PROJECT':
+                for project_or_project_group_id in project_path:
+                    if project_or_project_group_id in user_roles['PROJECT']:
+                        return user_roles['PROJECT'][project_or_project_group_id]
+
+            return user_roles['DOMAIN']
+
+        elif user_role_type == 'PROJECT':
+            if scope == 'PROJECT':
+                if len(project_path) > 0:
+                    for project_or_project_group_id in project_path:
+                        if project_or_project_group_id in user_roles['PROJECT']:
+                            return user_roles['PROJECT'][project_or_project_group_id]
+
+                    raise ERROR_PERMISSION_DENIED()
+
+            project_roles = []
+            for project_or_project_group_id, roles in user_roles['PROJECT'].items():
+                project_roles += roles
+
+            return project_roles
+
+        raise ERROR_PERMISSION_DENIED()
 
     @cache.cacheable(key='project-group-children:{domain_id}:{project_group_id}', expire=3600)
     def _get_children_in_project_group(self, project_group_id, domain_id):
@@ -167,17 +232,9 @@ class AuthorizationService(BaseService):
         return projects, project_groups
 
     def _get_related_project_group(self, project_group_vo, related_project_groups):
-        query = {
-            'filter': [{
-                'k': 'parent_project_group',
-                'v': project_group_vo,
-                'o': 'eq'
-            }]
-        }
+        project_group_vos = self.project_group_mgr.filter_project_groups(parent_project_group=project_group_vo)
 
-        project_group_vos, total_count = self.project_group_mgr.list_project_groups(query)
-
-        if total_count > 0:
+        if project_group_vos.count() > 0:
             related_project_groups += project_group_vos
             for pg_vo in project_group_vos:
                 related_project_groups = self._get_related_project_group(pg_vo, related_project_groups)
