@@ -14,9 +14,9 @@ class AuthorizationManager(BaseManager):
     def __init__(self, transaction):
         super().__init__(transaction)
 
-    @cache.cacheable(key='user-permissions:{domain_id}:{user_id}:{service}:{resource}:{verb}:{user_roles_str}',
+    @cache.cacheable(key='user-permissions:{domain_id}:{user_id}:{service}:{resource}:{verb}:{request_roles_str}',
                      expire=3600)
-    def check_permissions(self, user_id, domain_id, permissions, service, resource, verb, user_roles_str):
+    def check_permissions(self, user_id, domain_id, permissions, service, resource, verb, request_roles_str):
         try:
             next(filter(functools.partial(
                 self._match_permission, service, resource, verb), permissions))

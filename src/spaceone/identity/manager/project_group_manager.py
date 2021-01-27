@@ -69,6 +69,9 @@ class ProjectGroupManager(BaseManager):
     def get_project_group(self, project_group_id, domain_id, only=None):
         return self.project_group_model.get(project_group_id=project_group_id, domain_id=domain_id, only=only)
 
+    def filter_project_groups(self, **conditions):
+        return self.project_group_model.filter(**conditions)
+
     def list_project_groups(self, query):
         return self.project_group_model.query(**query)
 
