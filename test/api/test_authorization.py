@@ -338,7 +338,7 @@ class TestAuthorization(unittest.TestCase):
                 params,
                 metadata=(('token', self.user_token),))
 
-    def test_authorization_verify_no_roles_access_default_permissions(self):
+    def test_authorization_verify_no_roles_access_default_permissions_my_id(self):
         self._test_create_user()
         self._test_issue_user_token()
 
@@ -346,7 +346,27 @@ class TestAuthorization(unittest.TestCase):
             'service': 'identity',
             'resource': 'User',
             'verb': 'get',
-            'scope': 'DOMAIN'
+            'scope': 'DOMAIN',
+            'user_id': self.user.user_id
+        }
+
+        response = self.identity_v1.Authorization.verify(
+            params,
+            metadata=(('token', self.user_token),))
+
+        self._print_data(response, 'test_authorization_verify_no_roles_access_default_permissions')
+        self.assertEqual('USER', response.role_type)
+
+    def test_authorization_verify_no_roles_access_default_permissions_other_id(self):
+        self._test_create_user()
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'get',
+            'scope': 'DOMAIN',
+            'user_id': utils.random_string() + '@mz.co.kr'
         }
 
         with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):

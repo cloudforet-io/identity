@@ -208,7 +208,7 @@ class TestUser(unittest.TestCase):
         with self.assertRaises(Exception) as e:
             self.test_create_user(user_id=user_id)
 
-        self.assertIn("ERROR_NOT_UNIQUE_KEYS", str(e.exception))
+        self.assertIn("ERROR_SAVE_UNIQUE_VALUES", str(e.exception))
 
     def test_update_user(self, name=None):
         self.test_create_user()
