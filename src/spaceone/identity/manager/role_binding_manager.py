@@ -62,8 +62,9 @@ class RoleBindingManager(BaseManager):
         role_binding_vo = self.role_binding_model.create(params)
         self.transaction.add_rollback(_rollback, role_binding_vo)
 
-        cache.delete_pattern(f'user-permissions:{domain_id}:{resource_id}:*')
-        cache.delete_pattern(f'user-scope:{domain_id}:{resource_id}:*')
+        cache.delete_pattern(f'role-bindings:{domain_id}:{resource_id}*')
+        cache.delete_pattern(f'user-permissions:{domain_id}:{resource_id}*')
+        cache.delete_pattern(f'user-scopes:{domain_id}:{resource_id}*')
 
         return role_binding_vo
 
@@ -90,9 +91,9 @@ class RoleBindingManager(BaseManager):
 
         role_binding_vo.delete()
 
-        cache.delete_pattern(f'role-bindings:{domain_id}:{resource_id}')
-        cache.delete_pattern(f'user-permissions:{domain_id}:{resource_id}:*')
-        cache.delete_pattern(f'user-scope:{domain_id}:{resource_id}:*')
+        cache.delete_pattern(f'role-bindings:{domain_id}:{resource_id}*')
+        cache.delete_pattern(f'user-permissions:{domain_id}:{resource_id}*')
+        cache.delete_pattern(f'user-scopes:{domain_id}:{resource_id}*')
 
     def get_role_binding(self, role_binding_id, domain_id, only=None):
         return self.role_binding_model.get(role_binding_id=role_binding_id, domain_id=domain_id, only=only)

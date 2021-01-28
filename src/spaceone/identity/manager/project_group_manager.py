@@ -21,6 +21,12 @@ class ProjectGroupManager(BaseManager):
         project_group_vo: ProjectGroup = self.project_group_model.create(params)
         self.transaction.add_rollback(_rollback, project_group_vo)
 
+        if 'parent_project_group_id' in params:
+            cache.delete_pattern(f'project-path:*{params["parent_project_group_id"]}*')
+            cache.delete_pattern(f'project-group-children:*{params["parent_project_group_id"]}')
+            cache.delete_pattern(f'role-bindings:*{params["parent_project_group_id"]}*')
+            cache.delete_pattern(f'user-scopes:*{params["parent_project_group_id"]}*')
+
         return project_group_vo
 
     def update_project_group(self, params):
@@ -34,18 +40,20 @@ class ProjectGroupManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, project_group_vo.to_dict())
 
-        if 'parent_project_group' in params:
-            domain_id = project_group_vo.domain_id
-            new_parent_project_group_id = params['parent_project_group'].project_group_id
-            if project_group_vo.parent_project_group:
-                old_parent_project_group_id = project_group_vo.parent_project_group.project_group_id
-            else:
-                old_parent_project_group_id = None
+        if 'parent_project_group_id' in params:
+            new_project_group_id = params['parent_project_group_id']
+            old_project_group_id = project_group_vo.parent_project_group_id
 
-            cache.delete_pattern(f'project-group-children:{domain_id}:{new_parent_project_group_id}')
+            if new_project_group_id is not None:
+                cache.delete_pattern(f'project-path:*{new_project_group_id}*')
+                cache.delete_pattern(f'project-group-children:*{new_project_group_id}')
+                cache.delete_pattern(f'role-bindings:*{new_project_group_id}*')
+                cache.delete_pattern(f'user-scopes:*{new_project_group_id}*')
 
-            if old_parent_project_group_id:
-                cache.delete_pattern(f'project-group-children:{domain_id}:{old_parent_project_group_id}')
+            cache.delete_pattern(f'project-path:*{old_project_group_id}*')
+            cache.delete_pattern(f'project-group-children:*{old_project_group_id}')
+            cache.delete_pattern(f'role-bindings:*{old_project_group_id}*')
+            cache.delete_pattern(f'user-scopes:*{old_project_group_id}*')
 
         return project_group_vo.update(params)
 
@@ -55,16 +63,14 @@ class ProjectGroupManager(BaseManager):
 
     @staticmethod
     def delete_project_group_by_vo(project_group_vo):
-        domain_id = project_group_vo.domain_id
-        if project_group_vo.parent_project_group:
-            parent_project_group_id = project_group_vo.parent_project_group.project_group_id
-        else:
-            parent_project_group_id = None
-
+        parent_project_group_id = project_group_vo.parent_project_group_id
         project_group_vo.delete()
 
         if parent_project_group_id:
-            cache.delete_pattern(f'project-group-children:{domain_id}:{parent_project_group_id}')
+            cache.delete_pattern(f'project-path:*{parent_project_group_id}*')
+            cache.delete_pattern(f'project-group-children:*{parent_project_group_id}')
+            cache.delete_pattern(f'role-bindings:*{parent_project_group_id}*')
+            cache.delete_pattern(f'user-scopes:*{parent_project_group_id}*')
 
     def get_project_group(self, project_group_id, domain_id, only=None):
         return self.project_group_model.get(project_group_id=project_group_id, domain_id=domain_id, only=only)
