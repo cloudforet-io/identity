@@ -1,6 +1,5 @@
-DEFAULT_PERMISSIONS = {
-    'USER': [
-        'identity.User.get',
-        'identity.User.update',
-    ]
-}
+DEFAULT_PERMISSIONS = [
+    'identity.User.get',
+    'identity.User.update',
+    'identity.RoleBinding.get'
+]

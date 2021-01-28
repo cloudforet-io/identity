@@ -79,6 +79,9 @@ class UserManager(BaseManager):
         user_vo.delete()
 
         cache.delete_pattern(f'user-state:{domain_id}:{user_id}')
+        cache.delete_pattern(f'role-bindings:{domain_id}:{user_id}*')
+        cache.delete_pattern(f'user-permissions:{domain_id}:{user_id}*')
+        cache.delete_pattern(f'user-scopes:{domain_id}:{user_id}*')
 
     def enable_user(self, user_id, domain_id):
         def _rollback(old_data):
