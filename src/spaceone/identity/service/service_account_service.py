@@ -17,7 +17,10 @@ class ServiceAccountService(BaseService):
         super().__init__(*args, **kwargs)
         self.service_account_mgr: ServiceAccountManager = self.locator.get_manager('ServiceAccountManager')
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'require_project_id': True
+    })
     @check_required(['name', 'data', 'provider', 'domain_id'])
     def create(self, params):
         """
@@ -126,11 +129,13 @@ class ServiceAccountService(BaseService):
         return self.service_account_mgr.get_service_account(params['service_account_id'], params['domain_id'],
                                                             params.get('only'))
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT',
-                              'mutation.append_parameter': {'project_id': 'authorization.projects'}})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
     @check_required(['domain_id'])
     @change_only_key({'project_info': 'project'}, key_path='query.only')
-    @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id'])
+    @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id', 'user_projects'])
     @change_tag_filter('tags')
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def list(self, params):
@@ -142,7 +147,8 @@ class ServiceAccountService(BaseService):
                     'provider': 'str',
                     'project_id': 'str',
                     'domain_id': 'str',
-                    'query': 'dict (spaceone.api.core.v1.Query)'
+                    'query': 'dict (spaceone.api.core.v1.Query)',
+                    'user_projects': 'list', // from meta
                 }
 
         Returns:
@@ -157,9 +163,12 @@ class ServiceAccountService(BaseService):
 
         return self.service_account_mgr.list_service_accounts(query)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
     @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
+    @append_query_filter(['project_id', 'domain_id', 'user_projects'])
     @change_tag_filter('tags')
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def stat(self, params):
@@ -167,7 +176,8 @@ class ServiceAccountService(BaseService):
         Args:
             params (dict): {
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'user_projects': 'list', // from meta
             }
 
         Returns:

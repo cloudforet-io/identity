@@ -123,8 +123,8 @@ class PolicyManager(BaseManager):
     def _delete_role_cache(self, policy_vo):
         role_vos = self._get_roles_using_policy(policy_vo)
         for role_vo in role_vos:
-            cache.delete_pattern(f'role-permissions:{role_vo.domain_id}:{role_vo.role_id}')
-            cache.delete_pattern(f'user-permissions:{role_vo.domain_id}:*{role_vo.role_id}*')
+            cache.delete_pattern(f'role-permissions:*{role_vo.role_id}')
+            cache.delete_pattern(f'user-permissions:*{role_vo.role_id}*')
 
     def _get_roles_using_policy(self, policy_vo):
         role_mgr: RoleManager = self.locator.get_manager('RoleManager')

@@ -33,6 +33,7 @@ class ServiceAccount(MongoModel):
             'provider'
         ],
         'change_query_keys': {
+            'user_projects': 'project.project_id',
             'project_id': 'project.project_id'
         },
         'reference_query_keys': {

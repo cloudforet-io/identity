@@ -1,14 +1,12 @@
-import logging
-
 from spaceone.core.service import *
 from spaceone.identity.manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.model import Domain
 
 
-@authentication_handler(methods=['update', 'get'])
-@authorization_handler(methods=['update', 'get'])
-@mutation_handler
+@authentication_handler(exclude=['create', 'list', 'get_public_key'])
+@authorization_handler(exclude=['create', 'list', 'get_public_key'])
+@mutation_handler(exclude=['create', 'list', 'get_public_key'])
 @event_handler
 class DomainService(BaseService):
 
@@ -16,7 +14,7 @@ class DomainService(BaseService):
         super().__init__(metadata)
         self.domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['name'])
     def create(self, params):
         """ Create domain
@@ -60,7 +58,7 @@ class DomainService(BaseService):
 
         return self.domain_mgr.update_domain(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     def delete(self, params):
         """ Delete domain
@@ -76,7 +74,7 @@ class DomainService(BaseService):
 
         self.domain_mgr.delete_domain(params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     def enable(self, params):
         """ Enable domain
@@ -92,7 +90,7 @@ class DomainService(BaseService):
 
         return self.domain_mgr.enable_domain(params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     def disable(self, params):
         """ Disable domain
@@ -151,7 +149,7 @@ class DomainService(BaseService):
             'domain_id': domain_id
         }
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @append_query_filter(['domain_id', 'name'])
     @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])
@@ -173,7 +171,7 @@ class DomainService(BaseService):
         query = params.get('query', {})
         return self.domain_mgr.list_domains(query)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query'])
     @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])

@@ -166,24 +166,24 @@ class TestAuthentication(unittest.TestCase):
         print('[ _issue_token: decoded token ]')
         self.pp.pprint(decoded)
 
-    def _get_domain(self):
+    def _get_user(self):
         params = {
-            'domain_id': self.domain.domain_id
+            'user_id': self.user.user_id
         }
 
-        domain = self.identity_v1.Domain.get(
+        user = self.identity_v1.User.get(
             params,
             metadata=(
                 ('token', self.token.access_token),
             )
         )
-        self._print_data(domain, '_get_domain')
+        self._print_data(user, '_get_user')
 
     def test_id_pw_authentication(self):
         self._create_user()
         self._issue_token()
 
-        self._get_domain()
+        self._get_user()
 
     def test_get_public_key(self):
         params = {

@@ -110,11 +110,13 @@ class ProjectService(BaseService):
 
         return self.project_mgr.get_project(params['project_id'], params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT',
-                              'mutation.append_parameter': {'project_id': 'authorization.projects'}})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
     @check_required(['domain_id'])
     @change_only_key({'project_group_info': 'project_group'}, key_path='query.only')
-    @append_query_filter(['project_id', 'name', 'project_group_id', 'domain_id'])
+    @append_query_filter(['project_id', 'name', 'project_group_id', 'domain_id', 'user_projects'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def list(self, params):
@@ -126,7 +128,8 @@ class ProjectService(BaseService):
                 'name': 'str',
                 'project_group_id': 'str',
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)'
+                'query': 'dict (spaceone.api.core.v1.Query)',
+                'user_projects': 'list', # from meta
             }
 
         Returns:
@@ -140,6 +143,31 @@ class ProjectService(BaseService):
             query['only'] += ['project_group_id']
 
         return self.project_mgr.list_projects(params.get('query', {}))
+
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
+    @check_required(['query', 'domain_id'])
+    @append_query_filter(['domain_id', 'user_projects'])
+    @change_tag_filter('tags')
+    @append_keyword_filter(['project_id', 'name'])
+    def stat(self, params):
+        """
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'user_projects': 'list', # from meta
+            }
+
+        Returns:
+            values (list): 'list of statistics data'
+            total_count (int)
+        """
+
+        query = params.get('query', {})
+        return self.project_mgr.stat_projects(query)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_id', 'user_id', 'role_id', 'domain_id'])
@@ -270,27 +298,6 @@ class ProjectService(BaseService):
         query['filter'] = list(map(self._change_filter, query.get('filter', [])))
 
         return role_binding_mgr.list_role_bindings(query)
-
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
-    @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
-    @append_keyword_filter(['project_id', 'name'])
-    def stat(self, params):
-        """
-        Args:
-            params (dict): {
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
-            }
-
-        Returns:
-            values (list): 'list of statistics data'
-            total_count (int)
-        """
-
-        query = params.get('query', {})
-        return self.project_mgr.stat_projects(query)
 
     @staticmethod
     def _change_filter(condition):
