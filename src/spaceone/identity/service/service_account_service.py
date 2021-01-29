@@ -19,7 +19,7 @@ class ServiceAccountService(BaseService):
 
     @transaction(append_meta={
         'authorization.scope': 'PROJECT',
-        'require_project_id': True
+        'authorization.require_project_id': True
     })
     @check_required(['name', 'data', 'provider', 'domain_id'])
     def create(self, params):
