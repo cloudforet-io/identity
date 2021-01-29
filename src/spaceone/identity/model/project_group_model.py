@@ -29,6 +29,7 @@ class ProjectGroup(MongoModel):
             'name'
         ],
         'change_query_keys': {
+            'user_project_groups': 'project_group_id',
             'parent_project_group_id': 'parent_project_group.project_group_id'
         },
         'reference_query_keys': {

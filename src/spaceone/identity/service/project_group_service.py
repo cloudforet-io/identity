@@ -19,7 +19,11 @@ class ProjectGroupService(BaseService):
         super().__init__(metadata)
         self.project_group_mgr: ProjectGroupManager = self.locator.get_manager('ProjectGroupManager')
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'authorization.project_group_id': 'parent_project_group_id',
+        'require_project_group_id': True
+    })
     @check_required(['name', 'domain_id'])
     def create(self, params):
         """ Create project group
@@ -118,11 +122,13 @@ class ProjectGroupService(BaseService):
         return self.project_group_mgr.get_project_group(params['project_group_id'], params['domain_id'],
                                                         params.get('only'))
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT',
-                              'mutation.append_parameter': {'project_group_id': 'authorization.project_groups'}})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_project_groups': 'authorization.project_groups'}
+    })
     @check_required(['domain_id'])
     @change_only_key({'parent_project_group_info': 'parent_project_group'}, key_path='query.only')
-    @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id'])
+    @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id', 'user_project_groups'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_group_id', 'name'])
     def list(self, params):
@@ -134,7 +140,8 @@ class ProjectGroupService(BaseService):
                 'name': 'str',
                 'parent_project_group_id': 'str',
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)'
+                'query': 'dict (spaceone.api.core.v1.Query)',
+                'user_project_groups': 'list', # from meta
             }
 
         Returns:
@@ -148,6 +155,31 @@ class ProjectGroupService(BaseService):
             query['only'] += ['parent_project_group_id']
 
         return self.project_group_mgr.list_project_groups(query)
+
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_project_groups': 'authorization.project_groups'}
+    })
+    @check_required(['query', 'domain_id'])
+    @append_query_filter(['domain_id', 'user_project_groups'])
+    @change_tag_filter('tags')
+    @append_keyword_filter(['project_id', 'name'])
+    def stat(self, params):
+        """
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'user_project_groups': 'list', # from meta
+            }
+
+        Returns:
+            values (list): 'list of statistics data'
+            total_count (int)
+        """
+
+        query = params.get('query', {})
+        return self.project_group_mgr.stat_project_groups(query)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_group_id', 'user_id', 'role_id', 'domain_id'])
@@ -329,27 +361,6 @@ class ProjectGroupService(BaseService):
             query['only'] += ['project_group_id']
 
         return project_mgr.list_projects(query)
-
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
-    @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
-    @append_keyword_filter(['project_id', 'name'])
-    def stat(self, params):
-        """
-        Args:
-            params (dict): {
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
-            }
-
-        Returns:
-            values (list): 'list of statistics data'
-            total_count (int)
-        """
-
-        query = params.get('query', {})
-        return self.project_group_mgr.stat_project_groups(query)
 
     @staticmethod
     def _change_filter(condition):

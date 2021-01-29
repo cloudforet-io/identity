@@ -6,7 +6,7 @@ from spaceone.identity.manager import DomainOwnerManager
 
 @authentication_handler(exclude=['create'])
 @authorization_handler(exclude=['create'])
-@mutation_handler
+@mutation_handler(exclude=['create'])
 @event_handler
 class DomainOwnerService(BaseService):
 
@@ -14,7 +14,7 @@ class DomainOwnerService(BaseService):
         super().__init__(metadata)
         self.domain_owner_mgr: DomainOwnerManager = self.locator.get_manager('DomainOwnerManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['owner_id', 'password', 'domain_id'])
     def create(self, params):
         """ Create domain owner
