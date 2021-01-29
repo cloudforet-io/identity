@@ -22,10 +22,11 @@ class ProjectManager(BaseManager):
         project_vo: Project = self.project_model.create(params)
         self.transaction.add_rollback(_rollback, project_vo)
 
-        cache.delete_pattern(f'project-path:*{params["project_group_id"]}*')
-        cache.delete_pattern(f'project-group-children:*{params["project_group_id"]}')
-        cache.delete_pattern(f'role-bindings:*{params["project_group_id"]}*')
-        cache.delete_pattern(f'user-scopes:*{params["project_group_id"]}*')
+        project_group_id = params['project_group_id']
+        cache.delete_pattern(f'project-path:*{project_group_id}*')
+        cache.delete_pattern(f'role-bindings:*{project_group_id}*')
+        cache.delete_pattern(f'user-scopes:*{project_group_id}*')
+        self._delete_parent_project_group_cache(params['project_group'])
 
         return project_vo
 
@@ -40,18 +41,18 @@ class ProjectManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, project_vo.to_dict())
 
-        if 'project_group_id' in params:
+        if 'project_group' in params:
             new_project_group_id = params['project_group_id']
             old_project_group_id = project_vo.project_group.project_group_id
 
             cache.delete_pattern(f'project-path:*{new_project_group_id}*')
             cache.delete_pattern(f'project-path:*{old_project_group_id}*')
-            cache.delete_pattern(f'project-group-children:*{new_project_group_id}')
-            cache.delete_pattern(f'project-group-children:*{old_project_group_id}')
             cache.delete_pattern(f'role-bindings:*{new_project_group_id}*')
             cache.delete_pattern(f'role-bindings:*{old_project_group_id}*')
             cache.delete_pattern(f'user-scopes:*{new_project_group_id}*')
             cache.delete_pattern(f'user-scopes:*{old_project_group_id}*')
+            self._delete_parent_project_group_cache(params['project_group'])
+            self._delete_parent_project_group_cache(project_vo.project_group)
 
         return project_vo.update(params)
 
@@ -59,8 +60,7 @@ class ProjectManager(BaseManager):
         project_vo = self.get_project(project_id, domain_id)
         self.delete_project_by_vo(project_vo)
 
-    @staticmethod
-    def delete_project_by_vo(project_vo):
+    def delete_project_by_vo(self, project_vo):
         project_group_id = project_vo.project_group_id
         project_vo.delete()
 
@@ -69,6 +69,7 @@ class ProjectManager(BaseManager):
             cache.delete_pattern(f'project-group-children:*{project_group_id}')
             cache.delete_pattern(f'role-bindings:*{project_group_id}*')
             cache.delete_pattern(f'user-scopes:*{project_group_id}*')
+            self._delete_parent_project_group_cache(project_vo.project_group)
 
     def get_project(self, project_id, domain_id, only=None):
         return self.project_model.get(project_id=project_id, domain_id=domain_id, only=only)
@@ -78,3 +79,8 @@ class ProjectManager(BaseManager):
 
     def stat_projects(self, query):
         return self.project_model.stat(**query)
+
+    def _delete_parent_project_group_cache(self, project_group_vo):
+        cache.delete_pattern(f'project-group-children:*{project_group_vo.project_group_id}')
+        if project_group_vo.parent_project_group:
+            self._delete_parent_project_group_cache(project_group_vo.parent_project_group)
