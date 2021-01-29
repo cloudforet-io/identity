@@ -22,9 +22,6 @@ class TestProviderService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.identity')
-        config.set_service_config()
-        config.set_global(DATABASE_SUPPORT_AWS_DOCUMENT_DB=True,
-                          HANDLERS={'authentication': [], 'authorization': [], 'mutation': [], 'event': []})
         connect('test', host='mongomock://localhost')
         cls.domain_id = utils.generate_id('domain')
         cls.transaction = Transaction({
