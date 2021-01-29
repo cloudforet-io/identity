@@ -31,7 +31,6 @@ class AuthorizationManager(BaseManager):
     def check_scope_by_role_type(self, user_id, domain_id, scope, role_type, projects, project_groups,
                                  request_domain_id, request_project_id, request_project_group_id, request_user_id):
         if role_type == 'USER':
-            print(user_id, domain_id, request_user_id)
             self._check_user_scope(user_id, domain_id, request_user_id)
         else:
             if scope == 'SYSTEM':
