@@ -22,7 +22,7 @@ class ProjectGroupService(BaseService):
     @transaction(append_meta={
         'authorization.scope': 'PROJECT',
         'authorization.project_group_id': 'parent_project_group_id',
-        'require_project_group_id': True
+        'authorization.require_project_group_id': True
     })
     @check_required(['name', 'domain_id'])
     def create(self, params):
@@ -122,10 +122,7 @@ class ProjectGroupService(BaseService):
         return self.project_group_mgr.get_project_group(params['project_group_id'], params['domain_id'],
                                                         params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_project_groups': 'authorization.project_groups'}
-    })
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @change_only_key({'parent_project_group_info': 'parent_project_group'}, key_path='query.only')
     @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id', 'user_project_groups'])
@@ -156,10 +153,7 @@ class ProjectGroupService(BaseService):
 
         return self.project_group_mgr.list_project_groups(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_project_groups': 'authorization.project_groups'}
-    })
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_project_groups'])
     @change_tag_filter('tags')
