@@ -710,6 +710,44 @@ class TestAuthorization(unittest.TestCase):
         self._print_data(response, 'test_authorization_verify_project_role_with_no_project_id')
         self.assertEqual('PROJECT', response.role_type)
 
+    def test_authorization_verify_project_role_with_no_project_id_require_project_id(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'list',
+            'scope': 'PROJECT',
+            'require_project_id': True
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
+    def test_authorization_verify_project_role_with_no_project_group_id_require_project_group_id(self):
+        self._test_create_user()
+        self._test_create_project()
+        self._test_create_project_role_binding(project_id=self.project.project_id)
+        self._test_issue_user_token()
+
+        params = {
+            'service': 'identity',
+            'resource': 'User',
+            'verb': 'list',
+            'scope': 'PROJECT',
+            'require_project_group_id': True
+        }
+
+        with self.assertRaisesRegex(Exception, 'ERROR_PERMISSION_DENIED'):
+            self.identity_v1.Authorization.verify(
+                params,
+                metadata=(('token', self.user_token),))
+
     def test_authorization_verify_project_role_with_no_domain_id(self):
         self._test_create_user()
         self._test_create_project()

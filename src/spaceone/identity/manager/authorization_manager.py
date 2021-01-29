@@ -27,22 +27,26 @@ class AuthorizationManager(BaseManager):
 
     @cache.cacheable(key='user-scopes:{domain_id}:{user_id}:{scope}:{role_type}:{request_domain_id}:'
                          '{request_project_id}:{request_project_group_id}:{projects}:{project_groups}:'
-                         '{request_user_id}', expire=3600)
+                         '{request_user_id}:{require_project_id}:{require_project_group_id}', expire=3600)
     def check_scope_by_role_type(self, user_id, domain_id, scope, role_type, projects, project_groups,
-                                 request_domain_id, request_project_id, request_project_group_id, request_user_id):
+                                 request_domain_id, request_project_id, request_project_group_id, request_user_id,
+                                 require_project_id, require_project_group_id):
+
         if role_type == 'USER':
+            self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
             self._check_user_scope(user_id, domain_id, request_user_id)
         else:
             if scope == 'SYSTEM':
-                pass
                 # Excluding system api checking process
                 # self._check_system_scope(user_id, domain_id, role_type)
+                pass
             elif scope == 'DOMAIN':
                 self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
             elif scope == 'PROJECT':
                 self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
                 self._check_project_scope(user_id, domain_id, role_type, projects, project_groups,
-                                          request_project_id, request_project_group_id)
+                                          request_project_id, request_project_group_id,
+                                          require_project_id, require_project_group_id)
 
     @staticmethod
     def _check_user_scope(user_id, domain_id, request_user_id):
@@ -70,8 +74,21 @@ class AuthorizationManager(BaseManager):
 
     @staticmethod
     def _check_project_scope(user_id, domain_id, role_type, projects, project_groups,
-                             request_project_id, request_project_group_id):
+                             request_project_id, request_project_group_id,
+                             require_project_id, require_project_group_id):
         if role_type == 'PROJECT':
+            if require_project_id and request_project_id is None:
+                _LOGGER.debug(f'[_check_project_scope] project_id is required.'
+                              f' (user_id = {user_id}, user_domain_id = {domain_id},'
+                              f' request_project_id = {request_project_id})')
+                raise ERROR_PERMISSION_DENIED()
+
+            if require_project_group_id and request_project_group_id is None:
+                _LOGGER.debug(f'[_check_project_scope] project_group_id is required.'
+                              f' (user_id = {user_id}, user_domain_id = {domain_id},'
+                              f' request_project_group_id = {request_project_group_id})')
+                raise ERROR_PERMISSION_DENIED()
+
             if request_project_id and request_project_id not in projects:
                 _LOGGER.debug(f'[_check_project_scope] project_id is not allowed.'
                               f' (user_id = {user_id}, user_domain_id = {domain_id},'
