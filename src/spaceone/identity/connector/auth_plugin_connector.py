@@ -25,9 +25,8 @@ class AuthPluginConnector(BaseConnector):
     def call_login(self, endpoint, credentials, options, secret_data, schema=None):
         self.initialize(endpoint)
 
-        # TODO: Add options, secret_data, schema from domain's plugin_info
         params = {
-            'options': {},
+            'options': options,
             'secret_data': secret_data,
             'schema': schema,
             'user_credentials': credentials
