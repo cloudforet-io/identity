@@ -127,7 +127,6 @@ class AuthorizationService(BaseService):
                 project_path += self._get_parent_project_path(project_group_vo.parent_project_group, [])
             except Exception:
                 _LOGGER.debug(f'[_get_project_path] Project group could not be found. (project_group_id={request_project_group_id})')
-                pass
 
         return project_path
 
