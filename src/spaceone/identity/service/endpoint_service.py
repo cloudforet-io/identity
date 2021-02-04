@@ -20,8 +20,7 @@ class EndpointService(BaseService):
         Args:
             params (dict): {
                     'query': 'dict (spaceone.api.core.v1.Query)',
-                    'service': 'str',
-                    'domain_id: 'str'
+                    'service': 'str'
                 }
 
         Returns:

@@ -1,4 +1,5 @@
 import logging
+from spaceone.core import cache
 from spaceone.core.service import *
 from spaceone.identity.error.error_project import *
 from spaceone.identity.manager.project_manager import ProjectManager
@@ -122,10 +123,13 @@ class ProjectGroupService(BaseService):
         return self.project_group_mgr.get_project_group(params['project_group_id'], params['domain_id'],
                                                         params.get('only'))
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_project_groups': 'authorization.project_groups'}
+    })
     @check_required(['domain_id'])
     @change_only_key({'parent_project_group_info': 'parent_project_group'}, key_path='query.only')
-    @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id', 'user_project_groups'])
+    @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_group_id', 'name'])
     def list(self, params):
@@ -146,14 +150,22 @@ class ProjectGroupService(BaseService):
             total_count (int)
         """
         query = params.get('query', {})
+        user_project_groups = params.get('user_project_groups')
+        domain_id = params['domain_id']
 
         # Temporary code for DB migration
         if 'only' in query:
             query['only'] += ['parent_project_group_id']
 
+        # For Access Control
+        self._append_user_project_group_filter(query, user_project_groups, domain_id)
+
         return self.project_group_mgr.list_project_groups(query)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_project_groups': 'authorization.project_groups'}
+    })
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_project_groups'])
     @change_tag_filter('tags')
@@ -407,3 +419,41 @@ class ProjectGroupService(BaseService):
             ERROR_NOT_FOUND(key='parent_project_group_id', value=parent_project_group_id)
 
         return parent_project_group_vos[0]
+
+    def _append_user_project_group_filter(self, query, user_project_groups, domain_id):
+        query['filter'] = query.get('filter', [])
+        if user_project_groups:
+            all_user_project_groups = user_project_groups[:]
+            for project_group_id in user_project_groups:
+                if project_group_id is not None:
+                    all_user_project_groups += self._get_project_group_path(project_group_id, domain_id)
+
+            query['filter'].append({
+                'k': 'user_project_groups',
+                'v': list(set(all_user_project_groups)),
+                'o': 'in'
+            })
+
+        return query
+
+    @cache.cacheable(key='project-path:{domain_id}:None:{project_group_id}', expire=3600)
+    def _get_project_group_path(self, project_group_id, domain_id):
+        project_group_path = []
+        try:
+            project_group_vo = self.project_group_mgr.get_project_group(project_group_id, domain_id)
+            project_group_path = [project_group_id]
+            project_group_path += self._get_parent_project_group_path(project_group_vo.parent_project_group, [])
+        except Exception:
+            _LOGGER.debug(f'[_get_all_parent_project_groups] Project group could not be found. '
+                          f'(project_group_id={project_group_id})')
+
+        return project_group_path
+
+    def _get_parent_project_group_path(self, project_group_vo, project_group_path):
+        project_group_id = project_group_vo.project_group_id
+        project_group_path.append(project_group_id)
+
+        if project_group_vo.parent_project_group:
+            project_group_path = self._get_parent_project_path(project_group_vo.parent_project_group, project_group_path)
+
+        return project_group_path
