@@ -123,10 +123,7 @@ class ProjectGroupService(BaseService):
         return self.project_group_mgr.get_project_group(params['project_group_id'], params['domain_id'],
                                                         params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_project_groups': 'authorization.project_groups'}
-    })
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @change_only_key({'parent_project_group_info': 'parent_project_group'}, key_path='query.only')
     @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id'])
@@ -150,7 +147,7 @@ class ProjectGroupService(BaseService):
             total_count (int)
         """
         query = params.get('query', {})
-        user_project_groups = params.get('user_project_groups')
+        user_project_groups = self.transaction.get_meta('authorization.project_groups')
         domain_id = params['domain_id']
 
         # Temporary code for DB migration
