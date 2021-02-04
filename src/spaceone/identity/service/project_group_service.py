@@ -426,7 +426,8 @@ class ProjectGroupService(BaseService):
             all_user_project_groups = user_project_groups[:]
             for project_group_id in user_project_groups:
                 if project_group_id is not None:
-                    all_user_project_groups += self._get_project_group_path(project_group_id, domain_id)
+                    project_group_path = self._get_project_group_path(project_group_id, domain_id)
+                    all_user_project_groups += project_group_path
 
             query['filter'].append({
                 'k': 'user_project_groups',
@@ -443,9 +444,9 @@ class ProjectGroupService(BaseService):
             project_group_vo = self.project_group_mgr.get_project_group(project_group_id, domain_id)
             project_group_path = [project_group_id]
             project_group_path += self._get_parent_project_group_path(project_group_vo.parent_project_group, [])
-        except Exception:
+        except Exception as e:
             _LOGGER.debug(f'[_get_all_parent_project_groups] Project group could not be found. '
-                          f'(project_group_id={project_group_id})')
+                          f'(project_group_id={project_group_id}, reason={e})')
 
         return project_group_path
 
@@ -454,6 +455,6 @@ class ProjectGroupService(BaseService):
         project_group_path.append(project_group_id)
 
         if project_group_vo.parent_project_group:
-            project_group_path = self._get_parent_project_path(project_group_vo.parent_project_group, project_group_path)
+            project_group_path = self._get_parent_project_group_path(project_group_vo.parent_project_group, project_group_path)
 
         return project_group_path
