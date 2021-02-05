@@ -138,16 +138,16 @@ class ProjectGroupService(BaseService):
                 'name': 'str',
                 'parent_project_group_id': 'str',
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)',
-                'user_project_groups': 'list', # from meta
+                'query': 'dict (spaceone.api.core.v1.Query)'
             }
 
         Returns:
             results (list): 'list of project_group_vo'
             total_count (int)
         """
-        query = params.get('query', {})
+        role_type = self.transaction.get_meta('authorization.role_type')
         user_project_groups = self.transaction.get_meta('authorization.project_groups')
+        query = params.get('query', {})
         domain_id = params['domain_id']
 
         # Temporary code for DB migration
@@ -155,7 +155,8 @@ class ProjectGroupService(BaseService):
             query['only'] += ['parent_project_group_id']
 
         # For Access Control
-        self._append_user_project_group_filter(query, user_project_groups, domain_id)
+        if role_type == 'PROJECT':
+            self._append_user_project_group_filter(query, user_project_groups, domain_id)
 
         return self.project_group_mgr.list_project_groups(query)
 
