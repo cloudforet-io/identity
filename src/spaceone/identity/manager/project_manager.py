@@ -1,8 +1,8 @@
 import logging
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.identity.manager import ProjectGroupManager
 from spaceone.identity.model.project_model import Project
-from spaceone.identity.model.project_group_model import ProjectGroup
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ class ProjectManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.project_model: Project = self.locator.get_model('Project')
-        self.project_group_model: ProjectGroup = self.locator.get_model('ProjectGroup')
+        self.project_group_mgr: ProjectGroupManager = self.locator.get_manager('ProjectGroupManager')
 
     def create_project(self, params):
         def _rollback(project_vo):
@@ -79,6 +79,39 @@ class ProjectManager(BaseManager):
 
     def stat_projects(self, query):
         return self.project_model.stat(**query)
+
+    @cache.cacheable(key='project-path:{domain_id}:{project_id}:{project_group_id}', expire=3600)
+    def get_project_path(self, project_id, project_group_id, domain_id, exclude_project_id=False):
+        project_path = []
+        if project_id:
+            try:
+                project_vo = self.get_project(project_id, domain_id)
+                if exclude_project_id is False:
+                    project_path = [project_id]
+                project_path += self._get_parent_project_group_path(project_vo.project_group, [])
+            except Exception as e:
+                _LOGGER.debug(f'[get_project_path] Project could not be found. '
+                              f'(project_id={project_id}, reason={e})')
+
+        elif project_group_id:
+            try:
+                project_group_vo = self.project_group_mgr.get_project_group(project_group_id, domain_id)
+                project_path = [project_group_id]
+                project_path += self._get_parent_project_group_path(project_group_vo.parent_project_group, [])
+            except Exception as e:
+                _LOGGER.debug(f'[_get_project_path] Project group could not be found. '
+                              f'(project_group_id={project_group_id}, reason={e})')
+
+        return project_path
+
+    def _get_parent_project_group_path(self, project_group_vo, project_path):
+        project_group_id = project_group_vo.project_group_id
+        project_path.append(project_group_id)
+
+        if project_group_vo.parent_project_group:
+            project_path = self._get_parent_project_group_path(project_group_vo.parent_project_group, project_path)
+
+        return project_path
 
     def _delete_parent_project_group_cache(self, project_group_vo):
         cache.delete_pattern(f'project-group-children:*{project_group_vo.project_group_id}')

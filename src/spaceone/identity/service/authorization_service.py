@@ -64,7 +64,7 @@ class AuthorizationService(BaseService):
         self._check_user_state(user_id, domain_id)
         self._check_domain_state(domain_id)
 
-        project_path = self._get_project_path(request_project_id, request_project_group_id, domain_id)
+        project_path = self.project_mgr.get_project_path(request_project_id, request_project_group_id, domain_id)
         role_type, request_roles, projects, project_groups = \
             self._get_user_roles_and_projects_from_role_bindings(user_id, domain_id, scope, project_path)
 
@@ -108,36 +108,6 @@ class AuthorizationService(BaseService):
         if domain_vo.state == 'DISABLED':
             _LOGGER.error(f'[_check_domain_state] Domain has been disabled. (domain_id={domain_id})')
             raise ERROR_PERMISSION_DENIED()
-
-    @cache.cacheable(key='project-path:{domain_id}:{request_project_id}:{request_project_group_id}', expire=3600)
-    def _get_project_path(self, request_project_id, request_project_group_id, domain_id):
-        project_path = []
-        if request_project_id:
-            try:
-                project_vo = self.project_mgr.get_project(request_project_id, domain_id)
-                project_path = [request_project_id]
-                project_path += self._get_parent_project_path(project_vo.project_group, [])
-            except Exception:
-                _LOGGER.debug(f'[_get_project_path] Project could not be found. (project_id={request_project_id})')
-
-        elif request_project_group_id:
-            try:
-                project_group_vo = self.project_group_mgr.get_project_group(request_project_group_id, domain_id)
-                project_path = [request_project_group_id]
-                project_path += self._get_parent_project_path(project_group_vo.parent_project_group, [])
-            except Exception:
-                _LOGGER.debug(f'[_get_project_path] Project group could not be found. (project_group_id={request_project_group_id})')
-
-        return project_path
-
-    def _get_parent_project_path(self, project_group_vo, project_path):
-        project_group_id = project_group_vo.project_group_id
-        project_path.append(project_group_id)
-
-        if project_group_vo.parent_project_group:
-            project_path = self._get_parent_project_path(project_group_vo.parent_project_group, project_path)
-
-        return project_path
 
     @cache.cacheable(key='role-bindings:{domain_id}:{user_id}:{scope}:{project_path}', expire=3600)
     def _get_user_roles_and_projects_from_role_bindings(self, user_id, domain_id, scope, project_path):
