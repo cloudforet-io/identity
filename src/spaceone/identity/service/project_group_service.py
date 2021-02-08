@@ -316,13 +316,10 @@ class ProjectGroupService(BaseService):
 
         return role_binding_mgr.list_role_bindings(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'DOMAIN',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['project_group_id', 'domain_id'])
     @change_only_key({'project_group_info': 'project_group'}, key_path='query.only')
-    @append_keyword_filter(['project_id', 'name', 'user_projects'])
+    @append_keyword_filter(['project_id', 'name'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def list_projects(self, params):
@@ -333,8 +330,7 @@ class ProjectGroupService(BaseService):
                 'project_group_id': 'str',
                 'recursive': 'bool',
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)',
-                'user_projects': 'list', # from meta
+                'query': 'dict (spaceone.api.core.v1.Query)'
             }
 
         Returns:
@@ -342,6 +338,8 @@ class ProjectGroupService(BaseService):
             total_count (int)
         """
 
+        role_type = self.transaction.get_meta('authorization.role_type')
+        user_projects = self.transaction.get_meta('authorization.projects')
         project_group_id = params['project_group_id']
         domain_id = params['domain_id']
         recursive = params.get('recursive', False)
@@ -364,6 +362,13 @@ class ProjectGroupService(BaseService):
             'v': related_project_groups,
             'o': 'in'
         })
+
+        if role_type == 'PROJECT':
+            query['filter'].append({
+                'k': 'user_projects',
+                'v': user_projects,
+                'o': 'in'
+            })
 
         # Temporary code for DB migration
         if 'only' in query:
