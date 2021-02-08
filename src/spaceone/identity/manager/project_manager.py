@@ -81,13 +81,12 @@ class ProjectManager(BaseManager):
         return self.project_model.stat(**query)
 
     @cache.cacheable(key='project-path:{domain_id}:{project_id}:{project_group_id}', expire=3600)
-    def get_project_path(self, project_id, project_group_id, domain_id, exclude_project_id=False):
+    def get_project_path(self, project_id, project_group_id, domain_id):
         project_path = []
         if project_id:
             try:
                 project_vo = self.get_project(project_id, domain_id)
-                if exclude_project_id is False:
-                    project_path = [project_id]
+                project_path = [project_id]
                 project_path += self._get_parent_project_group_path(project_vo.project_group, [])
             except Exception as e:
                 _LOGGER.debug(f'[get_project_path] Project could not be found. '
