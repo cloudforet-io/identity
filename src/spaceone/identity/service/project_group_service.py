@@ -316,10 +316,13 @@ class ProjectGroupService(BaseService):
 
         return role_binding_mgr.list_role_bindings(query)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={
+        'authorization.scope': 'DOMAIN',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
     @check_required(['project_group_id', 'domain_id'])
     @change_only_key({'project_group_info': 'project_group'}, key_path='query.only')
-    @append_keyword_filter(['project_id', 'name'])
+    @append_keyword_filter(['project_id', 'name', 'user_projects'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def list_projects(self, params):
@@ -330,7 +333,8 @@ class ProjectGroupService(BaseService):
                 'project_group_id': 'str',
                 'recursive': 'bool',
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)'
+                'query': 'dict (spaceone.api.core.v1.Query)',
+                'user_projects': 'list', # from meta
             }
 
         Returns:
