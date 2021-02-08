@@ -435,8 +435,7 @@ class ProjectGroupService(BaseService):
             all_user_project_path = project_groups[:]
             for project_id in projects:
                 if project_id is not None:
-                    all_user_project_path += self.project_mgr.get_project_path(project_id, None, domain_id,
-                                                                               exclude_project_id=True)
+                    all_user_project_path += self.project_mgr.get_project_path(project_id, None, domain_id)
 
             for project_group_id in project_groups:
                 if project_group_id is not None:
