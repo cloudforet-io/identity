@@ -146,6 +146,7 @@ class ProjectGroupService(BaseService):
             total_count (int)
         """
         role_type = self.transaction.get_meta('authorization.role_type')
+        user_projects = self.transaction.get_meta('authorization.projects')
         user_project_groups = self.transaction.get_meta('authorization.project_groups')
         query = params.get('query', {})
         domain_id = params['domain_id']
@@ -156,7 +157,7 @@ class ProjectGroupService(BaseService):
 
         # For Access Control
         if role_type == 'PROJECT':
-            self._append_user_project_group_filter(query, user_project_groups, domain_id)
+            self._append_user_project_group_filter(query, user_projects, user_project_groups, domain_id)
 
         return self.project_group_mgr.list_project_groups(query)
 
@@ -418,41 +419,24 @@ class ProjectGroupService(BaseService):
 
         return parent_project_group_vos[0]
 
-    def _append_user_project_group_filter(self, query, user_project_groups, domain_id):
+    def _append_user_project_group_filter(self, query, projects, project_groups, domain_id):
+        self.project_mgr: ProjectManager = self.locator.get_manager('ProjectManager')
         query['filter'] = query.get('filter', [])
-        if user_project_groups:
-            all_user_project_groups = user_project_groups[:]
-            for project_group_id in user_project_groups:
+        if projects or project_groups:
+            all_user_project_path = project_groups[:]
+            for project_id in projects:
+                if project_id is not None:
+                    all_user_project_path += self.project_mgr.get_project_path(project_id, None, domain_id,
+                                                                               exclude_project_id=True)
+
+            for project_group_id in project_groups:
                 if project_group_id is not None:
-                    project_group_path = self._get_project_group_path(project_group_id, domain_id)
-                    all_user_project_groups += project_group_path
+                    all_user_project_path += self.project_mgr.get_project_path(None, project_group_id, domain_id)
 
             query['filter'].append({
                 'k': 'user_project_groups',
-                'v': list(set(all_user_project_groups)),
+                'v': list(set(all_user_project_path)),
                 'o': 'in'
             })
 
         return query
-
-    @cache.cacheable(key='project-path:{domain_id}:None:{project_group_id}', expire=3600)
-    def _get_project_group_path(self, project_group_id, domain_id):
-        project_group_path = []
-        try:
-            project_group_vo = self.project_group_mgr.get_project_group(project_group_id, domain_id)
-            project_group_path = [project_group_id]
-            project_group_path += self._get_parent_project_group_path(project_group_vo.parent_project_group, [])
-        except Exception as e:
-            _LOGGER.debug(f'[_get_all_parent_project_groups] Project group could not be found. '
-                          f'(project_group_id={project_group_id}, reason={e})')
-
-        return project_group_path
-
-    def _get_parent_project_group_path(self, project_group_vo, project_group_path):
-        project_group_id = project_group_vo.project_group_id
-        project_group_path.append(project_group_id)
-
-        if project_group_vo.parent_project_group:
-            project_group_path = self._get_parent_project_group_path(project_group_vo.parent_project_group, project_group_path)
-
-        return project_group_path
