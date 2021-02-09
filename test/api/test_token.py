@@ -310,10 +310,8 @@ class TestToken(unittest.TestCase):
             },
             'domain_id': self.domain.domain_id
         }
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaisesRegex(Exception, 'ERROR_AUTHENTICATE_FAILURE'):
             self.identity_v1.Token.issue(token_params)
-
-        self.assertIn("ERROR_NOT_ALLOWED_ISSUE_TOKEN_API_USER", str(cm.exception))
 
     def test_refresh_token(self):
         self.test_issue_token()
@@ -337,13 +335,11 @@ class TestToken(unittest.TestCase):
             metadata=(('token', self.token.refresh_token),)
         )
 
-        with self.assertRaises(Exception) as e:
+        with self.assertRaisesRegex(Exception, 'ERROR_AUTHENTICATE_FAILURE'):
             self.identity_v1.Token.refresh(
                 {},
                 metadata=(('token', self.token.refresh_token),)
             )
-
-        self.assertIn("ERROR_INVALID_REFRESH_TOKEN", str(e.exception))
 
     def test_exceeded_maximum_refresh_count(self):
         self.test_issue_token()
@@ -356,13 +352,11 @@ class TestToken(unittest.TestCase):
                 metadata=(('token', self.token.refresh_token),)
             )
 
-        with self.assertRaises(Exception) as e:
+        with self.assertRaisesRegex(Exception, 'ERROR_AUTHENTICATE_FAILURE'):
             self.identity_v1.Token.refresh(
                 {},
                 metadata=(('token', self.token.refresh_token),)
             )
-
-        self.assertIn("ERROR_REFRESH_COUNT", str(e.exception))
 
 
 if __name__ == "__main__":
