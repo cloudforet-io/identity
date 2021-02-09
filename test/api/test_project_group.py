@@ -750,7 +750,7 @@ class TestProjectGroup(unittest.TestCase):
         params = {
             'domain_id': self.domain.domain_id,
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'project_group_id',
@@ -765,11 +765,12 @@ class TestProjectGroup(unittest.TestCase):
                             'operator': 'size'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'key': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 
