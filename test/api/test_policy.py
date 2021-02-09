@@ -283,7 +283,7 @@ class TestPolicy(unittest.TestCase):
         params = {
             'domain_id': self.domain.domain_id,
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'policy_id',
@@ -294,11 +294,12 @@ class TestPolicy(unittest.TestCase):
                             'name': 'Count'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'key': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 

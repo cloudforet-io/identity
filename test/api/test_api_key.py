@@ -313,7 +313,7 @@ class TestAPIKey(unittest.TestCase):
         params = {
             'domain_id': self.domain.domain_id,
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'created_at',
@@ -333,11 +333,12 @@ class TestAPIKey(unittest.TestCase):
                             'name': 'Count'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'key': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 
