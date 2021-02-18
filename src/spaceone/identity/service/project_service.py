@@ -110,10 +110,7 @@ class ProjectService(BaseService):
 
         return self.project_mgr.get_project(params['project_id'], params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @change_only_key({'project_group_info': 'project_group'}, key_path='query.only')
     @append_query_filter(['project_id', 'name', 'project_group_id', 'domain_id', 'user_projects'])
@@ -136,7 +133,16 @@ class ProjectService(BaseService):
             results (list): 'list of project_vo'
             total_count (int)
         """
+        role_type = self.transaction.get_meta('authorization.role_type')
+        user_projects = self.transaction.get_meta('authorization.projects')
         query = params.get('query', {})
+
+        if role_type == 'PROJECT':
+            query['filter'].append({
+                'k': 'user_projects',
+                'v': user_projects,
+                'o': 'in'
+            })
 
         # Temporary code for DB migration
         if 'only' in query:
