@@ -137,6 +137,7 @@ class ProjectGroupService(BaseService):
                 'project_group_id': 'str',
                 'name': 'str',
                 'parent_project_group_id': 'str',
+                'author_within': 'bool',
                 'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)'
             }
@@ -148,6 +149,7 @@ class ProjectGroupService(BaseService):
         role_type = self.transaction.get_meta('authorization.role_type')
         user_projects = self.transaction.get_meta('authorization.projects')
         user_project_groups = self.transaction.get_meta('authorization.project_groups')
+        author_within = params.get('author_within', False)
         query = params.get('query', {})
         domain_id = params['domain_id']
 
@@ -158,6 +160,13 @@ class ProjectGroupService(BaseService):
         # For Access Control
         if role_type == 'PROJECT':
             self._append_user_project_group_filter(query, user_projects, user_project_groups, domain_id)
+
+        if author_within:
+            query['filter'].append({
+                'k': 'user_project_groups',
+                'v': user_project_groups,
+                'o': 'in'
+            })
 
         return self.project_group_mgr.list_project_groups(query)
 
