@@ -67,6 +67,7 @@ class ProjectGroupManager(BaseManager):
 
         cache.delete_pattern(f'project-path:*{project_group_vo.project_group_id}*')
         cache.delete_pattern(f'role-bindings:*{project_group_vo.project_group_id}*')
+        cache.delete_pattern(f'role-bindings:*:')
         cache.delete_pattern(f'user-scopes:*{project_group_vo.project_group_id}*')
         self._delete_parent_project_group_cache(project_group_vo)
 
