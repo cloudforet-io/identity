@@ -159,14 +159,14 @@ class ProjectGroupService(BaseService):
 
         # For Access Control
         if role_type == 'PROJECT':
-            self._append_user_project_group_filter(query, user_projects, user_project_groups, domain_id)
-
-        if author_within:
-            query['filter'].append({
-                'k': 'user_project_groups',
-                'v': user_project_groups,
-                'o': 'in'
-            })
+            if author_within:
+                query['filter'].append({
+                    'k': 'user_project_groups',
+                    'v': user_project_groups,
+                    'o': 'in'
+                })
+            else:
+                self._append_user_project_group_filter(query, user_projects, user_project_groups, domain_id)
 
         return self.project_group_mgr.list_project_groups(query)
 
