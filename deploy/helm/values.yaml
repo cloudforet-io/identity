@@ -7,8 +7,7 @@ scheduler: false
 worker: false
 name: identity
 image:
-    repository: spaceone
-    name: identity
+    name: spaceone/identity
     version: latest
 imagePullPolicy: IfNotPresent
 
