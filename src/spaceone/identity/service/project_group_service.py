@@ -51,7 +51,10 @@ class ProjectGroupService(BaseService):
 
         return self.project_group_mgr.create_project_group(params)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'authorization.project_group_id': 'parent_project_group_id'
+    })
     @check_required(['project_group_id', 'domain_id'])
     def update(self, params):
         """ Update project group
