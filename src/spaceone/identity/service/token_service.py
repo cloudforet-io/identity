@@ -67,7 +67,10 @@ class TokenService(BaseService):
         """
 
         refresh_token = self.transaction.get_meta('token')
-        _LOGGER.error('refresh token:', refresh_token)
+        _LOGGER.error('------')
+        _LOGGER.error(str(refresh_token))
+        _LOGGER.error(self.transaction.meta)
+        _LOGGER.error('------')
         domain_id = _extract_domain_id(refresh_token)
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
