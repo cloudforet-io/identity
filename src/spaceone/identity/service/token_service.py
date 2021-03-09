@@ -67,6 +67,10 @@ class TokenService(BaseService):
         """
 
         refresh_token = self.transaction.get_meta('token')
+
+        if refresh_token is None:
+            raise ERROR_INVALID_REFRESH_TOKEN()
+
         domain_id = _extract_domain_id(refresh_token)
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
