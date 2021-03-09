@@ -117,6 +117,7 @@ def _extract_domain_id(token):
         decoded = JWTUtil.unverified_decode(token)
     except Exception as e:
         _LOGGER.error(f'[_extract_domain_id] {e}')
+        _LOGGER.error(token)
         raise ERROR_AUTHENTICATE_FAILURE(message='Cannot decode token.')
 
     domain_id = decoded.get('did')
