@@ -253,6 +253,71 @@ DEFAULT_PROVIDERS = [{
             'value': 'https://spaceone.console.doodle.spaceone.dev/img/brand_logo.42208bb4.svg'
         }
     ]
+},{
+    "provider": "alibaba_cloud",
+    "name": "Alibaba Cloud",
+    "template": {
+        "service_account": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "account_id": {
+                        "title": "Account ID",
+                        "type": "string",
+                        "minLength": 4
+                    }
+                },
+                "required": ["account_id"]
+            }
+        }
+    },
+    "metadata": {
+        "view": {
+            "layouts": {
+                "help:service_account:create": {
+                    "name": "Creation Help",
+                    "type": "markdown",
+                    "options": {
+                        "markdown": {
+                            "en": (
+                                "# Help for Alibaba Cloud Users\n"
+                                "## Find Your Alibaba Cloud Account ID\n"
+                                "Get your Alibaba Cloud Account ID.\n"
+                                "* Individual Account: Alibaba Cloud console > Click your avatar > Account Management Page > Security Settings > **Account ID**\n* Enterprise Account: Alibaba Cloud console > Click your avatar > **Enterprise Alias**\n"
+                                "## Generate Your AccessKey Pair\n"
+                                "Get your Alibaba Cloud AccessKey ID & AccessKey Secret\n"
+                                "[Alibaba Cloud AccessKey & AccessSecret](https://www.alibabacloud.com/help/doc-detail/53045.htm?spm=a2c63.p38356.879954.17.6be510df6F9vxS#concept-53045-zh)\n"
+                            ),
+                            "ko": (
+                                "# 알리바바 클라우드 이용자 가이드\n"
+                                "## 알리바바 클라우드 계정 아이디(Account ID) 찾기\n"
+                                "콘솔에서 사용자의 알리바바 클라우드 계정 아이디 확인하기\n"
+                                "* 개인 계정: 알리바바 클라우드 콘솔 > 사용자 아바타 클릭 > Account Management 페이지 > Security Settings > **Account ID**\n* 엔터프라이즈 계정: 알리바바 클라우드 콘솔 > 사용자 아바타 클 > **Enterprise Alias**\n"
+                                "## 알리바바 클라우드 AccessKey Pair 발급하기\n"
+                                "콘솔에서 알리바바 클라우드 AccessKey ID & AccessKey Secret 생성하기\n"
+                                "[Alibaba Cloud AccessKey & AccessSecret](https://www.alibabacloud.com/help/doc-detail/53045.htm?spm=a2c63.p38356.879954.17.6be510df6F9vxS#concept-53045-zh)\n"
+                            ),
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "capability": {
+        "supported_schema": ["ali_access_key_id", "ali_access_key_secret"]
+    },
+    "tags": [
+        {
+            'key': 'color',
+            'value': '#FF6A00'
+        }, {
+            'key': 'icon',
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/cloud-services/alibaba_cloud/logo.svg'
+        }, {
+            'key': 'external_link_template',
+            'value': 'https://homenew-intl.console.aliyun.com/'
+        }
+    ]
 }]
 
 aws_access_key = {
@@ -507,6 +572,37 @@ spaceone_api_key = {
         {
             'key': 'description',
             'value': 'SpaceONE API Key'
+        }
+    ]
+}
+
+alibaba_cloud_access_key_pair = {
+    "name": "ali_access_key_id",
+    "service_type": "secret.credentials",
+    "schema": {
+        "required": [
+            "ali_access_key_id",
+            "ali_access_key_secret"
+        ],
+        "properties": {
+            "ali_access_key_id": {
+                "title": "Alibaba Cloud AccessKey ID",
+                "type": "string",
+                "minLength": 4
+            },
+            "ali_access_key_secret": {
+                "title": "Alibaba Cloud AccessKey Secret",
+                "type": "string",
+                "minLength": 4
+            }
+        },
+        "type": "object"
+    },
+    "labels": ["Alibaba Cloud"],
+    "tags": [
+        {
+            'key': 'description',
+            'value': "Alibaba Cloud AccessKey Pair"
         }
     ]
 }
