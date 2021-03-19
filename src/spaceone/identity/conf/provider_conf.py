@@ -317,7 +317,79 @@ DEFAULT_PROVIDERS = [{
             'key': 'external_link_template',
             'value': 'https://homenew-intl.console.aliyun.com/'
         }
+    ],{
+    "provider": "oci",
+    "name": "Oracle Cloud Infrastructure",
+    "template": {
+        "service_account": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "tenancy_name": {
+                        "title": "Tenancy Name",
+                        "type": "string",
+                        "minLength": 4
+                    },
+                    "user_name": {
+                        "title": "User Name",
+                        "type": "string",
+                        "minLength": 4
+                    }
+                },
+                "required": ["tenancy_name", "user_name"]
+            }
+        }
+    },
+    "metadata": {
+        "view": {
+            "layouts": {
+                "help:service_account:create": {
+                    "name": "Creation Help",
+                    "type": "markdown",
+                    "options": {
+                        "markdown": {
+                            "en": (
+                                "# Getting started with Oracle Cloud Intrastructure\n"
+                                "## Find Your Tenancy & User OCID\n"
+                                "[Get your User's OCID  and Tenancy's OCID](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five)\n"
+                                "## Generate RSA key pair and Key's Fingerprint\n"
+                                "* [Generate RSA key pair]([https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two))\n"
+                                "* [Get Key's Fingerprint](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
+                                "## Upload the Public Key from the key pair in the Console\n"
+                                "[Upload Your Public Key](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
+                            ),
+                            "ko": (
+                                "# 오라클 클라우드 이용자 가이드\n"
+                                "## 오라클 클라우드 테넌시와 유저 OCID 찾기\n"
+                                "[유저와 테넌시 OCID 정보 확인](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five)\n"
+                                "## RSA 키 페어와 핑거프린트 생성\n"
+                                "* [RSA 키 페어 생성]([https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two))\n"
+                                "* [핑거프린트 생성](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
+                                "## 오라클 클라우드 콘솔에 공개 키 등록\n"
+                                "[퍼블릭 키 업로드](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
+                            ),
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "capability": {
+        "supported_schema": ["oci_api_key"]
+    },
+    "tags": [
+        {
+            'key': 'color',
+            'value': '#D73A27'
+        }, {
+            'key': 'icon',
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/cloud-services/oci/ic_provider_oracle.svg'
+        }, {
+            'key': 'external_link_template',
+            'value': 'https://www.oracle.com/kr/cloud/sign-in.html'
+        }
     ]
+
 }]
 
 aws_access_key = {
@@ -603,6 +675,49 @@ alibaba_cloud_access_key_pair = {
         {
             'key': 'description',
             'value': "Alibaba Cloud AccessKey Pair"
+        }
+    ]
+}
+
+oci_api_key = {
+    "name": "oci_api_key",
+    "service_type": "secret.credentials",
+    "schema": {
+        "required": [
+            "tenancy",
+            "user",
+            "key_content",
+            "fingerprint"
+        ],
+        "properties": {
+            "tenancy": {
+                "title": "Tenancy's OCID",
+                "type": "string",
+                "minLength": 4
+            },
+            "user":{
+                "title": "User's OCID",
+                "type": "string",
+                "minLength": 4
+            },
+            "key_content": {
+                "title": "Private Key Content",
+                "type": "string",
+                "minLength": 4
+            },
+            "fingerprint": {
+                "title": "Fingerprint",
+                "type": "string",
+                "minLength": 4
+            }
+        },
+        "type": "object"
+    },
+    "labels": ["Oracle"],
+    "tags": [
+        {
+            'key': 'description',
+            'value': "Oracle Cloud Infrastructure AccessKey Pair"
         }
     ]
 }
