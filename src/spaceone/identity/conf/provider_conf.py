@@ -317,9 +317,9 @@ DEFAULT_PROVIDERS = [{
             'key': 'external_link_template',
             'value': 'https://homenew-intl.console.aliyun.com/'
         }
-    ]},
-    {
-    "provider": "oci",
+    ]
+}, {
+    "provider": "oracle_cloud",
     "name": "Oracle Cloud Infrastructure",
     "template": {
         "service_account": {
@@ -364,8 +364,8 @@ DEFAULT_PROVIDERS = [{
                                 "## 오라클 클라우드 테넌시와 유저 OCID 찾기\n"
                                 "[유저와 테넌시 OCID 정보 확인](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five)\n"
                                 "## RSA 키 페어와 핑거프린트 생성\n"
-                                "* [RSA 키 페어 생성]([https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two))\n"
-                                "* [핑거프린트 생성](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
+                                "[RSA 키 페어 생성]([https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two))\n"
+                                "[핑거프린트 생성](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
                                 "## 오라클 클라우드 콘솔에 공개 키 등록\n"
                                 "[퍼블릭 키 업로드](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
                             ),
@@ -718,7 +718,7 @@ oci_api_key = {
     "tags": [
         {
             'key': 'description',
-            'value': "Oracle Cloud Infrastructure AccessKey Pair"
+            'value': "Oracle Cloud Infrastructure Access Configuration"
         }
     ]
 }
