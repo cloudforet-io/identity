@@ -295,7 +295,7 @@ DEFAULT_PROVIDERS = [{
                                 "* 개인 계정: 알리바바 클라우드 콘솔 > 사용자 아바타 클릭 > Account Management 페이지 > Security Settings > **Account ID**\n* 엔터프라이즈 계정: 알리바바 클라우드 콘솔 > 사용자 아바타 클 > **Enterprise Alias**\n"
                                 "## 알리바바 클라우드 AccessKey Pair 발급하기\n"
                                 "콘솔에서 알리바바 클라우드 AccessKey ID & AccessKey Secret 생성하기\n"
-                                "[Alibaba Cloud AccessKey & AccessSecret](https://www.alibabacloud.com/help/doc-detail/53045.htm?spm=a2c63.p38356.879954.17.6be510df6F9vxS#concept-53045-zh)\n"
+                                "* [Alibaba Cloud AccessKey & AccessKey Secret](https://www.alibabacloud.com/help/doc-detail/53045.htm?spm=a2c63.p38356.879954.17.6be510df6F9vxS#concept-53045-zh)\n"
                             ),
                         }
                     }
