@@ -304,7 +304,7 @@ DEFAULT_PROVIDERS = [{
         }
     },
     "capability": {
-        "supported_schema": ["ali_access_key_id", "ali_access_key_secret"]
+        "supported_schema": ["alibaba_cloud_access_key_pair"]
     },
     "tags": [
         {
@@ -577,7 +577,7 @@ spaceone_api_key = {
 }
 
 alibaba_cloud_access_key_pair = {
-    "name": "ali_access_key_id",
+    "name": "alibaba_cloud_access_key_pair",
     "service_type": "secret.credentials",
     "schema": {
         "required": [
