@@ -317,7 +317,8 @@ DEFAULT_PROVIDERS = [{
             'key': 'external_link_template',
             'value': 'https://homenew-intl.console.aliyun.com/'
         }
-    ],{
+    ]},
+    {
     "provider": "oci",
     "name": "Oracle Cloud Infrastructure",
     "template": {
