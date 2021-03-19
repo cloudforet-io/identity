@@ -598,7 +598,7 @@ alibaba_cloud_access_key_pair = {
         },
         "type": "object"
     },
-    "labels": ["Alibaba Cloud"],
+    "labels": ["Alibaba"],
     "tags": [
         {
             'key': 'description',
