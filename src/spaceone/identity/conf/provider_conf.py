@@ -358,6 +358,7 @@ DEFAULT_PROVIDERS = [{
                                 "[Get Key's Fingerprint](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
                                 "## Upload the Public Key from the key pair in the Console\n"
                                 "[Upload Your Public Key](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
+                                R"## Note: It requires to add \n at end of every each line of your private_key string prior to put private key in credentials. ex) -----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0\n...\n..\n"
                             ),
                             "ko": (
                                 "# 오라클 클라우드 이용자 가이드\n"
