@@ -29,10 +29,6 @@ def ProjectGroupInfo(project_group_vo: ProjectGroup, minimal=False):
             'created_at': utils.datetime_to_iso8601(project_group_vo.created_at)
         })
 
-        # Temporary code for DB migration
-        if not project_group_vo.parent_project_group_id and project_group_vo.parent_project_group:
-            project_group_vo.update({'parent_project_group_id': project_group_vo.parent_project_group.project_group_id})
-
     return project_group_pb2.ProjectGroupInfo(**info)
 
 

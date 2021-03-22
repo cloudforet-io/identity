@@ -34,10 +34,6 @@ def RoleBindingInfo(role_binding_vo: RoleBinding, minimal=False):
         if not role_binding_vo.project_group_id and role_binding_vo.project_group:
             role_binding_vo.update({'project_group_id': role_binding_vo.project_group.project_group_id})
 
-    # Temporary code for DB migration
-    if not role_binding_vo.role_id and role_binding_vo.role:
-        role_binding_vo.update({'role_id': role_binding_vo.role.role_id})
-
     return role_binding_pb2.RoleBindingInfo(**info)
 
 

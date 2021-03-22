@@ -162,10 +162,6 @@ class ProjectGroupService(BaseService):
         query = params.get('query', {})
         domain_id = params['domain_id']
 
-        # Temporary code for DB migration
-        if 'only' in query:
-            query['only'] += ['parent_project_group_id']
-
         # For Access Control
         if role_type == 'PROJECT':
             if author_within:
@@ -393,10 +389,6 @@ class ProjectGroupService(BaseService):
                 'v': user_projects,
                 'o': 'in'
             })
-
-        # Temporary code for DB migration
-        if 'only' in query:
-            query['only'] += ['project_group_id']
 
         return project_mgr.list_projects(query)
 

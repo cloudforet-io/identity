@@ -151,10 +151,6 @@ class ProjectService(BaseService):
                 'o': 'in'
             })
 
-        # Temporary code for DB migration
-        if 'only' in query:
-            query['only'] += ['project_group_id']
-
         return self.project_mgr.list_projects(params.get('query', {}))
 
     @transaction(append_meta={

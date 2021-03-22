@@ -128,10 +128,6 @@ class RoleBindingService(BaseService):
         """
         query = params.get('query', {})
 
-        # Temporary code for DB migration
-        if 'only' in query:
-            query['only'] += ['role_id', 'project_id', 'project_group_id']
-
         return self.role_binding_mgr.list_role_bindings(params.get('query', {}))
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
