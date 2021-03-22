@@ -1,5 +1,6 @@
 from spaceone.core import cache
 from spaceone.core.service import *
+from spaceone.core import utils
 from spaceone.identity.manager.provider_manager import ProviderManager
 
 
@@ -24,7 +25,7 @@ class ProviderService(BaseService):
                 'template': 'dict',
                 'metadata': 'dict',
                 'capability': 'dict',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -33,6 +34,10 @@ class ProviderService(BaseService):
         """
         # TODO: validate a template data
         # TODO: validate a capability data
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
+
         return self.provider_mgr.create_provider(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -55,6 +60,10 @@ class ProviderService(BaseService):
         """
         # TODO: validate a template data
         # TODO: validate a capability data
+        
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
+
         return self.provider_mgr.update_provider(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})

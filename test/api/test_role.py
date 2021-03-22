@@ -165,13 +165,10 @@ class TestRole(unittest.TestCase):
                 'policy_id': policy.policy_id,
                 'policy_type': 'CUSTOM'
             }, self.policies)),
-            'tags': [
-                {
-                    'key': 'tag_key',
-                    'value': 'tag_value'
-                }
-
-            ],
+            'tags': {
+                utils.random_string(4): utils.random_string(4),
+                utils.random_string(4):utils.random_string(4)
+            },
             'domain_id': self.domain.domain_id
         }
 
@@ -193,12 +190,9 @@ class TestRole(unittest.TestCase):
         """ Update Role
         """
         update_name = 'Role-' + utils.random_string()
-        update_tags = [
-            {
-                'key': 'update_key',
-                'value': 'update_value'
-            }
-        ]
+        update_tags = {
+            'update_key': 'update_value'
+        }
 
         self.test_create_role()
 

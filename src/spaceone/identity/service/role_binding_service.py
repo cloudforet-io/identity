@@ -1,6 +1,6 @@
 from spaceone.core.service import *
-from spaceone.core.error import *
-from spaceone.identity.manager import RoleBindingManager, RoleManager, ProjectManager, ProjectGroupManager, UserManager
+from spaceone.core import utils
+from spaceone.identity.manager import RoleBindingManager
 
 
 @authentication_handler
@@ -26,13 +26,16 @@ class RoleBindingService(BaseService):
                 'project_id': 'str',
                 'project_group_id': 'str',
                 'labels': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
         Returns:
             role_binding_vo (object)
         """
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.role_binding_mgr.create_role_binding(params)
 
@@ -45,13 +48,16 @@ class RoleBindingService(BaseService):
             params (dict): {
                 'role_binding_id': 'str',
                 'labels': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
         Returns:
             role_binding_vo (object)
         """
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.role_binding_mgr.update_role_binding(params)
 

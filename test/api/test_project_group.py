@@ -245,15 +245,10 @@ class TestProjectGroup(unittest.TestCase):
         name = f'project-{utils.random_string()}'
         params = {
             'name': name,
-            'tags': [
-                {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
-                }, {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
-                }
-            ],
+            'tags': {
+                utils.random_string(4): utils.random_string(4),
+                utils.random_string(4):utils.random_string(4)
+            },
             'domain_id': self.domain.domain_id
         }
 
@@ -275,15 +270,10 @@ class TestProjectGroup(unittest.TestCase):
 
         params = {
             'name': name,
-            'tags': [
-                {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
-                }, {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
-                }
-            ],
+            'tags': {
+                utils.random_string(4): utils.random_string(4),
+                utils.random_string(4):utils.random_string(4)
+            },
             'domain_id': self.domain.domain_id
         }
 

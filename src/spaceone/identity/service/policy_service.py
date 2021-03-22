@@ -1,4 +1,5 @@
 from spaceone.core.service import *
+from spaceone.core import utils
 from spaceone.identity.manager import PolicyManager
 
 
@@ -21,13 +22,16 @@ class PolicyService(BaseService):
             params (dict): {
                 'name': 'str',
                 'permissions': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
         Returns:
             policy_vo (object)
         """
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.policy_mgr.create_policy(params)
 
@@ -41,13 +45,16 @@ class PolicyService(BaseService):
                 'policy_id': 'str',
                 'name': 'str',
                 'permissions': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
         Returns:
             policy_vo (object)
         """
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.policy_mgr.update_policy(params)
 

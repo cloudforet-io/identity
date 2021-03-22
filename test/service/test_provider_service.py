@@ -85,12 +85,9 @@ class TestProviderService(unittest.TestCase):
             'capability': {
                 'supported_schema': ['schema-aaa', 'schema-bbb']
             },
-            'tags': [
-                {
-                    'key': 'tag_key',
-                    'value': 'tag_value'
-                }
-            ],
+            'tags': {
+                'tag_key': 'tag_value'
+            },
             'domain_id': self.domain_id
         }
 
@@ -107,7 +104,7 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['template'], provider_vo.template)
         self.assertEqual(params['metadata'], provider_vo.metadata)
         self.assertEqual(params['capability'], provider_vo.capability)
-        self.assertEqual(params['tags'], provider_vo.to_dict()['tags'])
+        self.assertEqual(params['tags'], utils.tags_to_dict(provider_vo.tags))
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_duplicated_provider(self, *args):
@@ -135,12 +132,9 @@ class TestProviderService(unittest.TestCase):
             },
             'metadata': {
             },
-            'tags': [
-                {
-                    'key': 'update_key',
-                    'value': 'update_value'
-                }
-            ],
+            'tags': {
+                'tag_key': 'tag_value'
+            },
             'domain_id': self.domain_id
         }
 
@@ -156,7 +150,7 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['name'], provider_vo.name)
         self.assertEqual(params['template'], provider_vo.template)
         self.assertEqual(params['metadata'], provider_vo.metadata)
-        self.assertEqual(params['tags'], provider_vo.to_dict()['tags'])
+        self.assertEqual(params['tags'], utils.tags_to_dict(provider_vo.tags))
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_provider(self, *args):
@@ -281,7 +275,7 @@ class TestProviderService(unittest.TestCase):
 
         params = {
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'provider',
@@ -292,11 +286,12 @@ class TestProviderService(unittest.TestCase):
                             'name': 'Count'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'key': 'Count',
+                        'desc': True
+                    }
+                }]
             },
             'domain_id': self.domain_id
         }

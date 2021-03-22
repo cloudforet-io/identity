@@ -231,15 +231,10 @@ class TestProject(unittest.TestCase):
         name = f'pg-{utils.random_string()}'
         params = {
             'name': name,
-            'tags': [
-                {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
-                }, {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
-                }
-            ],
+            'tags': {
+                utils.random_string(4): utils.random_string(4),
+                utils.random_string(4):utils.random_string(4)
+            },
             'domain_id': self.domain.domain_id
         }
 
@@ -257,15 +252,10 @@ class TestProject(unittest.TestCase):
         name = f'project-{utils.random_string()}'
         params = {
             'name': name,
-            'tags': [
-                {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
-                }, {
-                    'key': utils.random_string(),
-                    'value': utils.random_string()
-                }
-            ],
+            'tags': {
+                utils.random_string(4): utils.random_string(4),
+                utils.random_string(4):utils.random_string(4)
+            },
             'domain_id': self.domain.domain_id
         }
 
@@ -301,12 +291,9 @@ class TestProject(unittest.TestCase):
     def test_update_project_tags(self):
         self.test_create_project()
 
-        tags = [
-            {
-                'key': 'test',
-                'value': 'is good'
-            }
-        ]
+        tags = {
+            'update_key': 'update_value'
+        }
 
         params = {
             'project_id': self.project.project_id,

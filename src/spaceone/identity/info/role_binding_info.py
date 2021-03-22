@@ -1,7 +1,7 @@
 import functools
-from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import role_binding_pb2
 from spaceone.core.pygrpc.message_type import *
+from spaceone.core import utils
 from spaceone.identity.model.role_binding_model import RoleBinding
 from spaceone.identity.info.role_info import RoleInfo
 from spaceone.identity.info.project_info import ProjectInfo
@@ -22,10 +22,10 @@ def RoleBindingInfo(role_binding_vo: RoleBinding, minimal=False):
         info.update({
             'project_info': ProjectInfo(role_binding_vo.project, minimal=True) if role_binding_vo.project else None,
             'project_group_info': ProjectGroupInfo(role_binding_vo.project_group, minimal=True) if role_binding_vo.project_group else None,
-            'labels': role_binding_vo.labels,
-            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in role_binding_vo.tags],
+            'labels': change_list_value_type(role_binding_vo.labels),
+            'tags': change_struct_type(utils.tags_to_dict(role_binding_vo.tags)),
             'domain_id': role_binding_vo.domain_id,
-            'created_at': change_timestamp_type(role_binding_vo.created_at)
+            'created_at': utils.datetime_to_iso8601(role_binding_vo.created_at)
         })
 
         if not role_binding_vo.project_id and role_binding_vo.project:
