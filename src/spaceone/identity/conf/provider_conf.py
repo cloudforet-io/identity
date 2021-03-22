@@ -369,6 +369,7 @@ DEFAULT_PROVIDERS = [{
                                 "[핑거프린트 생성](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
                                 "## 오라클 클라우드 콘솔에 공개 키 등록\n"
                                 "[퍼블릭 키 업로드](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
+                                R"## Note: 개인 키를 Credential에 넣기 전에 private_key 문자열의 각 줄 끝에 \n을 추가해야 합니다. ex) -------BEGIN Private KEY-------\nMIEvQIBADANBgkqhkiG9w0\n...\n...\n"
                             ),
                         }
                     }
