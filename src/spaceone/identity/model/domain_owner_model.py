@@ -9,11 +9,10 @@ class DomainOwner(MongoModel):
     password = BinaryField()
     name = StringField(max_length=128)
     email = StringField(max_length=255, default=None, null=True)
-    mobile = StringField(max_length=24, default=None, null=True)
     language = StringField(max_length=7, default='en')
-    timezone = StringField(max_length=50, default='Etc/GMT')
+    timezone = StringField(max_length=50, default='UTC')
     domain_id = StringField(max_length=40)
-    last_accessed_at = DateTimeField(auto_now_add=True)
+    last_accessed_at = DateTimeField(default=None, null=True)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
@@ -21,24 +20,20 @@ class DomainOwner(MongoModel):
             'password',
             'name',
             'email',
-            'mobile',
             'language',
             'timezone',
-            'state'
-        ],
-        'exact_fields': [
-            'owner_id',
-            'domain_id'
+            'last_accessed_at'
         ],
         'minimal_fields': [
             'owner_id',
-            'name',
-            'state'
+            'name'
         ],
         'ordering': ['name'],
         'indexes': [
             'owner_id',
-            'domain_id'
+            'email',
+            'domain_id',
+            'last_accessed_at'
         ]
     }
 

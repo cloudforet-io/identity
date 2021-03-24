@@ -1,28 +1,25 @@
-# -*- coding: utf-8 -*-
-
 import functools
 from spaceone.api.identity.v1 import api_key_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.identity.model.api_key_model import APIKey
-import logging
-
 
 __all__ = ['APIKeyInfo', 'APIKeysInfo']
 
-_LOGGER = logging.getLogger(__name__)
 
+def APIKeyInfo(api_key_vo: APIKey, minimal=False, api_key=None, **kwargs):
+    info = {
+        'api_key': api_key,
+        'api_key_id': api_key_vo.api_key_id,
+        'state': api_key_vo.state,
+        'user_id': api_key_vo.user_id
+    }
 
-def APIKeyInfo(api_key_vo: APIKey, **kwargs):
-    _LOGGER.debug(f'[APIKeyInfo] api_key_vo: {api_key_vo}')
-    info = {}
-    info['api_key'] = kwargs.get('api_key')
-    info['api_key_id'] = api_key_vo.api_key_id
-    info['state'] = api_key_vo.state
-    # info['api_key_type'] = api_key_vo.api_key_type
-    info['user_id'] = api_key_vo.user_id
-    info['domain_id'] = api_key_vo.domain_id
-    info['last_accessed_at'] = change_timestamp_type(api_key_vo.last_accessed_at)
-    info['created_at'] = change_timestamp_type(api_key_vo.created_at)
+    if not minimal:
+        info.update({
+            'domain_id': api_key_vo.domain_id,
+            'last_accessed_at': change_timestamp_type(api_key_vo.last_accessed_at),
+            'created_at': change_timestamp_type(api_key_vo.created_at)
+        })
 
     return api_key_pb2.APIKeyInfo(**info)
 

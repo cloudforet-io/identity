@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.connector import PluginServiceConnector, AuthPluginConnector
@@ -25,9 +26,6 @@ class DomainManager(BaseManager):
             plugin_svc_conn: PluginServiceConnector = self.locator.get_connector('PluginServiceConnector')
             plugin_id = plugin_info['plugin_id']
             version = plugin_info['version']
-            _LOGGER.warning('[create_domain] Can not check plugin, since there is no token')
-            # TODO: labels
-            # TODO: no token
             #endpoint = plugin_svc_conn.get_plugin_endpoint(plugin_id, version)
             #_LOGGER.debug('endpoint: %s' % endpoint)
 
@@ -65,8 +63,9 @@ class DomainManager(BaseManager):
 
                 result = self._auth_init_and_verify(endpoint, params)
                 _LOGGER.debug('[update_domain] endpoint: %s' % endpoint)
-                _LOGGER.debug('[update_domain] updated options: %s' % result)
-                plugin_info['options'] = result['options']
+                _LOGGER.debug(f'[update_domain] PluginInfo: {result}')
+                #plugin_info['options'] = result['options']
+                plugin_info['metadata'] = result['metadata']
                 params['plugin_info'] = plugin_info
 
         return domain_vo.update(params)
@@ -74,6 +73,8 @@ class DomainManager(BaseManager):
     def delete_domain(self, domain_id):
         domain_vo: Domain = self.get_domain(domain_id)
         domain_vo.delete()
+
+        cache.delete_pattern(f'domain-state:{domain_id}')
 
     def enable_domain(self, domain_id):
         def _rollback(old_data):
@@ -85,6 +86,8 @@ class DomainManager(BaseManager):
         if domain_vo.state != 'ENABLED':
             self.transaction.add_rollback(_rollback, domain_vo.to_dict())
             domain_vo.update({'state': 'ENABLED'})
+
+            cache.delete_pattern(f'domain-state:{domain_id}')
 
         return domain_vo
 
@@ -98,6 +101,8 @@ class DomainManager(BaseManager):
         if domain_vo.state != 'DISABLED':
             self.transaction.add_rollback(_rollback, domain_vo.to_dict())
             domain_vo.update({'state': 'DISABLED'})
+
+            cache.delete_pattern(f'domain-state:{domain_id}')
 
         return domain_vo
 
@@ -122,5 +127,6 @@ class DomainManager(BaseManager):
         auth: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
         auth.initialize(endpoint)
         # update options based on return verify
-        result = auth.verify(params.get("options"), params.get("credentials"))
+        #result = auth.verify(params.get("options"), params.get("credentials"))
+        result = auth.init(params.get("options"))
         return result

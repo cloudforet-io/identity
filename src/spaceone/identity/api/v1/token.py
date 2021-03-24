@@ -11,12 +11,12 @@ class Token(BaseAPI, token_pb2_grpc.TokenServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('TokenService', metadata) as token_svc:
-            data = token_svc.issue_token(params)
+            data = token_svc.issue(params)
             return self.locator.get_info('TokenInfo', data)
 
     def refresh(self, request, context):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('TokenService', metadata) as token_svc:
-            data = token_svc.refresh_token(params)
+            data = token_svc.refresh(params)
             return self.locator.get_info('TokenInfo', data)

@@ -7,8 +7,15 @@ from spaceone.core.model.mongo_model import MongoModel
 class PluginInfo(EmbeddedDocument):
     plugin_id = StringField(max_length=40)
     version = StringField(max_length=255)
-    options = DictField()
+    options = DictField(default=None)
+    metadata = DictField(default=None)
     secret_id = StringField(max_length=40, null=True)
+    auto_upgrade = BooleanField(default=True)
+
+
+class DomainTag(EmbeddedDocument):
+    key = StringField(max_length=255)
+    value = StringField(max_length=255)
 
 
 class Domain(MongoModel):
@@ -17,7 +24,7 @@ class Domain(MongoModel):
     state = StringField(max_length=20, default='ENABLED')
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
     config = DictField()
-    tags = DictField()
+    tags = ListField(EmbeddedDocumentField(DomainTag))
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
 
@@ -30,10 +37,6 @@ class Domain(MongoModel):
             'tags',
             'deleted_at'
         ],
-        'exact_fields': [
-            'domain_id',
-            'state'
-        ],
         'minimal_fields': [
             'domain_id',
             'name',
@@ -42,7 +45,8 @@ class Domain(MongoModel):
         'ordering': ['name'],
         'indexes': [
             'domain_id',
-            'state'
+            'state',
+            ('tags.key', 'tags.value')
         ]
     }
 

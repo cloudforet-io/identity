@@ -2,7 +2,6 @@ import os
 import unittest
 
 from google.protobuf.json_format import MessageToDict
-
 from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
 
@@ -26,74 +25,89 @@ class TestDomain(unittest.TestCase):
 
         self.domain = None
         self.owner_id = 'DomainOwner'
-        self.owner_pw = 'qwerty'
+        self.owner_pw = utils.generate_password()
         self.owner = None
         self.owner_token = None
 
     def tearDown(self):
         if self.owner:
-            self.identity_v1.DomainOwner.delete({
-                'domain_id': self.domain.domain_id,
-                'owner_id': self.owner_id
-            })
+            self.identity_v1.DomainOwner.delete(
+                {
+                    'domain_id': self.domain.domain_id,
+                    'owner_id': self.owner_id
+                },
+                metadata=(('token', self.owner_token),)
+            )
 
         if self.domain:
             print(f'[TearDown] Delete domain. (domain_id: {self.domain.domain_id}')
-            self.identity_v1.Domain.delete({'domain_id': self.domain.domain_id})
+            self.identity_v1.Domain.delete(
+                {
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
+            )
 
     def _create_domain_owner(self):
-        param = {
+        params = {
             'owner_id': self.owner_id,
             'password': self.owner_pw,
-            'name': 'Steven' + utils.random_string()[0:5],
-            'timezone': 'utc+9',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
             'domain_id': self.domain.domain_id
         }
 
         self.owner = self.identity_v1.DomainOwner.create(
-            param
+            params
         )
 
-    def _issue_token(self):
-        token_param = {
+    def _issue_owner_token(self):
+        token_params = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': self.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': self.owner_id,
                 'password': self.owner_pw
             },
             'domain_id': self.domain.domain_id
         }
 
-        issue_token = self.identity_v1.Token.issue(token_param)
+        issue_token = self.identity_v1.Token.issue(token_params)
         self.owner_token = issue_token.access_token
 
     def test_create_domain(self):
         """ Create Domain
         """
         name = utils.random_string()
-        param = {'name': name,
-                 'tags': {utils.random_string(): utils.random_string(), utils.random_string(): utils.random_string()},
-                 'config': {
-                     'aaa': 'bbbb'
-                 }
-                 }
-        self.domain = self.identity_v1.Domain.create(param)
+        params = {
+            'name': name,
+            'tags': [
+                {
+                    'key': utils.random_string(4),
+                    'value': utils.random_string(4)
+                }, {
+                    'key': utils.random_string(4),
+                    'value': utils.random_string(4)
+                }
+            ]
+        }
+        self.domain = self.identity_v1.Domain.create(params)
         self.assertEqual(self.domain.name, name)
 
         self._create_domain_owner()
-        self._issue_token()
+        self._issue_owner_token()
 
     def test_update_domain_tag(self):
         """ Update domain tag
         """
         self.test_create_domain()
 
-        tags = {'a': '123'}
-        param = {'domain_id': self.domain.domain_id, 'tags': tags}
+        tags = [
+            {
+                'key': 'a',
+                'value': '123'
+            }
+        ]
+        params = {'domain_id': self.domain.domain_id, 'tags': tags}
         self.domain = self.identity_v1.Domain.update(
-            param,
+            params,
             metadata=(('token', self.owner_token),)
         )
         domain_info = MessageToDict(self.domain)
@@ -104,9 +118,9 @@ class TestDomain(unittest.TestCase):
         """
         self.test_create_domain()
         config = {'TEST': 'BLAH-BLAH'}
-        param = {'domain_id': self.domain.domain_id, 'config': config}
+        params = {'domain_id': self.domain.domain_id, 'config': config}
         self.domain = self.identity_v1.Domain.update(
-            param,
+            params,
             metadata=(('token', self.owner_token),)
         )
         domain_info = MessageToDict(self.domain)
@@ -150,7 +164,7 @@ class TestDomain(unittest.TestCase):
         """
         self.test_create_domain()
 
-        param = {
+        params = {
             'query': {
                 'filter': [
                     {'k': 'state', 'v': 'ENABLED', 'o': 'eq'}
@@ -159,7 +173,7 @@ class TestDomain(unittest.TestCase):
         }
 
         result = self.identity_v1.Domain.list(
-            param,
+            params,
             metadata=(('token', self.owner_token),)
         )
 
@@ -168,12 +182,12 @@ class TestDomain(unittest.TestCase):
     def test_list_domains_query_filter(self):
         self.test_create_domain()
 
-        param = {
+        params = {
             'name': self.domain.name
         }
 
         result = self.identity_v1.Domain.list(
-            param,
+            params,
             metadata=(('token', self.owner_token),)
         )
 
@@ -184,7 +198,7 @@ class TestDomain(unittest.TestCase):
 
         params = {
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'domain_id',
@@ -195,11 +209,12 @@ class TestDomain(unittest.TestCase):
                             'name': 'Count'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'key': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 

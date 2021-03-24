@@ -4,6 +4,7 @@ from spaceone.identity.manager import PolicyManager
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class PolicyService(BaseService):
 
@@ -11,36 +12,109 @@ class PolicyService(BaseService):
         super().__init__(metadata)
         self.policy_mgr: PolicyManager = self.locator.get_manager('PolicyManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['name', 'permissions', 'domain_id'])
-    def create_policy(self, params):
+    def create(self, params):
+        """ Create policy
+
+        Args:
+            params (dict): {
+                'name': 'str',
+                'permissions': 'list',
+                'tags': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            policy_vo (object)
+        """
+
         return self.policy_mgr.create_policy(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['policy_id', 'domain_id'])
-    def update_policy(self, params):
+    def update(self, params):
+        """ Update policy
+
+        Args:
+            params (dict): {
+                'policy_id': 'str',
+                'name': 'str',
+                'permissions': 'list',
+                'tags': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            policy_vo (object)
+        """
+
         return self.policy_mgr.update_policy(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['policy_id', 'domain_id'])
-    def delete_policy(self, params):
+    def delete(self, params):
+        """ Delete policy
+
+        Args:
+            params (dict): {
+                'policy_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
         self.policy_mgr.delete_policy(params['policy_id'], params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['policy_id', 'domain_id'])
-    def get_policy(self, params):
+    def get(self, params):
+        """ Get policy
+
+        Args:
+            params (dict): {
+                'policy_id': 'str',
+                'domain_id': 'str',
+                'only': 'list'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.policy_mgr.get_policy(params['policy_id'], params['domain_id'], params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['policy_id', 'name', 'domain_id'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['policy_id', 'name'])
-    def list_policies(self, params):
-        return self.policy_mgr.list_policies(params.get('query', {}))
+    def list(self, params):
+        """ List polices
 
-    @transaction
+        Args:
+            params (dict): {
+                'policy_id': 'str',
+                'name': 'str',
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
+            }
+
+        Returns:
+            results (list): 'list of policy_vo'
+            total_count (int)
+        """
+
+        query = self._append_policy_type_filter(params.get('query', {}))
+        return self.policy_mgr.list_policies(query)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
+    @change_tag_filter('tags')
+    @append_keyword_filter(['policy_id', 'name'])
     def stat(self, params):
         """
         Args:
@@ -50,9 +124,20 @@ class PolicyService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
-        query = params.get('query', {})
+        query = self._append_policy_type_filter(params.get('query', {}))
         return self.policy_mgr.stat_policies(query)
+
+    @staticmethod
+    def _append_policy_type_filter(query):
+        query['filter'] = query.get('filter', [])
+        query['filter'].append({
+            'k': 'policy_type',
+            'v': 'CUSTOM',
+            'o': 'eq'
+        })
+
+        return query

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from spaceone.core.pygrpc.message_type import *
 
 __all__ = ['AuthorizationResponse']

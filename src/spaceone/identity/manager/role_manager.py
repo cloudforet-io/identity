@@ -1,4 +1,5 @@
 import logging
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.identity.model.policy_model import *
 from spaceone.identity.model.role_model import *
@@ -30,14 +31,23 @@ class RoleManager(BaseManager):
         role_vo: Role = self.get_role(params['role_id'], params['domain_id'])
         self.transaction.add_rollback(_rollback, role_vo.to_dict())
 
+        cache.delete_pattern(f'role-permissions:*{params["role_id"]}')
+        cache.delete_pattern(f'user-permissions:*{params["role_id"]}*')
+
         return role_vo.update(params)
 
     def delete_role(self, role_id, domain_id):
         role_vo = self.get_role(role_id, domain_id)
         role_vo.delete()
 
+        cache.delete_pattern(f'role-permissions:*{role_id}')
+        cache.delete_pattern(f'user-permissions:*{role_id}*')
+
     def get_role(self, role_id, domain_id, only=None):
         return self.role_model.get(role_id=role_id, domain_id=domain_id, only=only)
+
+    def filter_roles(self, **conditions):
+        return self.role_model.filter(**conditions)
 
     def list_roles(self, query):
         return self.role_model.query(**query)

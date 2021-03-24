@@ -7,3 +7,4 @@ redis
 jinja2
 fakeredis
 mongomock
+pytz

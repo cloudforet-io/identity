@@ -1,15 +1,10 @@
 import os
-import uuid
 import unittest
 import pprint
 
 from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
-
-
-def random_string():
-    return uuid.uuid4().hex
 
 
 class TestPolicy(unittest.TestCase):
@@ -22,7 +17,7 @@ class TestPolicy(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls):
@@ -37,14 +32,22 @@ class TestPolicy(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestPolicy, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -60,8 +63,8 @@ class TestPolicy(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string()
+        cls.owner_pw = utils.generate_password()
 
         owner = cls.identity_v1.DomainOwner.create({
             'owner_id': cls.owner_id,
@@ -76,17 +79,16 @@ class TestPolicy(unittest.TestCase):
     @classmethod
     def _issue_owner_token(cls):
         token_params = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
         }
 
         issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        cls.owner_token = issue_token.access_token
 
     def setUp(self):
         self.policies = []
@@ -96,9 +98,11 @@ class TestPolicy(unittest.TestCase):
         print()
         for policy in self.policies:
             self.identity_v1.Policy.delete(
-                {'policy_id': policy.policy_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'policy_id': policy.policy_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete policy: {policy.name} ({policy.policy_id})')
 
@@ -114,7 +118,7 @@ class TestPolicy(unittest.TestCase):
         """
 
         if name is None:
-            name = 'Policy-' + random_string()[0:5]
+            name = 'Policy-' + utils.random_string()
 
         params = {
             'name': name,
@@ -126,13 +130,16 @@ class TestPolicy(unittest.TestCase):
                 'identity.User.get',
                 'identity.User.update',
             ],
-            'tags': {
-                'tag_key': 'tag_value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'domain_id': self.domain.domain_id
         }
 
-        metadata = (('token', self.token),)
+        metadata = (('token', self.owner_token),)
         ext_meta = kwargs.get('meta')
 
         if ext_meta:
@@ -149,10 +156,13 @@ class TestPolicy(unittest.TestCase):
     def test_update_policy(self, name=None):
         """ Update Policy
         """
-        update_name = 'Policy-' + random_string()[0:5]
-        update_tags = {
-            'update_key': 'update_value'
-        }
+        update_name = 'Policy-' + utils.random_string()
+        update_tags = [
+            {
+                'key': 'update_key',
+                'value': 'update_value'
+            }
+        ]
 
         self.test_create_policy()
 
@@ -163,12 +173,13 @@ class TestPolicy(unittest.TestCase):
                 'tags': update_tags,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.policy, 'test_update_policy')
+        policy_data = MessageToDict(self.policy)
         self.assertEqual(self.policy.name, update_name)
-        self.assertEqual(MessageToDict(self.policy.tags), update_tags)
+        self.assertEqual(policy_data['tags'], update_tags)
 
     def test_update_policy_permissions(self):
         """ Update Policy Rules
@@ -183,7 +194,7 @@ class TestPolicy(unittest.TestCase):
                 'permissions': update_permissions,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.policy, 'test_update_policy_permissions')
@@ -198,7 +209,7 @@ class TestPolicy(unittest.TestCase):
                 'policy_id': self.policy.policy_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(policy.name, self.policy.name)
@@ -212,7 +223,7 @@ class TestPolicy(unittest.TestCase):
                     'policy_id': 'Guido van Rossum',
                     'domain_id': self.domain.dopmain_id
                 },
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_delete_policy_not_exists(self):
@@ -225,7 +236,7 @@ class TestPolicy(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.Policy.delete(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_list_policy_id(self):
@@ -238,7 +249,7 @@ class TestPolicy(unittest.TestCase):
 
         result = self.identity_v1.Policy.list(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(1, result.total_count)
@@ -262,7 +273,7 @@ class TestPolicy(unittest.TestCase):
         }
 
         result = self.identity_v1.Policy.list(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self.assertEqual(len(self.policies), result.total_count)
 
@@ -272,7 +283,7 @@ class TestPolicy(unittest.TestCase):
         params = {
             'domain_id': self.domain.domain_id,
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'policy_id',
@@ -283,16 +294,17 @@ class TestPolicy(unittest.TestCase):
                             'name': 'Count'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'key': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 
         result = self.identity_v1.Policy.stat(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self._print_data(result, 'test_stat_policy')
 

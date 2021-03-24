@@ -18,19 +18,19 @@ from test.factory.provider_factory import ProviderFactory
 
 class _MockProviderService(BaseService):
 
-    def create_provider(self, params):
+    def create(self, params):
         return ProviderFactory(**params)
 
-    def update_provider(self, params):
+    def update(self, params):
         return ProviderFactory(**params)
 
-    def delete_provider(self, params):
+    def delete(self, params):
         pass
 
-    def get_provider(self, params):
+    def get(self, params):
         return ProviderFactory(**params)
 
-    def list_providers(self, params):
+    def list(self, params):
         return ProviderFactory.build_batch(10, **params), 10
 
 
@@ -86,9 +86,12 @@ class TestProviderAPI(unittest.TestCase):
             'capability': {
                 'supported_schema': ['schema-aaa', 'schema-bbb']
             },
-            'tags': {
-                'key': 'value'
-            }
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ]
         }
         mock_parse_request.return_value = (params, {})
 
@@ -97,13 +100,14 @@ class TestProviderAPI(unittest.TestCase):
 
         print_message(provider_info, 'test_create_provider')
 
+        provider_data = MessageToDict(provider_info)
         self.assertIsInstance(provider_info, provider_pb2.ProviderInfo)
         self.assertEqual(provider_info.provider, params['provider'])
         self.assertEqual(provider_info.name, params['name'])
         self.assertDictEqual(MessageToDict(provider_info.template), params['template'])
         self.assertDictEqual(MessageToDict(provider_info.metadata), params['metadata'])
         self.assertDictEqual(MessageToDict(provider_info.capability), params['capability'])
-        self.assertDictEqual(MessageToDict(provider_info.tags), params['tags'])
+        self.assertListEqual(provider_data['tags'], params['tags'])
         self.assertIsNotNone(getattr(provider_info, 'created_at', None))
 
     @patch.object(BaseAPI, '__init__', return_value=None)
@@ -113,9 +117,12 @@ class TestProviderAPI(unittest.TestCase):
         params = {
             'provider': utils.random_string(),
             'name': utils.random_string(),
-            'tags': {
-                'update_key': 'update_value'
-            }
+            'tags': [
+                {
+                    'key': 'update_key',
+                    'value': 'update_value'
+                }
+            ]
         }
         mock_parse_request.return_value = (params, {})
 
@@ -124,9 +131,10 @@ class TestProviderAPI(unittest.TestCase):
 
         print_message(provider_info, 'test_update_provider')
 
+        provider_data = MessageToDict(provider_info)
         self.assertIsInstance(provider_info, provider_pb2.ProviderInfo)
         self.assertEqual(provider_info.name, params['name'])
-        self.assertDictEqual(MessageToDict(provider_info.tags), params['tags'])
+        self.assertListEqual(provider_data['tags'], params['tags'])
 
     @patch.object(BaseAPI, '__init__', return_value=None)
     @patch.object(Locator, 'get_service', return_value=_MockProviderService())

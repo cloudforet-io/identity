@@ -46,7 +46,8 @@ class ProviderManager(BaseManager):
     def stat_providers(self, query):
         return self.provider_model.stat(**query)
 
-    def create_default_providers(self):
+    def create_default_providers(self, installed_providers):
         for provider in DEFAULT_PROVIDERS:
-            _LOGGER.debug(f'Create default provider: {provider["name"]}')
-            self.create_provider(provider)
+            if provider['provider'] not in installed_providers:
+                _LOGGER.debug(f'Create default provider: {provider["name"]}')
+                self.create_provider(provider)

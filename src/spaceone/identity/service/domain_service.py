@@ -1,15 +1,12 @@
-import logging
-
 from spaceone.core.service import *
 from spaceone.identity.manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.model import Domain
 
 
-# @authentication_handler(exclude=[
-#     'list_domains', 'get_public_key', 'get_domain_key'
-# ])
-#@authorization_handler
+@authentication_handler(exclude=['create', 'list', 'get_public_key'])
+@authorization_handler(exclude=['create', 'list', 'get_public_key'])
+@mutation_handler(exclude=['create', 'list', 'get_public_key'])
 @event_handler
 class DomainService(BaseService):
 
@@ -17,9 +14,23 @@ class DomainService(BaseService):
         super().__init__(metadata)
         self.domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['name'])
-    def create_domain(self, params):
+    def create(self, params):
+        """ Create domain
+
+        Args:
+            params (dict): {
+                'name': 'str',
+                'config': 'dict',
+                'plugin_info': 'dict',
+                'tags': 'list'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         # Create Domain
         domain_vo: Domain = self.domain_mgr.create_domain(params)
 
@@ -29,37 +40,106 @@ class DomainService(BaseService):
 
         return domain_vo
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    def update_domain(self, params):
+    def update(self, params):
+        """ Update domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'config': 'dict',
+                'tags': 'list'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.domain_mgr.update_domain(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    def delete_domain(self, params):
+    def delete(self, params):
+        """ Delete domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
         self.domain_mgr.delete_domain(params['domain_id'])
 
-        # domain_secret_mgr: DomainSecretManager = self._get_domain_secret_manager()
-        # domain_secret_mgr.delete_domain_secret(params['domain_id'])
-
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    def enable_domain(self, params):
+    def enable(self, params):
+        """ Enable domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.domain_mgr.enable_domain(params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    def disable_domain(self, params):
+    def disable(self, params):
+        """ Disable domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.domain_mgr.disable_domain(params['domain_id'])
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    def get_domain(self, params):
+    def get(self, params):
+        """ Disable domain
+
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'only': 'list'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+
         return self.domain_mgr.get_domain(params['domain_id'], params.get('only'))
 
-    @transaction
+    @transaction(append_meta={'auth.scope': 'SYSTEM'})
     @check_required(['domain_id'])
     def get_public_key(self, params):
+        """ Get domain's public key for authentication
+
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+
+        Returns:
+            result (dict): {
+                'pub_jwk': 'str',
+                'domain_id': 'str'
+            }
+        """
+
         domain_id = params['domain_id']
         domain_secret_mgr: DomainSecretManager = self._get_domain_secret_manager()
         pub_jwk = domain_secret_mgr.get_domain_public_key(domain_id=domain_id)
@@ -69,15 +149,32 @@ class DomainService(BaseService):
             'domain_id': domain_id
         }
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @append_query_filter(['domain_id', 'name'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])
-    def list_domains(self, params):
+    def list(self, params):
+        """ List api keys
+
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'name': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
+            }
+
+        Returns:
+            results (list): 'list of domain_vo'
+            total_count (int)
+        """
+
         query = params.get('query', {})
         return self.domain_mgr.list_domains(query)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query'])
+    @change_tag_filter('tags')
+    @append_keyword_filter(['domain_id', 'name'])
     def stat(self, params):
         """
         Args:
@@ -86,8 +183,8 @@ class DomainService(BaseService):
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

@@ -1,8 +1,6 @@
-import logging
 import os
 import random
 import unittest
-
 from langcodes import Language
 
 from spaceone.core import utils, pygrpc
@@ -33,49 +31,67 @@ class TestDomainOwner(unittest.TestCase):
     def tearDown(self):
         if self.domain_owner:
             print(f'[TearDown] Delete domain owner. (domain_id: {self.domain.domain_id})')
-            param = {
+            params = {
                 'domain_id': self.domain.domain_id,
                 'owner_id': self.domain_owner.owner_id
             }
-            self.identity_v1.DomainOwner.delete(param)
+            self.identity_v1.DomainOwner.delete(
+                params,
+                metadata=(('token', self.owner_token),)
+            )
 
         if self.domain:
             print(f'[TearDown] Delete domain. (domain_id: {self.domain.domain_id})')
-            self.identity_v1.Domain.delete({'domain_id': self.domain.domain_id})
-
+            self.identity_v1.Domain.delete(
+                {
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
+            )
 
     def _create_domain(self):
         name = utils.random_string()
-        param = {'name': name,
-                 'tags': {utils.random_string(): utils.random_string(), utils.random_string(): utils.random_string()},
-                 'config': {
-                     'aaa': 'bbbb'
-                 }
-                 }
-        self.domain = self.identity_v1.Domain.create(param)
+        params = {
+            'name': name
+        }
+        self.domain = self.identity_v1.Domain.create(params)
+
+    def _issue_owner_token(self, owner_id, owner_pw):
+        token_params = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': owner_id,
+            'credentials': {
+                'password': owner_pw
+            },
+            'domain_id': self.domain.domain_id
+        }
+
+        issue_token = self.identity_v1.Token.issue(token_params)
+        self.owner_token = issue_token.access_token
 
     def test_create_owner(self):
         lang_code = random.choice(['zh-hans', 'jp', 'ko', 'en', 'es'])
         language = Language.get(lang_code)
-        owner_id = utils.random_string()[0:10]
+        owner_id = utils.random_string()
 
-        param = {
+        params = {
             'owner_id': owner_id,
-            'password': 'qwerty123',
-            'name': 'Steven' + utils.random_string()[0:5],
+            'password': utils.generate_password(),
+            'name': 'Steven' + utils.random_string(),
             'language': language.__str__(),
-            'timezone': 'utc+9',
-            'email': 'Steven' + utils.random_string()[0:5] + '@mz.co.kr',
-            'mobile': '+821026671234',
+            'timezone': 'Asia/Seoul',
+            'email': 'Steven' + utils.random_string() + '@mz.co.kr',
             'domain_id': self.domain.domain_id
         }
 
         owner = self.identity_v1.DomainOwner.create(
-            param
+            params
         )
         self.domain_owner = owner
-        self.param = param
-        self.assertEqual(param['name'], self.domain_owner.name)
+        self.params = params
+        self.assertEqual(params['name'], self.domain_owner.name)
+
+        self._issue_owner_token(params['owner_id'], params['password'])
 
     def test_failure_create_two_owners(self):
         self.test_create_owner()
@@ -86,44 +102,48 @@ class TestDomainOwner(unittest.TestCase):
 
     def test_update_owner(self):
         self.test_create_owner()
-        self.param['owner_id'] = self.domain_owner.owner_id
-        self.param['name'] = 'John Doe'
+        self.params['owner_id'] = self.domain_owner.owner_id
+        self.params['name'] = 'John Doe'
         owner = self.identity_v1.DomainOwner.update(
-            self.param,
+            self.params,
+            metadata=(('token', self.owner_token),)
         )
-        self.assertEqual(owner.name, self.param['name'])
+        self.assertEqual(owner.name, self.params['name'])
 
     def test_get_domain_owner(self):
         self.test_create_owner()
-        param = {
+        params = {
             'owner_id': self.domain_owner.owner_id,
             'domain_id': self.domain.domain_id
         }
         owner = self.identity_v1.DomainOwner.get(
-            param,
+            params,
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(owner.name, self.domain_owner.name)
 
     def test_get_domain_owner_with_domain_id(self):
         self.test_create_owner()
-        param = {
+        params = {
             'domain_id': self.domain.domain_id
         }
         owner = self.identity_v1.DomainOwner.get(
-            param,
+            params,
+            metadata=(('token', self.owner_token),)
         )
         self.assertEqual(owner.name, self.domain_owner.name)
 
     def test_failure_get_not_exist_owner(self):
         self.test_create_owner()
-        param = {
+        params = {
             'domain_id': 'no-domain',
             'owner_id': 'no-owner'
         }
 
         with self.assertRaises(Exception) as e:
             self.identity_v1.DomainOwner.get(
-                param,
+                params,
+                metadata=(('token', self.owner_token),)
             )
         self.assertIn('ERROR_NOT_FOUND', str(e.exception))
 

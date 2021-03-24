@@ -1,15 +1,10 @@
 import os
-import uuid
 import unittest
 import pprint
 
 from google.protobuf.json_format import MessageToDict
 from spaceone.core import utils, pygrpc
 from spaceone.core.unittest.runner import RichTestRunner
-
-
-def random_string():
-    return uuid.uuid4().hex
 
 
 class TestRole(unittest.TestCase):
@@ -22,7 +17,7 @@ class TestRole(unittest.TestCase):
     domain_owner = None
     owner_id = None
     owner_pw = None
-    token = None
+    owner_token = None
 
     @classmethod
     def setUpClass(cls):
@@ -37,14 +32,22 @@ class TestRole(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super(TestRole, cls).tearDownClass()
-        cls.identity_v1.DomainOwner.delete({
-            'domain_id': cls.domain.domain_id,
-            'owner_id': cls.owner_id
-        })
+        cls.identity_v1.DomainOwner.delete(
+            {
+                'domain_id': cls.domain.domain_id,
+                'owner_id': cls.owner_id
+            },
+            metadata=(('token', cls.owner_token),)
+        )
         print(f'>> delete domain owner: {cls.owner_id}')
 
         if cls.domain:
-            cls.identity_v1.Domain.delete({'domain_id': cls.domain.domain_id})
+            cls.identity_v1.Domain.delete(
+                {
+                    'domain_id': cls.domain.domain_id
+                },
+                metadata=(('token', cls.owner_token),)
+            )
             print(f'>> delete domain: {cls.domain.name} ({cls.domain.domain_id})')
 
     @classmethod
@@ -60,8 +63,8 @@ class TestRole(unittest.TestCase):
 
     @classmethod
     def _create_domain_owner(cls):
-        cls.owner_id = utils.random_string()[0:10]
-        cls.owner_pw = 'qwerty'
+        cls.owner_id = utils.random_string()
+        cls.owner_pw = utils.generate_password()
 
         owner = cls.identity_v1.DomainOwner.create({
             'owner_id': cls.owner_id,
@@ -76,17 +79,16 @@ class TestRole(unittest.TestCase):
     @classmethod
     def _issue_owner_token(cls):
         token_params = {
+            'user_type': 'DOMAIN_OWNER',
+            'user_id': cls.owner_id,
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': cls.owner_id,
                 'password': cls.owner_pw
             },
             'domain_id': cls.domain.domain_id
         }
 
         issue_token = cls.identity_v1.Token.issue(token_params)
-        cls.token = issue_token.access_token
-        print(f'token: {cls.token}')
+        cls.owner_token = issue_token.access_token
 
     def setUp(self):
         self.policies = []
@@ -98,17 +100,21 @@ class TestRole(unittest.TestCase):
         print()
         for role in self.roles:
             self.identity_v1.Role.delete(
-                {'role_id': role.role_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'role_id': role.role_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete role: {role.name} ({role.role_id})')
 
         for policy in self.policies:
             self.identity_v1.Policy.delete(
-                {'policy_id': policy.policy_id,
-                 'domain_id': self.domain.domain_id},
-                metadata=(('token', self.token),)
+                {
+                    'policy_id': policy.policy_id,
+                    'domain_id': self.domain.domain_id
+                },
+                metadata=(('token', self.owner_token),)
             )
             print(f'>> delete policy: {policy.name} ({policy.policy_id})')
 
@@ -131,14 +137,14 @@ class TestRole(unittest.TestCase):
             ]
 
         params = {
-            'name': 'Policy-' + random_string()[0:5],
+            'name': 'Policy-' + utils.random_string(),
             'permissions': permissions,
             'domain_id': self.domain.domain_id
         }
 
         self.policy = self.identity_v1.Policy.create(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
         self.policies.append(self.policy)
 
@@ -147,7 +153,7 @@ class TestRole(unittest.TestCase):
         """
 
         if name is None:
-            name = 'Role-' + random_string()[0:5]
+            name = 'Role-' + utils.random_string()
 
         self._test_create_policy()
         self._test_create_policy(['inventory.*'])
@@ -157,14 +163,19 @@ class TestRole(unittest.TestCase):
             'role_type': 'PROJECT',
             'policies': list(map(lambda policy: {
                 'policy_id': policy.policy_id,
-                'policy_type': 'CUSTOM'}, self.policies)),
-            'tags': {
-                'tag_key': 'tag_value'
-            },
+                'policy_type': 'CUSTOM'
+            }, self.policies)),
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+
+            ],
             'domain_id': self.domain.domain_id
         }
 
-        metadata = (('token', self.token),)
+        metadata = (('token', self.owner_token),)
         ext_meta = kwargs.get('meta')
 
         if ext_meta:
@@ -181,10 +192,13 @@ class TestRole(unittest.TestCase):
     def test_update_role(self, name=None):
         """ Update Role
         """
-        update_name = 'Role-' + random_string()[0:5]
-        update_tags = {
-            'update_key': 'update_value'
-        }
+        update_name = 'Role-' + utils.random_string()
+        update_tags = [
+            {
+                'key': 'update_key',
+                'value': 'update_value'
+            }
+        ]
 
         self.test_create_role()
 
@@ -195,12 +209,14 @@ class TestRole(unittest.TestCase):
                 'tags': update_tags,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.role, 'test_update_role')
+        role_data = MessageToDict(self.role)
+
         self.assertEqual(self.role.name, update_name)
-        self.assertEqual(MessageToDict(self.role.tags), update_tags)
+        self.assertEqual(role_data['tags'], update_tags)
 
     def test_update_role_policies(self):
         """ Update Role Policies
@@ -210,7 +226,8 @@ class TestRole(unittest.TestCase):
 
         update_policies = list(map(lambda policy: {
             'policy_id': policy.policy_id,
-            'policy_type': 'CUSTOM'}, self.policies))
+            'policy_type': 'CUSTOM'
+        }, self.policies))
 
         self.role = self.identity_v1.Role.update(
             {
@@ -218,14 +235,14 @@ class TestRole(unittest.TestCase):
                 'policies': update_policies,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self._print_data(self.policy, 'test_update_role_policies')
         role_info = MessageToDict(self.role, preserving_proto_field_name=True)
         self.assertEqual(role_info['policies'], update_policies)
 
-    def test_get(self):
+    def test_get_role(self):
         self.test_create_role()
 
         role = self.identity_v1.Role.get(
@@ -233,7 +250,7 @@ class TestRole(unittest.TestCase):
                 'role_id': self.role.role_id,
                 'domain_id': self.domain.domain_id
             },
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(role.name, self.role.name)
@@ -249,7 +266,7 @@ class TestRole(unittest.TestCase):
         with self.assertRaises(Exception):
             self.identity_v1.Role.delete(
                 params,
-                metadata=(('token', self.token),)
+                metadata=(('token', self.owner_token),)
             )
 
     def test_list_role_id(self):
@@ -262,7 +279,7 @@ class TestRole(unittest.TestCase):
 
         result = self.identity_v1.Role.list(
             params,
-            metadata=(('token', self.token),)
+            metadata=(('token', self.owner_token),)
         )
 
         self.assertEqual(1, result.total_count)
@@ -286,7 +303,7 @@ class TestRole(unittest.TestCase):
         }
 
         result = self.identity_v1.Role.list(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self.assertEqual(len(self.roles), result.total_count)
 
@@ -296,7 +313,7 @@ class TestRole(unittest.TestCase):
         params = {
             'domain_id': self.domain.domain_id,
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'role_id',
@@ -307,16 +324,17 @@ class TestRole(unittest.TestCase):
                             'name': 'Count'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'key': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 
         result = self.identity_v1.Role.stat(
-            params, metadata=(('token', self.token),))
+            params, metadata=(('token', self.owner_token),))
 
         self._print_data(result, 'test_stat_role')
 

@@ -2,13 +2,18 @@ from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
 
 
+class ProviderTag(EmbeddedDocument):
+    key = StringField(max_length=255)
+    value = StringField(max_length=255)
+
+
 class Provider(MongoModel):
     provider = StringField(max_length=40, unique=True)
     name = StringField(max_length=255)
     template = DictField()
     metadata = DictField()
     capability = DictField()
-    tags = DictField()
+    tags = ListField(EmbeddedDocumentField(ProviderTag))
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
@@ -19,15 +24,13 @@ class Provider(MongoModel):
             'capability',
             'tags'
         ],
-        'exact_fields': [
-            'provider'
-        ],
         'minimal_fields': [
             'provider',
             'name'
         ],
         'ordering': ['created_at'],
         'indexes': [
-            'provider'
+            'provider',
+            ('tags.key', 'tags.value')
         ]
     }

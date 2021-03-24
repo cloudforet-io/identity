@@ -1,4 +1,5 @@
 import functools
+from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import provider_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.identity.model.provider_model import Provider
@@ -17,7 +18,7 @@ def ProviderInfo(provider_vo: Provider, minimal=False):
             'template': change_struct_type(provider_vo.template),
             'metadata': change_struct_type(provider_vo.metadata),
             'capability': change_struct_type(provider_vo.capability),
-            'tags': change_struct_type(provider_vo.tags),
+            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in provider_vo.tags],
             'created_at': change_timestamp_type(provider_vo.created_at)
         })
 

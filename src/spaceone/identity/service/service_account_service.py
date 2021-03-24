@@ -9,6 +9,7 @@ from spaceone.identity.manager.provider_manager import ProviderManager
 
 @authentication_handler
 @authorization_handler
+@mutation_handler
 @event_handler
 class ServiceAccountService(BaseService):
 
@@ -16,9 +17,12 @@ class ServiceAccountService(BaseService):
         super().__init__(*args, **kwargs)
         self.service_account_mgr: ServiceAccountManager = self.locator.get_manager('ServiceAccountManager')
 
-    @transaction
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'authorization.require_project_id': True
+    })
     @check_required(['name', 'data', 'provider', 'domain_id'])
-    def create_service_account(self, params):
+    def create(self, params):
         """
         Args:
             params (dict): {
@@ -26,14 +30,14 @@ class ServiceAccountService(BaseService):
                 'data': 'dict',
                 'provider': 'str',
                 'project_id': 'str',
-                'tags': 'dict',
+                'tags': 'list',
                 'domain_id': 'str'
             }
 
         Returns:
             service_account_vo (object)
-
         """
+
         self._check_data(params['data'], params['provider'])
 
         if 'project_id' in params:
@@ -41,9 +45,9 @@ class ServiceAccountService(BaseService):
 
         return self.service_account_mgr.create_service_account(params)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
-    def update_service_account(self, params):
+    def update(self, params):
         """
         Args:
             params (dict): {
@@ -51,15 +55,15 @@ class ServiceAccountService(BaseService):
                 'name': 'str',
                 'data': 'dict',
                 'project_id': 'str',
-                'tags': 'dict',
+                'tags': 'list',
                 'release_project': 'bool',
                 'domain_id': 'str'
             }
 
         Returns:
             service_account_vo (object)
-
         """
+
         service_account_id = params['service_account_id']
         domain_id = params['domain_id']
         project_id = params.get('project_id')
@@ -72,6 +76,7 @@ class ServiceAccountService(BaseService):
 
         if release_project:
             params['project'] = None
+            params['project_id'] = None
         elif project_id:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
 
@@ -84,9 +89,9 @@ class ServiceAccountService(BaseService):
 
         return service_account_vo
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
-    def delete_service_account(self, params):
+    def delete(self, params):
         """
         Args:
             params (dict): {
@@ -96,8 +101,8 @@ class ServiceAccountService(BaseService):
 
         Returns:
             None
-
         """
+
         service_account_id = params['service_account_id']
         domain_id = params['domain_id']
 
@@ -105,10 +110,10 @@ class ServiceAccountService(BaseService):
         self.service_account_mgr.delete_service_account_secrets(service_account_id, domain_id)
         self.service_account_mgr.delete_service_account(service_account_id, domain_id)
 
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
     @change_only_key({'project_info': 'project'})
-    def get_service_account(self, params):
+    def get(self, params):
         """
         Args:
             params (dict): {
@@ -119,17 +124,21 @@ class ServiceAccountService(BaseService):
 
         Returns:
             service_account_vo (object)
-
         """
+
         return self.service_account_mgr.get_service_account(params['service_account_id'], params['domain_id'],
                                                             params.get('only'))
 
-    @transaction
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
     @check_required(['domain_id'])
     @change_only_key({'project_info': 'project'}, key_path='query.only')
-    @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id'])
+    @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id', 'user_projects'])
+    @change_tag_filter('tags')
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
-    def list_service_accounts(self, params):
+    def list(self, params):
         """
         Args:
             params (dict): {
@@ -138,30 +147,42 @@ class ServiceAccountService(BaseService):
                     'provider': 'str',
                     'project_id': 'str',
                     'domain_id': 'str',
-                    'query': 'dict (spaceone.api.core.v1.Query)'
+                    'query': 'dict (spaceone.api.core.v1.Query)',
+                    'user_projects': 'list', // from meta
                 }
 
         Returns:
-            results (list)
+            results (list): 'list of service_account_vo'
             total_count (int)
-
         """
-        return self.service_account_mgr.list_service_accounts(params.get('query', {}))
+        query = params.get('query', {})
 
-    @transaction
+        # Temporary code for DB migration
+        if 'only' in query:
+            query['only'] += ['project_id']
+
+        return self.service_account_mgr.list_service_accounts(query)
+
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
     @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
+    @append_query_filter(['project_id', 'domain_id', 'user_projects'])
+    @change_tag_filter('tags')
+    @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def stat(self, params):
         """
         Args:
             params (dict): {
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'user_projects': 'list', // from meta
             }
 
         Returns:
-            values (list) : 'list of statistics data'
-
+            values (list): 'list of statistics data'
+            total_count (int)
         """
 
         query = params.get('query', {})

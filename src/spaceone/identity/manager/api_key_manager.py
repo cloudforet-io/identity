@@ -16,35 +16,30 @@ class APIKeyManager(BaseManager):
         self.api_key_model: APIKey = self.locator.get_model('APIKey')
         self.secret_model: DomainSecret = self.locator.get_model('DomainSecret')
 
-    def create_api_key(self, user_id, domain_id):
+    def create_api_key(self, user_vo, domain_id):
         def _rollback(api_key_vo):
             _LOGGER.info(f'[create_api_key._rollback] Delete api_key : {api_key_vo.api_key_id}')
             api_key_vo.delete()
 
-        prv_jwk = self._query_domain_secret(domain_id)
-
-        key_gen = KeyGenerator(prv_jwk=prv_jwk,
-                               domain_id=domain_id,
-                               aud_id=user_id)
-        key, api_key = key_gen.generate_api_key()
-
-        # TODO: Add params['role', 'allowed_hosts']
-
         params = {
-            'api_key': key,
-            'api_key_type': 'USER',
-            'user_id': user_id,
+            'user_id': user_vo.user_id,
             'domain_id': domain_id
         }
         api_key_vo: APIKey = self.api_key_model.create(params)
         self.transaction.add_rollback(_rollback, api_key_vo)
 
+        prv_jwk = self._query_domain_secret(domain_id)
+
+        key_gen = KeyGenerator(prv_jwk=prv_jwk,
+                               domain_id=domain_id,
+                               audience=user_vo.user_id)
+
+        api_key = key_gen.generate_api_key(api_key_vo.api_key_id, user_vo.user_type)
         return api_key_vo, api_key
 
     def delete_api_key(self, api_key_id, domain_id):
         api_key_vo = self.get_api_key(api_key_id, domain_id)
         api_key_vo.delete()
-        # TODO: delete api_key_cache
 
     def enable_api_key(self, api_key_id, domain_id):
         def _rollback(old_data):

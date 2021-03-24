@@ -1,3 +1,5 @@
+DATABASE_AUTO_CREATE_INDEX = True
+DATABASE_CASE_INSENSITIVE_INDEX = False
 DATABASES = {
     'default': {
         # 'db': '',
@@ -28,19 +30,19 @@ IDENTITY = {
     }
 }
 
-SYSTEM_METHODS = []
-
 HANDLERS = {
-    # TODO: add system key authentication handler
-    'authentication': [{
-        'backend': 'spaceone.core.handler.authentication_handler.AuthenticationGRPCHandler',
-        'uri': 'grpc://localhost:50051/v1/Domain/get_public_key'
-    }],
-    'authorization': [{
-        'backend': 'spaceone.core.handler.authorization_handler.AuthorizationGRPCHandler',
-        'uri': 'grpc://localhost:50051/v1/Authorization/verify'
-    }],
-    'event': []
+    # 'authentication': [{
+    #     'backend': 'spaceone.core.handler.authentication_handler.AuthenticationGRPCHandler',
+    #     'uri': 'grpc://localhost:50051/v1/Domain/get_public_key'
+    # }],
+    # 'authorization': [{
+    #     'backend': 'spaceone.core.handler.authorization_handler.AuthorizationGRPCHandler',
+    #     'uri': 'grpc://localhost:50051/v1/Authorization/verify'
+    # }],
+    # 'mutation': [{
+    #     'backend': 'spaceone.core.handler.mutation_handler.SpaceONEMutationHandler'
+    # }],
+    # 'event': []
 }
 
 CONNECTORS = {
@@ -59,8 +61,17 @@ CONNECTORS = {
             'v1': 'grpc://secret:50051'
         }
     },
+    'RepositoryConnector': {
+        'endpoint': {
+            'v1': 'grpc://repository:50051'
+        }
+    },
 }
 
-ENDPOINTS = {}
-
-LOG = {}
+ENDPOINTS = [
+    # {
+    #     'service': 'identity',
+    #     'name': 'Identity Service',
+    #     'endpoint': 'grpc://<endpoint>>:<port>/v1'
+    # },
+]

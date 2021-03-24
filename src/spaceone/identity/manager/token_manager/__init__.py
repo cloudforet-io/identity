@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import time
 from abc import abstractmethod, ABC, ABCMeta
@@ -11,6 +10,8 @@ from spaceone.identity.error.error_authentication import *
 
 
 __all__ = ['TokenManager', 'JWTManager']
+_LOGGER = logging.getLogger(__name__)
+
 
 class TokenManager(BaseManager, ABC):
 
@@ -29,7 +30,7 @@ class TokenManager(BaseManager, ABC):
         pass
 
     @abstractmethod
-    def authenticate(self, credentials, domain_id):
+    def authenticate(self, user_id, domain_id, credentials):
         pass
 
     @abstractmethod
@@ -57,7 +58,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
     def refresh_token(self, user_id, domain_id, **kwargs):
         raise NotImplementedError('TokenManager.refresh_token not implemented!')
 
-    def authenticate(self, credentials, domain_id):
+    def authenticate(self, user_id, domain_id, credentials):
         raise NotImplementedError('TokenManager.authenticate not implemented!')
 
     def check_refreshable(self, refresh_key, ttl):
@@ -88,7 +89,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         return encoded
 
     def issue_refresh_token(self, user_type, user_id, domain_id, **kwargs):
-        private_jwk = self._get_private_jwk(kwargs)
+        refresh_private_jwk = self._get_refresh_private_jwk(kwargs)
         ttl = kwargs.get('ttl', self.CONST_REFRESH_TTL)
         timeout = kwargs.get('timeout', self.CONST_REFRESH_TIMEOUT)
         refresh_key = self._generate_refresh_key()
@@ -104,7 +105,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
             'ttl': ttl
         }
 
-        encoded = JWTUtil.encode(payload, private_jwk)
+        encoded = JWTUtil.encode(payload, refresh_private_jwk)
 
         if self.CONST_REFRESH_ONCE:
             self._set_refresh_token_cache(refresh_key)
@@ -113,14 +114,21 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
 
     @staticmethod
     def _generate_refresh_key():
-        return utils.random_string()
+        return utils.random_string(16)
 
     @staticmethod
     def _get_private_jwk(kwargs):
         if 'private_jwk' not in kwargs:
-            raise ERROR_NOT_FOUND_PRIVATE_KEY()
+            raise ERROR_NOT_FOUND_PRIVATE_KEY(purpose='Access Token')
 
         return kwargs['private_jwk']
+
+    @staticmethod
+    def _get_refresh_private_jwk(kwargs):
+        if 'refresh_private_jwk' not in kwargs:
+            raise ERROR_NOT_FOUND_PRIVATE_KEY(purpose='Refresh Token')
+
+        return kwargs['refresh_private_jwk']
 
     def _set_refresh_token_cache(self, new_refresh_key):
         if cache.is_set():

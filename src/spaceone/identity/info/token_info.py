@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from spaceone.api.identity.v1 import token_pb2
 
 __all__ = ['TokenInfo']

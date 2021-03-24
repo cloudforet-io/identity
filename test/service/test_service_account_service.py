@@ -14,6 +14,7 @@ from spaceone.identity.model.service_account_model import ServiceAccount
 from spaceone.identity.model.project_model import Project
 from spaceone.identity.info.service_account_info import *
 from spaceone.identity.info.common_info import StatisticsInfo
+from spaceone.identity.connector import SecretConnector
 from test.factory.service_account_factory import ServiceAccountFactory
 from test.factory.provider_factory import ProviderFactory
 from test.factory.project_factory import ProjectFactory
@@ -73,15 +74,18 @@ class TestServiceAccountService(unittest.TestCase):
             'data': {
                 'account_id': '000321654'
             },
-            'tags': {
-                'key': 'value'
-            },
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
             'domain_id': utils.generate_id('domain')
         }
 
         self.transaction.method = 'create'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.create_service_account(params.copy())
+        service_account_vo = service_account_svc.create(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_create_service_account')
         ServiceAccountInfo(service_account_vo)
@@ -91,7 +95,7 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(params['provider'], service_account_vo.provider)
         self.assertEqual(params['domain_id'], service_account_vo.domain_id)
         self.assertEqual(params.get('data', {}), service_account_vo.data)
-        self.assertEqual(params.get('tags', {}), service_account_vo.tags)
+        self.assertEqual(params.get('tags', {}), service_account_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_invalid_data(self, *args):
@@ -108,7 +112,7 @@ class TestServiceAccountService(unittest.TestCase):
         service_account_svc = ServiceAccountService(transaction=self.transaction)
 
         with self.assertRaises(ERROR_INVALID_PARAMETER):
-            service_account_svc.create_service_account(params)
+            service_account_svc.create(params)
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_invalid_data_type(self, *args):
@@ -125,7 +129,7 @@ class TestServiceAccountService(unittest.TestCase):
         service_account_svc = ServiceAccountService(transaction=self.transaction)
 
         with self.assertRaises(ERROR_INVALID_PARAMETER):
-            service_account_svc.create_service_account(params)
+            service_account_svc.create(params)
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_with_project(self, *args):
@@ -141,7 +145,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'create'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.create_service_account(params.copy())
+        service_account_vo = service_account_svc.create(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_create_service_account_with_project')
         ServiceAccountInfo(service_account_vo)
@@ -159,15 +163,18 @@ class TestServiceAccountService(unittest.TestCase):
             'data': {
                 'account_id': 'update-1234'
             },
-            'tags': {
-                'update_key': 'update_value'
-            },
+            'tags': [
+                {
+                    'key': 'update_key',
+                    'value': 'update_value'
+                }
+            ],
             'domain_id': self.domain_id
         }
 
         self.transaction.method = 'update'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.update_service_account(params.copy())
+        service_account_vo = service_account_svc.update(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_update_service_account')
         ServiceAccountInfo(service_account_vo)
@@ -176,9 +183,12 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(new_service_account_vo.service_account_id, service_account_vo.service_account_id)
         self.assertEqual(params['name'], service_account_vo.name)
         self.assertEqual(params['data'], service_account_vo.data)
-        self.assertEqual(params['tags'], service_account_vo.tags)
+        self.assertEqual(params['tags'], service_account_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SecretConnector, 'update_secret_project', return_value=None)
     def test_update_service_account_project(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id)
         params = {
@@ -189,7 +199,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'update'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.update_service_account(params.copy())
+        service_account_vo = service_account_svc.update(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_update_service_account_project')
         ServiceAccountInfo(service_account_vo)
@@ -199,6 +209,9 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(service_account_vo.project.project_id, params['project_id'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SecretConnector, 'release_secret_project', return_value=None)
     def test_release_service_account_project(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id, project=self.project_vo)
         params = {
@@ -209,7 +222,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'update'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.update_service_account(params.copy())
+        service_account_vo = service_account_svc.update(params.copy())
 
         print_data(service_account_vo.to_dict(), 'test_release_service_account_project')
         ServiceAccountInfo(service_account_vo)
@@ -218,6 +231,9 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsNone(service_account_vo.project)
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SecretConnector, 'delete_secret', return_value=None)
     def test_delete_service_account(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id)
         params = {
@@ -227,11 +243,14 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'delete'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        result = service_account_svc.delete_service_account(params)
+        result = service_account_svc.delete(params)
 
         self.assertIsNone(result)
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SecretConnector, 'delete_secret', return_value=None)
     def test_delete_project_exist_service_account(self, *args):
         params = {
             'name': 'SpaceONE',
@@ -245,7 +264,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'create'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.create_service_account(params.copy())
+        service_account_vo = service_account_svc.create(params.copy())
         ServiceAccountInfo(service_account_vo)
 
         with self.assertRaises(ERROR_EXIST_RESOURCE):
@@ -261,7 +280,7 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.transaction.method = 'get'
         service_account_svc = ServiceAccountService(transaction=self.transaction)
-        service_account_vo = service_account_svc.get_service_account(params)
+        service_account_vo = service_account_svc.get(params)
 
         print_data(service_account_vo.to_dict(), 'test_get_service_account')
         ServiceAccountInfo(service_account_vo)
@@ -280,7 +299,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list_service_accounts(params)
+        service_accounts_vos, total_count = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -300,7 +319,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list_service_accounts(params)
+        service_accounts_vos, total_count = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -324,7 +343,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list_service_accounts(params)
+        service_accounts_vos, total_count = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -334,7 +353,7 @@ class TestServiceAccountService(unittest.TestCase):
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_service_accounts_by_tag(self, *args):
-        ServiceAccountFactory(tags={'tag_key': 'tag_value'}, domain_id=self.domain_id)
+        ServiceAccountFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}], domain_id=self.domain_id)
         service_account_vos = ServiceAccountFactory.build_batch(9, project=None,
                                                                 domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), service_account_vos))
@@ -342,8 +361,8 @@ class TestServiceAccountService(unittest.TestCase):
         params = {
             'query': {
                 'filter': [{
-                    'k': 'tags.tag_key',
-                    'v': 'tag_value',
+                    'k': 'tags.tag_key_1',
+                    'v': 'tag_value_1',
                     'o': 'eq'
                 }]
             },
@@ -351,7 +370,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list_service_accounts(params)
+        service_accounts_vos, total_count = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 

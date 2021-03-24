@@ -3,6 +3,7 @@ from unittest.mock import patch
 from mongoengine import connect, disconnect
 
 from spaceone.core.error import *
+from spaceone.core import utils
 from spaceone.core.unittest.result import print_data
 from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.core import config
@@ -22,6 +23,7 @@ class TestProviderService(unittest.TestCase):
     def setUpClass(cls):
         config.init_conf(package='spaceone.identity')
         connect('test', host='mongomock://localhost')
+        cls.domain_id = utils.generate_id('domain')
         cls.transaction = Transaction({
             'service': 'identity',
             'api_class': 'Provider'
@@ -83,14 +85,18 @@ class TestProviderService(unittest.TestCase):
             'capability': {
                 'supported_schema': ['schema-aaa', 'schema-bbb']
             },
-            'tags': {
-                'key': 'value'
-            }
+            'tags': [
+                {
+                    'key': 'tag_key',
+                    'value': 'tag_value'
+                }
+            ],
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'create'
         provider_svc = ProviderService(transaction=self.transaction)
-        provider_vo = provider_svc.create_provider(params.copy())
+        provider_vo = provider_svc.create(params.copy())
 
         print_data(provider_vo.to_dict(), 'test_create_provider')
         ProviderInfo(provider_vo)
@@ -101,22 +107,23 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['template'], provider_vo.template)
         self.assertEqual(params['metadata'], provider_vo.metadata)
         self.assertEqual(params['capability'], provider_vo.capability)
-        self.assertEqual(params['tags'], provider_vo.tags)
+        self.assertEqual(params['tags'], provider_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_duplicated_provider(self, *args):
         params = {
             'provider': 'duplicated_provider',
-            'name': 'Duplicated Provider'
+            'name': 'Duplicated Provider',
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'create'
         provider_svc = ProviderService(transaction=self.transaction)
-        provider_svc.create_provider(params.copy())
+        provider_svc.create(params.copy())
 
-        with self.assertRaises(ERROR_NOT_UNIQUE_KEYS) as e:
+        with self.assertRaises(ERROR_SAVE_UNIQUE_VALUES) as e:
             provider_svc = ProviderService(transaction=self.transaction)
-            provider_svc.create_provider(params.copy())
+            provider_svc.create(params.copy())
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_provider(self, *args):
@@ -128,14 +135,18 @@ class TestProviderService(unittest.TestCase):
             },
             'metadata': {
             },
-            'tags': {
-                'update_key': 'update_value'
-            }
+            'tags': [
+                {
+                    'key': 'update_key',
+                    'value': 'update_value'
+                }
+            ],
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'update'
         provider_svc = ProviderService(transaction=self.transaction)
-        provider_vo = provider_svc.update_provider(params.copy())
+        provider_vo = provider_svc.update(params.copy())
 
         print_data(provider_vo.to_dict(), 'test_update_provider')
         ProviderInfo(provider_vo)
@@ -145,18 +156,19 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['name'], provider_vo.name)
         self.assertEqual(params['template'], provider_vo.template)
         self.assertEqual(params['metadata'], provider_vo.metadata)
-        self.assertEqual(params['tags'], provider_vo.tags)
+        self.assertEqual(params['tags'], provider_vo.to_dict()['tags'])
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_provider(self, *args):
         new_provider_vo = ProviderFactory()
         params = {
-            'provider': new_provider_vo.provider
+            'provider': new_provider_vo.provider,
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'delete'
         provider_svc = ProviderService(transaction=self.transaction)
-        result = provider_svc.delete_provider(params)
+        result = provider_svc.delete(params)
 
         self.assertIsNone(result)
 
@@ -164,12 +176,13 @@ class TestProviderService(unittest.TestCase):
     def test_get_provider(self, *args):
         new_provider_vo = ProviderFactory()
         params = {
-            'provider': new_provider_vo.provider
+            'provider': new_provider_vo.provider,
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'get'
         provider_svc = ProviderService(transaction=self.transaction)
-        provider_vo = provider_svc.get_provider(params)
+        provider_vo = provider_svc.get(params)
 
         print_data(provider_vo.to_dict(), 'test_get_provider')
         ProviderInfo(provider_vo)
@@ -179,12 +192,13 @@ class TestProviderService(unittest.TestCase):
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_generate_default_provider_by_list_providers_method(self, *args):
         params = {
-            'provider': 'aws'
+            'provider': 'aws',
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
         provider_svc = ProviderService(transaction=self.transaction)
-        providers_vos, total_count = provider_svc.list_providers(params)
+        providers_vos, total_count = provider_svc.list(params)
 
         print_data(providers_vos, 'test_generate_default_provider_by_list_providers_method')
         ProvidersInfo(providers_vos, total_count)
@@ -199,12 +213,13 @@ class TestProviderService(unittest.TestCase):
         list(map(lambda vo: vo.save(), provider_vos))
 
         params = {
-            'provider': provider_vos[0].provider
+            'provider': provider_vos[0].provider,
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
         provider_svc = ProviderService(transaction=self.transaction)
-        providers_vos, total_count = provider_svc.list_providers(params)
+        providers_vos, total_count = provider_svc.list(params)
 
         ProvidersInfo(providers_vos, total_count)
 
@@ -218,12 +233,13 @@ class TestProviderService(unittest.TestCase):
         list(map(lambda vo: vo.save(), provider_vos))
 
         params = {
-            'name': provider_vos[0].name
+            'name': provider_vos[0].name,
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
         provider_svc = ProviderService(transaction=self.transaction)
-        providers_vos, total_count = provider_svc.list_providers(params)
+        providers_vos, total_count = provider_svc.list(params)
 
         ProvidersInfo(providers_vos, total_count)
 
@@ -233,23 +249,24 @@ class TestProviderService(unittest.TestCase):
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_providers_by_tag(self, *args):
-        ProviderFactory(tags={'tag_key': 'tag_value'})
+        ProviderFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}])
         provider_vos = ProviderFactory.build_batch(9)
         list(map(lambda vo: vo.save(), provider_vos))
 
         params = {
             'query': {
                 'filter': [{
-                    'k': 'tags.tag_key',
-                    'v': 'tag_value',
+                    'k': 'tags.tag_key_1',
+                    'v': 'tag_value_1',
                     'o': 'eq'
                 }]
-            }
+            },
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
         provider_svc = ProviderService(transaction=self.transaction)
-        providers_vos, total_count = provider_svc.list_providers(params)
+        providers_vos, total_count = provider_svc.list(params)
 
         ProvidersInfo(providers_vos, total_count)
 
@@ -280,7 +297,8 @@ class TestProviderService(unittest.TestCase):
                     'name': 'Count',
                     'desc': True
                 }
-            }
+            },
+            'domain_id': self.domain_id
         }
 
         self.transaction.method = 'stat'
