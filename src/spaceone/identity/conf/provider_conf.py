@@ -358,7 +358,8 @@ DEFAULT_PROVIDERS = [{
                                 "[Get Key's Fingerprint](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
                                 "## Upload the Public Key from the key pair in the Console\n"
                                 "[Upload Your Public Key](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
-                                R"## Note: It requires to add \n at end of every each line of your private_key string prior to put private key in credentials. ex) -----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0\n...\n..\n"
+                                #R"## Note: It requires to add \n at end of every each line of your private_key string prior to put private key in credentials. ex) -----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0\n...\n..\n"
+                                "## Note: You must copy and paste the private key, except for the header and footer of the private_key string, before putting it into Credential. The same is true for typing in JSON format; each string is separated by a space.\n"
                             ),
                             "ko": (
                                 "# 오라클 클라우드 이용자 가이드\n"
@@ -369,7 +370,8 @@ DEFAULT_PROVIDERS = [{
                                 "[핑거프린트 생성](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
                                 "## 오라클 클라우드 콘솔에 공개 키 등록\n"
                                 "[퍼블릭 키 업로드](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
-                                R"## Note: 개인 키를 Credential에 넣기 전에 private_key 문자열의 각 줄 끝에 \n을 추가해야 합니다. ex) -------BEGIN Private KEY-------\nMIEvQIBADANBgkqhkiG9w0\n...\n...\n"
+                                #R"## Note: 개인 키를 Credential에 넣기 전에 private_key 문자열의 각 줄 끝에 \n을 추가해야 합니다. ex) -------BEGIN Private KEY-------\nMIEvQIBADANBgkqhkiG9w0\n...\n...\n"
+                                "## Note: 개인 키를 Credential에 넣기 전에 private_key 문자열의 헤더와 푸터를 제외하고 복사해서 붙여넣어야 합니다. JSON 형식으로 입력 시에도 동일하며, 각 문자열은 공백으로 구분합니다.\n  "
                             ),
                         }
                     }
