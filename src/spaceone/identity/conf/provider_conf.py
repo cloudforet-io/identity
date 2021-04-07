@@ -253,6 +253,147 @@ DEFAULT_PROVIDERS = [{
             'value': 'https://spaceone.console.doodle.spaceone.dev/img/brand_logo.42208bb4.svg'
         }
     ]
+},{
+    "provider": "alibaba_cloud",
+    "name": "Alibaba Cloud",
+    "template": {
+        "service_account": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "account_id": {
+                        "title": "Account ID",
+                        "type": "string",
+                        "minLength": 4
+                    }
+                },
+                "required": ["account_id"]
+            }
+        }
+    },
+    "metadata": {
+        "view": {
+            "layouts": {
+                "help:service_account:create": {
+                    "name": "Creation Help",
+                    "type": "markdown",
+                    "options": {
+                        "markdown": {
+                            "en": (
+                                "# Help for Alibaba Cloud Users\n"
+                                "## Find Your Alibaba Cloud Account ID\n"
+                                "Get your Alibaba Cloud Account ID.\n"
+                                "Individual Account: Alibaba Cloud console > Click your avatar > Account Management Page > Security Settings > **Account ID**\nEnterprise Account: Alibaba Cloud console > Click your avatar > **Enterprise Alias**\n"
+                                "## Generate Your AccessKey Pair\n"
+                                "Get your Alibaba Cloud AccessKey ID & AccessKey Secret\n"
+                                "[Alibaba Cloud AccessKey & AccessSecret](https://www.alibabacloud.com/help/doc-detail/53045.htm?spm=a2c63.p38356.879954.17.6be510df6F9vxS#concept-53045-zh)\n"
+                            ),
+                            "ko": (
+                                "# 알리바바 클라우드 이용자 가이드\n"
+                                "## 알리바바 클라우드 계정 아이디(Account ID) 찾기\n"
+                                "콘솔에서 사용자의 알리바바 클라우드 계정 아이디 확인하기\n"
+                                "개인 계정: 알리바바 클라우드 콘솔 > 사용자 아바타 클릭 > Account Management 페이지 > Security Settings > **Account ID**\n엔터프라이즈 계정: 알리바바 클라우드 콘솔 > 사용자 아바타 클 > **Enterprise Alias**\n"
+                                "## 알리바바 클라우드 AccessKey Pair 발급하기\n"
+                                "콘솔에서 알리바바 클라우드 AccessKey ID & AccessKey Secret 생성하기\n"
+                                "[Alibaba Cloud AccessKey & AccessKey Secret](https://www.alibabacloud.com/help/doc-detail/53045.htm?spm=a2c63.p38356.879954.17.6be510df6F9vxS#concept-53045-zh)\n"
+                            ),
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "capability": {
+        "supported_schema": ["alibaba_cloud_access_key_pair"]
+    },
+    "tags": [
+        {
+            'key': 'color',
+            'value': '#FF6A00'
+        }, {
+            'key': 'icon',
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/cloud-services/alibaba_cloud/logo.svg'
+        }, {
+            'key': 'external_link_template',
+            'value': 'https://homenew-intl.console.aliyun.com/'
+        }
+    ]
+}, {
+    "provider": "oracle_cloud",
+    "name": "Oracle Cloud Infrastructure",
+    "template": {
+        "service_account": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "tenancy_name": {
+                        "title": "Tenancy Name",
+                        "type": "string",
+                        "minLength": 4
+                    },
+                    "user_name": {
+                        "title": "User Name",
+                        "type": "string",
+                        "minLength": 4
+                    }
+                },
+                "required": ["tenancy_name", "user_name"]
+            }
+        }
+    },
+    "metadata": {
+        "view": {
+            "layouts": {
+                "help:service_account:create": {
+                    "name": "Creation Help",
+                    "type": "markdown",
+                    "options": {
+                        "markdown": {
+                            "en": (
+                                "# Getting started with Oracle Cloud Intrastructure\n"
+                                "## Find Your Tenancy & User OCID\n"
+                                "[Get your User's OCID  and Tenancy's OCID](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five)\n"
+                                "## Generate RSA key pair and Key's Fingerprint\n"
+                                "[Generate RSA key pair]([https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two))\n"
+                                "[Get Key's Fingerprint](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
+                                "## Upload the Public Key from the key pair in the Console\n"
+                                "[Upload Your Public Key](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
+                                #R"## Note: It requires to add \n at end of every each line of your private_key string prior to put private key in credentials. ex) -----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0\n...\n..\n"
+                                "## Note: You must copy and paste the private key, except for the header and footer of the private_key string, before putting it into Credential. The same is true for typing in JSON format; each string is separated by a space.\n"
+                            ),
+                            "ko": (
+                                "# 오라클 클라우드 이용자 가이드\n"
+                                "## 오라클 클라우드 테넌시와 유저 OCID 찾기\n"
+                                "[유저와 테넌시 OCID 정보 확인](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five)\n"
+                                "## RSA 키 페어와 핑거프린트 생성\n"
+                                "[RSA 키 페어 생성]([https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#two))\n"
+                                "[핑거프린트 생성](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four)\n"
+                                "## 오라클 클라우드 콘솔에 공개 키 등록\n"
+                                "[퍼블릭 키 업로드](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#three)\n"
+                                "## Note: 개인 키를 Credential에 넣기 전에 private_key 문자열의 헤더와 푸터를 제외하고 복사해서 붙여넣어야 합니다. JSON 형식으로 입력 시에도 동일하며, 각 문자열은 공백으로 구분합니다.\n  "
+                            ),
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "capability": {
+        "supported_schema": ["oci_api_key"]
+    },
+    "tags": [
+        {
+            'key': 'color',
+            'value': '#D73A27'
+        }, {
+            'key': 'icon',
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/cloud-services/oci/ic_provider_oracle.svg'
+        }, {
+            'key': 'external_link_template',
+            'value': 'https://www.oracle.com/kr/cloud/sign-in.html'
+        }
+    ]
+
 }]
 
 aws_access_key = {
@@ -507,6 +648,80 @@ spaceone_api_key = {
         {
             'key': 'description',
             'value': 'SpaceONE API Key'
+        }
+    ]
+}
+
+alibaba_cloud_access_key_pair = {
+    "name": "alibaba_cloud_access_key_pair",
+    "service_type": "secret.credentials",
+    "schema": {
+        "required": [
+            "ali_access_key_id",
+            "ali_access_key_secret"
+        ],
+        "properties": {
+            "ali_access_key_id": {
+                "title": "Alibaba Cloud AccessKey ID",
+                "type": "string",
+                "minLength": 4
+            },
+            "ali_access_key_secret": {
+                "title": "Alibaba Cloud AccessKey Secret",
+                "type": "string",
+                "minLength": 4
+            }
+        },
+        "type": "object"
+    },
+    "labels": ["Alibaba"],
+    "tags": [
+        {
+            'key': 'description',
+            'value': "Alibaba Cloud AccessKey Pair"
+        }
+    ]
+}
+
+oci_api_key = {
+    "name": "oci_api_key",
+    "service_type": "secret.credentials",
+    "schema": {
+        "required": [
+            "tenancy",
+            "user",
+            "key_content",
+            "fingerprint"
+        ],
+        "properties": {
+            "tenancy": {
+                "title": "Tenancy's OCID",
+                "type": "string",
+                "minLength": 4
+            },
+            "user":{
+                "title": "User's OCID",
+                "type": "string",
+                "minLength": 4
+            },
+            "key_content": {
+                "title": "Private Key Content",
+                "type": "string",
+                "minLength": 4
+            },
+            "fingerprint": {
+                "title": "Fingerprint",
+                "type": "string",
+                "minLength": 4
+            }
+        },
+        "type": "object"
+    },
+    "labels": ["Oracle"],
+    "tags": [
+        {
+            'key': 'description',
+            'value': "Oracle Cloud Infrastructure Access Configuration"
         }
     ]
 }
