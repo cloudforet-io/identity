@@ -1,7 +1,7 @@
 import functools
-from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import user_pb2
 from spaceone.core.pygrpc.message_type import *
+from spaceone.core import utils
 from spaceone.identity.model.user_model import User
 
 __all__ = ['UserInfo', 'UsersInfo']
@@ -21,10 +21,10 @@ def UserInfo(user_vo: User, minimal=False):
             'backend': user_vo.backend,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
-            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in user_vo.tags],
+            'tags': change_struct_type(utils.tags_to_dict(user_vo.tags)),
             'domain_id': user_vo.domain_id,
-            'last_accessed_at': change_timestamp_type(user_vo.last_accessed_at),
-            'created_at': change_timestamp_type(user_vo.created_at)
+            'last_accessed_at': utils.datetime_to_iso8601(user_vo.last_accessed_at),
+            'created_at': utils.datetime_to_iso8601(user_vo.created_at)
         })
 
     return user_pb2.UserInfo(**info)

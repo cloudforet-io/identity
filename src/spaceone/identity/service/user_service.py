@@ -1,8 +1,9 @@
 import pytz
 from spaceone.core.service import *
+from spaceone.core import utils
 from spaceone.identity.error.error_user import *
 from spaceone.identity.model import Domain
-from spaceone.identity.manager import UserManager, RoleManager, DomainManager
+from spaceone.identity.manager import UserManager, DomainManager
 
 
 @authentication_handler
@@ -30,7 +31,7 @@ class UserService(BaseService):
                 'backend': 'str',
                 'language': 'str',
                 'timezone': 'str',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -46,6 +47,9 @@ class UserService(BaseService):
         domain_vo: Domain = domain_mgr.get_domain(domain_id)
 
         self._check_user_type_and_backend(params['user_type'], params['backend'], domain_vo)
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if 'timezone' in params:
             self._check_timezone(params['timezone'])
@@ -65,13 +69,15 @@ class UserService(BaseService):
                 'email': 'str',
                 'language': 'str',
                 'timezone': 'str',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
         Returns:
             user_vo (object)
         """
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if 'timezone' in params:
             self._check_timezone(params['timezone'])

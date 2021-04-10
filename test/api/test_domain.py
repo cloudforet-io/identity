@@ -78,15 +78,10 @@ class TestDomain(unittest.TestCase):
         name = utils.random_string()
         params = {
             'name': name,
-            'tags': [
-                {
-                    'key': utils.random_string(4),
-                    'value': utils.random_string(4)
-                }, {
-                    'key': utils.random_string(4),
-                    'value': utils.random_string(4)
-                }
-            ]
+            'tags': {
+                utils.random_string(4): utils.random_string(4),
+                utils.random_string(4):utils.random_string(4)
+            }
         }
         self.domain = self.identity_v1.Domain.create(params)
         self.assertEqual(self.domain.name, name)
@@ -99,12 +94,9 @@ class TestDomain(unittest.TestCase):
         """
         self.test_create_domain()
 
-        tags = [
-            {
-                'key': 'a',
-                'value': '123'
-            }
-        ]
+        tags = {
+            'update_key': 'update_value'
+        }
         params = {'domain_id': self.domain.domain_id, 'tags': tags}
         self.domain = self.identity_v1.Domain.update(
             params,

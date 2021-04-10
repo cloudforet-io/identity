@@ -74,12 +74,9 @@ class TestServiceAccountService(unittest.TestCase):
             'data': {
                 'account_id': '000321654'
             },
-            'tags': [
-                {
-                    'key': 'tag_key',
-                    'value': 'tag_value'
-                }
-            ],
+            'tags': {
+                'tag_key': 'tag_value'
+            },
             'domain_id': utils.generate_id('domain')
         }
 
@@ -95,7 +92,7 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(params['provider'], service_account_vo.provider)
         self.assertEqual(params['domain_id'], service_account_vo.domain_id)
         self.assertEqual(params.get('data', {}), service_account_vo.data)
-        self.assertEqual(params.get('tags', {}), service_account_vo.to_dict()['tags'])
+        self.assertEqual(params.get('tags', {}), utils.tags_to_dict(service_account_vo.tags))
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_invalid_data(self, *args):
@@ -163,12 +160,9 @@ class TestServiceAccountService(unittest.TestCase):
             'data': {
                 'account_id': 'update-1234'
             },
-            'tags': [
-                {
-                    'key': 'update_key',
-                    'value': 'update_value'
-                }
-            ],
+            'tags': {
+                'tag_key': 'tag_value'
+            },
             'domain_id': self.domain_id
         }
 
@@ -183,7 +177,7 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(new_service_account_vo.service_account_id, service_account_vo.service_account_id)
         self.assertEqual(params['name'], service_account_vo.name)
         self.assertEqual(params['data'], service_account_vo.data)
-        self.assertEqual(params['tags'], service_account_vo.to_dict()['tags'])
+        self.assertEqual(params['tags'], utils.tags_to_dict(service_account_vo.tags))
 
     @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
@@ -387,7 +381,7 @@ class TestServiceAccountService(unittest.TestCase):
         params = {
             'domain_id': self.domain_id,
             'query': {
-                'aggregate': {
+                'aggregate': [{
                     'group': {
                         'keys': [{
                             'key': 'service_account_id',
@@ -402,11 +396,12 @@ class TestServiceAccountService(unittest.TestCase):
                             'operator': 'size'
                         }]
                     }
-                },
-                'sort': {
-                    'name': 'Count',
-                    'desc': True
-                }
+                }, {
+                    'sort': {
+                        'key': 'Count',
+                        'desc': True
+                    }
+                }]
             }
         }
 

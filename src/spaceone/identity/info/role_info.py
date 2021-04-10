@@ -1,7 +1,7 @@
 import functools
-from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import role_pb2
 from spaceone.core.pygrpc.message_type import *
+from spaceone.core import utils
 from spaceone.identity.model.role_model import Role, RolePolicy
 
 __all__ = ['RoleInfo', 'RolesInfo']
@@ -26,9 +26,9 @@ def RoleInfo(role_vo: Role, minimal=False):
     if not minimal:
         info.update({
             'policies': list(map(lambda policy: RolePolicyInfo(policy), role_vo.policies)),
-            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in role_vo.tags],
+            'tags': change_struct_type(utils.tags_to_dict(role_vo.tags)),
             'domain_id': role_vo.domain_id,
-            'created_at': change_timestamp_type(role_vo.created_at)
+            'created_at': utils.datetime_to_iso8601(role_vo.created_at)
         })
 
     return role_pb2.RoleInfo(**info)

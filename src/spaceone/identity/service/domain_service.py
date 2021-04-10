@@ -1,4 +1,5 @@
 from spaceone.core.service import *
+from spaceone.core import utils
 from spaceone.identity.manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.model import Domain
@@ -24,12 +25,15 @@ class DomainService(BaseService):
                 'name': 'str',
                 'config': 'dict',
                 'plugin_info': 'dict',
-                'tags': 'list'
+                'tags': 'dict'
             }
 
         Returns:
             domain_vo (object)
         """
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         # Create Domain
         domain_vo: Domain = self.domain_mgr.create_domain(params)
@@ -49,12 +53,15 @@ class DomainService(BaseService):
             params (dict): {
                 'domain_id': 'str',
                 'config': 'dict',
-                'tags': 'list'
+                'tags': 'dict'
             }
 
         Returns:
             domain_vo (object)
         """
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.domain_mgr.update_domain(params)
 

@@ -2,10 +2,10 @@ import functools
 import json
 
 from spaceone.api.core.v1 import handler_pb2
-from spaceone.api.core.v1 import tag_pb2
 from spaceone.api.identity.v1 import domain_pb2
 
 from spaceone.core.pygrpc.message_type import *
+from spaceone.core import utils
 from spaceone.identity.model.domain_model import Domain
 
 __all__ = ['DomainInfo', 'DomainsInfo', 'DomainPublicKeyInfo']
@@ -22,9 +22,9 @@ def DomainInfo(domain_vo: Domain, minimal=False):
         info.update({
             'plugin_info': PluginInfo(domain_vo.plugin_info),
             'config': change_struct_type(domain_vo.config),
-            'created_at': change_timestamp_type(domain_vo.created_at),
-            'deleted_at': change_timestamp_type(domain_vo.deleted_at),
-            'tags': [tag_pb2.Tag(key=tag.key, value=tag.value) for tag in domain_vo.tags]
+            'created_at': utils.datetime_to_iso8601(domain_vo.created_at),
+            'deleted_at': utils.datetime_to_iso8601(domain_vo.deleted_at),
+            'tags': change_struct_type(utils.tags_to_dict(domain_vo.tags))
         })
 
     return domain_pb2.DomainInfo(**info)

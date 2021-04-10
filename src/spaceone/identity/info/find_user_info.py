@@ -1,5 +1,5 @@
 import functools
-from spaceone.api.core.v1 import tag_pb2
+from spaceone.core.pygrpc.message_type import *
 from spaceone.api.identity.v1 import user_pb2
 
 __all__ = ['FindUserInfo', 'FindUsersInfo']
@@ -12,8 +12,12 @@ def FindUserInfo(user_data: dict, minimal=False):
         'email': user_data.get('email')
     }
     if not minimal:
+        tags = {}
+        for tag in user_data.get('tags', []):
+            tags[tag['key']] = tag['value']
+
         info.update({
-            'tags': [tag_pb2.Tag(key=tag['key'], value=tag['value']) for tag in user_data.get('tags', [])],
+            'tags': change_struct_type(tags),
         })
 
     return user_pb2.FindUserInfo(**info)

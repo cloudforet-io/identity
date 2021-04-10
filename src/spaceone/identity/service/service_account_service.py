@@ -2,6 +2,7 @@ from jsonschema import validate
 
 from spaceone.core.service import *
 from spaceone.core.error import *
+from spaceone.core import utils
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.provider_manager import ProviderManager
@@ -30,7 +31,7 @@ class ServiceAccountService(BaseService):
                 'data': 'dict',
                 'provider': 'str',
                 'project_id': 'str',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -42,6 +43,9 @@ class ServiceAccountService(BaseService):
 
         if 'project_id' in params:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.service_account_mgr.create_service_account(params)
 
@@ -55,7 +59,7 @@ class ServiceAccountService(BaseService):
                 'name': 'str',
                 'data': 'dict',
                 'project_id': 'str',
-                'tags': 'list',
+                'tags': 'dict',
                 'release_project': 'bool',
                 'domain_id': 'str'
             }
@@ -79,6 +83,9 @@ class ServiceAccountService(BaseService):
             params['project_id'] = None
         elif project_id:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(params, service_account_vo)
 
@@ -156,10 +163,6 @@ class ServiceAccountService(BaseService):
             total_count (int)
         """
         query = params.get('query', {})
-
-        # Temporary code for DB migration
-        if 'only' in query:
-            query['only'] += ['project_id']
 
         return self.service_account_mgr.list_service_accounts(query)
 
