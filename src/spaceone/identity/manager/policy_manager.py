@@ -3,6 +3,7 @@ from datetime import datetime
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.core import utils
 from spaceone.identity.error.error_role import *
 from spaceone.identity.model.policy_model import Policy
 from spaceone.identity.manager.role_manager import RoleManager
@@ -72,6 +73,8 @@ class PolicyManager(BaseManager):
 
                 return self._update_managed_policy(local_managed_policy_vo, repo_managed_policy_info)
 
+            if 'tags' in repo_managed_policy_info:
+                repo_managed_policy_info['tags'] = utils.dict_to_tags(repo_managed_policy_info['tags'])
             return self._create_managed_policy(policy_id, domain_id, repo_managed_policy_info)
         else:
             if local_managed_policy_vo:
