@@ -250,7 +250,7 @@ DEFAULT_PROVIDERS = [{
             'value': '#6638B6'
         }, {
             'key': 'icon',
-            'value': 'https://spaceone.console.doodle.spaceone.dev/img/brand_logo.42208bb4.svg'
+            'value': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/spaceone.svg'
         }
     ]
 },{
