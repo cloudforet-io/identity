@@ -64,7 +64,7 @@ DEFAULT_PROVIDERS = [{
             'value': '#FF9900'
         }, {
             'key': 'icon',
-            'value': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg'
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg'
         }, {
             'key': 'external_link_template',
             'value': 'https://<%- data.account_id %>.signin.aws.amazon.com/console'
@@ -131,7 +131,7 @@ DEFAULT_PROVIDERS = [{
             'value': '#4285F4'
         }, {
             'key': 'icon',
-            'value': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg'
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg'
         }, {
             'key': 'external_link_template',
             'value': 'https://console.cloud.google.com/home/dashboard?project=<%- data.project_id %>'
@@ -220,7 +220,7 @@ DEFAULT_PROVIDERS = [{
             'value': '#00BCF2'
         }, {
             'key': 'icon',
-            'value': 'https://assets-console-spaceone-stg.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
         }
     ]
 }, {
@@ -250,7 +250,7 @@ DEFAULT_PROVIDERS = [{
             'value': '#6638B6'
         }, {
             'key': 'icon',
-            'value': 'https://spaceone.console.doodle.spaceone.dev/img/brand_logo.42208bb4.svg'
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/spaceone.svg'
         }
     ]
 },{
