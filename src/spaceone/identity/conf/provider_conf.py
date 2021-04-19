@@ -253,7 +253,7 @@ DEFAULT_PROVIDERS = [{
             'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/spaceone.svg'
         }
     ]
-},{
+}, {
     "provider": "alibaba_cloud",
     "name": "Alibaba Cloud",
     "template": {
