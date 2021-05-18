@@ -1,6 +1,6 @@
 import functools
 from spaceone.api.identity.v1 import api_key_pb2
-from spaceone.core.pygrpc.message_type import *
+from spaceone.core import utils
 from spaceone.identity.model.api_key_model import APIKey
 
 __all__ = ['APIKeyInfo', 'APIKeysInfo']
@@ -17,8 +17,8 @@ def APIKeyInfo(api_key_vo: APIKey, minimal=False, api_key=None, **kwargs):
     if not minimal:
         info.update({
             'domain_id': api_key_vo.domain_id,
-            'last_accessed_at': change_timestamp_type(api_key_vo.last_accessed_at),
-            'created_at': change_timestamp_type(api_key_vo.created_at)
+            'last_accessed_at': utils.datetime_to_iso8601(api_key_vo.last_accessed_at),
+            'created_at': utils.datetime_to_iso8601(api_key_vo.created_at)
         })
 
     return api_key_pb2.APIKeyInfo(**info)

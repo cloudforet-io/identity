@@ -183,12 +183,9 @@ class TestUser(unittest.TestCase):
             'email': user_id,
             'timezone': 'Asia/Seoul',
             'language': language.__str__(),
-            'tags': [
-                {
-                    'key': 'tag_key',
-                    'value': 'tag_value'
-                }
-            ],
+            'tags': {
+                'tag_key': 'tag_value'
+            },
             'domain_id': self.domain.domain_id
         }
 
@@ -269,12 +266,9 @@ class TestUser(unittest.TestCase):
         self.test_create_user()
         params = {
             'user_id': self.user.user_id,
-            'tags': [
-                {
-                    'key': 'update_key',
-                    'value': 'update_value'
-                }
-            ],
+            'tags': {
+                'update_key': 'update_value'
+            },
             'domain_id': self.domain.domain_id
         }
         self.user = self.identity_v1.User.update(
@@ -283,6 +277,8 @@ class TestUser(unittest.TestCase):
         )
 
         user_data = MessageToDict(self.user)
+        print(user_data['tags'])
+        print(params)
         self.assertEqual(user_data['tags'], params['tags'])
 
     def test_enable_user(self):
@@ -399,9 +395,9 @@ class TestUser(unittest.TestCase):
 
     def test_find_user(self):
         token_param = {
+            'user_id': self.owner_id,
+            'user_type': 'DOMAIN_OWNER',
             'credentials': {
-                'user_type': 'DOMAIN_OWNER',
-                'user_id': self.owner_id,
                 'password': self.owner_pw
             },
             'domain_id': self.domain.domain_id

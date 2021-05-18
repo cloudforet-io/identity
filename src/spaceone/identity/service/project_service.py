@@ -1,5 +1,6 @@
 import logging
 from spaceone.core.service import *
+from spaceone.core import utils
 from spaceone.identity.error.error_project import *
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
@@ -28,7 +29,7 @@ class ProjectService(BaseService):
             params (dict): {
                 'name': 'str',
                 'project_group_id': 'str',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -37,6 +38,9 @@ class ProjectService(BaseService):
         """
 
         params['created_by'] = self.transaction.get_meta('user_id')
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if 'project_group_id' in params:
             project_group_mgr: ProjectGroupManager = self.locator.get_manager('ProjectGroupManager')
@@ -55,7 +59,7 @@ class ProjectService(BaseService):
                 'project_id': 'str',
                 'name': 'str',
                 'project_group_id': 'str',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -66,6 +70,9 @@ class ProjectService(BaseService):
         domain_id = params['domain_id']
 
         project_vo = self.project_mgr.get_project(params['project_id'], domain_id)
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if 'project_group_id' in params:
             project_group_mgr: ProjectGroupManager = self.locator.get_manager('ProjectGroupManager')
@@ -144,10 +151,6 @@ class ProjectService(BaseService):
                 'o': 'in'
             })
 
-        # Temporary code for DB migration
-        if 'only' in query:
-            query['only'] += ['project_group_id']
-
         return self.project_mgr.list_projects(params.get('query', {}))
 
     @transaction(append_meta={
@@ -186,7 +189,7 @@ class ProjectService(BaseService):
                 'user_id': 'str',
                 'role_id': 'str',
                 'labels': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -205,6 +208,9 @@ class ProjectService(BaseService):
         if role_vo.role_type != 'PROJECT':
             raise ERROR_ONLY_PROJECT_ROLE_TYPE_ALLOWED()
 
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
+
         return role_binding_mgr.create_role_binding(params)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
@@ -217,7 +223,7 @@ class ProjectService(BaseService):
                 'project_id': 'str',
                 'user_id': 'str',
                 'labels': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -237,6 +243,9 @@ class ProjectService(BaseService):
 
         if role_binding_vos.count() == 0:
             raise ERROR_NOT_FOUND(key='user_id', value=user_id)
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return role_binding_mgr.update_role_binding_by_vo(params, role_binding_vos[0])
 

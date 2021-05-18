@@ -1,6 +1,6 @@
 import logging
-from spaceone.core import cache
 from spaceone.core.service import *
+from spaceone.core import utils
 from spaceone.identity.error.error_project import *
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
@@ -33,7 +33,7 @@ class ProjectGroupService(BaseService):
             params (dict): {
                 'name': 'str',
                 'parent_project_group_id': 'str',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -42,6 +42,9 @@ class ProjectGroupService(BaseService):
         """
 
         params['created_by'] = self.transaction.get_meta('user_id')
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if 'parent_project_group_id' in params:
             params['parent_project_group'] = self._get_parent_project_group(params['parent_project_group_id'],
@@ -65,7 +68,7 @@ class ProjectGroupService(BaseService):
                 'name': 'str',
                 'parent_project_group_id': 'str',
                 'release_parent_project_group': 'bool',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -77,6 +80,9 @@ class ProjectGroupService(BaseService):
         release_parent_project_group = params.get('release_parent_project_group', False)
 
         project_group_vo = self.project_group_mgr.get_project_group(params['project_group_id'], domain_id)
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if release_parent_project_group:
             params['parent_project_group'] = None
@@ -156,10 +162,6 @@ class ProjectGroupService(BaseService):
         query = params.get('query', {})
         domain_id = params['domain_id']
 
-        # Temporary code for DB migration
-        if 'only' in query:
-            query['only'] += ['parent_project_group_id']
-
         # For Access Control
         if role_type == 'PROJECT':
             if author_within:
@@ -209,7 +211,7 @@ class ProjectGroupService(BaseService):
                 'user_id': 'str',
                 'role_id': 'str',
                 'labels': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -227,6 +229,9 @@ class ProjectGroupService(BaseService):
         role_vo = role_mgr.get_role(params['role_id'], params['domain_id'])
         if role_vo.role_type != 'PROJECT':
             raise ERROR_ONLY_PROJECT_ROLE_TYPE_ALLOWED()
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return role_binding_mgr.create_role_binding(params)
 
@@ -260,6 +265,9 @@ class ProjectGroupService(BaseService):
 
         if role_binding_vos.count() == 0:
             raise ERROR_NOT_FOUND(key='user_id', value=user_id)
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return role_binding_mgr.update_role_binding_by_vo(params, role_binding_vos[0])
 
@@ -381,10 +389,6 @@ class ProjectGroupService(BaseService):
                 'v': user_projects,
                 'o': 'in'
             })
-
-        # Temporary code for DB migration
-        if 'only' in query:
-            query['only'] += ['project_group_id']
 
         return project_mgr.list_projects(query)
 

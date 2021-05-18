@@ -1,4 +1,5 @@
 import unittest
+import copy
 from unittest.mock import patch
 from mongoengine import connect, disconnect
 from google.protobuf.json_format import MessageToDict
@@ -19,9 +20,17 @@ from test.factory.provider_factory import ProviderFactory
 class _MockProviderService(BaseService):
 
     def create(self, params):
+        params = copy.deepcopy(params)
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
+
         return ProviderFactory(**params)
 
     def update(self, params):
+        params = copy.deepcopy(params)
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
+
         return ProviderFactory(**params)
 
     def delete(self, params):
@@ -86,12 +95,9 @@ class TestProviderAPI(unittest.TestCase):
             'capability': {
                 'supported_schema': ['schema-aaa', 'schema-bbb']
             },
-            'tags': [
-                {
-                    'key': 'tag_key',
-                    'value': 'tag_value'
-                }
-            ]
+            'tags': {
+                'tag_key': 'tag_value'
+            }
         }
         mock_parse_request.return_value = (params, {})
 
@@ -107,7 +113,7 @@ class TestProviderAPI(unittest.TestCase):
         self.assertDictEqual(MessageToDict(provider_info.template), params['template'])
         self.assertDictEqual(MessageToDict(provider_info.metadata), params['metadata'])
         self.assertDictEqual(MessageToDict(provider_info.capability), params['capability'])
-        self.assertListEqual(provider_data['tags'], params['tags'])
+        self.assertDictEqual(provider_data['tags'], params['tags'])
         self.assertIsNotNone(getattr(provider_info, 'created_at', None))
 
     @patch.object(BaseAPI, '__init__', return_value=None)
@@ -117,12 +123,9 @@ class TestProviderAPI(unittest.TestCase):
         params = {
             'provider': utils.random_string(),
             'name': utils.random_string(),
-            'tags': [
-                {
-                    'key': 'update_key',
-                    'value': 'update_value'
-                }
-            ]
+            'tags': {
+                'update_key': 'update_value'
+            }
         }
         mock_parse_request.return_value = (params, {})
 
@@ -134,7 +137,7 @@ class TestProviderAPI(unittest.TestCase):
         provider_data = MessageToDict(provider_info)
         self.assertIsInstance(provider_info, provider_pb2.ProviderInfo)
         self.assertEqual(provider_info.name, params['name'])
-        self.assertListEqual(provider_data['tags'], params['tags'])
+        self.assertDictEqual(provider_data['tags'], params['tags'])
 
     @patch.object(BaseAPI, '__init__', return_value=None)
     @patch.object(Locator, 'get_service', return_value=_MockProviderService())

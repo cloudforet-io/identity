@@ -1,5 +1,5 @@
-from spaceone.core.error import *
 from spaceone.core.service import *
+from spaceone.core import utils
 from spaceone.identity.manager import RoleManager, PolicyManager
 
 
@@ -23,7 +23,7 @@ class RoleService(BaseService):
                 'name': 'str',
                 'role_type': 'str',
                 'policies': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -32,6 +32,10 @@ class RoleService(BaseService):
         """
 
         params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
+
         return self.role_mgr.create_role(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -44,7 +48,7 @@ class RoleService(BaseService):
                 'role_id': 'str',
                 'name': 'str',
                 'policies': 'list',
-                'tags': 'list',
+                'tags': 'dict',
                 'domain_id': 'str'
             }
 
@@ -54,6 +58,9 @@ class RoleService(BaseService):
 
         if 'policies' in params:
             params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
+
+        if 'tags' in params:
+            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.role_mgr.update_role(params)
 
