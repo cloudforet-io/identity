@@ -3,8 +3,10 @@
 ###############################
 enabled: true
 developer: false
+grpc: true
 scheduler: false
 worker: false
+rest: false
 name: identity
 image:
     name: spaceone/identity
@@ -62,11 +64,34 @@ global:
 
 # Service
 service:
-    type: ClusterIP
-    annotations:
-        nil: nil
-    ports:
-        - name: grpc
-          port: 50051
-          targetPort: 50051
-          protocol: TCP
+    grpc:
+        type: ClusterIP
+        annotations:
+            nil: nil
+        ports:
+            - name: grpc
+              port: 50051
+              targetPort: 50051
+              protocol: TCP
+
+################################
+# volumeMount per deployment
+################################
+volumeMounts:
+    application_grpc: []
+    application_rest: []
+    application_scheduler: []
+    application_worker: []
+
+
+####################################
+# pod spec (append more pod spec)
+# example nodeSelect
+#
+# pod:
+#   spec:
+#     nodeSelector:
+#       application: my-node-group
+####################################
+pod:
+    spec: {}
