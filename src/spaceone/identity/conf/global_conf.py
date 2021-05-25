@@ -17,7 +17,7 @@ CACHES = {
     'local': {
         'backend': 'spaceone.core.cache.local_cache.LocalCache',
         'max_size': 128,
-        'ttl': 86400
+        'ttl': 300
     }
 }
 

@@ -23,6 +23,7 @@ class APIKeyManager(BaseManager):
 
         params = {
             'user_id': user_vo.user_id,
+            'user': user_vo,
             'domain_id': domain_id
         }
         api_key_vo: APIKey = self.api_key_model.create(params)
