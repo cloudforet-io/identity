@@ -87,7 +87,8 @@ class DomainManager(BaseManager):
         If options exists, it should be complete content.
         """
         domain_vo: Domain = self.get_domain(domain_id)
-        current_plugin_info = domain_vo.plugin_info.to_dict()
+        domain_dict = domain_vo.to_dict()
+        current_plugin_info = domain_dict.get('plugin_info', {})
         new_plugin_info = current_plugin_info.copy()
         _LOGGER.debug(f'[update_domain_plugin] plugin_info: {new_plugin_info}')
         if version:
@@ -111,7 +112,7 @@ class DomainManager(BaseManager):
             #plugin_info['options'] = result['options']
             new_plugin_info['metadata'] = result['metadata']
             _LOGGER.debug(f'[update_domain_plugin] new plugin_info: {new_plugin_info}')
-            return domain_vo.update(new_plugin_info)
+            return domain_vo.update({'plugin_info': new_plugin_info})
         else:
             _LOGGER.error(f'[update_domain_plugin] fail to get endpoint: {endpoint}')
             raise ERROR_DOMAIN_PLUGIN(domain=domain_id, version = new_plugin_info['version'])

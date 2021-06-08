@@ -42,6 +42,7 @@ def PluginInfo(plugin_info):
             'plugin_id': plugin_info.plugin_id,
             'version': plugin_info.version,
             'options': change_struct_type(plugin_info.options),
+            'metadata': change_struct_type(plugin_info.metadata),
             'secret_id': plugin_info.secret_id
         }
         return domain_pb2.PluginInfo(**info)
