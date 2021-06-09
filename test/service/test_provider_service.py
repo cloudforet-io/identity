@@ -7,7 +7,6 @@ from spaceone.core import utils
 from spaceone.core.unittest.result import print_data
 from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.core import config
-from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
 from spaceone.identity.service.provider_service import ProviderService
 from spaceone.identity.model.provider_model import Provider
