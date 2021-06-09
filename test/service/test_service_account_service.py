@@ -9,12 +9,13 @@ from spaceone.core import utils
 from spaceone.core.error import *
 from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.service.service_account_service import ServiceAccountService
+from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.model.service_account_model import ServiceAccount
 from spaceone.identity.model.project_model import Project
 from spaceone.identity.info.service_account_info import *
 from spaceone.identity.info.common_info import StatisticsInfo
-from spaceone.identity.connector import SecretConnector
 from test.factory.service_account_factory import ServiceAccountFactory
 from test.factory.provider_factory import ProviderFactory
 from test.factory.project_factory import ProjectFactory
@@ -25,6 +26,8 @@ class TestServiceAccountService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.identity')
+        config.set_service_config()
+        config.set_global(MOCK_MODE=True)
         connect('test', host='mongomock://localhost')
         ProviderFactory(provider='aws', name='AWS', template={
             'service_account': {
@@ -56,7 +59,6 @@ class TestServiceAccountService(unittest.TestCase):
         self.project_vo = ProjectFactory(domain_id=self.domain_id)
         self.project_id = self.project_vo.project_id
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def tearDown(self, *args) -> None:
         print()
         print('(tearDown) ==> Delete all service accounts')
@@ -66,7 +68,6 @@ class TestServiceAccountService(unittest.TestCase):
         print('(tearDown) ==> Delete project')
         self.project_vo.delete()
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account(self, *args):
         params = {
             'name': 'SpaceONE',
@@ -94,7 +95,6 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(params.get('data', {}), service_account_vo.data)
         self.assertEqual(params.get('tags', {}), utils.tags_to_dict(service_account_vo.tags))
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_invalid_data(self, *args):
         params = {
             'name': 'SpaceONE',
@@ -111,7 +111,6 @@ class TestServiceAccountService(unittest.TestCase):
         with self.assertRaises(ERROR_INVALID_PARAMETER):
             service_account_svc.create(params)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_invalid_data_type(self, *args):
         params = {
             'name': 'SpaceONE',
@@ -128,7 +127,6 @@ class TestServiceAccountService(unittest.TestCase):
         with self.assertRaises(ERROR_INVALID_PARAMETER):
             service_account_svc.create(params)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_service_account_with_project(self, *args):
         params = {
             'name': 'SpaceONE',
@@ -151,7 +149,6 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsInstance(service_account_vo.project, Project)
         self.assertEqual(service_account_vo.project.project_id, params['project_id'])
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_service_account(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id)
         params = {
@@ -179,10 +176,8 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(params['data'], service_account_vo.data)
         self.assertEqual(params['tags'], utils.tags_to_dict(service_account_vo.tags))
 
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
-    @patch.object(SecretConnector, 'update_secret_project', return_value=None)
+    @patch.object(ServiceAccountManager, '_list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SpaceConnector, 'dispatch', return_value=None)
     def test_update_service_account_project(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id)
         params = {
@@ -202,10 +197,8 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsInstance(service_account_vo.project, Project)
         self.assertEqual(service_account_vo.project.project_id, params['project_id'])
 
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
-    @patch.object(SecretConnector, 'release_secret_project', return_value=None)
+    @patch.object(ServiceAccountManager, '_list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SpaceConnector, 'dispatch', return_value=None)
     def test_release_service_account_project(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id, project=self.project_vo)
         params = {
@@ -224,10 +217,8 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsInstance(service_account_vo, ServiceAccount)
         self.assertIsNone(service_account_vo.project)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
-    @patch.object(SecretConnector, 'delete_secret', return_value=None)
+    @patch.object(ServiceAccountManager, '_list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SpaceConnector, 'dispatch', return_value=None)
     def test_delete_service_account(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id)
         params = {
@@ -241,10 +232,8 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'list_secrets', return_value={'results': [], 'total_count': 0})
-    @patch.object(SecretConnector, 'delete_secret', return_value=None)
+    @patch.object(ServiceAccountManager, '_list_secrets', return_value={'results': [], 'total_count': 0})
+    @patch.object(SpaceConnector, 'dispatch', return_value=None)
     def test_delete_project_exist_service_account(self, *args):
         params = {
             'name': 'SpaceONE',
@@ -264,7 +253,6 @@ class TestServiceAccountService(unittest.TestCase):
         with self.assertRaises(ERROR_EXIST_RESOURCE):
             self.project_vo.delete()
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_get_service_account(self, *args):
         new_service_account_vo = ServiceAccountFactory(domain_id=self.domain_id)
         params = {
@@ -281,7 +269,6 @@ class TestServiceAccountService(unittest.TestCase):
 
         self.assertIsInstance(service_account_vo, ServiceAccount)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_service_accounts_by_service_account_id(self, *args):
         service_account_vos = ServiceAccountFactory.build_batch(10, project=None,
                                                                 domain_id=self.domain_id)
@@ -301,7 +288,6 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsInstance(service_accounts_vos[0], ServiceAccount)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_service_accounts_by_name(self, *args):
         service_account_vos = ServiceAccountFactory.build_batch(10, project=None,
                                                                 domain_id=self.domain_id)
@@ -321,7 +307,6 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsInstance(service_accounts_vos[0], ServiceAccount)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_service_accounts_by_project(self, *args):
         service_account_vos = ServiceAccountFactory.build_batch(3, project=self.project_vo,
                                                                 domain_id=self.domain_id)
@@ -345,7 +330,6 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsInstance(service_accounts_vos[0], ServiceAccount)
         self.assertEqual(total_count, 3)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_service_accounts_by_tag(self, *args):
         ServiceAccountFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}], domain_id=self.domain_id)
         service_account_vos = ServiceAccountFactory.build_batch(9, project=None,
@@ -372,7 +356,6 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertIsInstance(service_accounts_vos[0], ServiceAccount)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_stat_service_account(self, *args):
         service_account_vos = ServiceAccountFactory.build_batch(10, project=None,
                                                                 domain_id=self.domain_id)

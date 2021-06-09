@@ -2,8 +2,8 @@ import logging
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
-
-from spaceone.identity.connector import PluginServiceConnector, AuthPluginConnector
+from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.model.domain_model import Domain
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,11 +23,17 @@ class DomainManager(BaseManager):
         if 'plugin_info' in params:
             plugin_info = params['plugin_info']
             _LOGGER.debug(f'[create_domain] plugin_info: {plugin_info}')
-            plugin_svc_conn: PluginServiceConnector = self.locator.get_connector('PluginServiceConnector')
-            plugin_id = plugin_info['plugin_id']
-            version = plugin_info['version']
-            #endpoint = plugin_svc_conn.get_plugin_endpoint(plugin_id, version)
-            #_LOGGER.debug('endpoint: %s' % endpoint)
+            # plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
+            # response = plugin_connector.dispatch(
+            #     'Plugin.get_plugin_endpoint',
+            #     {
+            #         'plugin_id': plugin_info['plugin_id'],
+            #         'version': plugin_info['version'],
+            #         'labels': {},
+            #         'domain_id': params['domain_id']
+            #     }
+            # )
+            # _LOGGER.debug(f'endpoint: {response["endpoint"]}')
 
         domain_vo: Domain = self.domain_model.create(params)
 
@@ -163,12 +169,17 @@ class DomainManager(BaseManager):
         return self.domain_model.stat(**query)
 
     def _get_plugin_endpoint(self, domain_id, plugin_info):
-        plugin_svc_conn: PluginServiceConnector = self.locator.get_connector('PluginServiceConnector')
-        plugin_id = plugin_info['plugin_id']
-        version = plugin_info['version']
-        # TODO: label
-        endpoint = plugin_svc_conn.get_plugin_endpoint(plugin_id, version, domain_id)
-        return endpoint
+        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
+        response = plugin_connector.dispatch(
+            'Plugin.get_plugin_endpoint',
+            {
+                'plugin_id': plugin_info['plugin_id'],
+                'version': plugin_info['version'],
+                'labels': {},
+                'domain_id': domain_id
+            }
+        )
+        return response['endpoint']
 
     def _auth_init_and_verify(self, endpoint, params):
         auth: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
