@@ -109,12 +109,13 @@ class PolicyManager(BaseManager):
 
     @cache.cacheable(key='managed-policy:{domain_id}:{policy_id}', expire=600)
     def _get_managed_policy_from_repository(self, policy_id, domain_id):
-        repo_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='repository')
-        try:
-            return repo_connector.dispatch('Policy.get', {'policy_id': policy_id, 'domain_id': domain_id})
-        except Exception as e:
-            _LOGGER.error(f'Failed to get managed policy. (policy_id = {policy_id})')
-            return None
+        return None
+        # repo_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='repository')
+        # try:
+        #     return repo_connector.dispatch('Policy.get', {'policy_id': policy_id, 'domain_id': domain_id})
+        # except Exception as e:
+        #     _LOGGER.error(f'Failed to get managed policy. (policy_id = {policy_id})')
+        #     return None
 
     def _get_managed_policy_from_local(self, policy_id, domain_id):
         managed_policy_vos = self.policy_model.filter(policy_id=policy_id, policy_type='MANAGED', domain_id=domain_id)
