@@ -57,10 +57,7 @@ class ServiceAccountManager(BaseManager):
 
     def update_secret_project(self, service_account_id, project_id, domain_id):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        response = secret_connector.dispatch('Secret.list', {
-            'service_account_id': service_account_id,
-            'domain_id': domain_id
-        })
+        response = self._list_secrets(secret_connector, service_account_id, domain_id)
         secrets = response.get('results', [])
 
         for secret_info in secrets:
@@ -72,10 +69,7 @@ class ServiceAccountManager(BaseManager):
 
     def release_secret_project(self, service_account_id, domain_id):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        response = secret_connector.dispatch('Secret.list', {
-            'service_account_id': service_account_id,
-            'domain_id': domain_id
-        })
+        response = self._list_secrets(secret_connector, service_account_id, domain_id)
         secrets = response.get('results', [])
 
         for secret_info in secrets:
@@ -87,10 +81,7 @@ class ServiceAccountManager(BaseManager):
 
     def delete_service_account_secrets(self, service_account_id, domain_id):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        response = secret_connector.dispatch('Secret.list', {
-            'service_account_id': service_account_id,
-            'domain_id': domain_id
-        })
+        response = self._list_secrets(secret_connector, service_account_id, domain_id)
         for secret_info in response.get('results', []):
             secret_connector.dispatch('Secret.delete', {
                 'secret_id': secret_info['secret_id'],
@@ -99,11 +90,15 @@ class ServiceAccountManager(BaseManager):
 
     def check_service_account_secrets(self, service_account_id, domain_id):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        response = secret_connector.dispatch('Secret.list', {
-            'service_account_id': service_account_id,
-            'domain_id': domain_id
-        })
+        response = self._list_secrets(secret_connector, service_account_id, domain_id)
         total_count = response.get('total_count', 0)
 
         if total_count > 0:
             raise ERROR_EXIST_RESOURCE(parent='ServiceAccount', child='Secret')
+
+    @staticmethod
+    def _list_secrets(secret_connector, service_account_id, domain_id):
+        return secret_connector.dispatch('Secret.list', {
+            'service_account_id': service_account_id,
+            'domain_id': domain_id
+        })
