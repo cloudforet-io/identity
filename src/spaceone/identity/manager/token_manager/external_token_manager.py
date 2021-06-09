@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_user import ERROR_USER_STATUS_CHECK_FAILURE
@@ -77,8 +77,9 @@ class ExternalTokenManager(JWTManager):
         return auth_plugin_conn.call_login(endpoint, credentials, options, {})
 
     def _get_plugin_endpoint(self):
-        plugin_connector = self.locator.get_connector('SpaceConnector', service='plugin')
-        response = plugin_connector.Plugin.get_plugin_endpoint(
+        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
+        response = plugin_connector.dispatch(
+            'Plugin.get_plugin_endpoint',
             {
                 'plugin_id': self.domain.plugin_info.plugin_id,
                 'version': self.domain.plugin_info.version,

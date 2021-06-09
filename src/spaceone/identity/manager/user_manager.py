@@ -3,6 +3,7 @@ import logging
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.model import Domain
@@ -160,8 +161,9 @@ class UserManager(BaseManager):
         """
         Return: endpoint
         """
-        plugin_connector = self.locator.get_connector('SpaceConnector', service='plugin')
-        response = plugin_connector.Plugin.get_plugin_endpoint(
+        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
+        response = plugin_connector.dispatch(
+            'Plugin.get_plugin_endpoint',
             {
                 'plugin_id': domain.plugin_info.plugin_id,
                 'version': domain.plugin_info.version,

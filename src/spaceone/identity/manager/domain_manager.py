@@ -2,7 +2,7 @@ import logging
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
-
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.model.domain_model import Domain
 
@@ -23,8 +23,9 @@ class DomainManager(BaseManager):
         if 'plugin_info' in params:
             plugin_info = params['plugin_info']
             _LOGGER.debug(f'[create_domain] plugin_info: {plugin_info}')
-            # plugin_connector = self.locator.get_connector('SpaceConnector', service='plugin')
-            # response = plugin_connector.Plugin.get_plugin_endpoint(
+            # plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
+            # response = plugin_connector.dispatch(
+            #     'Plugin.get_plugin_endpoint',
             #     {
             #         'plugin_id': plugin_info['plugin_id'],
             #         'version': plugin_info['version'],
@@ -168,8 +169,9 @@ class DomainManager(BaseManager):
         return self.domain_model.stat(**query)
 
     def _get_plugin_endpoint(self, domain_id, plugin_info):
-        plugin_connector = self.locator.get_connector('SpaceConnector', service='plugin')
-        response = plugin_connector.Plugin.get_plugin_endpoint(
+        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
+        response = plugin_connector.dispatch(
+            'Plugin.get_plugin_endpoint',
             {
                 'plugin_id': plugin_info['plugin_id'],
                 'version': plugin_info['version'],
