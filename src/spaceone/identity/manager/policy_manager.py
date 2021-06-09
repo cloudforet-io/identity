@@ -7,7 +7,6 @@ from spaceone.core import utils
 from spaceone.identity.error.error_role import *
 from spaceone.identity.model.policy_model import Policy
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.connector.repository_connector import RepositoryConnector
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,9 +108,9 @@ class PolicyManager(BaseManager):
 
     @cache.cacheable(key='managed-policy:{domain_id}:{policy_id}', expire=600)
     def _get_managed_policy_from_repository(self, policy_id, domain_id):
-        repo_connector: RepositoryConnector = self.locator.get_connector('RepositoryConnector')
+        repo_connector = self.locator.get_connector('SpaceConnector', service='repository')
         try:
-            return repo_connector.get_policy(policy_id, domain_id)
+            return repo_connector.Policy.get({'policy_id': policy_id, 'domain_id': domain_id})
         except Exception as e:
             _LOGGER.error(f'Failed to get managed policy. (policy_id = {policy_id})')
             return None
