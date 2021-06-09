@@ -7,7 +7,6 @@ from spaceone.core import utils
 from spaceone.core.unittest.result import print_data
 from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.core import config
-from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
 from spaceone.identity.service.provider_service import ProviderService
 from spaceone.identity.model.provider_model import Provider
@@ -22,6 +21,7 @@ class TestProviderService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.identity')
+        config.set_service_config()
         config.set_global(MOCK_MODE=True)
         connect('test', host='mongomock://localhost')
         cls.domain_id = utils.generate_id('domain')

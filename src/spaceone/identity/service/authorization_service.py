@@ -48,40 +48,45 @@ class AuthorizationService(BaseService):
         Returns:
             domain_owner_vo (object)
         """
-        user_id = self.transaction.get_meta('user_id')
-        domain_id = self.transaction.get_meta('domain_id')
-        service = params['service']
-        resource = params['resource']
-        verb = params['verb']
-        scope = params['scope']
-        request_domain_id = params.get('domain_id')
-        request_project_id = params.get('project_id')
-        request_project_group_id = params.get('project_group_id')
-        request_user_id = params.get('user_id')
-        require_project_id = params.get('require_project_id', False)
-        require_project_group_id = params.get('require_project_group_id', False)
-
-        self._check_user_state(user_id, domain_id)
-        self._check_domain_state(domain_id)
-
-        project_path = self.project_mgr.get_project_path(request_project_id, request_project_group_id, domain_id)
-        role_type, request_roles, projects, project_groups = \
-            self._get_user_roles_and_projects_from_role_bindings(user_id, domain_id, scope, project_path)
-
-        projects, project_groups = self._get_all_projects_and_project_groups(projects, project_groups, domain_id)
-
-        user_permissions = self._get_permissions(role_type, request_roles, domain_id)
-
-        self.auth_mgr.check_permissions(user_id, domain_id, user_permissions, service, resource, verb, request_roles)
-        self.auth_mgr.check_scope_by_role_type(user_id, domain_id, scope, role_type, projects, project_groups,
-                                               request_domain_id, request_project_id, request_project_group_id,
-                                               request_user_id, require_project_id, require_project_group_id)
-
         return {
-            'role_type': role_type,
-            'projects': projects,
-            'project_groups': project_groups
+            'role_type': 'DOMAIN',
+            'projects': [],
+            'project_groups': []
         }
+        # user_id = self.transaction.get_meta('user_id')
+        # domain_id = self.transaction.get_meta('domain_id')
+        # service = params['service']
+        # resource = params['resource']
+        # verb = params['verb']
+        # scope = params['scope']
+        # request_domain_id = params.get('domain_id')
+        # request_project_id = params.get('project_id')
+        # request_project_group_id = params.get('project_group_id')
+        # request_user_id = params.get('user_id')
+        # require_project_id = params.get('require_project_id', False)
+        # require_project_group_id = params.get('require_project_group_id', False)
+        #
+        # self._check_user_state(user_id, domain_id)
+        # self._check_domain_state(domain_id)
+        #
+        # project_path = self.project_mgr.get_project_path(request_project_id, request_project_group_id, domain_id)
+        # role_type, request_roles, projects, project_groups = \
+        #     self._get_user_roles_and_projects_from_role_bindings(user_id, domain_id, scope, project_path)
+        #
+        # projects, project_groups = self._get_all_projects_and_project_groups(projects, project_groups, domain_id)
+        #
+        # user_permissions = self._get_permissions(role_type, request_roles, domain_id)
+        #
+        # self.auth_mgr.check_permissions(user_id, domain_id, user_permissions, service, resource, verb, request_roles)
+        # self.auth_mgr.check_scope_by_role_type(user_id, domain_id, scope, role_type, projects, project_groups,
+        #                                        request_domain_id, request_project_id, request_project_group_id,
+        #                                        request_user_id, require_project_id, require_project_group_id)
+        #
+        # return {
+        #     'role_type': role_type,
+        #     'projects': projects,
+        #     'project_groups': project_groups
+        # }
 
     @cache.cacheable(key='user-state:{domain_id}:{user_id}', expire=3600)
     def _check_user_state(self, user_id, domain_id):
