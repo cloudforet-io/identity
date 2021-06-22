@@ -2,8 +2,8 @@ from spaceone.core.service import *
 from spaceone.identity.manager import APIKeyManager, UserManager
 
 
-@authentication_handler
-@authorization_handler
+@authentication_handler(exclude=['get'])
+@authorization_handler(exclude=['get'])
 @mutation_handler
 @event_handler
 class APIKeyService(BaseService):
