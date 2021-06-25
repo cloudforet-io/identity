@@ -21,6 +21,28 @@ class Domain(BaseAPI, domain_pb2_grpc.DomainServicer):
             data = domain_svc.update(params)
             return self.locator.get_info('DomainInfo', data)
 
+    def change_auth_plugin(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('DomainService', metadata) as domain_svc:
+            data = domain_svc.change_auth_plugin(params)
+            return self.locator.get_info('DomainInfo', data)
+
+    def update_plugin(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('DomainService', metadata) as domain_svc:
+            data = domain_svc.update_plugin(params)
+            return self.locator.get_info('DomainInfo', data)
+
+    def verify_plugin(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('DomainService', metadata) as domain_svc:
+            data = domain_svc.verify_plugin(params)
+            return self.locator.get_info('EmptyInfo')
+
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
 

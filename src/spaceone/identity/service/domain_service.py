@@ -67,6 +67,68 @@ class DomainService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
+    def change_auth_plugin(self, params):
+        """ Change domain auth plugin
+
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'plugin_info': 'dict',
+                'release_auth_plugin': 'bool'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+        domain_id = params['domain_id']
+        release_auth_plugin = params['release_auth_plugin'] if 'release_auth_plugin' in params else False
+        plugin_info = params['plugin_info'] if 'plugin_info' in params else None
+        # relase plugin
+        if release_auth_plugin:
+            # release auth plugin
+            return self.domain_mgr.release_auth_plugin(domain_id)
+        elif plugin_info and release_auth_plugin == False:
+            return self.domain_mgr.update(params)
+        else:
+            _LOGGER.error(f'parameter failed, {release_auth_plugin}, {plugin}')
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['domain_id'])
+    def update_plugin(self, params):
+        """ Update Plugin
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'version': 'str',
+                'options': 'dict'
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+        domain_id = params['domain_id']
+        version = params['version'] if 'version' in params else None
+        options = params['options'] if 'options' in params else None
+        return self.domain_mgr.update_domain_plugin(domain_id, version, options)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['domain_id'])
+    def verify_plugin(self, params):
+        """ Update Plugin
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+            }
+
+        Returns:
+            domain_vo (object)
+        """
+        domain_id = params['domain_id']
+        return self.domain_mgr.update_domain_plugin(domain_id)
+
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['domain_id'])
     def delete(self, params):
         """ Delete domain
 

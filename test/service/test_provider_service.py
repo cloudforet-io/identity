@@ -7,7 +7,6 @@ from spaceone.core import utils
 from spaceone.core.unittest.result import print_data
 from spaceone.core.unittest.runner import RichTestRunner
 from spaceone.core import config
-from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
 from spaceone.identity.service.provider_service import ProviderService
 from spaceone.identity.model.provider_model import Provider
@@ -22,6 +21,8 @@ class TestProviderService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.identity')
+        config.set_service_config()
+        config.set_global(MOCK_MODE=True)
         connect('test', host='mongomock://localhost')
         cls.domain_id = utils.generate_id('domain')
         cls.transaction = Transaction({
@@ -35,14 +36,12 @@ class TestProviderService(unittest.TestCase):
         super().tearDownClass()
         disconnect()
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def tearDown(self, *args) -> None:
         print('(tearDown) ==> Delete all providers')
         provider_mgr = ProviderManager()
         provider_vos, total_count = provider_mgr.list_providers()
         provider_vos.delete()
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_provider(self, *args):
         params = {
             'provider': 'DK corp',
@@ -106,7 +105,6 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['capability'], provider_vo.capability)
         self.assertEqual(params['tags'], utils.tags_to_dict(provider_vo.tags))
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_duplicated_provider(self, *args):
         params = {
             'provider': 'duplicated_provider',
@@ -122,7 +120,6 @@ class TestProviderService(unittest.TestCase):
             provider_svc = ProviderService(transaction=self.transaction)
             provider_svc.create(params.copy())
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_provider(self, *args):
         new_provider_vo = ProviderFactory(provider='aws')
         params = {
@@ -152,7 +149,6 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['metadata'], provider_vo.metadata)
         self.assertEqual(params['tags'], utils.tags_to_dict(provider_vo.tags))
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_provider(self, *args):
         new_provider_vo = ProviderFactory()
         params = {
@@ -166,7 +162,6 @@ class TestProviderService(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_get_provider(self, *args):
         new_provider_vo = ProviderFactory()
         params = {
@@ -183,7 +178,6 @@ class TestProviderService(unittest.TestCase):
 
         self.assertIsInstance(provider_vo, Provider)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_generate_default_provider_by_list_providers_method(self, *args):
         params = {
             'provider': 'aws',
@@ -201,7 +195,6 @@ class TestProviderService(unittest.TestCase):
         self.assertIsInstance(providers_vos[0], Provider)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_providers_by_provider(self, *args):
         provider_vos = ProviderFactory.build_batch(10)
         list(map(lambda vo: vo.save(), provider_vos))
@@ -221,7 +214,6 @@ class TestProviderService(unittest.TestCase):
         self.assertIsInstance(providers_vos[0], Provider)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_providers_by_name(self, *args):
         provider_vos = ProviderFactory.build_batch(10)
         list(map(lambda vo: vo.save(), provider_vos))
@@ -241,7 +233,6 @@ class TestProviderService(unittest.TestCase):
         self.assertIsInstance(providers_vos[0], Provider)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_providers_by_tag(self, *args):
         ProviderFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}])
         provider_vos = ProviderFactory.build_batch(9)
@@ -268,7 +259,6 @@ class TestProviderService(unittest.TestCase):
         self.assertIsInstance(providers_vos[0], Provider)
         self.assertEqual(total_count, 1)
 
-    @patch.object(MongoModel, 'connect', return_value=None)
     def test_stat_provider(self, *args):
         provider_vos = ProviderFactory.build_batch(10)
         list(map(lambda vo: vo.save(), provider_vos))
