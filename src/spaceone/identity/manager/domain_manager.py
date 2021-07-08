@@ -54,6 +54,13 @@ class DomainManager(BaseManager):
             # TODO: Check Plugin
             plugin_info = params['plugin_info']
             _LOGGER.debug('[update_domain] plugin_info: %s' % plugin_info)
+            secret_data = plugin_info.get('secret_data', None)
+            if secret_data:
+                secret_id = self._create_secret(secret_data)
+                if secret_id:
+                    plugin_info['secret_id'] = secret_id
+                    del plugin_info['secret_data']
+
             endpoint = self._get_plugin_endpoint(domain_id, plugin_info)
             if endpoint:
                 # grpc://dev-docker.pyengine.net:50060
@@ -61,7 +68,6 @@ class DomainManager(BaseManager):
                 # plugin will return options
                 # TODO: secret_id
                 params['options'] = plugin_info['options']
-                params['credentials'] = {}
                 # params = {
                 #     'options': plugin_info['options'],
                 #     'credentials': {}
@@ -188,3 +194,12 @@ class DomainManager(BaseManager):
         #result = auth.verify(params.get("options"), params.get("credentials"))
         result = auth.init(params.get("options"))
         return result
+
+    def _create_secret(self, secret_data):
+        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
+                                                                                 service='secret')
+        resp = secret_connector.dispatch('Secret.create', secret_data)
+        _LOGGER.debug(f'[_create_secret] {resp}')
+        return resp.get('secret_id', None)
+        
+
