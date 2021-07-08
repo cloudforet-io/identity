@@ -56,7 +56,7 @@ class DomainManager(BaseManager):
             _LOGGER.debug('[update_domain] plugin_info: %s' % plugin_info)
             secret_data = plugin_info.get('secret_data', None)
             if secret_data:
-                secret_id = self._create_secret(secret_data)
+                secret_id = self._create_secret(domain_id, secret_data)
                 if secret_id:
                     plugin_info['secret_id'] = secret_id
                     del plugin_info['secret_data']
@@ -195,10 +195,16 @@ class DomainManager(BaseManager):
         result = auth.init(params.get("options"))
         return result
 
-    def _create_secret(self, secret_data):
+    def _create_secret(self, domain_id, secret_data):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
                                                                                  service='secret')
-        resp = secret_connector.dispatch('Secret.create', secret_data)
+        params = {
+                'name': 'domain_auth_plugin_credential',
+                'data': secret_data,
+                'secret_type': 'CREDENTIALS',
+                'domain_id': domain_id
+                }
+        resp = secret_connector.dispatch('Secret.create', params)
         _LOGGER.debug(f'[_create_secret] {resp}')
         return resp.get('secret_id', None)
         
