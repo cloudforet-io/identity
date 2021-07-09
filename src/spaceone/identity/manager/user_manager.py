@@ -5,6 +5,7 @@ from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
+from spaceone.identity.connector import SecretConnector
 from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.model import Domain
 from spaceone.identity.model.user_model import User
@@ -155,7 +156,8 @@ class UserManager(BaseManager):
 
         auth_plugin_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
         auth_plugin_conn.initialize(endpoint)
-        return auth_plugin_conn.call_find(keyword, user_id, options, {})
+        (secret_data, schema) = self._get_auth_plugin_secret(domain_vo.to_dict())
+        return auth_plugin_conn.call_find(keyword, user_id, options, secret_data, schema)
 
     def _get_plugin_endpoint(self, domain):
         """
@@ -172,3 +174,20 @@ class UserManager(BaseManager):
             }
         )
         return response['endpoint']
+
+    def _get_auth_plugin_secret(self. domain):
+        """
+        Return: (secret_data, schema)
+                Default: ({}, None)
+        """
+        plugin_info = domain.get('plugin_info', {})
+        secret_id = plugin_info.get('secret_id', None)
+        if secret_id == None:
+            return ({}, None)
+        # Secret exists
+        # WARNING: DONOT USE SpaceConnector for secret Service
+        # secret connector may decrypt secret_data
+        secret_connector: SecretConnector = self.locator.get_connector('SecretConnector')
+        secret = secret_connector.get(secret_id, domain_id)
+        secret_data = secret_connector.get_data(secret_id, domain_id)
+        return (secret_data.get('data', {}), secret.get('schema', None))
