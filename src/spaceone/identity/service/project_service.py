@@ -2,6 +2,8 @@ import logging
 from spaceone.core.service import *
 from spaceone.core import utils
 from spaceone.identity.error.error_project import *
+from spaceone.identity.model.project_group_model import ProjectGroup
+from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.role_manager import RoleManager
@@ -285,8 +287,8 @@ class ProjectService(BaseService):
     @check_required(['project_id', 'domain_id'])
     @change_only_key({'project_group_info': 'project_group', 'project_info': 'project', 'role_info': 'role'},
                      key_path='query.only')
-    @append_query_filter(['project_id', 'user_id', 'role_id'])
-    @append_keyword_filter(['resource_id'])
+    @append_query_filter(['user_id', 'role_id'])
+    @append_keyword_filter(['user_id', 'name', 'email'])
     def list_members(self, params):
         """ List project members
 
@@ -305,20 +307,47 @@ class ProjectService(BaseService):
             total_count (int)
         """
 
+        project_id = params['project_id']
+        domain_id = params['domain_id']
+        include_parent_member = params.get('include_parent_member', False)
+
         role_binding_mgr: RoleBindingManager = self.locator.get_manager('RoleBindingManager')
 
         query = params.get('query', {})
+        query['filter'] = query.get('filter', [])
 
-        # TODO: include_parent_member filter
-        query['filter'] = list(map(self._change_filter, query.get('filter', [])))
+        if include_parent_member:
+            project_vo = self.project_mgr.get_project(project_id, domain_id)
+            project_group_vos = self._get_parents(project_vo.project_group, [])
+            query['filter'].append({
+                'k': 'project',
+                'v': [project_vo, None],
+                'o': 'in'
+            })
+            query['filter'].append({
+                'k': 'project_group',
+                'v': project_group_vos + [None],
+                'o': 'in'
+            })
+            query['filter'].append({
+                'k': 'role_type',
+                'v': 'PROJECT',
+                'o': 'eq'
+            })
+        else:
+            query['filter'].append({
+                'k': 'project_id',
+                'v': project_id,
+                'o': 'eq'
+            })
 
         return role_binding_mgr.list_role_bindings(query)
 
-    @staticmethod
-    def _change_filter(condition):
-        if condition.get('key') == 'user_id':
-            condition['key'] = 'resource_id'
-        elif condition.get('k') == 'user_id':
-            condition['k'] = 'resource_id'
+    def _get_parents(self, project_group_vo: ProjectGroup, parent_project_group_vos):
+        parent_project_group_vos.append(project_group_vo)
 
-        return condition
+        if project_group_vo.parent_project_group:
+            return self._get_parents(project_group_vo.parent_project_group, parent_project_group_vos)
+        else:
+            return parent_project_group_vos
+

@@ -37,23 +37,28 @@ def ProjectsInfo(project_vos, total_count, **kwargs):
     return project_pb2.ProjectsInfo(results=results, total_count=total_count)
 
 
-def ProjectRoleBindingInfo(role_binding_vo):
+def ProjectRoleBindingInfo(role_binding_vo, minimal=False):
     info = {
         'role_binding_id': role_binding_vo.role_binding_id,
         'resource_type': role_binding_vo.resource_type,
         'resource_id': role_binding_vo.resource_id,
-        'role_info': RoleInfo(role_binding_vo.role, minimal=True),
-        'project_info': ProjectInfo(role_binding_vo.project, minimal=True),
-        'labels': change_list_value_type(role_binding_vo.labels),
-        'tags': change_struct_type(utils.tags_to_dict(role_binding_vo.tags)),
-        'domain_id': role_binding_vo.domain_id,
-        'created_at': utils.datetime_to_iso8601(role_binding_vo.created_at)
+        'role_info': RoleInfo(role_binding_vo.role, minimal=True) if role_binding_vo.role else None
     }
+
+    if not minimal:
+        info.update({
+            'project_info': ProjectInfo(role_binding_vo.project, minimal=True) if role_binding_vo.project else None,
+            'project_group_info': ProjectGroupInfo(role_binding_vo.project_group, minimal=True) if role_binding_vo.project_group else None,
+            'labels': change_list_value_type(role_binding_vo.labels),
+            'tags': change_struct_type(utils.tags_to_dict(role_binding_vo.tags)),
+            'domain_id': role_binding_vo.domain_id,
+            'created_at': utils.datetime_to_iso8601(role_binding_vo.created_at)
+        })
 
     return project_pb2.ProjectRoleBindingInfo(**info)
 
 
 def ProjectRoleBindingsInfo(role_binding_vos, total_count, **kwargs):
-    results = list(map(ProjectRoleBindingInfo, role_binding_vos))
+    results = list(map(functools.partial(ProjectRoleBindingInfo, **kwargs), role_binding_vos))
 
     return project_pb2.ProjectRoleBindingsInfo(results=results, total_count=total_count)
