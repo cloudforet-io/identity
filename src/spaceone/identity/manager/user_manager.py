@@ -175,15 +175,17 @@ class UserManager(BaseManager):
         )
         return response['endpoint']
 
-    def _get_auth_plugin_secret(self. domain):
+    def _get_auth_plugin_secret(self, domain_info):
         """
         Return: (secret_data, schema)
                 Default: ({}, None)
         """
-        plugin_info = domain.get('plugin_info', {})
+        domain_id = domain_info['domain_id']
+        plugin_info = domain_info.get('plugin_info', {})
         secret_id = plugin_info.get('secret_id', None)
         if secret_id == None:
             return ({}, None)
+
         # Secret exists
         # WARNING: DONOT USE SpaceConnector for secret Service
         # secret connector may decrypt secret_data
