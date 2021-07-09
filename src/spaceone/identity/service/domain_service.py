@@ -88,7 +88,7 @@ class DomainService(BaseService):
             # release auth plugin
             return self.domain_mgr.release_auth_plugin(domain_id)
         elif plugin_info and release_auth_plugin == False:
-            return self.domain_mgr.update(params)
+            return self.domain_mgr.update_domain(params)
         else:
             _LOGGER.error(f'parameter failed, {release_auth_plugin}, {plugin}')
 

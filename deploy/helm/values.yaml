@@ -15,7 +15,57 @@ imagePullPolicy: IfNotPresent
 
 database: {}
 
-application: {}
+###########################################################
+# if you want to use API key or spacectl
+# Put full FQDN at endpoint
+# Ex) endpoint: grpc+ssl://identity.example.com:443/v1
+# grpc+ssl is for gRPC ALB ingress controller
+# If you want to use NLB instead of ALB, 
+# You have to use grpc://identity.example.com:50051/v1
+###########################################################
+application_grpc:
+    ENDPOINTS:
+    - service: identity
+      name: Identity Service
+      endpoint: grpc+ssl://identity:443/v1
+    - service: inventory
+      name: Inventory Service
+      endpoint: grpc+ssl://inventory:443/v1
+    - service: plugin
+      name: Plugin Manager
+      endpoint: grpc+ssl://plugin:443/v1
+    - service: repository
+      name: Repository Service
+      endpoint: grpc+ssl://repository:443/v1
+    - service: secret
+      name: Secret Manager
+      endpoint: grpc+ssl://secret:443/v1
+    - service: monitoring
+      name: Monitoring Service
+      endpoint: grpc+ssl://monitoring:443/v1
+    - service: config
+      name: Config Service
+      endpoint: grpc+ssl://config:443/v1
+    - service: power_scheduler
+      name: Power Scheduler Service
+      endpoint: grpc+ssl://power-scheduler:443/v1
+    - service: statistics
+      name: Statistics Service
+      endpoint: grpc+ssl://statistics:443/v1
+    - service: billing
+      name: Billing Service
+      endpoint: grpc+ssl://billing:443/v1
+    - service: notification
+      name: Notification Service
+      endpoint: grpc+ssl://notification:443/v1
+    LOG:
+        filters:
+            exclude:
+                rules:
+                  tnx_method:
+                  - Domain.get_public_key
+                  - Authorization.verify
+
 # local sidecar
 ##########################
 #sidecar:

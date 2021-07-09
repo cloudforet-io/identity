@@ -71,7 +71,7 @@ class AuthPluginConnector(BaseConnector):
         except Exception as e:
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(messsage=str(e))
 
-    def call_find(self, keyword, user_id, options, secret_data, schema=None):
+    def call_find(self, keyword, user_id, options, secret_data={}, schema=None):
         params = {
             'options': options,
             'secret_data': secret_data,
