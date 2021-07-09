@@ -2,6 +2,7 @@ import logging
 from spaceone.core.service import *
 from spaceone.core import utils
 from spaceone.identity.error.error_project import *
+from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.role_manager import RoleManager
@@ -286,7 +287,7 @@ class ProjectService(BaseService):
     @change_only_key({'project_group_info': 'project_group', 'project_info': 'project', 'role_info': 'role'},
                      key_path='query.only')
     @append_query_filter(['project_id', 'user_id', 'role_id'])
-    @append_keyword_filter(['resource_id'])
+    @append_keyword_filter(['user_id', 'name', 'email'])
     def list_members(self, params):
         """ List project members
 
@@ -310,15 +311,6 @@ class ProjectService(BaseService):
         query = params.get('query', {})
 
         # TODO: include_parent_member filter
-        query['filter'] = list(map(self._change_filter, query.get('filter', [])))
+        # query = self._change_query_filter(query)
 
         return role_binding_mgr.list_role_bindings(query)
-
-    @staticmethod
-    def _change_filter(condition):
-        if condition.get('key') == 'user_id':
-            condition['key'] = 'resource_id'
-        elif condition.get('k') == 'user_id':
-            condition['k'] = 'resource_id'
-
-        return condition

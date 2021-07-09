@@ -332,7 +332,6 @@ class ProjectGroupService(BaseService):
         query = params.get('query', {})
 
         # TODO: include_parent_member filter
-        query['filter'] = list(map(self._change_filter, query.get('filter', [])))
 
         return role_binding_mgr.list_role_bindings(query)
 
@@ -391,15 +390,6 @@ class ProjectGroupService(BaseService):
             })
 
         return project_mgr.list_projects(query)
-
-    @staticmethod
-    def _change_filter(condition):
-        if condition.get('key') == 'user_id':
-            condition['key'] = 'resource_id'
-        elif condition.get('k') == 'user_id':
-            condition['k'] = 'resource_id'
-
-        return condition
 
     def _get_related_project_group(self, project_group_vo, related_project_groups):
         query = {

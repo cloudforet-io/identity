@@ -43,12 +43,14 @@ class RoleBinding(MongoModel):
             'role'
         ],
         'change_query_keys': {
-            'role_id': 'role.role_id',
+            'user_id': 'user.user_id',
+            'name': 'user.name',
+            'email': 'user.email',
             'role_type': 'role.role_type',
-            'project_id': 'project.project_id',
-            'project_group_id': 'project_group.project_group_id',
+            'project_group_id': 'project_group.project_group_id'
         },
         'reference_query_keys': {
+            'user': User,
             'role': Role,
             'project': Project,
             'project_group': ProjectGroup
