@@ -47,6 +47,9 @@ class DomainManager(BaseManager):
             domain_vo.update(old_data)
 
         domain_vo: Domain = self.get_domain(params['domain_id'])
+        domain_dict = domain_vo.to_dict()
+        old_plugin_info = domain_dict.get('plugin_info', {})
+        old_secret_id = old_plugin_info.get('secret_id', None)
 
         self.transaction.add_rollback(_rollback, domain_vo.to_dict())
         domain_id = params['domain_id']
@@ -56,7 +59,10 @@ class DomainManager(BaseManager):
             _LOGGER.debug('[update_domain] plugin_info: %s' % plugin_info)
             secret_data = plugin_info.get('secret_data', None)
             if secret_data:
-                secret_id = self._create_secret(domain_id, secret_data)
+                if old_secret_id:
+                    secret_id = self._update_secret_data(old_secret_id, secret_data, domain_id)
+                else:
+                    secret_id = self._create_secret(domain_id, secret_data)
                 if secret_id:
                     plugin_info['secret_id'] = secret_id
                     del plugin_info['secret_data']
@@ -68,10 +74,6 @@ class DomainManager(BaseManager):
                 # plugin will return options
                 # TODO: secret_id
                 params['options'] = plugin_info['options']
-                # params = {
-                #     'options': plugin_info['options'],
-                #     'credentials': {}
-                # }
 
                 result = self._auth_init_and_verify(endpoint, params)
                 _LOGGER.debug('[update_domain] endpoint: %s' % endpoint)
@@ -91,6 +93,13 @@ class DomainManager(BaseManager):
 
         domain_vo: Domain = self.get_domain(domain_id)
         self.transaction.add_rollback(_rollback, domain_vo.to_dict())
+        # clean plugin_info
+        # secret_id, if exist
+        domain_dict = domain_vo.to_dict()
+        plugin_info = domain_dict.get('plugin_info', {})
+        if 'secret_id' in  plugin_info:
+            self._delete_secret(plugin_info['secret_id'], domain_id)
+
         params = {'plugin_info': {}}
         return domain_vo.update(params)
 
@@ -207,5 +216,41 @@ class DomainManager(BaseManager):
         resp = secret_connector.dispatch('Secret.create', params)
         _LOGGER.debug(f'[_create_secret] {resp}')
         return resp.get('secret_id', None)
-        
+
+    def _delete_secret(self, secret_id, domain_id):
+        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
+                                                                                 service='secret')
+        params = {
+                'secret_id': secret_id,
+                'domain_id': domain_id
+                }
+        resp = secret_connector.dispatch('Secret.delete', params)
+
+
+    def _update_secret_data(self, secret_id, secret_data, domain_id):
+        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
+                                                                                 service='secret')
+        params = {
+                'secret_id': secret_id,
+                'data': secret_data,
+                'domain_id': domain_id
+                }
+        resp = secret_connector.dispatch('Secret.update_data', params)
+        _LOGGER.debug(f'[_update_secret_data] {resp}')
+        return resp.get('secret_id', None)
+
+
+    def _cleanup_plugin_info(self, plugin_info, domain_id):
+        """ Clean up plugin_info
+        secret_id
+        """
+        if 'secret_id' in plugin_info:
+            # delete secret_id
+            secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
+                                                                                     service='secret')
+            params = {
+                    'secret_id': plugin_info['secret_id'],
+                    'domain_id': domain_id
+                    }
+            resp = secret_connector.dispatch('Secret.delete', params)
 

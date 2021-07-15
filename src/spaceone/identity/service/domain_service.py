@@ -81,13 +81,15 @@ class DomainService(BaseService):
             domain_vo (object)
         """
         domain_id = params['domain_id']
-        release_auth_plugin = params['release_auth_plugin'] if 'release_auth_plugin' in params else False
-        plugin_info = params['plugin_info'] if 'plugin_info' in params else None
+        release_auth_plugin = params.get('release_auth_plugin', False)
+        plugin_info = params.get('plugin_info', None)
         # relase plugin
         if release_auth_plugin:
             # release auth plugin
+            _LOGGER.debug(f'[change_auth_plugin] release auth plugin')
             return self.domain_mgr.release_auth_plugin(domain_id)
         elif plugin_info and release_auth_plugin == False:
+            _LOGGER.debug(f'[change_auth_plugin] update plugin_info: {plugin_info}')
             return self.domain_mgr.update_domain(params)
         else:
             _LOGGER.error(f'parameter failed, {release_auth_plugin}, {plugin}')
