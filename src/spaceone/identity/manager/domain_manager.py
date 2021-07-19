@@ -47,6 +47,9 @@ class DomainManager(BaseManager):
             domain_vo.update(old_data)
 
         domain_vo: Domain = self.get_domain(params['domain_id'])
+        domain_dict = domain_vo.to_dict()
+        old_plugin_info = domain_dict.get('plugin_info', {})
+        old_secret_id = old_plugin_info.get('secret_id', None)
 
         self.transaction.add_rollback(_rollback, domain_vo.to_dict())
         domain_id = params['domain_id']
@@ -56,7 +59,10 @@ class DomainManager(BaseManager):
             _LOGGER.debug('[update_domain] plugin_info: %s' % plugin_info)
             secret_data = plugin_info.get('secret_data', None)
             if secret_data:
-                secret_id = self._create_secret(domain_id, secret_data)
+                if old_secret_id:
+                    secret_id = self._update_secret_data(old_secret_id, secret_data, domain_id)
+                else:
+                    secret_id = self._create_secret(domain_id, secret_data)
                 if secret_id:
                     plugin_info['secret_id'] = secret_id
                     del plugin_info['secret_data']
@@ -68,10 +74,6 @@ class DomainManager(BaseManager):
                 # plugin will return options
                 # TODO: secret_id
                 params['options'] = plugin_info['options']
-                # params = {
-                #     'options': plugin_info['options'],
-                #     'credentials': {}
-                # }
 
                 result = self._auth_init_and_verify(endpoint, params)
                 _LOGGER.debug('[update_domain] endpoint: %s' % endpoint)
@@ -82,6 +84,58 @@ class DomainManager(BaseManager):
 
         return domain_vo.update(params)
 
+    def change_auth_plugin(self, params):
+        def _rollback(old_data):
+            _LOGGER.info(f'[update_domain._rollback] Revert Data : {old_data["name"]} ({old_data["domain_id"]})')
+            domain_vo.update(old_data)
+
+        domain_vo: Domain = self.get_domain(params['domain_id'])
+        domain_dict = dict(domain_vo.to_dict())
+        old_plugin_info = domain_dict.get('plugin_info', {})
+        if old_plugin_info == None:
+            old_secret_id = None
+        else:
+            old_secret_id = old_plugin_info.get('secret_id', None)
+
+        self.transaction.add_rollback(_rollback, domain_vo.to_dict())
+        domain_id = params['domain_id']
+        if 'plugin_info' in params:
+            # TODO: Check Plugin
+            plugin_info = params['plugin_info']
+            _LOGGER.debug('[update_domain] plugin_info: %s' % plugin_info)
+            secret_data = plugin_info.get('secret_data', None)
+
+            # Check endpoint first
+            endpoint = self._get_plugin_endpoint(domain_id, plugin_info)
+            if endpoint:
+                # grpc://dev-docker.pyengine.net:50060
+                # verify plugin
+                # plugin will return options
+                params['options'] = plugin_info['options']
+
+                result = self._auth_init_and_verify(endpoint, params)
+                _LOGGER.debug('[update_domain] endpoint: %s' % endpoint)
+                _LOGGER.debug(f'[update_domain] PluginInfo: {result}')
+                #plugin_info['options'] = result['options']
+                plugin_info['metadata'] = result['metadata']
+
+            if secret_data:
+                # TODO: rollback secret_data
+                if old_secret_id:
+                    _LOGGER.debug(f'update secret_data of {old_secret_id}')
+                    secret_id = self._update_secret_data(old_secret_id, secret_data, domain_id)
+                else:
+                    _LOGGER.debug(f'create new secret_id')
+                    secret_id = self._create_secret(domain_id, secret_data)
+                if secret_id:
+                    plugin_info['secret_id'] = secret_id
+                    del plugin_info['secret_data']
+
+            params['plugin_info'] = plugin_info
+
+        return domain_vo.update(params)
+
+
     def release_auth_plugin(self, domain_id):
         """ release plugin_info
         """
@@ -91,6 +145,13 @@ class DomainManager(BaseManager):
 
         domain_vo: Domain = self.get_domain(domain_id)
         self.transaction.add_rollback(_rollback, domain_vo.to_dict())
+        # clean plugin_info
+        # secret_id, if exist
+        domain_dict = domain_vo.to_dict()
+        plugin_info = domain_dict.get('plugin_info', {})
+        if 'secret_id' in  plugin_info:
+            self._delete_secret(plugin_info['secret_id'], domain_id)
+
         params = {'plugin_info': {}}
         return domain_vo.update(params)
 
@@ -207,5 +268,41 @@ class DomainManager(BaseManager):
         resp = secret_connector.dispatch('Secret.create', params)
         _LOGGER.debug(f'[_create_secret] {resp}')
         return resp.get('secret_id', None)
-        
+
+    def _delete_secret(self, secret_id, domain_id):
+        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
+                                                                                 service='secret')
+        params = {
+                'secret_id': secret_id,
+                'domain_id': domain_id
+                }
+        resp = secret_connector.dispatch('Secret.delete', params)
+
+
+    def _update_secret_data(self, secret_id, secret_data, domain_id):
+        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
+                                                                                 service='secret')
+        params = {
+                'secret_id': secret_id,
+                'data': secret_data,
+                'domain_id': domain_id
+                }
+        resp = secret_connector.dispatch('Secret.update_data', params)
+        _LOGGER.debug(f'[_update_secret_data] {resp}')
+        return secret_id
+
+
+    def _cleanup_plugin_info(self, plugin_info, domain_id):
+        """ Clean up plugin_info
+        secret_id
+        """
+        if 'secret_id' in plugin_info:
+            # delete secret_id
+            secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector',
+                                                                                     service='secret')
+            params = {
+                    'secret_id': plugin_info['secret_id'],
+                    'domain_id': domain_id
+                    }
+            resp = secret_connector.dispatch('Secret.delete', params)
 

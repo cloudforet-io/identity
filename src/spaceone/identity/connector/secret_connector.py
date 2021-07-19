@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 
 from spaceone.core.connector import BaseConnector
@@ -26,13 +25,12 @@ class SecretConnector(BaseConnector):
             self.client = pygrpc.client(endpoint=f'{e.get("hostname")}:{e.get("port")}', version=k)
 
     def get(self, secret_id, domain_id):
-        resp = self.client.Secret.get(secret_id': secret_id, 'domain_id': domain_id},
-                                    metadata=self.transaction.get_connection_meta())
+        resp = self.client.Secret.get({'secret_id': secret_id, 'domain_id': domain_id},
+                                      metadata=self.transaction.get_connection_meta())
         return MessageToDict(resp, preserving_proto_field_name=True)
 
-
     def get_data(self, secret_id, domain_id):
-        resp = self.client.Secret.get_data(secret_id': secret_id, 'domain_id': domain_id},
-                                    metadata=self.transaction.get_connection_meta())
+        resp = self.client.Secret.get_data({'secret_id': secret_id, 'domain_id': domain_id},
+                                           metadata=self.transaction.get_connection_meta())
         return MessageToDict(resp, preserving_proto_field_name=True)
 

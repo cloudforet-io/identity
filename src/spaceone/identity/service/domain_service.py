@@ -1,9 +1,12 @@
+import logging
+
 from spaceone.core.service import *
 from spaceone.core import utils
 from spaceone.identity.manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.model import Domain
 
+_LOGGER = logging.getLogger(__name__)
 
 @authentication_handler(exclude=['create', 'list', 'get_public_key'])
 @authorization_handler(exclude=['create', 'list', 'get_public_key'])
@@ -81,14 +84,16 @@ class DomainService(BaseService):
             domain_vo (object)
         """
         domain_id = params['domain_id']
-        release_auth_plugin = params['release_auth_plugin'] if 'release_auth_plugin' in params else False
-        plugin_info = params['plugin_info'] if 'plugin_info' in params else None
+        release_auth_plugin = params.get('release_auth_plugin', False)
+        plugin_info = params.get('plugin_info', None)
         # relase plugin
         if release_auth_plugin:
             # release auth plugin
+            _LOGGER.debug(f'[change_auth_plugin] release auth plugin')
             return self.domain_mgr.release_auth_plugin(domain_id)
         elif plugin_info and release_auth_plugin == False:
-            return self.domain_mgr.update_domain(params)
+            _LOGGER.debug(f'[change_auth_plugin] update plugin_info: {plugin_info}')
+            return self.domain_mgr.change_auth_plugin(params)
         else:
             _LOGGER.error(f'parameter failed, {release_auth_plugin}, {plugin}')
 
