@@ -20,11 +20,12 @@ class EndpointService(BaseService):
         Args:
             params (dict): {
                     'query': 'dict (spaceone.api.core.v1.Query)',
-                    'service': 'str'
+                    'service': 'str',
+                    'endpoint_type': 'str'
                 }
 
         Returns:
             results (list): list of endpoint_vo
             total_count (int)
         """
-        return self.endpoint_mgr.list_endpoints(params.get('query', {}))
+        return self.endpoint_mgr.list_endpoints(params.get('query', {}), params.get('endpoint_type', 'public'))
