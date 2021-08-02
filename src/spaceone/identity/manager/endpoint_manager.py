@@ -6,9 +6,10 @@ from spaceone.core.manager import BaseManager
 _LOGGER = logging.getLogger(__name__)
 
 ENDPOINT_MAP = {
-        'public': 'ENDPOINTS',
-        'internal': 'INTERNAL_ENDPOINTS'
-        }
+    'public': 'ENDPOINTS',
+    'internal': 'INTERNAL_ENDPOINTS'
+}
+
 
 class EndpointManager(BaseManager):
 
