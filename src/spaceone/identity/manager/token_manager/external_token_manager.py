@@ -24,20 +24,21 @@ class ExternalTokenManager(JWTManager):
         _LOGGER.debug(f'[authenticate] domain_id: {domain_id}')
 
         # Add User ID for External Authentication
-        credentials[user_id] = user_id
+        if user_id:
+            credentials[user_id] = user_id
 
         self.domain: Domain = self.domain_mgr.get_domain(domain_id)
-        self.user: User = self.user_mgr.get_user(user_id, domain_id)
 
         self._check_domain_state()
 
         endpoint = self._get_plugin_endpoint()
         auth_user_info = self._authenticate_with_plugin(endpoint, credentials)
+
         _LOGGER.info(f'[authenticate] Authentication success. (user_id={auth_user_info.get("user_id")})')
 
-        self._match_user_id(user_id, auth_user_info)
-
+        self._verify_user_from_plugin_user_info(auth_user_info, domain_id)
         self._check_user_state()
+
         self.is_authenticated = True
 
     def issue_token(self, **kwargs):
@@ -65,10 +66,12 @@ class ExternalTokenManager(JWTManager):
 
         return self.issue_token(**kwargs)
 
-    @staticmethod
-    def _match_user_id(user_id, auth_user_info):
-        if user_id != auth_user_info['user_id']:
-            raise ERROR_AUTHENTICATION_FAILURE()
+    def _verify_user_from_plugin_user_info(self, auth_user_info, domain_id):
+        if 'user_id' not in auth_user_info:
+            _LOGGER.error(f'[_verify_user_from_plugin_user_info] does not return user_id from plugin user info.')
+            raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(message='plugin response is invalid.')
+
+        self.user: User = self.user_mgr.get_user(auth_user_info['user_id'], domain_id)
 
     def _authenticate_with_plugin(self, endpoint, credentials):
         options = self.domain.plugin_info.options
