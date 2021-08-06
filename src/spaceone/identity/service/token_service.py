@@ -21,7 +21,7 @@ class TokenService(BaseService):
         self.domain_secret_mgr: DomainSecretManager = self.locator.get_manager('DomainSecretManager')
 
     @transaction
-    @check_required(['user_id', 'credentials', 'domain_id'])
+    @check_required(['credentials', 'domain_id'])
     def issue(self, params):
         """ Issue token
 
@@ -40,7 +40,7 @@ class TokenService(BaseService):
             }
         """
 
-        user_id = params['user_id']
+        user_id = params.get('user_id')
         user_type = params.get('user_type', 'USER')
         domain_id = params['domain_id']
 
@@ -87,14 +87,17 @@ class TokenService(BaseService):
     def _get_token_manager(self, user_id, user_type, domain_id):
         self._check_domain_state(domain_id)
 
-        # user_type = USER | API_USER | DOMAIN_OWNER
+        # user_type = USER | DOMAIN_OWNER
         if user_type == 'DOMAIN_OWNER':
             return self.locator.get_manager('DomainOwnerTokenManager')
 
-        user_backend = self._get_user_backend(user_id, domain_id)
+        if user_id:
+            user_backend = self._get_user_backend(user_id, domain_id)
 
-        if user_backend == 'LOCAL':
-            return self.locator.get_manager('LocalTokenManager')
+            if user_backend == 'LOCAL':
+                return self.locator.get_manager('LocalTokenManager')
+            else:
+                return self.locator.get_manager('ExternalTokenManager')
         else:
             return self.locator.get_manager('ExternalTokenManager')
 
