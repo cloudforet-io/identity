@@ -29,7 +29,13 @@ class UserManager(BaseManager):
 
         # If user create external authentication, call find action.
         if params['backend'] == 'EXTERNAL':
-            found_users, count = self.find_user({'user_id': params['user_id']}, domain_vo)
+            found_users, count = self.find_user(
+                {
+                    'user_id': params['user_id']
+                },
+                domain_vo
+            )
+
             if count == 1:
                 if found_users[0].get('state') in ['ENABLED', 'DISABLED']:
                     params['state'] = found_users[0]['state']
@@ -39,6 +45,7 @@ class UserManager(BaseManager):
                 raise ERROR_TOO_MANY_USERS_IN_EXTERNAL_AUTH(user_id=params['user_id'])
             else:
                 raise ERROR_NOT_FOUND_USER_IN_EXTERNAL_AUTH(user_id=params['user_id'])
+
         else:
             if params['user_type'] == 'API_USER':
                 params['password'] = None
@@ -156,7 +163,8 @@ class UserManager(BaseManager):
 
         auth_plugin_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
         auth_plugin_conn.initialize(endpoint)
-        (secret_data, schema) = self._get_auth_plugin_secret(domain_vo.to_dict())
+
+        secret_data, schema = self._get_auth_plugin_secret(domain_vo.to_dict())
         return auth_plugin_conn.call_find(keyword, user_id, options, secret_data, schema)
 
     def _get_plugin_endpoint(self, domain):
@@ -175,21 +183,23 @@ class UserManager(BaseManager):
         )
         return response['endpoint']
 
-    def _get_auth_plugin_secret(self, domain_info):
+    def _get_auth_plugin_secret(self, domain_data):
         """
         Return: (secret_data, schema)
                 Default: ({}, None)
         """
-        domain_id = domain_info['domain_id']
-        plugin_info = domain_info.get('plugin_info', {})
-        secret_id = plugin_info.get('secret_id', None)
-        if secret_id == None:
-            return ({}, None)
+        domain_id = domain_data['domain_id']
+        plugin_info = domain_data.get('plugin_info', {})
+        secret_id = plugin_info.get('secret_id')
+
+        if secret_id is None:
+            return {}, None
 
         # Secret exists
-        # WARNING: DONOT USE SpaceConnector for secret Service
+        # WARNING: DO NOT USE SpaceConnector for secret service
         # secret connector may decrypt secret_data
         secret_connector: SecretConnector = self.locator.get_connector('SecretConnector')
         secret = secret_connector.get(secret_id, domain_id)
         secret_data = secret_connector.get_data(secret_id, domain_id)
-        return (secret_data.get('data', {}), secret.get('schema', None))
+
+        return secret_data.get('data', {}), secret_data.get('schema')
