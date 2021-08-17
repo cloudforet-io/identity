@@ -47,11 +47,16 @@ class DomainManager(BaseManager):
             domain_vo.update(old_data)
 
         domain_vo: Domain = self.get_domain(params['domain_id'])
-        domain_dict = domain_vo.to_dict()
+        domain_dict = dict(domain_vo.to_dict())
+
         old_plugin_info = domain_dict.get('plugin_info', {})
-        old_secret_id = old_plugin_info.get('secret_id', None)
+        if old_plugin_info is None:
+            old_secret_id = None
+        else:
+            old_secret_id = old_plugin_info.get('secret_id')
 
         self.transaction.add_rollback(_rollback, domain_vo.to_dict())
+
         domain_id = params['domain_id']
         if 'plugin_info' in params:
             # TODO: Check Plugin
