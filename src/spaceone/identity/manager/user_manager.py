@@ -37,10 +37,18 @@ class UserManager(BaseManager):
             )
 
             if count == 1:
-                if found_users[0].get('state') in ['ENABLED', 'DISABLED']:
-                    params['state'] = found_users[0]['state']
+                found_user = found_users[0]
+                if found_user.get('state') in ['ENABLED', 'DISABLED']:
+                    params['state'] = found_user['state']
                 else:
                     params['state'] = 'PENDING'
+
+                    if 'name' not in params:
+                        params['name'] = found_user.get('name')
+
+                    if 'email' not in params:
+                        params['email'] = found_user.get('email')
+
             elif count > 1:
                 raise ERROR_TOO_MANY_USERS_IN_EXTERNAL_AUTH(user_id=params['user_id'])
             else:
@@ -124,6 +132,9 @@ class UserManager(BaseManager):
 
     def get_user(self, user_id, domain_id, only=None):
         return self.user_model.get(user_id=user_id, domain_id=domain_id, only=only)
+
+    def filter_users(self, **conditions):
+        return self.user_model.filter(**conditions)
 
     def list_users(self, query):
         return self.user_model.query(**query)
