@@ -3,13 +3,13 @@ import logging
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
-from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.connector import SecretConnector
 from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.model import Domain
 from spaceone.identity.model.user_model import User
 from spaceone.identity.error.error_user import *
+from spaceone.identity.manager.domain_manager import DomainManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -146,11 +146,15 @@ class UserManager(BaseManager):
         keyword = search.get('keyword')
         user_id = search.get('user_id')
 
-        endpoint = self._get_plugin_endpoint(domain_vo)
+        domain_mgr: DomainManager = self.locator.get_model('DomainManager')
 
-        result = self._call_find(keyword, user_id, domain_vo, endpoint)
+        endpoint = domain_mgr.get_auth_plugin_endpoint_by_vo(domain_vo)
 
-        return result.get('results', []), result.get('total_count', 0)
+        response = self._call_find(keyword, user_id, domain_vo, endpoint)
+        results = response.get('results', [])
+        total_count = response.get('total_count', 0)
+
+        return results, total_count
 
     @staticmethod
     def _check_user_id_format(user_id):
@@ -177,22 +181,6 @@ class UserManager(BaseManager):
 
         secret_data, schema = self._get_auth_plugin_secret(domain_vo.to_dict())
         return auth_plugin_conn.call_find(keyword, user_id, options, secret_data, schema)
-
-    def _get_plugin_endpoint(self, domain):
-        """
-        Return: endpoint
-        """
-        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
-        response = plugin_connector.dispatch(
-            'Plugin.get_plugin_endpoint',
-            {
-                'plugin_id': domain.plugin_info.plugin_id,
-                'version': domain.plugin_info.version,
-                'labels': {},
-                'domain_id': domain.domain_id
-            }
-        )
-        return response['endpoint']
 
     def _get_auth_plugin_secret(self, domain_data):
         """

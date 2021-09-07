@@ -7,10 +7,13 @@ from spaceone.core.model.mongo_model import MongoModel
 class PluginInfo(EmbeddedDocument):
     plugin_id = StringField(max_length=40)
     version = StringField(max_length=255)
-    options = DictField(default=None)
-    metadata = DictField(default=None)
-    secret_id = StringField(max_length=40, null=True)
-    auto_upgrade = BooleanField(default=True)
+    options = DictField(default={})
+    metadata = DictField(default={})
+    secret_id = StringField(max_length=40, null=True, default=None)
+    upgrade_mode = StringField(max_length=20, default='AUTO', choices=('AUTO', 'MANUAL'))
+
+    def to_dict(self):
+        return dict(self.to_mongo())
 
 
 class DomainTag(EmbeddedDocument):
