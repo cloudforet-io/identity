@@ -1,12 +1,11 @@
 import logging
 from datetime import datetime
-from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_user import ERROR_USER_STATUS_CHECK_FAILURE
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.token_manager import JWTManager
-from spaceone.identity.manager import DomainManager
+from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.model import Domain, User
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,7 +30,7 @@ class ExternalTokenManager(JWTManager):
 
         self._check_domain_state()
 
-        endpoint = self._get_plugin_endpoint()
+        endpoint = self.domain_mgr.get_auth_plugin_endpoint_by_vo(self.domain)
         auth_user_info = self._authenticate_with_plugin(endpoint, credentials)
 
         _LOGGER.info(f'[authenticate] Authentication success. (user_id={auth_user_info.get("user_id")})')
@@ -78,20 +77,6 @@ class ExternalTokenManager(JWTManager):
 
         auth_plugin_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
         return auth_plugin_conn.call_login(endpoint, credentials, options, {})
-
-    def _get_plugin_endpoint(self):
-        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
-        response = plugin_connector.dispatch(
-            'Plugin.get_plugin_endpoint',
-            {
-                'plugin_id': self.domain.plugin_info.plugin_id,
-                'version': self.domain.plugin_info.version,
-                'labels': {},
-                'domain_id': self.domain.domain_id
-            }
-        )
-
-        return response['endpoint']
 
     def _check_domain_state(self):
         if not self.domain.plugin_info:
