@@ -56,7 +56,7 @@ class AuthPluginConnector(BaseConnector):
         except Exception as e:
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(messsage=str(e))
 
-    def verify(self, options, secret_data, schema=None):
+    def verify(self, options, secret_data=None, schema=None):
         params = {
             'options': options,
             'secret_data': secret_data,

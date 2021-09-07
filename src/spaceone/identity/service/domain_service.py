@@ -2,11 +2,13 @@ import logging
 
 from spaceone.core.service import *
 from spaceone.core import utils
+from spaceone.identity.error import *
 from spaceone.identity.manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.model import Domain
 
 _LOGGER = logging.getLogger(__name__)
+
 
 @authentication_handler(exclude=['create', 'list', 'get_public_key'])
 @authorization_handler(exclude=['create', 'list', 'get_public_key'])
@@ -83,19 +85,21 @@ class DomainService(BaseService):
         Returns:
             domain_vo (object)
         """
+
         domain_id = params['domain_id']
+        plugin_info = params.get('plugin_info')
         release_auth_plugin = params.get('release_auth_plugin', False)
-        plugin_info = params.get('plugin_info', None)
-        # relase plugin
+
         if release_auth_plugin:
             # release auth plugin
             _LOGGER.debug(f'[change_auth_plugin] release auth plugin')
             return self.domain_mgr.release_auth_plugin(domain_id)
-        elif plugin_info and release_auth_plugin == False:
-            _LOGGER.debug(f'[change_auth_plugin] update plugin_info: {plugin_info}')
-            return self.domain_mgr.change_auth_plugin(params)
         else:
-            _LOGGER.error(f'parameter failed, {release_auth_plugin}, {plugin}')
+            if plugin_info is None:
+                raise ERROR_REQUIRED_PARAMETER(key='plugin_info')
+
+            _LOGGER.debug(f'[change_auth_plugin] update plugin_info: {plugin_info}')
+            return self.domain_mgr.change_auth_plugin(domain_id, plugin_info)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
@@ -105,16 +109,20 @@ class DomainService(BaseService):
             params (dict): {
                 'domain_id': 'str',
                 'version': 'str',
-                'options': 'dict'
+                'options': 'dict',
+                'upgrade_mode': 'str',
             }
 
         Returns:
             domain_vo (object)
         """
+
         domain_id = params['domain_id']
-        version = params['version'] if 'version' in params else None
-        options = params['options'] if 'options' in params else None
-        return self.domain_mgr.update_domain_plugin(domain_id, version, options)
+        version = params.get('version')
+        options = params.get('options')
+        upgrade_mode = params.get('upgrade_mode')
+
+        return self.domain_mgr.update_domain_plugin(domain_id, version, options, upgrade_mode)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
@@ -129,8 +137,7 @@ class DomainService(BaseService):
             domain_vo (object)
         """
         domain_id = params['domain_id']
-        return self.domain_mgr.update_domain_plugin(domain_id)
-
+        return self.domain_mgr.verify_auth_plugin(domain_id)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
