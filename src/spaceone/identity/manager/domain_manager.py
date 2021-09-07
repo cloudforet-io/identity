@@ -129,7 +129,7 @@ class DomainManager(BaseManager):
         if updated_version:
             plugin_info['version'] = updated_version
 
-        response = self.init_auth_plugin(endpoint, options)
+        response = self.init_auth_plugin(endpoint, plugin_info.get('options', {}))
         plugin_info['metadata'] = response['metadata']
 
         return domain_vo.update({'plugin_info': plugin_info})
