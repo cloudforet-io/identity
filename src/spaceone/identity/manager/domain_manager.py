@@ -194,7 +194,8 @@ class DomainManager(BaseManager):
         endpoint, updated_version = self.get_auth_plugin_endpoint(domain_vo.domain_id, plugin_info)
 
         if updated_version:
-            response = self.init_auth_plugin(endpoint, plugin_info['version'])
+            _LOGGER.debug(f'[get_auth_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}')
+            response = self.init_auth_plugin(endpoint, plugin_info('options', {}))
             domain_vo.set_data('plugin_info.version', updated_version)
             domain_vo.set_data('plugin_info.metadata', response['metadata'])
 
