@@ -146,7 +146,7 @@ class UserManager(BaseManager):
         keyword = search.get('keyword')
         user_id = search.get('user_id')
 
-        domain_mgr: DomainManager = self.locator.get_model('DomainManager')
+        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
 
         endpoint = domain_mgr.get_auth_plugin_endpoint_by_vo(domain_vo)
 
