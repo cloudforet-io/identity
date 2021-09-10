@@ -20,8 +20,11 @@ class DomainManager(BaseManager):
             _LOGGER.info(f'[create_domain._rollback] Delete domain : {vo.name} ({vo.domain_id})')
             vo.delete()
 
+        domain_vo: Domain = self.domain_model.create(params)
+        self.transaction.add_rollback(_rollback, domain_vo)
+
         if 'plugin_info' in params:
-            domain_id = params['domain_id']
+            domain_id = domain_vo.domain_id
             plugin_info = params['plugin_info']
             options = plugin_info.get('options', {})
             endpoint, updated_version = self.get_auth_plugin_endpoint(domain_id, plugin_info)
@@ -45,11 +48,9 @@ class DomainManager(BaseManager):
                 if schema:
                     del params['plugin_info']['schema']
 
-        domain_vo: Domain = self.domain_model.create(params)
-
-        self.transaction.add_rollback(_rollback, domain_vo)
-
-        return domain_vo
+        return domain_vo.update({
+            'plugin_info': params['plugin_info']
+        })
 
     def update_domain(self, params):
         def _rollback(old_data):
@@ -195,10 +196,7 @@ class DomainManager(BaseManager):
 
         if updated_version:
             _LOGGER.debug(f'[get_auth_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}')
-            response = self.init_auth_plugin(endpoint, plugin_info.get('options', {}))
-            plugin_info['version'] = updated_version
-            plugin_info['metadata'] = response['metadata']
-            domain_vo.update({'plugin_info': plugin_info})
+            self.upgrade_auth_plugin_version(domain_vo, endpoint, updated_version)
 
         return endpoint
 
@@ -215,6 +213,13 @@ class DomainManager(BaseManager):
         )
 
         return response['endpoint'], response.get('updated_version')
+
+    def upgrade_auth_plugin_version(self, domain_vo: Domain, endpoint, updated_version):
+        plugin_info = domain_vo.plugin_info.to_dict()
+        response = self.init_auth_plugin(endpoint, plugin_info.get('options', {}))
+        plugin_info['version'] = updated_version
+        plugin_info['metadata'] = response['metadata']
+        domain_vo.update({'plugin_info': plugin_info})
 
     def init_auth_plugin(self, endpoint, options):
         auth_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
