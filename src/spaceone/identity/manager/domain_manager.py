@@ -196,10 +196,7 @@ class DomainManager(BaseManager):
 
         if updated_version:
             _LOGGER.debug(f'[get_auth_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}')
-            response = self.init_auth_plugin(endpoint, plugin_info.get('options', {}))
-            plugin_info['version'] = updated_version
-            plugin_info['metadata'] = response['metadata']
-            domain_vo.update({'plugin_info': plugin_info})
+            self.upgrade_auth_plugin_version(domain_vo, endpoint, updated_version)
 
         return endpoint
 
@@ -216,6 +213,13 @@ class DomainManager(BaseManager):
         )
 
         return response['endpoint'], response.get('updated_version')
+
+    def upgrade_auth_plugin_version(self, domain_vo: Domain, endpoint, updated_version):
+        plugin_info = domain_vo.plugin_info.to_dict()
+        response = self.init_auth_plugin(endpoint, plugin_info.get('options', {}))
+        plugin_info['version'] = updated_version
+        plugin_info['metadata'] = response['metadata']
+        domain_vo.update({'plugin_info': plugin_info})
 
     def init_auth_plugin(self, endpoint, options):
         auth_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
