@@ -20,8 +20,11 @@ class DomainManager(BaseManager):
             _LOGGER.info(f'[create_domain._rollback] Delete domain : {vo.name} ({vo.domain_id})')
             vo.delete()
 
+        domain_vo: Domain = self.domain_model.create(params)
+        self.transaction.add_rollback(_rollback, domain_vo)
+
         if 'plugin_info' in params:
-            domain_id = params['domain_id']
+            domain_id = domain_vo.domain_id
             plugin_info = params['plugin_info']
             options = plugin_info.get('options', {})
             endpoint, updated_version = self.get_auth_plugin_endpoint(domain_id, plugin_info)
@@ -45,11 +48,9 @@ class DomainManager(BaseManager):
                 if schema:
                     del params['plugin_info']['schema']
 
-        domain_vo: Domain = self.domain_model.create(params)
-
-        self.transaction.add_rollback(_rollback, domain_vo)
-
-        return domain_vo
+        return domain_vo.update({
+            'plugin_info': params['plugin_info']
+        })
 
     def update_domain(self, params):
         def _rollback(old_data):
