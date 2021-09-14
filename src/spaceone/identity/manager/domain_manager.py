@@ -48,9 +48,11 @@ class DomainManager(BaseManager):
                 if schema:
                     del params['plugin_info']['schema']
 
-        return domain_vo.update({
-            'plugin_info': params['plugin_info']
-        })
+            return domain_vo.update({
+                'plugin_info': params['plugin_info']
+            })
+        else:
+            return domain_vo
 
     def update_domain(self, params):
         def _rollback(old_data):
