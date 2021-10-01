@@ -65,9 +65,18 @@ class DomainManager(BaseManager):
         return domain_vo.update(params)
 
     def change_auth_plugin(self, domain_id, plugin_info):
+        """"
+        Case 1. No plugin_info -> New plugin_info
+        Case 2. plugin_info(1) -> New plugin_info
+        """
         domain_vo: Domain = self.get_domain(domain_id)
 
-        old_secret_id = domain_vo.plugin_info.secret_id
+        try:
+            old_secret_id = domain_vo.plugin_info.secret_id
+        except Exception as e:
+            # No plugin_info
+            # plugin_info without secret_id
+            old_secret_id = None
 
         options = plugin_info.get('options', {})
         endpoint, updated_version = self.get_auth_plugin_endpoint(domain_id, plugin_info)
