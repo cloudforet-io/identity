@@ -33,7 +33,7 @@ class AuthPluginConnector(BaseConnector):
         }
 
         try:
-            user_info = self.client.Auth.login(params, metadata=self.transaction.get_connection_meta())
+            response = self.client.Auth.login(params, metadata=self.transaction.get_connection_meta())
         except ERROR_BASE as e:
             _LOGGER.error(f'[call_login] Auth.login failed. (reason={e.message})')
             raise ERROR_INVALID_CREDENTIALS()
@@ -41,7 +41,7 @@ class AuthPluginConnector(BaseConnector):
             _LOGGER.error(f'[call_login] Auth.login failed. (reason={str(e)})')
             raise ERROR_INVALID_CREDENTIALS()
 
-        return MessageToDict(user_info, preserving_proto_field_name=True)
+        return MessageToDict(response, preserving_proto_field_name=True)
 
     def init(self, options):
         params = {
@@ -49,14 +49,14 @@ class AuthPluginConnector(BaseConnector):
         }
 
         try:
-            plugin_info = self.client.Auth.init(params, metadata=self.transaction.get_connection_meta())
-            return MessageToDict(plugin_info)
+            response = self.client.Auth.init(params, metadata=self.transaction.get_connection_meta())
+            return MessageToDict(response, preserving_proto_field_name=True)
         except ERROR_BASE as e:
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(message=e.message)
         except Exception as e:
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(messsage=str(e))
 
-    def verify(self, options, secret_data, schema=None):
+    def verify(self, options, secret_data=None, schema=None):
         params = {
             'options': options,
             'secret_data': secret_data,
@@ -64,8 +64,8 @@ class AuthPluginConnector(BaseConnector):
         }
         try:
             # TODO: meta (plugin has no meta)
-            auth_verify_info = self.client.Auth.verify(params, metadata=self.transaction.get_connection_meta())
-            return MessageToDict(auth_verify_info)
+            response = self.client.Auth.verify(params, metadata=self.transaction.get_connection_meta())
+            return MessageToDict(response, preserving_proto_field_name=True)
         except ERROR_BASE as e:
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(message=e.message)
         except Exception as e:
@@ -82,10 +82,12 @@ class AuthPluginConnector(BaseConnector):
         _LOGGER.info(f'[call_find] params: {params}')
 
         try:
-            users_info = self.client.Auth.find(params, metadata=self.transaction.get_connection_meta())
-            _LOGGER.debug(f'[call_find] MessageToDict(user_info): '
-                          f'{MessageToDict(users_info, preserving_proto_field_name=True)}')
-            return MessageToDict(users_info, preserving_proto_field_name=True)
+            response = self.client.Auth.find(params, metadata=self.transaction.get_connection_meta())
+
+            users_info = MessageToDict(response, preserving_proto_field_name=True)
+            _LOGGER.debug(f'[call_find] MessageToDict(user_info): {users_info}')
+            return users_info
+
         except ERROR_BASE as e:
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(message=e.message)
         except Exception as e:

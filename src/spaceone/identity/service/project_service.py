@@ -3,6 +3,7 @@ from spaceone.core.service import *
 from spaceone.core import utils
 from spaceone.identity.error.error_project import *
 from spaceone.identity.model.project_group_model import ProjectGroup
+from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
@@ -189,6 +190,7 @@ class ProjectService(BaseService):
             params (dict): {
                 'project_id': 'str',
                 'user_id': 'str',
+                'is_external_user': 'bool',
                 'role_id': 'str',
                 'labels': 'list',
                 'tags': 'dict',
@@ -199,8 +201,15 @@ class ProjectService(BaseService):
             role_binding_vo (object)
         """
 
+        is_external_user = params.get('is_external_user', False)
+        user_id = params['user_id']
+        domain_id = params['domain_id']
+
+        if is_external_user:
+            self._create_external_user(user_id, domain_id)
+
         params['resource_type'] = 'identity.User'
-        params['resource_id'] = params['user_id']
+        params['resource_id'] = user_id
         del params['user_id']
 
         role_mgr: RoleManager = self.locator.get_manager('RoleManager')
@@ -351,3 +360,17 @@ class ProjectService(BaseService):
         else:
             return parent_project_group_vos
 
+    def _create_external_user(self, user_id, domain_id):
+        user_mgr: UserManager = self.locator.get_manager('UserManager')
+        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
+
+        user_vos = user_mgr.filter_users(user_id=user_id, domain_id=domain_id)
+
+        if user_vos.count() == 0:
+            domain_vo = domain_mgr.get_domain(domain_id)
+            user_mgr.create_user({
+                'user_id': user_id,
+                'user_type': 'USER',
+                'backend': 'EXTERNAL',
+                'domain_id': domain_id
+            }, domain_vo)

@@ -105,7 +105,7 @@ class RoleBindingService(BaseService):
     @append_query_filter(['role_binding_id', 'resource_type', 'resource_id', 'role_id', 'role_type',
                           'project_id', 'project_group_id', 'domain_id'])
     @change_tag_filter('tags')
-    @append_keyword_filter(['role_binding_id', 'resource_id'])
+    @append_keyword_filter(['role_binding_id', 'resource_id', 'name'])
     def list(self, params):
         """ List role bindings
 

@@ -3,13 +3,13 @@ import logging
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
-from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.connector import SecretConnector
 from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.model import Domain
 from spaceone.identity.model.user_model import User
 from spaceone.identity.error.error_user import *
+from spaceone.identity.manager.domain_manager import DomainManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,16 +29,31 @@ class UserManager(BaseManager):
 
         # If user create external authentication, call find action.
         if params['backend'] == 'EXTERNAL':
-            found_users, count = self.find_user({'user_id': params['user_id']}, domain_vo)
+            found_users, count = self.find_user(
+                {
+                    'user_id': params['user_id']
+                },
+                domain_vo
+            )
+
             if count == 1:
-                if found_users[0].get('state') in ['ENABLED', 'DISABLED']:
-                    params['state'] = found_users[0]['state']
+                found_user = found_users[0]
+                if found_user.get('state') in ['ENABLED', 'DISABLED']:
+                    params['state'] = found_user['state']
                 else:
                     params['state'] = 'PENDING'
+
+                    if 'name' not in params:
+                        params['name'] = found_user.get('name')
+
+                    if 'email' not in params:
+                        params['email'] = found_user.get('email')
+
             elif count > 1:
                 raise ERROR_TOO_MANY_USERS_IN_EXTERNAL_AUTH(user_id=params['user_id'])
             else:
                 raise ERROR_NOT_FOUND_USER_IN_EXTERNAL_AUTH(user_id=params['user_id'])
+
         else:
             if params['user_type'] == 'API_USER':
                 params['password'] = None
@@ -118,6 +133,9 @@ class UserManager(BaseManager):
     def get_user(self, user_id, domain_id, only=None):
         return self.user_model.get(user_id=user_id, domain_id=domain_id, only=only)
 
+    def filter_users(self, **conditions):
+        return self.user_model.filter(**conditions)
+
     def list_users(self, query):
         return self.user_model.query(**query)
 
@@ -128,11 +146,15 @@ class UserManager(BaseManager):
         keyword = search.get('keyword')
         user_id = search.get('user_id')
 
-        endpoint = self._get_plugin_endpoint(domain_vo)
+        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
 
-        result = self._call_find(keyword, user_id, domain_vo, endpoint)
+        endpoint = domain_mgr.get_auth_plugin_endpoint_by_vo(domain_vo)
 
-        return result.get('results', []), result.get('total_count', 0)
+        response = self._call_find(keyword, user_id, domain_vo, endpoint)
+        results = response.get('results', [])
+        total_count = response.get('total_count', 0)
+
+        return results, total_count
 
     @staticmethod
     def _check_user_id_format(user_id):
@@ -156,40 +178,27 @@ class UserManager(BaseManager):
 
         auth_plugin_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
         auth_plugin_conn.initialize(endpoint)
-        (secret_data, schema) = self._get_auth_plugin_secret(domain_vo.to_dict())
+
+        secret_data, schema = self._get_auth_plugin_secret(domain_vo.to_dict())
         return auth_plugin_conn.call_find(keyword, user_id, options, secret_data, schema)
 
-    def _get_plugin_endpoint(self, domain):
-        """
-        Return: endpoint
-        """
-        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
-        response = plugin_connector.dispatch(
-            'Plugin.get_plugin_endpoint',
-            {
-                'plugin_id': domain.plugin_info.plugin_id,
-                'version': domain.plugin_info.version,
-                'labels': {},
-                'domain_id': domain.domain_id
-            }
-        )
-        return response['endpoint']
-
-    def _get_auth_plugin_secret(self, domain_info):
+    def _get_auth_plugin_secret(self, domain_data):
         """
         Return: (secret_data, schema)
                 Default: ({}, None)
         """
-        domain_id = domain_info['domain_id']
-        plugin_info = domain_info.get('plugin_info', {})
-        secret_id = plugin_info.get('secret_id', None)
-        if secret_id == None:
-            return ({}, None)
+        domain_id = domain_data['domain_id']
+        plugin_info = domain_data.get('plugin_info', {})
+        secret_id = plugin_info.get('secret_id')
+
+        if secret_id is None:
+            return {}, None
 
         # Secret exists
-        # WARNING: DONOT USE SpaceConnector for secret Service
+        # WARNING: DO NOT USE SpaceConnector for secret service
         # secret connector may decrypt secret_data
         secret_connector: SecretConnector = self.locator.get_connector('SecretConnector')
         secret = secret_connector.get(secret_id, domain_id)
         secret_data = secret_connector.get_data(secret_id, domain_id)
-        return (secret_data.get('data', {}), secret.get('schema', None))
+
+        return secret_data.get('data', {}), secret_data.get('schema')

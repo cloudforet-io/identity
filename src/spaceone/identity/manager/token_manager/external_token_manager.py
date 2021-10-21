@@ -1,12 +1,11 @@
 import logging
 from datetime import datetime
-from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_user import ERROR_USER_STATUS_CHECK_FAILURE
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.token_manager import JWTManager
-from spaceone.identity.manager import DomainManager
+from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.model import Domain, User
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,20 +23,21 @@ class ExternalTokenManager(JWTManager):
         _LOGGER.debug(f'[authenticate] domain_id: {domain_id}')
 
         # Add User ID for External Authentication
-        credentials[user_id] = user_id
+        if user_id:
+            credentials[user_id] = user_id
 
         self.domain: Domain = self.domain_mgr.get_domain(domain_id)
-        self.user: User = self.user_mgr.get_user(user_id, domain_id)
 
         self._check_domain_state()
 
-        endpoint = self._get_plugin_endpoint()
+        endpoint = self.domain_mgr.get_auth_plugin_endpoint_by_vo(self.domain)
         auth_user_info = self._authenticate_with_plugin(endpoint, credentials)
+
         _LOGGER.info(f'[authenticate] Authentication success. (user_id={auth_user_info.get("user_id")})')
 
-        self._match_user_id(user_id, auth_user_info)
-
+        self._verify_user_from_plugin_user_info(auth_user_info, domain_id)
         self._check_user_state()
+
         self.is_authenticated = True
 
     def issue_token(self, **kwargs):
@@ -65,30 +65,18 @@ class ExternalTokenManager(JWTManager):
 
         return self.issue_token(**kwargs)
 
-    @staticmethod
-    def _match_user_id(user_id, auth_user_info):
-        if user_id != auth_user_info['user_id']:
-            raise ERROR_AUTHENTICATION_FAILURE()
+    def _verify_user_from_plugin_user_info(self, auth_user_info, domain_id):
+        if 'user_id' not in auth_user_info:
+            _LOGGER.error(f'[_verify_user_from_plugin_user_info] does not return user_id from plugin user info.')
+            raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(message='plugin response is invalid.')
+
+        self.user: User = self.user_mgr.get_user(auth_user_info['user_id'], domain_id)
 
     def _authenticate_with_plugin(self, endpoint, credentials):
         options = self.domain.plugin_info.options
 
         auth_plugin_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
         return auth_plugin_conn.call_login(endpoint, credentials, options, {})
-
-    def _get_plugin_endpoint(self):
-        plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
-        response = plugin_connector.dispatch(
-            'Plugin.get_plugin_endpoint',
-            {
-                'plugin_id': self.domain.plugin_info.plugin_id,
-                'version': self.domain.plugin_info.version,
-                'labels': {},
-                'domain_id': self.domain.domain_id
-            }
-        )
-
-        return response['endpoint']
 
     def _check_domain_state(self):
         if not self.domain.plugin_info:

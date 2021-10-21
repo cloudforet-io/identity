@@ -63,3 +63,47 @@ ENDPOINTS = [
     #     'endpoint': 'grpc://<endpoint>>:<port>/v1'
     # },
 ]
+
+# Internal Endpoint
+INTERNAL_ENDPOINTS = [
+    {
+        'service': 'identity',
+        'name': 'Identity Service',
+        'endpoint': 'grpc://identity.spaceone.svc.cluster.local:50051/v1'
+    },
+    {
+        'service': 'secret',
+        'name': 'Secret Service',
+        'endpoint': 'grpc://secret.spaceone.svc.cluster.local:50051/v1'
+    },
+    {
+        'service': 'repository',
+        'name': 'Repository Service',
+        'endpoint': 'grpc://repository.spaceone.svc.cluster.local:50051/v1'
+    },
+    {
+        'service': 'plugin',
+        'name': 'Plugin Service',
+        'endpoint': 'grpc://plugin.spaceone.svc.cluster.local:50051/v1'
+    },
+    {
+        'service': 'config',
+        'name': 'Config Service',
+        'endpoint': 'grpc://config.spaceone.svc.cluster.local:50051/v1'
+    },
+    {
+        'service': 'inventory',
+        'name': 'Inventory Service',
+        'endpoint': 'grpc://inventory.spaceone.svc.cluster.local:50051/v1'
+    },
+    {
+        'service': 'monitoring',
+        'name': 'Monitoring Service',
+        'endpoint': 'grpc://monitoring.spaceone.svc.cluster.local:50051/v1'
+    },
+    {
+        'service': 'statistics',
+        'name': 'Statistics Service',
+        'endpoint': 'grpc://statistics.spaceone.svc.cluster.local:50051/v1'
+    }
+]
