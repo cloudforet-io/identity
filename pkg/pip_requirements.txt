@@ -8,3 +8,4 @@ jinja2
 fakeredis
 mongomock
 pytz
+boto3
