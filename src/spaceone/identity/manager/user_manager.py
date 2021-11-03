@@ -3,6 +3,7 @@ import logging
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.connector import SecretConnector
 from spaceone.identity.lib.cipher import PasswordCipher
@@ -194,11 +195,8 @@ class UserManager(BaseManager):
         if secret_id is None:
             return {}, None
 
-        # Secret exists
-        # WARNING: DO NOT USE SpaceConnector for secret service
-        # secret connector may decrypt secret_data
-        secret_connector: SecretConnector = self.locator.get_connector('SecretConnector')
-        secret = secret_connector.get(secret_id, domain_id)
-        secret_data = secret_connector.get_data(secret_id, domain_id)
+        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
+        secret = secret_connector.dispatch('Secret.get', {'secret_id': secret_id, 'domain_id': domain_id})
+        secret_data = secret_connector.dispatch('Secret.get_data', {'secret_id': secret_id, 'domain_id': domain_id})
 
         return secret_data.get('data', {}), secret_data.get('schema')
