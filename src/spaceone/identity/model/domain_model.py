@@ -10,6 +10,7 @@ class PluginInfo(EmbeddedDocument):
     options = DictField(default={})
     metadata = DictField(default={})
     secret_id = StringField(max_length=40, null=True, default=None)
+    schema = StringField(max_length=255, null=True, default=None)
     upgrade_mode = StringField(max_length=20, default='AUTO', choices=('AUTO', 'MANUAL'))
 
     def to_dict(self):

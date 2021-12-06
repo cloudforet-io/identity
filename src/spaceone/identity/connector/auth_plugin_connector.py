@@ -3,7 +3,7 @@ import logging
 from google.protobuf.json_format import MessageToDict
 from spaceone.core import pygrpc
 from spaceone.core.connector import BaseConnector
-from spaceone.core.utils import parse_endpoint
+from spaceone.core.utils import parse_grpc_endpoint
 
 from spaceone.identity.error.error_authentication import *
 
@@ -17,10 +17,15 @@ class AuthPluginConnector(BaseConnector):
         self.client = None
 
     def initialize(self, endpoint):
+        static_endpoint = self.config.get('endpoint')
+
+        if static_endpoint:
+            endpoint = static_endpoint
+
         _LOGGER.info(f'[initialize] endpoint: {endpoint}')
 
-        e = parse_endpoint(endpoint)
-        self.client = pygrpc.client(endpoint=f'{e.get("hostname")}:{e.get("port")}', version='plugin')
+        e = parse_grpc_endpoint(endpoint)
+        self.client = pygrpc.client(endpoint=e['endpoint'], ssl_enabled=e['ssl_enabled'])
 
     def call_login(self, endpoint, credentials, options, secret_data, schema=None):
         self.initialize(endpoint)
