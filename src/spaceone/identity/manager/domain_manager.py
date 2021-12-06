@@ -45,9 +45,6 @@ class DomainManager(BaseManager):
                     params['plugin_info']['secret_id'] = secret_id
                     del params['plugin_info']['secret_data']
 
-                if schema:
-                    del params['plugin_info']['schema']
-
             return domain_vo.update({
                 'plugin_info': params['plugin_info']
             })
@@ -70,13 +67,13 @@ class DomainManager(BaseManager):
         Case 2. plugin_info(1) -> New plugin_info
         """
         domain_vo: Domain = self.get_domain(domain_id)
+        secret_id = None
 
         try:
-            old_secret_id = domain_vo.plugin_info.secret_id
+            secret_id = domain_vo.plugin_info.secret_id
         except Exception as e:
-            # No plugin_info
-            # plugin_info without secret_id
-            old_secret_id = None
+            # No plugin_info or plugin_info without secret_id
+            pass
 
         options = plugin_info.get('options', {})
         endpoint, updated_version = self.get_auth_plugin_endpoint(domain_id, plugin_info)
@@ -91,19 +88,17 @@ class DomainManager(BaseManager):
 
         if secret_data:
             schema = plugin_info.get('schema')
-            secret_id = self._create_secret(domain_id, secret_data, schema)
+
+            if secret_id:
+                self._update_secret_data(secret_id, domain_id, secret_data, schema)
+            else:
+                secret_id = self._create_secret(domain_id, secret_data, schema)
 
             if secret_id:
                 plugin_info['secret_id'] = secret_id
                 del plugin_info['secret_data']
 
-            if schema:
-                del plugin_info['schema']
-
         updated_domain_vo = domain_vo.update({'plugin_info': plugin_info})
-
-        if old_secret_id:
-            self._delete_secret(old_secret_id, domain_id)
 
         return updated_domain_vo
 
@@ -260,11 +255,13 @@ class DomainManager(BaseManager):
         }
         secret_connector.dispatch('Secret.delete', params)
 
-    def _update_secret_data(self, secret_id, secret_data, domain_id):
+    def _update_secret_data(self, secret_id, domain_id, secret_data, schema):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
         params = {
             'secret_id': secret_id,
             'data': secret_data,
-            'domain_id': domain_id
+            'schema': schema,
+            'domain_id': domain_id,
         }
+
         secret_connector.dispatch('Secret.update_data', params)

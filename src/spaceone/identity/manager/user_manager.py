@@ -5,7 +5,6 @@ from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.connector import AuthPluginConnector
-from spaceone.identity.connector import SecretConnector
 from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.model import Domain
 from spaceone.identity.model.user_model import User
