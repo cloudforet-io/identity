@@ -52,8 +52,14 @@ class RoleBindingManager(BaseManager):
                 params['project_group'] = project_group_vo
             else:
                 raise ERROR_REQUIRED_PROJECT_OR_PROJECT_GROUP()
+        elif role_vo.role_type == 'DOMAIN':
+            self._check_duplicate_domain_role(resource_type, resource_id, role_vo, role_id)
+            if project_id:
+                raise ERROR_NOT_ALLOWED_PROJECT_ID()
+            elif project_group_id:
+                raise ERROR_NOT_ALLOWED_PROJECT_GROUP_ID()
         else:
-            self._check_duplicate_domain_or_system_role(resource_type, resource_id, role_vo, role_id)
+            self._check_duplicate_system_role(resource_type, resource_id, role_vo, role_id)
             if project_id:
                 raise ERROR_NOT_ALLOWED_PROJECT_ID()
             elif project_group_id:
@@ -128,7 +134,21 @@ class RoleBindingManager(BaseManager):
                 if role_binding_vo.role.role_type == 'SYSTEM':
                     raise ERROR_NOT_ALLOWED_ROLE_TYPE()
 
-    def _check_duplicate_domain_or_system_role(self, resource_type, resource_id, role_vo, role_id):
+    def _check_duplicate_domain_role(self, resource_type, resource_id, role_vo, role_id):
+        query = {
+            'filter': [
+                {'k': 'resource_type', 'v': resource_type, 'o': 'eq'},
+                {'k': 'resource_id', 'v': resource_id, 'o': 'eq'},
+                {'k': 'role.role_type', 'v': 'DOMAIN', 'o': 'eq'},
+            ]
+        }
+
+        rb_vos, total_count = self.list_role_bindings(query)
+
+        if total_count > 0:
+            raise ERROR_DUPLICATE_ROLE_BOUND(role_id=role_id, resource_id=resource_id)
+
+    def _check_duplicate_system_role(self, resource_type, resource_id, role_vo, role_id):
         rb_vos = self.role_binding_model.filter(resource_type=resource_type, resource_id=resource_id, role=role_vo)
 
         if rb_vos.count() > 0:
