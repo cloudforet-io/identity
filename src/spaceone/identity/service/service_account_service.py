@@ -194,11 +194,16 @@ class ServiceAccountService(BaseService):
     def _check_data(self, data, provider):
         provider_mgr: ProviderManager = self.locator.get_manager('ProviderManager')
         provider_vo = provider_mgr.get_provider(provider)
-        schema = provider_vo.template.get('service_account', {}).get('schema', [])
-        try:
-            validate(instance=data, schema=schema)
-        except Exception as e:
-            raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)
+        schema = provider_vo.template.get('service_account', {}).get('schema')
+
+        if schema:
+            try:
+                validate(instance=data, schema=schema)
+            except Exception as e:
+                raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)
+        else:
+            if data != {}:
+                raise ERROR_INVALID_PARAMETER(key='data', reason='data format is invalid.')
 
     def _get_project(self, project_id, domain_id):
         project_mgr: ProjectManager = self.locator.get_manager('ProjectManager')
