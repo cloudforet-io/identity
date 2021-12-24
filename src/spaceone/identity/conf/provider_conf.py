@@ -135,11 +135,14 @@ DEFAULT_PROVIDERS = [{
         }, {
             'key': 'external_link_template',
             'value': 'https://console.cloud.google.com/home/dashboard?project=<%- data.project_id %>'
+        }, {
+            'key': 'label',
+            'value': 'Google'
         }
     ]
 }, {
     "provider": "azure",
-    "name": "Microsoft Azure",
+    "name": "Azure",
     "template": {
         "service_account": {
             "schema": {
