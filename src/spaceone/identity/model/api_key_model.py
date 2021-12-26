@@ -22,6 +22,9 @@ class APIKey(MongoModel):
             'state',
             'user_id'
         ],
+        'change_query_keys': {
+            'user_self': 'user_id'
+        },
         'ordering': ['api_key_id'],
         'indexes': [
             'api_key_id',

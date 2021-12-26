@@ -42,7 +42,8 @@ class AuthorizationService(BaseService):
                 'project_group_id': 'str',
                 'user_id': 'str',
                 'require_project_id': 'bool',
-                'require_project_group_id': 'bool'
+                'require_project_group_id': 'bool',
+                'require_user_id': 'bool',
             }
 
         Returns:
@@ -60,6 +61,7 @@ class AuthorizationService(BaseService):
         request_user_id = params.get('user_id')
         require_project_id = params.get('require_project_id', False)
         require_project_group_id = params.get('require_project_group_id', False)
+        require_user_id = params.get('require_user_id', False)
 
         self._check_user_state(user_id, domain_id)
         self._check_domain_state(domain_id)
@@ -75,7 +77,8 @@ class AuthorizationService(BaseService):
         self.auth_mgr.check_permissions(user_id, domain_id, user_permissions, service, resource, verb, request_roles)
         self.auth_mgr.check_scope_by_role_type(user_id, domain_id, scope, role_type, projects, project_groups,
                                                request_domain_id, request_project_id, request_project_group_id,
-                                               request_user_id, require_project_id, require_project_group_id)
+                                               request_user_id, require_project_id, require_project_group_id,
+                                               require_user_id)
 
         return {
             'role_type': role_type,
