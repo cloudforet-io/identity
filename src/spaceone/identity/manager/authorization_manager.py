@@ -61,7 +61,7 @@ class AuthorizationManager(BaseManager):
                           f' request_user_id = {request_user_id})')
             raise ERROR_PERMISSION_DENIED()
 
-        if user_id != request_user_id:
+        if request_user_id and request_user_id != user_id:
             _LOGGER.debug(f'[_check_user_scope] user role_type can only access self resource.'
                           f' (user_id = {user_id}, user_domain_id = {domain_id},'
                           f' request_user_id = {request_user_id})')
