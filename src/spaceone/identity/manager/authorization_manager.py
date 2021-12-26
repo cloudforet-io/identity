@@ -27,14 +27,15 @@ class AuthorizationManager(BaseManager):
 
     @cache.cacheable(key='user-scopes:{domain_id}:{user_id}:{scope}:{role_type}:{request_domain_id}:'
                          '{request_project_id}:{request_project_group_id}:{projects}:{project_groups}:'
-                         '{request_user_id}:{require_project_id}:{require_project_group_id}', expire=3600)
+                         '{request_user_id}:{require_project_id}:{require_project_group_id}:{require_user_id}',
+                     expire=3600)
     def check_scope_by_role_type(self, user_id, domain_id, scope, role_type, projects, project_groups,
                                  request_domain_id, request_project_id, request_project_group_id, request_user_id,
-                                 require_project_id, require_project_group_id):
+                                 require_project_id, require_project_group_id, require_user_id):
 
         if role_type == 'USER':
             self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
-            self._check_user_scope(user_id, domain_id, request_user_id)
+            self._check_user_scope(user_id, domain_id, request_user_id, require_user_id)
         else:
             if scope == 'SYSTEM':
                 # Excluding system api checking process
@@ -47,9 +48,19 @@ class AuthorizationManager(BaseManager):
                 self._check_project_scope(user_id, domain_id, role_type, projects, project_groups,
                                           request_project_id, request_project_group_id,
                                           require_project_id, require_project_group_id)
+                self._check_user_scope(user_id, domain_id, request_user_id, require_user_id)
+            elif scope == 'USER':
+                self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
+                self._check_user_scope(user_id, domain_id, request_user_id, require_user_id)
 
     @staticmethod
-    def _check_user_scope(user_id, domain_id, request_user_id):
+    def _check_user_scope(user_id, domain_id, request_user_id, require_user_id):
+        if require_user_id and request_user_id is None:
+            _LOGGER.debug(f'[_check_user_scope] user_id is required.'
+                          f' (user_id = {user_id}, user_domain_id = {domain_id},'
+                          f' request_user_id = {request_user_id})')
+            raise ERROR_PERMISSION_DENIED()
+
         if user_id != request_user_id:
             _LOGGER.debug(f'[_check_user_scope] user role_type can only access self resource.'
                           f' (user_id = {user_id}, user_domain_id = {domain_id},'
