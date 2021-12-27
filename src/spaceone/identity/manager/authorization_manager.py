@@ -48,7 +48,6 @@ class AuthorizationManager(BaseManager):
                 self._check_project_scope(user_id, domain_id, role_type, projects, project_groups,
                                           request_project_id, request_project_group_id,
                                           require_project_id, require_project_group_id)
-                self._check_user_scope(user_id, domain_id, request_user_id, require_user_id)
             elif scope == 'USER':
                 self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
                 self._check_user_scope(user_id, domain_id, request_user_id, require_user_id)
