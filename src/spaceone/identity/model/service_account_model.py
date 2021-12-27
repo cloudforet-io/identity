@@ -42,6 +42,7 @@ class ServiceAccount(MongoModel):
         'ordering': ['name'],
         'indexes': [
             'service_account_id',
+            'name',
             'provider',
             'project',
             'project_id',
