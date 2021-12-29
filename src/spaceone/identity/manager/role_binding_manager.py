@@ -93,6 +93,8 @@ class RoleBindingManager(BaseManager):
         resource_id = role_binding_vo.resource_id
         domain_id = role_binding_vo.domain_id
 
+        _LOGGER.debug(f'[delete_role_binding_by_vo] resource_id = {resource_id}, domain_id = {domain_id}')
+
         role_binding_vo.delete()
 
         cache.delete_pattern(f'role-bindings:{domain_id}:{resource_id}*')
@@ -116,6 +118,7 @@ class RoleBindingManager(BaseManager):
         return self.role_binding_model.stat(**query)
 
     def _delete_old_domain_or_system_role_binding(self, resource_id, resource_type, role_type, new_role_binding_id):
+        _LOGGER.debug(f'[_delete_old_domain_or_system_role_binding] resource_id = {resource_id}, role_type = {role_type}')
         query = {
             'filter': [
                 {'k': 'resource_id', 'v': resource_id, 'o': 'eq'},
