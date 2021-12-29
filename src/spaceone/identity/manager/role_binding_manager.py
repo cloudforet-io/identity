@@ -64,7 +64,7 @@ class RoleBindingManager(BaseManager):
 
         if role_vo.role_type in ['DOMAIN', 'SYSTEM']:
             self._delete_old_domain_or_system_role_binding(resource_id, resource_type, role_vo.role_type,
-                                                           role_binding_vo.role_binding_id)
+                                                           role_binding_vo.role_binding_id, domain_id)
 
         cache.delete_pattern(f'role-bindings:{domain_id}:{resource_id}*')
         cache.delete_pattern(f'user-permissions:{domain_id}:{resource_id}*')
@@ -117,13 +117,15 @@ class RoleBindingManager(BaseManager):
     def stat_role_bindings(self, query):
         return self.role_binding_model.stat(**query)
 
-    def _delete_old_domain_or_system_role_binding(self, resource_id, resource_type, role_type, new_role_binding_id):
+    def _delete_old_domain_or_system_role_binding(self, resource_id, resource_type, role_type, new_role_binding_id,
+                                                  domain_id):
         query = {
             'filter': [
                 {'k': 'resource_id', 'v': resource_id, 'o': 'eq'},
                 {'k': 'resource_type', 'v': resource_type, 'o': 'eq'},
                 {'k': 'role.role_type', 'v': role_type, 'o': 'eq'},
                 {'k': 'role_binding_id', 'v': new_role_binding_id, 'o': 'not'},
+                {'k': 'domain_id', 'v': domain_id, 'o': 'eq'},
             ]
         }
 
