@@ -50,21 +50,22 @@ class AuthorizationManager(BaseManager):
                                           require_project_id, require_project_group_id)
             elif scope == 'USER':
                 self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
-                self._check_user_scope(user_id, domain_id, request_user_id, require_user_id)
+                self._check_user_scope(user_id, domain_id, role_type, request_user_id, require_user_id)
 
     @staticmethod
-    def _check_user_scope(user_id, domain_id, request_user_id, require_user_id):
-        if require_user_id and request_user_id is None:
-            _LOGGER.debug(f'[_check_user_scope] user_id is required.'
-                          f' (user_id = {user_id}, user_domain_id = {domain_id},'
-                          f' request_user_id = {request_user_id})')
-            raise ERROR_PERMISSION_DENIED()
+    def _check_user_scope(user_id, domain_id, role_type, request_user_id, require_user_id):
+        if role_type == 'PROJECT':
+            if require_user_id and request_user_id is None:
+                _LOGGER.debug(f'[_check_user_scope] user_id is required.'
+                              f' (user_id = {user_id}, user_domain_id = {domain_id},'
+                              f' request_user_id = {request_user_id})')
+                raise ERROR_PERMISSION_DENIED()
 
-        if request_user_id and request_user_id != user_id:
-            _LOGGER.debug(f'[_check_user_scope] user role_type can only access self resource.'
-                          f' (user_id = {user_id}, user_domain_id = {domain_id},'
-                          f' request_user_id = {request_user_id})')
-            raise ERROR_PERMISSION_DENIED()
+            if request_user_id and request_user_id != user_id:
+                _LOGGER.debug(f'[_check_user_scope] user role_type can only access self resource.'
+                              f' (user_id = {user_id}, user_domain_id = {domain_id},'
+                              f' request_user_id = {request_user_id})')
+                raise ERROR_PERMISSION_DENIED()
 
     @staticmethod
     def _check_system_scope(user_id, domain_id, role_type):
