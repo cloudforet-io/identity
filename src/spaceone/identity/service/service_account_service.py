@@ -164,7 +164,9 @@ class ServiceAccountService(BaseService):
         """
         query = params.get('query', {})
 
-        return self.service_account_mgr.list_service_accounts(query)
+        service_account_vos, total_count = self.service_account_mgr.list_service_accounts(query)
+
+        return service_account_vos, total_count, self._get_project_info(service_account_vos)
 
     @transaction(append_meta={
         'authorization.scope': 'PROJECT',
@@ -208,3 +210,18 @@ class ServiceAccountService(BaseService):
     def _get_project(self, project_id, domain_id):
         project_mgr: ProjectManager = self.locator.get_manager('ProjectManager')
         return project_mgr.get_project(project_id, domain_id)
+
+    def _get_project_info(self, service_account_vos):
+        project_mgr: ProjectManager = self.locator.get_manager('ProjectManager')
+
+        projects_info = {}
+        project_ids = []
+        for service_account_vo in service_account_vos:
+            if service_account_vo.project_id:
+                project_ids.append(service_account_vo.project_id)
+
+        project_vos = project_mgr.filter_projects(project_id=project_ids)
+        for project_vo in project_vos:
+            projects_info[project_vo.project_id] = project_vo
+
+        return projects_info

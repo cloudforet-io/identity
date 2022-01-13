@@ -9,7 +9,7 @@ from spaceone.identity.info.role_info import RoleInfo
 __all__ = ['ProjectInfo', 'ProjectsInfo', 'ProjectRoleBindingInfo', 'ProjectRoleBindingsInfo']
 
 
-def ProjectInfo(project_vo: Project, minimal=False):
+def ProjectInfo(project_vo: Project, minimal=False, project_groups_info=None):
     info = {
         'project_id': project_vo.project_id,
         'name': project_vo.name
@@ -17,10 +17,17 @@ def ProjectInfo(project_vo: Project, minimal=False):
     }
 
     if not minimal:
-        if project_vo.project_group:
-            info.update({
-                'project_group_info': ProjectGroupInfo(project_vo.project_group, minimal=True)
-            })
+        if project_groups_info:
+            if project_vo.project_group_id and project_vo.project_group_id in project_groups_info:
+                project_group_info = ProjectGroupInfo(project_groups_info[project_vo.project_group_id], minimal=True)
+                info.update({
+                    'project_group_info': project_group_info
+                })
+        else:
+            if project_vo.project_group:
+                info.update({
+                    'project_group_info': ProjectGroupInfo(project_vo.project_group, minimal=True)
+                })
 
         info.update({
             'tags': change_struct_type(utils.tags_to_dict(project_vo.tags)),

@@ -10,17 +10,27 @@ __all__ = ['ProjectGroupInfo', 'ProjectGroupsInfo', 'ProjectGroupRoleBindingInfo
            'ProjectGroupProjectsInfo']
 
 
-def ProjectGroupInfo(project_group_vo: ProjectGroup, minimal=False):
+def ProjectGroupInfo(project_group_vo: ProjectGroup, minimal=False, parent_project_groups_info=None):
     info = {
         'project_group_id': project_group_vo.project_group_id,
         'name': project_group_vo.name
     }
 
     if not minimal:
-        if project_group_vo.parent_project_group:
-            info.update({
-                'parent_project_group_info': ProjectGroupInfo(project_group_vo.parent_project_group, minimal=True)
-            })
+        if parent_project_groups_info:
+            parent_project_group_id = project_group_vo.parent_project_group_id
+            if parent_project_group_id and parent_project_group_id in parent_project_groups_info:
+                parent_project_group_info = ProjectGroupInfo(parent_project_groups_info[parent_project_group_id],
+                                                             minimal=True)
+
+                info.update({
+                    'parent_project_group_info': parent_project_group_info
+                })
+        else:
+            if project_group_vo.parent_project_group:
+                info.update({
+                    'parent_project_group_info': ProjectGroupInfo(project_group_vo.parent_project_group, minimal=True)
+                })
 
         info.update({
             'tags': change_struct_type(utils.tags_to_dict(project_group_vo.tags)),
@@ -64,17 +74,24 @@ def ProjectGroupRoleBindingsInfo(role_binding_vos, total_count, **kwargs):
     return project_group_pb2.ProjectGroupRoleBindingsInfo(results=results, total_count=total_count)
 
 
-def ProjectGroupProjectInfo(project_vo: Project, minimal=False):
+def ProjectGroupProjectInfo(project_vo: Project, minimal=False, project_groups_info=None, **kwargs):
     info = {
         'project_id': project_vo.project_id,
         'name': project_vo.name
     }
 
     if not minimal:
-        if project_vo.project_group:
-            info.update({
-                'project_group_info': ProjectGroupInfo(project_vo.project_group, minimal=True)
-            })
+        if project_groups_info:
+            if project_vo.project_group_id and project_vo.project_group_id in project_groups_info:
+                project_group_info = ProjectGroupInfo(project_groups_info[project_vo.project_group_id], minimal=True)
+                info.update({
+                    'project_group_info': project_group_info
+                })
+        else:
+            if project_vo.project_group:
+                info.update({
+                    'project_group_info': ProjectGroupInfo(project_vo.project_group, minimal=True)
+                })
 
         info.update({
             'tags': change_struct_type(utils.tags_to_dict(project_vo.tags)),

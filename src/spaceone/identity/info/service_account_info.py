@@ -8,7 +8,7 @@ from spaceone.identity.info.project_info import ProjectInfo
 __all__ = ['ServiceAccountInfo', 'ServiceAccountsInfo']
 
 
-def ServiceAccountInfo(service_account_vo: ServiceAccount, minimal=False):
+def ServiceAccountInfo(service_account_vo: ServiceAccount, minimal=False, projects_info=None):
     info = {
         'service_account_id': service_account_vo.service_account_id,
         'name': service_account_vo.name,
@@ -23,10 +23,17 @@ def ServiceAccountInfo(service_account_vo: ServiceAccount, minimal=False):
             'created_at': utils.datetime_to_iso8601(service_account_vo.created_at)
         })
 
-        if service_account_vo.project:
-            info.update({
-                'project_info': ProjectInfo(service_account_vo.project, minimal=True)
-            })
+        if projects_info:
+            if service_account_vo.project_id and service_account_vo.project_id in projects_info:
+                project_info = ProjectInfo(projects_info[service_account_vo.project_id], minimal=True)
+                info.update({
+                    'project_info': project_info
+                })
+        else:
+            if service_account_vo.project:
+                info.update({
+                    'project_info': ProjectInfo(service_account_vo.project, minimal=True)
+                })
 
     return service_account_pb2.ServiceAccountInfo(**info)
 

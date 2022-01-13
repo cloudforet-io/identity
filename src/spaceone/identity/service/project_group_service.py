@@ -165,6 +165,9 @@ class ProjectGroupService(BaseService):
         query = params.get('query', {})
         domain_id = params['domain_id']
 
+        if 'only' in query and 'parent_project_group' in query['only']:
+            query['only'].append('parent_project_group_id')
+
         # For Access Control
         if role_type == 'PROJECT':
             if author_within:
@@ -176,7 +179,9 @@ class ProjectGroupService(BaseService):
             else:
                 self._append_user_project_group_filter(query, user_projects, user_project_groups, domain_id)
 
-        return self.project_group_mgr.list_project_groups(query)
+        project_group_vos, total_count = self.project_group_mgr.list_project_groups(query)
+
+        return project_group_vos, total_count, self._get_parent_project_groups_info(project_group_vos)
 
     @transaction(append_meta={
         'authorization.scope': 'PROJECT',
@@ -398,6 +403,9 @@ class ProjectGroupService(BaseService):
         recursive = params.get('recursive', False)
         query = params.get('query', {})
 
+        if 'only' in query and 'project_group' in query['only']:
+            query['only'].append('project_group_id')
+
         project_mgr: ProjectManager = self.locator.get_manager('ProjectManager')
 
         if 'filter' not in query:
@@ -423,7 +431,9 @@ class ProjectGroupService(BaseService):
                 'o': 'in'
             })
 
-        return project_mgr.list_projects(query)
+        project_vos, total_count = project_mgr.list_projects(query)
+
+        return project_vos, total_count, self._get_project_groups_info(project_vos)
 
     def _get_related_project_group(self, project_group_vo, related_project_groups):
         query = {
@@ -464,7 +474,7 @@ class ProjectGroupService(BaseService):
         parent_project_group_vos, total_count = self.project_group_mgr.list_project_groups({'filter': query_filter})
 
         if total_count == 0:
-            ERROR_NOT_FOUND(key='parent_project_group_id', value=parent_project_group_id)
+            raise ERROR_NOT_FOUND(key='parent_project_group_id', value=parent_project_group_id)
 
         return parent_project_group_vos[0]
 
@@ -511,3 +521,30 @@ class ProjectGroupService(BaseService):
                 'backend': 'EXTERNAL',
                 'domain_id': domain_id
             }, domain_vo)
+
+    def _get_project_groups_info(self, project_vos):
+        project_groups_info = {}
+        project_group_ids = []
+        for project_vo in project_vos:
+            if project_vo.project_group_id:
+                project_group_ids.append(project_vo.project_group_id)
+
+        pg_vos = self.project_group_mgr.filter_project_groups(project_group_id=project_group_ids)
+        for pg_vo in pg_vos:
+            project_groups_info[pg_vo.project_group_id] = pg_vo
+
+        return project_groups_info
+
+    def _get_parent_project_groups_info(self, project_group_vos):
+        parent_project_groups_info = {}
+        parent_project_group_ids = []
+        for project_group_vo in project_group_vos:
+            if project_group_vo.parent_project_group_id:
+                parent_project_group_ids.append(project_group_vo.parent_project_group_id)
+
+        if len(parent_project_group_ids) > 0:
+            parent_pg_vos = self.project_group_mgr.filter_project_groups(project_group_id=parent_project_group_ids)
+            for parent_pg_vo in parent_pg_vos:
+                parent_project_groups_info[parent_pg_vo.project_group_id] = parent_pg_vo
+
+        return parent_project_groups_info
