@@ -36,9 +36,10 @@ class ProjectGroup(BaseAPI, project_group_pb2_grpc.ProjectGroupServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            project_group_vos, total_count = project_group_svc.list(params)
+            project_group_vos, total_count, parent_project_groups_info = project_group_svc.list(params)
             return self.locator.get_info('ProjectGroupsInfo', project_group_vos, total_count,
-                                         minimal=self.get_minimal(params))
+                                         minimal=self.get_minimal(params),
+                                         parent_project_groups_info=parent_project_groups_info)
 
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)
@@ -77,6 +78,6 @@ class ProjectGroup(BaseAPI, project_group_pb2_grpc.ProjectGroupServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            project_vos, total_count = project_group_svc.list_projects(params)
+            project_vos, total_count, project_groups_info = project_group_svc.list_projects(params)
             return self.locator.get_info('ProjectGroupProjectsInfo', project_vos, total_count,
-                                         minimal=self.get_minimal(params))
+                                         minimal=self.get_minimal(params), project_groups_info=project_groups_info)

@@ -39,9 +39,9 @@ class ServiceAccount(BaseAPI, service_account_pb2_grpc.ServiceAccountServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('ServiceAccountService', metadata) as service_account_svc:
-            service_account_vos, total_count = service_account_svc.list(params)
-            return self.locator.get_info('ServiceAccountsInfo', service_account_vos,
-                                         total_count, minimal=self.get_minimal(params))
+            service_account_vos, total_count, projects_info = service_account_svc.list(params)
+            return self.locator.get_info('ServiceAccountsInfo', service_account_vos, total_count,
+                                         minimal=self.get_minimal(params), projects_info=projects_info)
 
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)

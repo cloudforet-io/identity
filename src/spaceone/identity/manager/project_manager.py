@@ -75,6 +75,9 @@ class ProjectManager(BaseManager):
     def get_project(self, project_id, domain_id, only=None):
         return self.project_model.get(project_id=project_id, domain_id=domain_id, only=only)
 
+    def filter_projects(self, **conditions):
+        return self.project_model.filter(**conditions)
+
     def list_projects(self, query):
         return self.project_model.query(**query)
 
