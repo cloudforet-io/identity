@@ -35,7 +35,7 @@ class AuthorizationManager(BaseManager):
 
         if role_type == 'USER':
             self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
-            self._check_user_scope(user_id, domain_id, request_user_id, require_user_id)
+            self._check_user_scope(user_id, domain_id, role_type, request_user_id, require_user_id)
         else:
             if scope == 'SYSTEM':
                 # Excluding system api checking process
