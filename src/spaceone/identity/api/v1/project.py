@@ -36,9 +36,9 @@ class Project(BaseAPI, project_pb2_grpc.ProjectServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('ProjectService', metadata) as project_svc:
-            project_vos, total_count = project_svc.list(params)
+            project_vos, total_count, project_groups_info = project_svc.list(params)
             return self.locator.get_info('ProjectsInfo', project_vos, total_count,
-                                         minimal=self.get_minimal(params))
+                                         minimal=self.get_minimal(params), project_groups_info=project_groups_info)
 
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)

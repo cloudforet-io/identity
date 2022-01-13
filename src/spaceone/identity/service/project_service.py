@@ -143,9 +143,13 @@ class ProjectService(BaseService):
             results (list): 'list of project_vo'
             total_count (int)
         """
+
         role_type = self.transaction.get_meta('authorization.role_type')
         user_projects = self.transaction.get_meta('authorization.projects')
         query = params.get('query', {})
+
+        if 'only' in query and 'project_group' in query['only']:
+            query['only'].append('project_group_id')
 
         if role_type == 'PROJECT':
             query['filter'].append({
@@ -154,7 +158,9 @@ class ProjectService(BaseService):
                 'o': 'in'
             })
 
-        return self.project_mgr.list_projects(params.get('query', {}))
+        project_vos, total_count = self.project_mgr.list_projects(params.get('query', {}))
+
+        return project_vos, total_count, self._get_project_groups_info(project_vos)
 
     @transaction(append_meta={
         'authorization.scope': 'PROJECT',
@@ -374,3 +380,18 @@ class ProjectService(BaseService):
                 'backend': 'EXTERNAL',
                 'domain_id': domain_id
             }, domain_vo)
+
+    def _get_project_groups_info(self, project_vos):
+        project_group_mgr: ProjectGroupManager = self.locator.get_manager('ProjectGroupManager')
+
+        project_groups_info = {}
+        project_group_ids = []
+        for project_vo in project_vos:
+            if project_vo.project_group_id:
+                project_group_ids.append(project_vo.project_group_id)
+
+        pg_vos = project_group_mgr.filter_project_groups(project_group_id=project_group_ids)
+        for pg_vo in pg_vos:
+            project_groups_info[pg_vo.project_group_id] = pg_vo
+
+        return project_groups_info
