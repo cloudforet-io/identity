@@ -40,6 +40,13 @@ class ExternalTokenManager(JWTManager):
 
         self.is_authenticated = True
 
+        auto_user_sync = self.domain.plugin_info.options.get('auto_user_sync', False)
+
+        if auto_user_sync:
+            _LOGGER.debug("=====")
+            _LOGGER.debug(auth_user_info)
+            _LOGGER.debug("=====")
+
     def issue_token(self, **kwargs):
         if self.is_authenticated is False:
             raise ERROR_NOT_AUTHENTICATED()
