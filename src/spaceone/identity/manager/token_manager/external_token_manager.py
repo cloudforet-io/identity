@@ -36,12 +36,8 @@ class ExternalTokenManager(JWTManager):
         _LOGGER.info(f'[authenticate] Authentication success. (user_id={auth_user_info.get("user_id")})')
 
         auto_user_sync = self.domain.plugin_info.options.get('auto_user_sync', False)
-        if auto_user_sync:
-            _LOGGER.debug("=====")
-            _LOGGER.debug(auth_user_info)
-            _LOGGER.debug("=====")
 
-        self._verify_user_from_plugin_user_info(auth_user_info, domain_id)
+        self._verify_user_from_plugin_user_info(auth_user_info, domain_id, auto_user_sync)
         self._check_user_state()
 
         self.is_authenticated = True
@@ -71,12 +67,22 @@ class ExternalTokenManager(JWTManager):
 
         return self.issue_token(**kwargs)
 
-    def _verify_user_from_plugin_user_info(self, auth_user_info, domain_id):
+    def _verify_user_from_plugin_user_info(self, auth_user_info, domain_id, auto_user_sync=False):
         if 'user_id' not in auth_user_info:
             _LOGGER.error(f'[_verify_user_from_plugin_user_info] does not return user_id from plugin user info.')
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(message='plugin response is invalid.')
 
-        self.user: User = self.user_mgr.get_user(auth_user_info['user_id'], domain_id)
+        user_id = auth_user_info['user_id']
+
+        user_vos = self.user_mgr.filter_users(user_id=user_id, domain_id=domain_id)
+
+        if user_vos.count() > 0:
+            self.user: User = user_vos[0]
+        else:
+            if auto_user_sync:
+                name = auth_user_info.get('name')
+                email = auth_user_info.get('email')
+                self.user: User = self._create_external_user(user_id, domain_id, name, email)
 
     def _authenticate_with_plugin(self, endpoint, credentials):
         options = self.domain.plugin_info.options
@@ -92,3 +98,13 @@ class ExternalTokenManager(JWTManager):
     def _check_user_state(self):
         if self.user.state not in ['ENABLED', 'PENDING']:
             raise ERROR_USER_STATUS_CHECK_FAILURE(user_id=self.user.user_id)
+
+    def _create_external_user(self, user_id, domain_id, name=None, email=None):
+        return self.user_mgr.create_user({
+            'user_id': user_id,
+            'name': name,
+            'email': email,
+            'user_type': 'USER',
+            'backend': 'EXTERNAL',
+            'domain_id': domain_id
+        }, self.domain)
