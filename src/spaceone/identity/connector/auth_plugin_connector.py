@@ -27,9 +27,7 @@ class AuthPluginConnector(BaseConnector):
         e = parse_grpc_endpoint(endpoint)
         self.client = pygrpc.client(endpoint=e['endpoint'], ssl_enabled=e['ssl_enabled'])
 
-    def call_login(self, endpoint, credentials, options, secret_data, schema=None):
-        self.initialize(endpoint)
-
+    def call_login(self, credentials, options, secret_data, schema=None):
         params = {
             'options': options,
             'secret_data': secret_data,
