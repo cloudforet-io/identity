@@ -3,6 +3,7 @@ from datetime import datetime
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_user import ERROR_USER_STATUS_CHECK_FAILURE
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.token_manager import JWTManager
 from spaceone.identity.manager.domain_manager import DomainManager
@@ -88,7 +89,11 @@ class ExternalTokenManager(JWTManager):
         options = self.domain.plugin_info.options
 
         auth_plugin_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
-        return auth_plugin_conn.call_login(endpoint, credentials, options, {})
+        auth_plugin_conn.initialize(endpoint)
+
+        secret_data, schema = self._get_auth_plugin_secret(self.domain.to_dict())
+
+        return auth_plugin_conn.call_login(credentials, options, secret_data, schema)
 
     def _check_domain_state(self):
         if not self.domain.plugin_info:
@@ -109,3 +114,21 @@ class ExternalTokenManager(JWTManager):
             'backend': 'EXTERNAL',
             'domain_id': domain_id
         }, self.domain)
+
+    def _get_auth_plugin_secret(self, domain_data):
+        """
+        Return: (secret_data, schema)
+                Default: ({}, None)
+        """
+        domain_id = domain_data['domain_id']
+        plugin_info = domain_data.get('plugin_info', {})
+        secret_id = plugin_info.get('secret_id')
+
+        if secret_id is None:
+            return {}, None
+
+        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
+        secret = secret_connector.dispatch('Secret.get', {'secret_id': secret_id, 'domain_id': domain_id})
+        secret_data = secret_connector.dispatch('Secret.get_data', {'secret_id': secret_id, 'domain_id': domain_id})
+
+        return secret_data.get('data', {}), secret_data.get('schema')
