@@ -46,7 +46,16 @@ class UserService(BaseService):
         domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
         domain_vo: Domain = domain_mgr.get_domain(domain_id)
 
+        default_language = self._get_default_config(domain, 'LANGUAGE')
+        default_timezone = self._get_default_config(domain, 'TIMEZONE')
+
         self._check_user_type_and_backend(params['user_type'], params['backend'], domain_vo)
+
+        if 'language' not in params:
+            params['language'] = default_language
+
+        if 'timezone' not in params:
+            params['timezone'] = default_timezone
 
         if 'tags' in params:
             params['tags'] = utils.dict_to_tags(params['tags'])
@@ -236,6 +245,17 @@ class UserService(BaseService):
 
         query = params.get('query', {})
         return self.user_mgr.stat_users(query)
+
+    @staticmethod
+    def _get_default_config(vo, item):
+        DEFAULT = {
+            'TIMEZONE': 'UTC',
+            'LANGUAGE': 'en'
+        }
+        dict_domain = vo.to_dict()
+        config = dict_domain.get('config', {})
+        value = config.get(item, DEFAULT.get(item, None))
+        return value
 
     @staticmethod
     def _check_timezone(timezone):
