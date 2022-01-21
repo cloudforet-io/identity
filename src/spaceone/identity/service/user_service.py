@@ -46,8 +46,8 @@ class UserService(BaseService):
         domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
         domain_vo: Domain = domain_mgr.get_domain(domain_id)
 
-        default_language = self._get_default_config(domain, 'LANGUAGE')
-        default_timezone = self._get_default_config(domain, 'TIMEZONE')
+        default_language = self._get_default_config(domain_vo, 'LANGUAGE')
+        default_timezone = self._get_default_config(domain_vo, 'TIMEZONE')
 
         self._check_user_type_and_backend(params['user_type'], params['backend'], domain_vo)
 
