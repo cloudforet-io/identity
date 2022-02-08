@@ -101,6 +101,9 @@ class ExternalTokenManager(JWTManager):
         if self.user.state not in ['ENABLED', 'PENDING']:
             raise ERROR_USER_STATUS_CHECK_FAILURE(user_id=self.user.user_id)
 
+        if self.user.backend != 'EXTERNAL':
+            raise ERROR_NOT_FOUND(key='user_id', value=self.user.user_id)
+
     def _create_external_user(self, user_id, domain_id, name=None, email=None):
         _LOGGER.error(f'[_create_external_user] create user on first login: {user_id}')
         return self.user_mgr.create_user({

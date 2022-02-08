@@ -70,3 +70,6 @@ class LocalTokenManager(JWTManager):
 
         if self.user.state != 'ENABLED':
             raise ERROR_USER_STATUS_CHECK_FAILURE(user_id=self.user.user_id)
+
+        if self.user.backend != 'LOCAL':
+            raise ERROR_NOT_FOUND(key='user_id', value=self.user.user_id)
