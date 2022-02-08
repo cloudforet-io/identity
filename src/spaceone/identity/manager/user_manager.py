@@ -20,7 +20,7 @@ class UserManager(BaseManager):
         super().__init__(transaction)
         self.user_model: User = self.locator.get_model('User')
 
-    def create_user(self, params, domain_vo: Domain):
+    def create_user(self, params, domain_vo: Domain, is_first_login_user=False):
         def _rollback(user_vo):
             _LOGGER.info(f'[create_user._rollback] Delete user : {user_vo.name} ({user_vo.user_id})')
             user_vo.delete()
@@ -29,30 +29,31 @@ class UserManager(BaseManager):
 
         # If user create external authentication, call find action.
         if params['backend'] == 'EXTERNAL':
-            found_users, count = self.find_user(
-                {
-                    'user_id': params['user_id']
-                },
-                domain_vo
-            )
+            if not is_first_login_user:
+                found_users, count = self.find_user(
+                    {
+                        'user_id': params['user_id']
+                    },
+                    domain_vo
+                )
 
-            if count == 1:
-                found_user = found_users[0]
-                if found_user.get('state') in ['ENABLED', 'DISABLED']:
-                    params['state'] = found_user['state']
+                if count == 1:
+                    found_user = found_users[0]
+                    if found_user.get('state') in ['ENABLED', 'DISABLED']:
+                        params['state'] = found_user['state']
+                    else:
+                        params['state'] = 'PENDING'
+
+                        if 'name' not in params:
+                            params['name'] = found_user.get('name')
+
+                        if 'email' not in params:
+                            params['email'] = found_user.get('email')
+
+                elif count > 1:
+                    raise ERROR_TOO_MANY_USERS_IN_EXTERNAL_AUTH(user_id=params['user_id'])
                 else:
-                    params['state'] = 'PENDING'
-
-                    if 'name' not in params:
-                        params['name'] = found_user.get('name')
-
-                    if 'email' not in params:
-                        params['email'] = found_user.get('email')
-
-            elif count > 1:
-                raise ERROR_TOO_MANY_USERS_IN_EXTERNAL_AUTH(user_id=params['user_id'])
-            else:
-                raise ERROR_NOT_FOUND_USER_IN_EXTERNAL_AUTH(user_id=params['user_id'])
+                    raise ERROR_NOT_FOUND_USER_IN_EXTERNAL_AUTH(user_id=params['user_id'])
 
         else:
             if params['user_type'] == 'API_USER':
