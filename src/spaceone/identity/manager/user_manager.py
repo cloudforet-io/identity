@@ -46,11 +46,11 @@ class UserManager(BaseManager):
                     else:
                         params['state'] = 'PENDING'
 
-                        if 'name' not in params:
-                            params['name'] = found_user.get('name')
+                    if 'name' not in params:
+                        params['name'] = found_user.get('name')
 
-                        if 'email' not in params:
-                            params['email'] = found_user.get('email')
+                    if 'email' not in params:
+                        params['email'] = found_user.get('email')
 
                 elif count > 1:
                     raise ERROR_TOO_MANY_USERS_IN_EXTERNAL_AUTH(user_id=params['user_id'])
