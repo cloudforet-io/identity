@@ -83,6 +83,8 @@ class ExternalTokenManager(JWTManager):
                 name = auth_user_info.get('name')
                 email = auth_user_info.get('email')
                 self.user: User = self._create_external_user(user_id, domain_id, name, email)
+            else:
+                raise ERROR_NOT_FOUND(key='user_id', value=user_id)
 
     def _authenticate_with_plugin(self, endpoint, credentials):
         options = self.domain.plugin_info.options
