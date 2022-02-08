@@ -73,6 +73,7 @@ class ExternalTokenManager(JWTManager):
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(message='plugin response is invalid.')
 
         user_id = auth_user_info['user_id']
+        state = auth_user_info.get('state', 'ENABLED')
 
         user_vos = self.user_mgr.filter_users(user_id=user_id, domain_id=domain_id)
 
@@ -82,7 +83,7 @@ class ExternalTokenManager(JWTManager):
             if auto_user_sync:
                 name = auth_user_info.get('name')
                 email = auth_user_info.get('email')
-                self.user: User = self._create_external_user(user_id, domain_id, name, email)
+                self.user: User = self._create_external_user(user_id, state, domain_id, name, email)
             else:
                 raise ERROR_NOT_FOUND(key='user_id', value=user_id)
 
@@ -106,13 +107,14 @@ class ExternalTokenManager(JWTManager):
         if self.user.backend != 'EXTERNAL':
             raise ERROR_NOT_FOUND(key='user_id', value=self.user.user_id)
 
-    def _create_external_user(self, user_id, domain_id, name=None, email=None):
+    def _create_external_user(self, user_id, state, domain_id, name=None, email=None):
         _LOGGER.error(f'[_create_external_user] create user on first login: {user_id}')
         return self.user_mgr.create_user({
             'user_id': user_id,
+            'state': state,
             'name': name,
             'email': email,
             'user_type': 'USER',
             'backend': 'EXTERNAL',
             'domain_id': domain_id
-        }, self.domain)
+        }, self.domain, is_first_login_user=True)
