@@ -39,6 +39,8 @@ class UserManager(BaseManager):
 
                 if count == 1:
                     found_user = found_users[0]
+                    _LOGGER.debug(f'[create_user] found user: {found_user}')
+
                     if found_user.get('state') in ['ENABLED', 'DISABLED']:
                         params['state'] = found_user['state']
                     else:
