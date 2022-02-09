@@ -72,8 +72,18 @@ class UserManager(BaseManager):
                 hashed_pw = PasswordCipher().hashpw(password)
                 params['password'] = hashed_pw
 
-        params['name'] = params.get('name', '').strip()
-        params['email'] = params.get('email', '').strip()
+        user_name = params.get('name')
+        user_email = params.get('email')
+
+        if user_name:
+            params['name'] = user_name.strip()
+        else:
+            params['name'] = ''
+
+        if user_email:
+            params['email'] = user_email.strip()
+        else:
+            params['email'] = ''
 
         user_vo = self.user_model.create(params)
 
