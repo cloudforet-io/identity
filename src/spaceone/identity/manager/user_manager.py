@@ -72,6 +72,9 @@ class UserManager(BaseManager):
                 hashed_pw = PasswordCipher().hashpw(password)
                 params['password'] = hashed_pw
 
+        params['name'] = params.get('name', '').strip()
+        params['email'] = params.get('email', '').strip()
+
         user_vo = self.user_model.create(params)
 
         self.transaction.add_rollback(_rollback, user_vo)
