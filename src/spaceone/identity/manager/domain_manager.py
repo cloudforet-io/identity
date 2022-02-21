@@ -3,6 +3,7 @@ import logging
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.identity.error.error_domain import *
 from spaceone.identity.connector import AuthPluginConnector
 from spaceone.identity.model.domain_model import Domain
 
@@ -119,6 +120,9 @@ class DomainManager(BaseManager):
         If options exists, it should be complete content.
         """
         domain_vo: Domain = self.get_domain(domain_id)
+
+        if domain_vo.plugin_info is None:
+            raise ERROR_PLUGIN_IS_NOT_SET()
 
         plugin_info = domain_vo.plugin_info.to_dict()
 
