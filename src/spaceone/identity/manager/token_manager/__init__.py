@@ -76,9 +76,6 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         private_jwk = self._get_private_jwk(kwargs)
         timeout = kwargs.get('timeout', self.CONST_TOKEN_TIMEOUT)
 
-        if user_id == 'sylocal@mz.co.kr':
-            timeout = 60
-
         payload = {
             'cat': 'ACCESS_TOKEN',
             'user_type': user_type,
@@ -96,9 +93,6 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         ttl = kwargs.get('ttl', self.CONST_REFRESH_TTL)
         timeout = kwargs.get('timeout', self.CONST_REFRESH_TIMEOUT)
         refresh_key = self._generate_refresh_key()
-
-        if user_id == 'sylocal@mz.co.kr':
-            timeout = 120
 
         payload = {
             'cat': 'REFRESH_TOKEN',
