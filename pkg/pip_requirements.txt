@@ -2,7 +2,7 @@ spaceone-core
 spaceone-api
 mongoengine
 langcodes
-bcrypt==3.1.6
+bcrypt
 redis
 jinja2
 fakeredis
