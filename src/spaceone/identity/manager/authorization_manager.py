@@ -27,11 +27,16 @@ class AuthorizationManager(BaseManager):
 
     @cache.cacheable(key='user-scopes:{domain_id}:{user_id}:{scope}:{role_type}:{request_domain_id}:'
                          '{request_project_id}:{request_project_group_id}:{projects}:{project_groups}:'
-                         '{request_user_id}:{require_project_id}:{require_project_group_id}:{require_user_id}',
+                         '{request_user_id}:{require_project_id}:{require_project_group_id}:{require_user_id}:'
+                         '{require_domain_id}',
                      expire=3600)
     def check_scope_by_role_type(self, user_id, domain_id, scope, role_type, projects, project_groups,
                                  request_domain_id, request_project_id, request_project_group_id, request_user_id,
-                                 require_project_id, require_project_group_id, require_user_id):
+                                 require_project_id, require_project_group_id, require_user_id, require_domain_id):
+
+        if role_type != 'SYSTEM':
+            if require_domain_id and request_domain_id is None:
+                raise ERROR_PERMISSION_DENIED()
 
         if role_type == 'USER':
             self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
