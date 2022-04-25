@@ -256,6 +256,47 @@ DEFAULT_PROVIDERS = [{
             'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/spaceone.svg'
         }
     ]
+}, {
+    "provider": "openstack",
+    "name": "OpenStack",
+    "template": {
+        "service_account": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "title": "Username",
+                        "type": "string",
+                        "minLength": 4
+                    },
+                    "project_id": {
+                        "title": "Project ID",
+                        "type": "string",
+                        "minLength": 4
+                    }
+                },
+                "required": ["username", "project_id"]
+            }
+        }
+    },
+    "metadata": {
+        "view": {
+            "layouts": {
+            }
+        }
+    },
+    "capability": {
+        "supported_schema": ["openstack_credentials"]
+    },
+    "tags": [
+        {
+            'key': 'color',
+            'value': '#EE1142'
+        }, {
+            'key': 'icon',
+            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/openstack.svg'
+        }
+    ]
 }]
 
 # }, {
@@ -726,6 +767,76 @@ oci_api_key = {
         {
             'key': 'description',
             'value': "Oracle Cloud Infrastructure Access Configuration"
+        }
+    ]
+}
+
+openstack_credentials = {
+    "name": "openstack_credentials",
+    "service_type": "secret.credentials",
+    "schema": {
+        "required": [
+            "username",
+            "password",
+            "region_name",
+            "interface",
+            "identity_api_version",
+            "auth_url",
+            "user_domain_name",
+            "project_id"
+        ],
+        "properties": {
+            "username": {
+                "title": "Username",
+                "type": "string",
+                "minLength": 4
+            },
+            "password": {
+                "title": "Password",
+                "type": "string",
+                "minLength": 4
+            },
+            "region_name": {
+                "title": "Region",
+                "type": "string",
+                "minLength": 1
+            },
+            "interface": {
+                "title": "API Interface",
+                "type": "string",
+                "minLength": 1,
+                "default": "public"
+            },
+            "identity_api_version": {
+                "title": "Identity API Version",
+                "type": "string",
+                "minLength": 1,
+                "default": "3"
+            },
+            "auth_url": {
+                "title": "Auth URL",
+                "type": "string",
+                "minLength": 4
+            },
+            "user_domain_name": {
+                "title": "Domain",
+                "type": "string",
+                "minLength": 1,
+                "default": "Default"
+            },
+            "project_id": {
+                "title": "Project ID",
+                "type": "string",
+                "minLength": 4
+            }
+        },
+        "type": "object"
+    },
+    "labels": ["OpenStack"],
+    "tags": [
+        {
+            "key": "description",
+            "value": "OpenStack Credentials"
         }
     ]
 }
