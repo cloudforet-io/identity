@@ -6,6 +6,7 @@ from spaceone.core.model.mongo_model import MongoModel
 class RolePolicy(EmbeddedDocument):
     policy_type = StringField(max_length=20, choices=('MANAGED', 'CUSTOM'))
     policy = ReferenceField('Policy')
+    policy_id = StringField(max_length=40)
 
 
 class RoleTag(EmbeddedDocument):
@@ -33,6 +34,9 @@ class Role(MongoModel):
             'name',
             'role_type'
         ],
+        'change_query_keys': {
+            'policy_id': 'policies.policy_id'
+        },
         'ordering': ['name'],
         'indexes': [
             'role_id',

@@ -10,13 +10,30 @@ __all__ = ['RoleInfo', 'RolesInfo']
 def RolePolicyInfo(role_policy_vo: RolePolicy):
     role_policy_info = {
         'policy_type': role_policy_vo.policy_type,
-        'policy_id': role_policy_vo.policy.policy_id
+        'policy_id': role_policy_vo.policy_id
     }
 
     return role_policy_info
 
 
 def RoleInfo(role_vo: Role, minimal=False):
+    # Temporary Code for Migration
+    policies = []
+    is_changed = False
+    for policy_vo in role_vo.policies:
+        if not policy_vo.policy_id:
+            policy_vo.policy_id = policy_vo.policy.policy_id
+            is_changed = True
+
+        policies.append({
+            'policy_type': policy_vo.policy_type,
+            'policy': policy_vo.policy,
+            'policy_id': policy_vo.policy_id
+        })
+
+    if is_changed:
+        role_vo = role_vo.update({'policies': policies})
+
     info = {
         'role_id': role_vo.role_id,
         'name': role_vo.name,
