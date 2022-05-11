@@ -2,7 +2,7 @@ import functools
 from spaceone.api.identity.v1 import role_pb2
 from spaceone.core.pygrpc.message_type import *
 from spaceone.core import utils
-from spaceone.identity.model.role_model import Role, RolePolicy
+from spaceone.identity.model.role_model import Role, RolePolicy, PagePermission
 
 __all__ = ['RoleInfo', 'RolesInfo']
 
@@ -14,6 +14,15 @@ def RolePolicyInfo(role_policy_vo: RolePolicy):
     }
 
     return role_policy_info
+
+
+def PagePermissionInfo(page_perm_vo: PagePermission):
+    page_perm_info = {
+        'page': page_perm_vo.page,
+        'permission': page_perm_vo.permission
+    }
+
+    return page_perm_info
 
 
 def RoleInfo(role_vo: Role, minimal=False):
@@ -43,6 +52,7 @@ def RoleInfo(role_vo: Role, minimal=False):
     if not minimal:
         info.update({
             'policies': list(map(lambda policy: RolePolicyInfo(policy), role_vo.policies)),
+            'page_permissions': list(map(lambda page_perm_vo: PagePermissionInfo(page_perm_vo), role_vo.page_permissions)),
             'tags': change_struct_type(utils.tags_to_dict(role_vo.tags)),
             'domain_id': role_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(role_vo.created_at)

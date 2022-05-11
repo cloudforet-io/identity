@@ -23,6 +23,7 @@ class RoleService(BaseService):
                 'name': 'str',
                 'role_type': 'str',
                 'policies': 'list',
+                'page_permissions': 'list',
                 'tags': 'dict',
                 'domain_id': 'str'
             }
@@ -48,13 +49,20 @@ class RoleService(BaseService):
                 'role_id': 'str',
                 'name': 'str',
                 'policies': 'list',
+                'page_permissions': 'list',
                 'tags': 'dict',
+                'release_page_permissions': 'bool',
                 'domain_id': 'str'
             }
 
         Returns:
             role_vo (object)
         """
+
+        release_page_permissions = params.get('release_page_permissions', False)
+
+        if release_page_permissions:
+            params['page_permissions'] = []
 
         if 'policies' in params:
             params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
