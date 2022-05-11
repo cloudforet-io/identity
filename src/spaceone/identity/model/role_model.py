@@ -6,11 +6,23 @@ from spaceone.core.model.mongo_model import MongoModel
 class RolePolicy(EmbeddedDocument):
     policy_type = StringField(max_length=20, choices=('MANAGED', 'CUSTOM'))
     policy = ReferenceField('Policy')
+    policy_id = StringField(max_length=40)
+
+    def to_dict(self):
+        return dict(self.to_mongo())
 
 
 class RoleTag(EmbeddedDocument):
     key = StringField(max_length=255)
     value = StringField(max_length=255)
+
+
+class PagePermission(EmbeddedDocument):
+    page = StringField(max_length=255, required=True)
+    permission = StringField(max_length=20, choices=('VIEW', 'MANAGE'))
+
+    def to_dict(self):
+        return dict(self.to_mongo())
 
 
 class Role(MongoModel):
@@ -19,6 +31,7 @@ class Role(MongoModel):
     role_type = StringField(max_length=20, choices=('SYSTEM', 'DOMAIN', 'PROJECT'))
     tags = ListField(EmbeddedDocumentField(RoleTag))
     policies = ListField(EmbeddedDocumentField(RolePolicy))
+    page_permissions = ListField(EmbeddedDocumentField(PagePermission), default=[])
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -26,6 +39,7 @@ class Role(MongoModel):
         'updatable_fields': [
             'name',
             'policies',
+            'page_permissions',
             'tags'
         ],
         'minimal_fields': [
@@ -33,6 +47,9 @@ class Role(MongoModel):
             'name',
             'role_type'
         ],
+        'change_query_keys': {
+            'policy_id': 'policies.policy_id'
+        },
         'ordering': ['name'],
         'indexes': [
             'role_id',

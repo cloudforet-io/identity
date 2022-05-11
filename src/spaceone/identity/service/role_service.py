@@ -23,6 +23,7 @@ class RoleService(BaseService):
                 'name': 'str',
                 'role_type': 'str',
                 'policies': 'list',
+                'page_permissions': 'list',
                 'tags': 'dict',
                 'domain_id': 'str'
             }
@@ -48,13 +49,20 @@ class RoleService(BaseService):
                 'role_id': 'str',
                 'name': 'str',
                 'policies': 'list',
+                'page_permissions': 'list',
                 'tags': 'dict',
+                'release_page_permissions': 'bool',
                 'domain_id': 'str'
             }
 
         Returns:
             role_vo (object)
         """
+
+        release_page_permissions = params.get('release_page_permissions', False)
+
+        if release_page_permissions:
+            params['page_permissions'] = []
 
         if 'policies' in params:
             params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
@@ -101,7 +109,7 @@ class RoleService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    @append_query_filter(['role_id', 'name', 'role_type', 'domain_id'])
+    @append_query_filter(['role_id', 'name', 'role_type', 'policy_id', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['role_id', 'name'])
     def list(self, params):
@@ -151,10 +159,8 @@ class RoleService(BaseService):
         for policy in policies:
             if policy['policy_type'] == 'MANAGED':
                 policy['policy'] = policy_mgr.get_managed_policy(policy['policy_id'], domain_id)
-                del policy['policy_id']
             elif policy['policy_type'] == 'CUSTOM':
                 policy['policy'] = policy_mgr.get_policy(policy['policy_id'], domain_id)
-                del policy['policy_id']
             change_policies.append(policy)
 
         return change_policies

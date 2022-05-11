@@ -828,6 +828,11 @@ openstack_credentials = {
                 "title": "Project ID",
                 "type": "string",
                 "minLength": 4
+            },
+            "dashboard_url": {
+                "title": "Dashboard URL",
+                "type": "string",
+                "minLength": 4
             }
         },
         "type": "object"
