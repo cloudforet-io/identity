@@ -45,7 +45,8 @@ class Role(MongoModel):
         'minimal_fields': [
             'role_id',
             'name',
-            'role_type'
+            'role_type',
+            'page_permissions'
         ],
         'change_query_keys': {
             'policy_id': 'policies.policy_id'
