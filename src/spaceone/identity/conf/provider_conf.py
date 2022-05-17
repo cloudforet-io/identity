@@ -265,17 +265,11 @@ DEFAULT_PROVIDERS = [{
                 "type": "object",
                 "properties": {
                     "username": {
-                        "title": "Username",
-                        "type": "string",
-                        "minLength": 4
-                    },
-                    "project_id": {
-                        "title": "Project ID",
+                        "title": "Description",
                         "type": "string",
                         "minLength": 4
                     }
-                },
-                "required": ["username", "project_id"]
+                }
             }
         }
     },
@@ -779,22 +773,19 @@ openstack_credentials = {
             "username",
             "password",
             "region_name",
-            "interface",
-            "identity_api_version",
             "auth_url",
-            "user_domain_name",
             "project_id"
         ],
         "properties": {
             "username": {
                 "title": "Username",
                 "type": "string",
-                "minLength": 4
+                "minLength": 1
             },
             "password": {
                 "title": "Password",
                 "type": "string",
-                "minLength": 4
+                "minLength": 1
             },
             "region_name": {
                 "title": "Region",
@@ -805,34 +796,41 @@ openstack_credentials = {
                 "title": "API Interface",
                 "type": "string",
                 "minLength": 1,
-                "default": "public"
+                "examples": ["public"]
             },
             "identity_api_version": {
                 "title": "Identity API Version",
                 "type": "string",
                 "minLength": 1,
-                "default": "3"
+                "examples": ["3"]
             },
             "auth_url": {
                 "title": "Auth URL",
                 "type": "string",
-                "minLength": 4
+                "minLength": 1
             },
             "user_domain_name": {
                 "title": "Domain",
                 "type": "string",
                 "minLength": 1,
-                "default": "Default"
+                "examples": ["Default"]
             },
             "project_id": {
                 "title": "Project ID",
                 "type": "string",
-                "minLength": 4
+                "minLength": 1
             },
             "dashboard_url": {
                 "title": "Dashboard URL",
                 "type": "string",
-                "minLength": 4
+                "minLength": 1
+            },
+            "all_projects": {
+                "title": "All Projects",
+                "type": "string",
+                "enum": ["true", "false"],
+                "minLength": 4,
+                "examples": ["true"]
             }
         },
         "type": "object"
