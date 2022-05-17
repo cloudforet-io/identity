@@ -46,13 +46,13 @@ def RoleInfo(role_vo: Role, minimal=False):
     info = {
         'role_id': role_vo.role_id,
         'name': role_vo.name,
-        'role_type': role_vo.role_type
+        'role_type': role_vo.role_type,
+        'page_permissions': list(map(lambda page_perm_vo: PagePermissionInfo(page_perm_vo), role_vo.page_permissions))
     }
 
     if not minimal:
         info.update({
             'policies': list(map(lambda policy: RolePolicyInfo(policy), role_vo.policies)),
-            'page_permissions': list(map(lambda page_perm_vo: PagePermissionInfo(page_perm_vo), role_vo.page_permissions)),
             'tags': change_struct_type(utils.tags_to_dict(role_vo.tags)),
             'domain_id': role_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(role_vo.created_at)
