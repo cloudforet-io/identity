@@ -226,73 +226,73 @@ DEFAULT_PROVIDERS = [{
             'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
         }
     ]
-}, {
-    "provider": "spaceone",
-    "name": "SpaceONE",
-    "template": {
-        "service_account": {
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "user_id": {
-                        "title": "User ID",
-                        "type": "string",
-                        "minLength": 4
-                    }
-                },
-                "required": ["user_id"]
-            }
-        }
-    },
-    "capability": {
-        "supported_schema": ["spaceone_api_key"]
-    },
-    "tags": [
-        {
-            'key': 'color',
-            'value': '#6638B6'
-        }, {
-            'key': 'icon',
-            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/spaceone.svg'
-        }
-    ]
-}, {
-    "provider": "openstack",
-    "name": "OpenStack",
-    "template": {
-        "service_account": {
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "username": {
-                        "title": "Description",
-                        "type": "string",
-                        "minLength": 4
-                    }
-                }
-            }
-        }
-    },
-    "metadata": {
-        "view": {
-            "layouts": {
-            }
-        }
-    },
-    "capability": {
-        "supported_schema": ["openstack_credentials"]
-    },
-    "tags": [
-        {
-            'key': 'color',
-            'value': '#EE1142'
-        }, {
-            'key': 'icon',
-            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/openstack.svg'
-        }
-    ]
 }]
 
+# }, {
+#     "provider": "spaceone",
+#     "name": "SpaceONE",
+#     "template": {
+#         "service_account": {
+#             "schema": {
+#                 "type": "object",
+#                 "properties": {
+#                     "user_id": {
+#                         "title": "User ID",
+#                         "type": "string",
+#                         "minLength": 4
+#                     }
+#                 },
+#                 "required": ["user_id"]
+#             }
+#         }
+#     },
+#     "capability": {
+#         "supported_schema": ["spaceone_api_key"]
+#     },
+#     "tags": [
+#         {
+#             'key': 'color',
+#             'value': '#6638B6'
+#         }, {
+#             'key': 'icon',
+#             'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/spaceone.svg'
+#         }
+#     ]
+# }, {
+#     "provider": "openstack",
+#     "name": "OpenStack",
+#     "template": {
+#         "service_account": {
+#             "schema": {
+#                 "type": "object",
+#                 "properties": {
+#                     "username": {
+#                         "title": "Description",
+#                         "type": "string",
+#                         "minLength": 4
+#                     }
+#                 }
+#             }
+#         }
+#     },
+#     "metadata": {
+#         "view": {
+#             "layouts": {
+#             }
+#         }
+#     },
+#     "capability": {
+#         "supported_schema": ["openstack_credentials"]
+#     },
+#     "tags": [
+#         {
+#             'key': 'color',
+#             'value': '#EE1142'
+#         }, {
+#             'key': 'icon',
+#             'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/openstack.svg'
+#         }
+#     ]
 # }, {
 #     "provider": "alibaba_cloud",
 #     "name": "Alibaba Cloud",
@@ -433,7 +433,6 @@ DEFAULT_PROVIDERS = [{
 #             'value': 'https://www.oracle.com/kr/cloud/sign-in.html'
 #         }
 #     ]
-# }]
 
 aws_access_key = {
     "name": "aws_access_key",
