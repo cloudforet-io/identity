@@ -45,7 +45,7 @@ class User(MongoModel):
             'user_type',
             'backend',
             'last_accessed_at',
-            ('user_id', 'domain_id'),
+            # ('user_id', 'domain_id'),
             ('tags.key', 'tags.value')
         ]
     }

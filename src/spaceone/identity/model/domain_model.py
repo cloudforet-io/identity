@@ -48,7 +48,7 @@ class Domain(MongoModel):
         ],
         'ordering': ['name'],
         'indexes': [
-            'domain_id',
+            # 'domain_id',
             'state',
             ('tags.key', 'tags.value')
         ]

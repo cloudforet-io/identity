@@ -57,7 +57,7 @@ class RoleBinding(MongoModel):
         },
         'ordering': ['resource_type', 'resource_id'],
         'indexes': [
-            'role_binding_id',
+            # 'role_binding_id',
             'resource_type',
             'resource_id',
             'role',

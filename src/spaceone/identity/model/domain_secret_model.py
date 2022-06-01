@@ -22,7 +22,7 @@ class DomainSecret(MongoModel):
         ],
         'ordering': ['domain_id'],
         'indexes': [
-            'domain_id',
+            # 'domain_id',
             'domain'
         ]
     }
