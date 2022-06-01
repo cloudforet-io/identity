@@ -27,7 +27,7 @@ class APIKey(MongoModel):
         },
         'ordering': ['api_key_id'],
         'indexes': [
-            'api_key_id',
+            # 'api_key_id',
             'state',
             'user_id',
             'domain_id',

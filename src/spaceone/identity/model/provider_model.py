@@ -30,7 +30,7 @@ class Provider(MongoModel):
         ],
         'ordering': ['created_at'],
         'indexes': [
-            'provider',
+            # 'provider',
             ('tags.key', 'tags.value')
         ]
     }

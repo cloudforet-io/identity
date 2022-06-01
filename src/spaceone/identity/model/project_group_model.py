@@ -36,7 +36,7 @@ class ProjectGroup(MongoModel):
         },
         'ordering': ['name'],
         'indexes': [
-            'project_group_id',
+            # 'project_group_id',
             'parent_project_group',
             'parent_project_group_id',
             'domain_id',

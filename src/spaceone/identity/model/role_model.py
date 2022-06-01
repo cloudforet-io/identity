@@ -53,7 +53,7 @@ class Role(MongoModel):
         },
         'ordering': ['name'],
         'indexes': [
-            'role_id',
+            # 'role_id',
             'role_type',
             'domain_id',
             ('tags.key', 'tags.value')
