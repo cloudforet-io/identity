@@ -110,9 +110,15 @@ class UserService(BaseService):
             user_vo (object)
         """
 
+        new_actions = params['actions']
+
         user_vo: User = self.user_mgr.get_user(params['user_id'], params['domain_id'])
 
-        required_actions = list(set(user_vo.required_actions + params['actions']))
+        if 'UPDATE_PASSWORD' in new_actions:
+            if user_vo.backend == 'EXTERNAL' or user_vo.user_type == 'API_USER':
+                raise ERROR_NOT_ALLOWED_ACTIONS(action='UPDATE_PASSWORD')
+
+        required_actions = list(set(user_vo.required_actions + new_actions))
 
         return self.user_mgr.update_user_by_vo({'required_actions': required_actions}, user_vo)
 

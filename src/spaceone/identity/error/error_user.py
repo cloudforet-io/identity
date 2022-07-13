@@ -27,3 +27,7 @@ class ERROR_INCORRECT_PASSWORD_FORMAT(ERROR_INVALID_ARGUMENT):
 
 class ERROR_INCORRECT_USER_ID_FORMAT(ERROR_INVALID_ARGUMENT):
     _message = 'The user id format is incorrect. (rule = {rule})'
+
+
+class ERROR_NOT_ALLOWED_ACTIONS(ERROR_INVALID_ARGUMENT):
+    _message = 'External or API user are supported for actions. (action = {action})'
