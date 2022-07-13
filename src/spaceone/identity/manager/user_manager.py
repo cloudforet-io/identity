@@ -105,6 +105,12 @@ class UserManager(BaseManager):
             hashed_pw = PasswordCipher().hashpw(params['password'])
             params['password'] = hashed_pw
 
+            required_actions = list(user_vo.required_actions)
+
+            if 'UPDATE_PASSWORD' in required_actions:
+                required_actions.remove('UPDATE_PASSWORD')
+                params['required_actions'] = required_actions
+
         self.transaction.add_rollback(_rollback, user_vo.to_dict())
 
         return user_vo.update(params)
