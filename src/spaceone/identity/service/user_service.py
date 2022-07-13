@@ -2,7 +2,7 @@ import pytz
 from spaceone.core.service import *
 from spaceone.core import utils
 from spaceone.identity.error.error_user import *
-from spaceone.identity.model import Domain
+from spaceone.identity.model import Domain, User
 from spaceone.identity.manager import UserManager, DomainManager
 
 
@@ -85,6 +85,7 @@ class UserService(BaseService):
         Returns:
             user_vo (object)
         """
+
         if 'tags' in params:
             params['tags'] = utils.dict_to_tags(params['tags'])
 
@@ -92,6 +93,34 @@ class UserService(BaseService):
             self._check_timezone(params['timezone'])
 
         return self.user_mgr.update_user(params)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['user_id', 'actions', 'domain_id'])
+    def set_required_actions(self, params):
+        """ Update user
+
+        Args:
+            params (dict): {
+                'user_id': 'str',
+                'actions': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            user_vo (object)
+        """
+
+        new_actions = params['actions']
+
+        user_vo: User = self.user_mgr.get_user(params['user_id'], params['domain_id'])
+
+        if 'UPDATE_PASSWORD' in new_actions:
+            if user_vo.backend == 'EXTERNAL' or user_vo.user_type == 'API_USER':
+                raise ERROR_NOT_ALLOWED_ACTIONS(action='UPDATE_PASSWORD')
+
+        required_actions = list(set(user_vo.required_actions + new_actions))
+
+        return self.user_mgr.update_user_by_vo({'required_actions': required_actions}, user_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'domain_id'])

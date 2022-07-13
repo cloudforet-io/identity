@@ -19,6 +19,12 @@ class User(BaseAPI, user_pb2_grpc.UserServicer):
         with self.locator.get_service('UserService', metadata) as user_svc:
             return self.locator.get_info('UserInfo', user_svc.update(params))
 
+    def set_required_actions(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('UserService', metadata) as user_svc:
+            return self.locator.get_info('UserInfo', user_svc.set_required_actions(params))
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
 

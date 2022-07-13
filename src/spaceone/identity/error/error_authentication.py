@@ -31,3 +31,7 @@ class ERROR_REFRESH_COUNT(ERROR_AUTHENTICATE_FAILURE):
 
 class ERROR_NOT_FOUND_PRIVATE_KEY(ERROR_AUTHENTICATE_FAILURE):
     _message = 'Private key not found. (purpose = {purpose})'
+
+
+class ERROR_MAX_REFRESH_COUNT(ERROR_AUTHENTICATE_FAILURE):
+    _message = 'The maximum refresh count has been exceeded. (max_refresh_count = {max_refresh_count})'

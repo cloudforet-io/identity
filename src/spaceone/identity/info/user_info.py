@@ -19,6 +19,7 @@ def UserInfo(user_vo: User, minimal=False):
         info.update({
             'email': user_vo.email,
             'backend': user_vo.backend,
+            'required_actions': user_vo.required_actions,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
             'tags': change_struct_type(utils.tags_to_dict(user_vo.tags)),
