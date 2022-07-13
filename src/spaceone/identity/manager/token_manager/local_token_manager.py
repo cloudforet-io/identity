@@ -37,8 +37,11 @@ class LocalTokenManager(JWTManager):
         if self.is_authenticated is False:
             raise ERROR_NOT_AUTHENTICATED()
 
+        permissions = self._get_permissions_from_required_actions()
+
         # Issue token
-        access_token = self.issue_access_token('USER', self.user.user_id, self.user.domain_id, **kwargs)
+        access_token = self.issue_access_token('USER', self.user.user_id, self.user.domain_id,
+                                               permissions=permissions, **kwargs)
         refresh_token = self.issue_refresh_token('USER', self.user.user_id, self.user.domain_id, **kwargs)
 
         # Update user's last_accessed_at field
@@ -55,8 +58,14 @@ class LocalTokenManager(JWTManager):
 
         return self.issue_token(**kwargs)
 
-    # def _check_required_actions(self):
-    #     if self.user.
+    def _get_permissions_from_required_actions(self):
+        if 'UPDATE_PASSWORD' in self.user.required_actions:
+            return [
+                'identity.User.get',
+                'identity.User.update'
+            ]
+
+        return None
 
     @staticmethod
     def _parse_password(credentials):
