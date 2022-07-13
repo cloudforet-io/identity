@@ -92,6 +92,10 @@ class UserManager(BaseManager):
         return user_vo
 
     def update_user(self, params):
+        user_vo: User = self.get_user(params['user_id'], params['domain_id'])
+        return self.update_user_by_vo(params, user_vo)
+
+    def update_user_by_vo(self, params, user_vo):
         def _rollback(old_data):
             _LOGGER.info(f'[update_user._rollback] Revert Data : {old_data["name"], ({old_data["user_id"]})}')
             user_vo.update(old_data)
@@ -101,11 +105,9 @@ class UserManager(BaseManager):
             hashed_pw = PasswordCipher().hashpw(params['password'])
             params['password'] = hashed_pw
 
-        user_vo: User = self.get_user(params['user_id'], params['domain_id'])
         self.transaction.add_rollback(_rollback, user_vo.to_dict())
 
-        user_vo.update(params)
-        return user_vo
+        return user_vo.update(params)
 
     def delete_user(self, user_id, domain_id):
         user_vo = self.get_user(user_id, domain_id)

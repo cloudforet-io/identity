@@ -15,6 +15,7 @@ class User(MongoModel):
     email = StringField(max_length=255, default='')
     user_type = StringField(max_length=20, choices=('USER', 'API_USER'))
     backend = StringField(max_length=20, choices=('LOCAL', 'EXTERNAL'))
+    required_actions = ListField(StringField(choices=('UPDATE_USER',)), default=[])
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='UTC')
     tags = ListField(EmbeddedDocumentField(UserTag))
@@ -28,6 +29,7 @@ class User(MongoModel):
             'name',
             'state',
             'email',
+            'required_actions',
             'language',
             'timezone',
             'tags',
