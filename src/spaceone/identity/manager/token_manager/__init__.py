@@ -74,7 +74,9 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
 
     def issue_access_token(self, user_type, user_id, domain_id, **kwargs):
         private_jwk = self._get_private_jwk(kwargs)
-        timeout = kwargs.get('timeout', self.CONST_TOKEN_TIMEOUT)
+        timeout = kwargs.get('timeout')
+        if timeout is None:
+            timeout = self.CONST_TOKEN_TIMEOUT
 
         payload = {
             'cat': 'ACCESS_TOKEN',
@@ -90,8 +92,15 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
 
     def issue_refresh_token(self, user_type, user_id, domain_id, **kwargs):
         refresh_private_jwk = self._get_refresh_private_jwk(kwargs)
-        ttl = kwargs.get('ttl', self.CONST_REFRESH_TTL)
-        timeout = kwargs.get('timeout', self.CONST_REFRESH_TIMEOUT)
+        ttl = kwargs.get('ttl')
+        timeout = kwargs.get('timeout')
+
+        if ttl is None:
+            ttl = self.CONST_REFRESH_TTL
+
+        if timeout is None:
+            timeout = self.CONST_TOKEN_TIMEOUT
+
         refresh_key = self._generate_refresh_key()
 
         payload = {
@@ -101,7 +110,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
             'aud': user_id,
             'iat': int(time.time()),
             'exp': int(time.time() + timeout),
-            "key": refresh_key,
+            'key': refresh_key,
             'ttl': ttl
         }
 

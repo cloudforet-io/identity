@@ -30,6 +30,8 @@ class TokenService(BaseService):
                 'user_id': 'str',
                 'credentials': 'dict'
                 'user_type': 'str',
+                'timeout': 'int',
+                'refresh_count': 'int',
                 'domain_id': 'str'
             }
 
@@ -43,6 +45,8 @@ class TokenService(BaseService):
         user_id = params.get('user_id')
         user_type = params.get('user_type', 'USER')
         domain_id = params['domain_id']
+        timeout = params.get('timeout')
+        refresh_count = params.get('refresh_count')
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(domain_id=domain_id)
@@ -50,7 +54,8 @@ class TokenService(BaseService):
         token_manager = self._get_token_manager(user_id, user_type, domain_id)
         token_manager.authenticate(user_id, domain_id, params['credentials'])
 
-        return token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk)
+        return token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,
+                                         timeout=timeout, ttl=refresh_count)
 
     @transaction
     def refresh(self, params):
@@ -71,17 +76,18 @@ class TokenService(BaseService):
         if refresh_token is None:
             raise ERROR_INVALID_REFRESH_TOKEN()
 
-        domain_id = _extract_domain_id(refresh_token)
+        domain_id = self._extract_domain_id(refresh_token)
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_public_jwk = self.domain_secret_mgr.get_domain_refresh_public_key(domain_id=domain_id)
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(domain_id=domain_id)
 
-        token_info = _verify_refresh_token(refresh_token, refresh_public_jwk)
+        token_info = self._verify_refresh_token(refresh_token, refresh_public_jwk)
+        timeout = self._get_timeout_from_refresh_token(token_info)
         token_mgr = self._get_token_manager(token_info['user_id'], token_info['user_type'], domain_id)
         token_mgr.check_refreshable(token_info['key'], token_info['ttl'])
 
-        return token_mgr.refresh_token(token_info['user_id'], domain_id, ttl=token_info['ttl']-1,
+        return token_mgr.refresh_token(token_info['user_id'], domain_id, timeout=timeout, ttl=token_info['ttl']-1,
                                        private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk)
 
     def _get_token_manager(self, user_id, user_type, domain_id):
@@ -118,36 +124,42 @@ class TokenService(BaseService):
         if domain_vo.state != 'ENABLED':
             raise ERROR_DOMAIN_STATE(domain_id=domain_vo.domain_id)
 
+    @staticmethod
+    def _extract_domain_id(token):
+        try:
+            decoded = JWTUtil.unverified_decode(token)
+        except Exception as e:
+            _LOGGER.error(f'[_extract_domain_id] {e}')
+            _LOGGER.error(token)
+            raise ERROR_AUTHENTICATE_FAILURE(message='Cannot decode token.')
 
-def _extract_domain_id(token):
-    try:
-        decoded = JWTUtil.unverified_decode(token)
-    except Exception as e:
-        _LOGGER.error(f'[_extract_domain_id] {e}')
-        _LOGGER.error(token)
-        raise ERROR_AUTHENTICATE_FAILURE(message='Cannot decode token.')
+        domain_id = decoded.get('did')
 
-    domain_id = decoded.get('did')
+        if domain_id is None:
+            raise ERROR_AUTHENTICATE_FAILURE(message='Empty domain_id provided.')
 
-    if domain_id is None:
-        raise ERROR_AUTHENTICATE_FAILURE(message='Empty domain_id provided.')
+        return domain_id
 
-    return domain_id
+    @staticmethod
+    def _verify_refresh_token(token, public_jwk):
+        try:
+            decoded = JWTAuthenticator(public_jwk).validate(token)
+        except Exception as e:
+            _LOGGER.error(f'[_verify_refresh_token] {e}')
+            raise ERROR_AUTHENTICATE_FAILURE(message='Token validation failed.')
 
+        if decoded.get('cat') != 'REFRESH_TOKEN':
+            raise ERROR_INVALID_REFRESH_TOKEN()
 
-def _verify_refresh_token(token, public_jwk):
-    try:
-        decoded = JWTAuthenticator(public_jwk).validate(token)
-    except Exception as e:
-        _LOGGER.error(f'[_verify_refresh_token] {e}')
-        raise ERROR_AUTHENTICATE_FAILURE(message='Token validation failed.')
+        return {
+            'user_id': decoded['aud'],
+            'user_type': decoded['user_type'],
+            'key': decoded['key'],
+            'ttl': decoded['ttl'],
+            'iat': decoded['iat'],
+            'exp': decoded['exp']
+        }
 
-    if decoded.get('cat') != 'REFRESH_TOKEN':
-        raise ERROR_INVALID_REFRESH_TOKEN()
-
-    return {
-        'user_id': decoded['aud'],
-        'user_type': decoded['user_type'],
-        'key': decoded['key'],
-        'ttl': decoded['ttl']
-    }
+    @staticmethod
+    def _get_timeout_from_refresh_token(token_info):
+        return token_info['exp'] - token_info['iat']
