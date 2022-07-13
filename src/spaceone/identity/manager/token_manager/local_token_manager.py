@@ -55,6 +55,9 @@ class LocalTokenManager(JWTManager):
 
         return self.issue_token(**kwargs)
 
+    # def _check_required_actions(self):
+    #     if self.user.
+
     @staticmethod
     def _parse_password(credentials):
         pw_to_check = credentials.get('password', None)
