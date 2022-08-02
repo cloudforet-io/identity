@@ -83,11 +83,10 @@ class TokenService(BaseService):
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(domain_id=domain_id)
 
         token_info = self._verify_refresh_token(refresh_token, refresh_public_jwk)
-        timeout = self._get_timeout_from_refresh_token(token_info)
         token_mgr = self._get_token_manager(token_info['user_id'], token_info['user_type'], domain_id)
         token_mgr.check_refreshable(token_info['key'], token_info['ttl'])
 
-        return token_mgr.refresh_token(token_info['user_id'], domain_id, timeout=timeout, ttl=token_info['ttl']-1,
+        return token_mgr.refresh_token(token_info['user_id'], domain_id, ttl=token_info['ttl']-1,
                                        private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk)
 
     def _get_token_manager(self, user_id, user_type, domain_id):
@@ -159,7 +158,3 @@ class TokenService(BaseService):
             'iat': decoded['iat'],
             'exp': decoded['exp']
         }
-
-    @staticmethod
-    def _get_timeout_from_refresh_token(token_info):
-        return token_info['exp'] - token_info['iat']
