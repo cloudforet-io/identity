@@ -7,11 +7,6 @@ from spaceone.identity.model.project_group_model import ProjectGroup
 from spaceone.identity.model.user_model import User
 
 
-class RoleBindingTag(EmbeddedDocument):
-    key = StringField(max_length=255)
-    value = StringField(max_length=255)
-
-
 class RoleBinding(MongoModel):
     role_binding_id = StringField(max_length=40, generate_id='rb', unique=True)
     resource_type = StringField(max_length=255)
@@ -24,7 +19,7 @@ class RoleBinding(MongoModel):
     project_id = StringField(max_length=40, null=True, default=None)
     project_group_id = StringField(max_length=40, null=True, default=None)
     labels = ListField(StringField(max_length=255))
-    tags = ListField(EmbeddedDocumentField(RoleBindingTag))
+    tags = DictField()
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -67,6 +62,5 @@ class RoleBinding(MongoModel):
             'project_id',
             'project_group_id',
             'domain_id',
-            ('tags.key', 'tags.value')
         ]
     }

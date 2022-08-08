@@ -46,9 +46,6 @@ class ProjectGroupService(BaseService):
 
         params['created_by'] = self.transaction.get_meta('user_id')
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         if 'parent_project_group_id' in params:
             params['parent_project_group'] = self._get_parent_project_group(params['parent_project_group_id'],
                                                                             params['domain_id'])
@@ -83,9 +80,6 @@ class ProjectGroupService(BaseService):
         release_parent_project_group = params.get('release_parent_project_group', False)
 
         project_group_vo = self.project_group_mgr.get_project_group(params['project_group_id'], domain_id)
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if release_parent_project_group:
             params['parent_project_group'] = None
@@ -139,7 +133,6 @@ class ProjectGroupService(BaseService):
     @check_required(['domain_id'])
     @change_only_key({'parent_project_group_info': 'parent_project_group'}, key_path='query.only')
     @append_query_filter(['project_group_id', 'name', 'parent_project_group_id', 'domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['project_group_id', 'name'])
     def list(self, params):
         """ List project groups
@@ -189,7 +182,6 @@ class ProjectGroupService(BaseService):
     })
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_project_groups'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def stat(self, params):
         """
@@ -246,9 +238,6 @@ class ProjectGroupService(BaseService):
         if role_vo.role_type != 'PROJECT':
             raise ERROR_ONLY_PROJECT_ROLE_TYPE_ALLOWED()
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         return role_binding_mgr.create_role_binding(params)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
@@ -281,9 +270,6 @@ class ProjectGroupService(BaseService):
 
         if role_binding_vos.count() == 0:
             raise ERROR_NOT_FOUND(key='user_id', value=user_id)
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return role_binding_mgr.update_role_binding_by_vo(params, role_binding_vos[0])
 
@@ -377,8 +363,6 @@ class ProjectGroupService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['project_group_id', 'domain_id'])
     @change_only_key({'project_group_info': 'project_group'}, key_path='query.only')
-    @append_keyword_filter(['project_id', 'name'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def list_projects(self, params):
         """ List projects in project group

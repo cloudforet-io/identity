@@ -37,9 +37,6 @@ class DomainService(BaseService):
             domain_vo (object)
         """
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         # Create Domain
         domain_vo: Domain = self.domain_mgr.create_domain(params)
 
@@ -64,9 +61,6 @@ class DomainService(BaseService):
         Returns:
             domain_vo (object)
         """
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.domain_mgr.update_domain(params)
 
@@ -232,7 +226,6 @@ class DomainService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @append_query_filter(['domain_id', 'name'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])
     def list(self, params):
         """ List api keys
@@ -254,7 +247,6 @@ class DomainService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['domain_id', 'name'])
     def stat(self, params):
         """

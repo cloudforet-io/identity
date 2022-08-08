@@ -93,7 +93,6 @@ class TestProviderService(unittest.TestCase):
         self.transaction.method = 'create'
         provider_svc = ProviderService(transaction=self.transaction)
         provider_vo = provider_svc.create(params.copy())
-
         print_data(provider_vo.to_dict(), 'test_create_provider')
         ProviderInfo(provider_vo)
 
@@ -103,7 +102,7 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['template'], provider_vo.template)
         self.assertEqual(params['metadata'], provider_vo.metadata)
         self.assertEqual(params['capability'], provider_vo.capability)
-        self.assertEqual(params['tags'], utils.tags_to_dict(provider_vo.tags))
+        self.assertEqual(params['tags'], provider_vo.tags)
 
     def test_create_duplicated_provider(self, *args):
         params = {
@@ -147,7 +146,7 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(params['name'], provider_vo.name)
         self.assertEqual(params['template'], provider_vo.template)
         self.assertEqual(params['metadata'], provider_vo.metadata)
-        self.assertEqual(params['tags'], utils.tags_to_dict(provider_vo.tags))
+        self.assertEqual(params['tags'], provider_vo.tags)
 
     def test_delete_provider(self, *args):
         new_provider_vo = ProviderFactory()
@@ -234,7 +233,7 @@ class TestProviderService(unittest.TestCase):
         self.assertEqual(total_count, 1)
 
     def test_list_providers_by_tag(self, *args):
-        ProviderFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}])
+        ProviderFactory(tags={'tag_key_1': 'tag_value_1'})
         provider_vos = ProviderFactory.build_batch(9)
         list(map(lambda vo: vo.save(), provider_vos))
 

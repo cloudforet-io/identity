@@ -18,7 +18,7 @@ def ServiceAccountInfo(service_account_vo: ServiceAccount, minimal=False, projec
     if not minimal:
         info.update({
             'data': change_struct_type(service_account_vo.data),
-            'tags': change_struct_type(utils.tags_to_dict(service_account_vo.tags)),
+            'tags': change_struct_type(service_account_vo.tags),
             'domain_id': service_account_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(service_account_vo.created_at)
         })

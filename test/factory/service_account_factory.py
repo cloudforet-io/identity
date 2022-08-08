@@ -18,11 +18,6 @@ class ServiceAccountFactory(factory.mongoengine.MongoEngineFactory):
     provider = 'aws'
     project = factory.SubFactory(ProjectFactory)
     project_id = factory.LazyAttribute(lambda o: utils.generate_id('project'))
-    tags = [
-        {
-            'key': 'tag_key',
-            'value': 'tag_value'
-        }
-    ]
+    tags = {'tag_key': 'tag_value'}
     domain_id = utils.generate_id('domain')
     created_at = factory.Faker('date_time')

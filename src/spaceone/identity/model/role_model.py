@@ -12,11 +12,6 @@ class RolePolicy(EmbeddedDocument):
         return dict(self.to_mongo())
 
 
-class RoleTag(EmbeddedDocument):
-    key = StringField(max_length=255)
-    value = StringField(max_length=255)
-
-
 class PagePermission(EmbeddedDocument):
     page = StringField(max_length=255, required=True)
     permission = StringField(max_length=20, choices=('VIEW', 'MANAGE'))
@@ -29,7 +24,7 @@ class Role(MongoModel):
     role_id = StringField(max_length=40, generate_id='role', unique=True)
     name = StringField(max_length=255, unique_with='domain_id')
     role_type = StringField(max_length=20, choices=('SYSTEM', 'DOMAIN', 'PROJECT'))
-    tags = ListField(EmbeddedDocumentField(RoleTag))
+    tags = DictField(default={})
     policies = ListField(EmbeddedDocumentField(RolePolicy))
     page_permissions = ListField(EmbeddedDocumentField(PagePermission), default=[])
     domain_id = StringField(max_length=40)
@@ -56,6 +51,6 @@ class Role(MongoModel):
             # 'role_id',
             'role_type',
             'domain_id',
-            ('tags.key', 'tags.value')
+            'tags'
         ]
     }

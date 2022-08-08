@@ -53,7 +53,7 @@ def RoleInfo(role_vo: Role, minimal=False):
     if not minimal:
         info.update({
             'policies': list(map(lambda policy: RolePolicyInfo(policy), role_vo.policies)),
-            'tags': change_struct_type(utils.tags_to_dict(role_vo.tags)),
+            'tags': change_struct_type(role_vo.tags),
             'domain_id': role_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(role_vo.created_at)
         })

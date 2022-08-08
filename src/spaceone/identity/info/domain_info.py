@@ -24,7 +24,7 @@ def DomainInfo(domain_vo: Domain, minimal=False):
             'config': change_struct_type(domain_vo.config),
             'created_at': utils.datetime_to_iso8601(domain_vo.created_at),
             'deleted_at': utils.datetime_to_iso8601(domain_vo.deleted_at),
-            'tags': change_struct_type(utils.tags_to_dict(domain_vo.tags))
+            'tags': change_struct_type(domain_vo.tags)
         })
 
     return domain_pb2.DomainInfo(**info)

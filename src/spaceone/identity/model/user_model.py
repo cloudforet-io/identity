@@ -2,11 +2,6 @@ from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
 
 
-class UserTag(EmbeddedDocument):
-    key = StringField(max_length=255)
-    value = StringField(max_length=255)
-
-
 class User(MongoModel):
     user_id = StringField(max_length=40, unique_with='domain_id', required=True)
     password = BinaryField(default=None)
@@ -18,7 +13,7 @@ class User(MongoModel):
     required_actions = ListField(StringField(choices=('UPDATE_USER',)), default=[])
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='UTC')
-    tags = ListField(EmbeddedDocumentField(UserTag))
+    tags = DictField()
     domain_id = StringField(max_length=40)
     last_accessed_at = DateTimeField(default=None, null=True)
     created_at = DateTimeField(auto_now_add=True)
@@ -48,6 +43,5 @@ class User(MongoModel):
             'backend',
             'last_accessed_at',
             # ('user_id', 'domain_id'),
-            ('tags.key', 'tags.value')
         ]
     }

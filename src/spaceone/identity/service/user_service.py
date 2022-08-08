@@ -57,9 +57,6 @@ class UserService(BaseService):
         if 'timezone' not in params:
             params['timezone'] = default_timezone
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         if 'timezone' in params:
             self._check_timezone(params['timezone'])
 
@@ -85,9 +82,6 @@ class UserService(BaseService):
         Returns:
             user_vo (object)
         """
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if 'timezone' in params:
             self._check_timezone(params['timezone'])
@@ -229,7 +223,6 @@ class UserService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['user_id', 'name', 'state', 'email', 'user_type', 'backend', 'role_id', 'domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['user_id', 'name', 'email'])
     def list(self, params):
         """ List users
@@ -257,7 +250,6 @@ class UserService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['user_id', 'name', 'email'])
     def stat(self, params):
         """

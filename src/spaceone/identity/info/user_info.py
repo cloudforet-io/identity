@@ -22,7 +22,7 @@ def UserInfo(user_vo: User, minimal=False):
             'required_actions': user_vo.required_actions,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
-            'tags': change_struct_type(utils.tags_to_dict(user_vo.tags)),
+            'tags': change_struct_type(user_vo.tags),
             'domain_id': user_vo.domain_id,
             'last_accessed_at': utils.datetime_to_iso8601(user_vo.last_accessed_at),
             'created_at': utils.datetime_to_iso8601(user_vo.created_at)

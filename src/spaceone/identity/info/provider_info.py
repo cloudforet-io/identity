@@ -18,7 +18,7 @@ def ProviderInfo(provider_vo: Provider, minimal=False):
             'template': change_struct_type(provider_vo.template),
             'metadata': change_struct_type(provider_vo.metadata),
             'capability': change_struct_type(provider_vo.capability),
-            'tags': change_struct_type(utils.tags_to_dict(provider_vo.tags)),
+            'tags': change_struct_type(provider_vo.tags),
             'created_at': utils.datetime_to_iso8601(provider_vo.created_at)
         })
 

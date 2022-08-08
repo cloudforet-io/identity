@@ -35,9 +35,6 @@ class ProviderService(BaseService):
         # TODO: validate a template data
         # TODO: validate a capability data
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         return self.provider_mgr.create_provider(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -60,9 +57,6 @@ class ProviderService(BaseService):
         """
         # TODO: validate a template data
         # TODO: validate a capability data
-        
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.provider_mgr.update_provider(params)
 
@@ -101,7 +95,6 @@ class ProviderService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['provider', 'name'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['provider', 'name'])
     def list(self, params):
         """
@@ -122,7 +115,6 @@ class ProviderService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['provider', 'name'])
     def stat(self, params):
         """

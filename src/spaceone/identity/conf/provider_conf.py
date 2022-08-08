@@ -58,18 +58,11 @@ DEFAULT_PROVIDERS = [{
     "capability": {
         "supported_schema": ["aws_access_key", "aws_assume_role"]
     },
-    "tags": [
-        {
-            'key': 'color',
-            'value': '#FF9900'
-        }, {
-            'key': 'icon',
-            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg'
-        }, {
-            'key': 'external_link_template',
-            'value': 'https://<%- data.account_id %>.signin.aws.amazon.com/console'
-        }
-    ]
+    "tags": {
+        'color': '#FF9900',
+        'icon': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg',
+        'external_link_template': 'https://<%- data.account_id %>.signin.aws.amazon.com/console'
+    }
 }, {
     "provider": "google_cloud",
     "version": "v1",
@@ -125,21 +118,12 @@ DEFAULT_PROVIDERS = [{
     "capability": {
         "supported_schema": ["google_oauth2_credentials"]
     },
-    "tags": [
-        {
-            'key': 'color',
-            'value': '#4285F4'
-        }, {
-            'key': 'icon',
-            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg'
-        }, {
-            'key': 'external_link_template',
-            'value': 'https://console.cloud.google.com/home/dashboard?project=<%- data.project_id %>'
-        }, {
-            'key': 'label',
-            'value': 'Google'
-        }
-    ]
+    "tags": {
+        'color': '#4285F4',
+        'icon': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg',
+        'external_link_template': 'https://console.cloud.google.com/home/dashboard?project=<%- data.project_id %>',
+        'label': 'Google'
+    }
 }, {
     "provider": "azure",
     "name": "Azure",
@@ -217,15 +201,10 @@ DEFAULT_PROVIDERS = [{
     "capability": {
         "supported_schema": ["azure_client_secret"]
     },
-    "tags": [
-        {
-            'key': 'color',
-            'value': '#00BCF2'
-        }, {
-            'key': 'icon',
-            'value': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
-        }
-    ]
+    "tags": {
+        'color': '#00BCF2',
+        'icon': 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
+    }
 }]
 
 # }, {
@@ -457,12 +436,8 @@ aws_access_key = {
         "type": "object"
     },
     "labels": ["AWS"],
-    "tags": [
-        {
-            'key': 'description',
-            'value': 'AWS Access Key'
-        }
-    ]
+    "tags": {'description': 'AWS Access Key'}
+
 }
 
 aws_assume_role = {
@@ -494,12 +469,7 @@ aws_assume_role = {
         "type": "object"
     },
     "labels": ["AWS", "Assume Role"],
-    "tags": [
-        {
-            'key': 'description',
-            'value': 'AWS Assume Role'
-        }
-    ]
+    "tags": {'description': 'AWS Assume Role'}
 }
 
 google_api_key = {
@@ -519,12 +489,7 @@ google_api_key = {
         "type": "object"
     },
     "labels": ["Google Cloud", "GCP"],
-    "tags": [
-        {
-            'key': 'description',
-            'value': 'Google API Key'
-        }
-    ]
+    "tags": {'description': 'Google API Key'}
 }
 
 google_oauth2_credentials = {
@@ -602,12 +567,7 @@ google_oauth2_credentials = {
         "type": "object"
     },
     "labels": ["Google Cloud", "GCP", "OAuth2.0"],
-    "tags": [
-        {
-            'key': 'description',
-            'value': 'Google OAuth2 Credentials'
-        }
-    ]
+    "tags": {'description': 'Google OAuth2 Credentials'}
 }
 
 azure_client_secret = {
@@ -645,12 +605,7 @@ azure_client_secret = {
         "type": "object"
     },
     "labels": ["Azure"],
-    "tags": [
-        {
-            'key': 'description',
-            'value': 'Azure Client Secret'
-        }
-    ]
+    "tags": {'description': 'Azure Client Secret'}
 }
 
 spaceone_api_key = {
@@ -682,12 +637,7 @@ spaceone_api_key = {
         "type": "object"
     },
     "labels": ["SpaceONE"],
-    "tags": [
-        {
-            'key': 'description',
-            'value': 'SpaceONE API Key'
-        }
-    ]
+    "tags": {'description': 'SpaceONE API Key'}
 }
 
 alibaba_cloud_access_key_pair = {
@@ -713,12 +663,7 @@ alibaba_cloud_access_key_pair = {
         "type": "object"
     },
     "labels": ["Alibaba"],
-    "tags": [
-        {
-            'key': 'description',
-            'value': "Alibaba Cloud AccessKey Pair"
-        }
-    ]
+    "tags": {'description': "Alibaba Cloud AccessKey Pair"}
 }
 
 oci_api_key = {
@@ -756,12 +701,7 @@ oci_api_key = {
         "type": "object"
     },
     "labels": ["Oracle"],
-    "tags": [
-        {
-            'key': 'description',
-            'value': "Oracle Cloud Infrastructure Access Configuration"
-        }
-    ]
+    "tags": {'description': "Oracle Cloud Infrastructure Access Configuration"}
 }
 
 openstack_credentials = {
@@ -835,10 +775,5 @@ openstack_credentials = {
         "type": "object"
     },
     "labels": ["OpenStack"],
-    "tags": [
-        {
-            "key": "description",
-            "value": "OpenStack Credentials"
-        }
-    ]
+    "tags": {"description": "OpenStack Credentials"}
 }

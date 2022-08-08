@@ -92,7 +92,7 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(params['provider'], service_account_vo.provider)
         self.assertEqual(params['domain_id'], service_account_vo.domain_id)
         self.assertEqual(params.get('data', {}), service_account_vo.data)
-        self.assertEqual(params.get('tags', {}), utils.tags_to_dict(service_account_vo.tags))
+        self.assertEqual(params.get('tags', {}), service_account_vo.tags)
 
     def test_create_service_account_invalid_data(self, *args):
         params = {
@@ -173,7 +173,7 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(new_service_account_vo.service_account_id, service_account_vo.service_account_id)
         self.assertEqual(params['name'], service_account_vo.name)
         self.assertEqual(params['data'], service_account_vo.data)
-        self.assertEqual(params['tags'], utils.tags_to_dict(service_account_vo.tags))
+        self.assertEqual(params['tags'], service_account_vo.tags)
 
     @patch.object(ServiceAccountManager, '_list_secrets', return_value={'results': [], 'total_count': 0})
     @patch.object(SpaceConnector, 'dispatch', return_value=None)
@@ -279,7 +279,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list(params)
+        service_accounts_vos, total_count, projects_info = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -298,7 +298,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list(params)
+        service_accounts_vos, total_count, projects_info = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -321,7 +321,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list(params)
+        service_accounts_vos, total_count, projects_info = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -330,7 +330,7 @@ class TestServiceAccountService(unittest.TestCase):
         self.assertEqual(total_count, 3)
 
     def test_list_service_accounts_by_tag(self, *args):
-        ServiceAccountFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}], domain_id=self.domain_id)
+        ServiceAccountFactory(tags={'tag_key_1': 'tag_value_1'}, domain_id=self.domain_id)
         service_account_vos = ServiceAccountFactory.build_batch(9, project=None,
                                                                 domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), service_account_vos))
@@ -347,7 +347,7 @@ class TestServiceAccountService(unittest.TestCase):
         }
 
         service_account_svc = ServiceAccountService()
-        service_accounts_vos, total_count = service_account_svc.list(params)
+        service_accounts_vos, total_count, projects_info = service_account_svc.list(params)
 
         ServiceAccountsInfo(service_account_vos, total_count)
 
@@ -372,10 +372,6 @@ class TestServiceAccountService(unittest.TestCase):
                         'fields': [{
                             'operator': 'count',
                             'name': 'Count'
-                        }, {
-                            'key': 'project.project_id',
-                            'name': 'project_count',
-                            'operator': 'size'
                         }]
                     }
                 }, {

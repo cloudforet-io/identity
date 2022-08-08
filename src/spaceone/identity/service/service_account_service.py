@@ -44,9 +44,6 @@ class ServiceAccountService(BaseService):
         if 'project_id' in params:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         return self.service_account_mgr.create_service_account(params)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
@@ -83,9 +80,6 @@ class ServiceAccountService(BaseService):
             params['project_id'] = None
         elif project_id:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(params, service_account_vo)
 
@@ -143,7 +137,6 @@ class ServiceAccountService(BaseService):
     @check_required(['domain_id'])
     @change_only_key({'project_info': 'project'}, key_path='query.only')
     @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id', 'user_projects'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def list(self, params):
         """
@@ -174,7 +167,6 @@ class ServiceAccountService(BaseService):
     })
     @check_required(['query', 'domain_id'])
     @append_query_filter(['project_id', 'domain_id', 'user_projects'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def stat(self, params):
         """

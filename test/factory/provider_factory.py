@@ -57,10 +57,5 @@ class ProviderFactory(factory.mongoengine.MongoEngineFactory):
     capability = {
         'supported_schema': ['schema-aaa', 'schema-bbb']
     }
-    tags = [
-        {
-            'key': 'tag_key',
-            'value': 'tag_value'
-        }
-    ]
+    tags = {'tag_key': 'tag_value'}
     created_at = factory.Faker('date_time')

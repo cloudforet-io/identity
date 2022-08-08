@@ -17,18 +17,13 @@ class PluginInfo(EmbeddedDocument):
         return dict(self.to_mongo())
 
 
-class DomainTag(EmbeddedDocument):
-    key = StringField(max_length=255)
-    value = StringField(max_length=255)
-
-
 class Domain(MongoModel):
     domain_id = StringField(max_length=40, generate_id='domain', unique=True)
     name = StringField(max_length=255)
     state = StringField(max_length=20, default='ENABLED')
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
     config = DictField()
-    tags = ListField(EmbeddedDocumentField(DomainTag))
+    tags = DictField()
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
 
@@ -50,7 +45,6 @@ class Domain(MongoModel):
         'indexes': [
             # 'domain_id',
             'state',
-            ('tags.key', 'tags.value')
         ]
     }
 

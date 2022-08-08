@@ -23,7 +23,7 @@ def RoleBindingInfo(role_binding_vo: RoleBinding, minimal=False):
             'project_info': ProjectInfo(role_binding_vo.project, minimal=True) if role_binding_vo.project else None,
             'project_group_info': ProjectGroupInfo(role_binding_vo.project_group, minimal=True) if role_binding_vo.project_group else None,
             'labels': change_list_value_type(role_binding_vo.labels),
-            'tags': change_struct_type(utils.tags_to_dict(role_binding_vo.tags)),
+            'tags': change_struct_type(role_binding_vo.tags),
             'domain_id': role_binding_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(role_binding_vo.created_at)
         })

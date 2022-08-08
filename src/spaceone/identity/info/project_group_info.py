@@ -33,7 +33,7 @@ def ProjectGroupInfo(project_group_vo: ProjectGroup, minimal=False, parent_proje
                 })
 
         info.update({
-            'tags': change_struct_type(utils.tags_to_dict(project_group_vo.tags)),
+            'tags': change_struct_type(project_group_vo.tags),
             'domain_id': project_group_vo.domain_id,
             'created_by': project_group_vo.created_by,
             'created_at': utils.datetime_to_iso8601(project_group_vo.created_at)
@@ -60,7 +60,7 @@ def ProjectGroupRoleBindingInfo(role_binding_vo, minimal=False):
             'project_group_info': ProjectGroupInfo(role_binding_vo.project_group,
                                                    minimal=True) if role_binding_vo.project_group else None,
             'labels': change_list_value_type(role_binding_vo.labels),
-            'tags': change_struct_type(utils.tags_to_dict(role_binding_vo.tags)),
+            'tags': change_struct_type(role_binding_vo.tags),
             'domain_id': role_binding_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(role_binding_vo.created_at)
         })
@@ -94,7 +94,7 @@ def ProjectGroupProjectInfo(project_vo: Project, minimal=False, project_groups_i
                 })
 
         info.update({
-            'tags': change_struct_type(utils.tags_to_dict(project_vo.tags)),
+            'tags': change_struct_type(project_vo.tags),
             'domain_id': project_vo.domain_id,
             'created_by': project_vo.created_by,
             'created_at': utils.datetime_to_iso8601(project_vo.created_at)

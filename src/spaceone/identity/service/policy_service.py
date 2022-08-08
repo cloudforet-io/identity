@@ -30,9 +30,6 @@ class PolicyService(BaseService):
             policy_vo (object)
         """
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         return self.policy_mgr.create_policy(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -52,9 +49,6 @@ class PolicyService(BaseService):
         Returns:
             policy_vo (object)
         """
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.policy_mgr.update_policy(params)
 
@@ -96,7 +90,6 @@ class PolicyService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['policy_id', 'name', 'domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['policy_id', 'name'])
     def list(self, params):
         """ List polices
@@ -120,7 +113,6 @@ class PolicyService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['policy_id', 'name'])
     def stat(self, params):
         """

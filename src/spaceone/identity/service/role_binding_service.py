@@ -34,9 +34,6 @@ class RoleBindingService(BaseService):
             role_binding_vo (object)
         """
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         return self.role_binding_mgr.create_role_binding(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -55,9 +52,6 @@ class RoleBindingService(BaseService):
         Returns:
             role_binding_vo (object)
         """
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.role_binding_mgr.update_role_binding(params)
 
@@ -104,7 +98,6 @@ class RoleBindingService(BaseService):
                      key_path='query.only')
     @append_query_filter(['role_binding_id', 'resource_type', 'resource_id', 'role_id', 'role_type',
                           'project_id', 'project_group_id', 'domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['role_binding_id', 'resource_id', 'name'])
     def list(self, params):
         """ List role bindings
@@ -133,7 +126,6 @@ class RoleBindingService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['role_binding_id', 'resource_type', 'resource_id'])
     def stat(self, params):
         """

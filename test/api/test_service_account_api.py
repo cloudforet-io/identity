@@ -21,15 +21,11 @@ class _MockServiceAccountService(BaseService):
 
     def create(self, params):
         params = copy.deepcopy(params)
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return ServiceAccountFactory(**params)
 
     def update(self, params):
         params = copy.deepcopy(params)
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return ServiceAccountFactory(**params)
 

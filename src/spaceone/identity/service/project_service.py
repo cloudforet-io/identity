@@ -42,9 +42,6 @@ class ProjectService(BaseService):
 
         params['created_by'] = self.transaction.get_meta('user_id')
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         if 'project_group_id' in params:
             project_group_mgr: ProjectGroupManager = self.locator.get_manager('ProjectGroupManager')
             params['project_group'] = project_group_mgr.get_project_group(params['project_group_id'],
@@ -73,9 +70,6 @@ class ProjectService(BaseService):
         domain_id = params['domain_id']
 
         project_vo = self.project_mgr.get_project(params['project_id'], domain_id)
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         if 'project_group_id' in params:
             project_group_mgr: ProjectGroupManager = self.locator.get_manager('ProjectGroupManager')
@@ -124,7 +118,6 @@ class ProjectService(BaseService):
     @check_required(['domain_id'])
     @change_only_key({'project_group_info': 'project_group'}, key_path='query.only')
     @append_query_filter(['project_id', 'name', 'project_group_id', 'domain_id', 'user_projects'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def list(self, params):
         """ List projects
@@ -168,7 +161,6 @@ class ProjectService(BaseService):
     })
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['project_id', 'name'])
     def stat(self, params):
         """
@@ -225,9 +217,6 @@ class ProjectService(BaseService):
         if role_vo.role_type != 'PROJECT':
             raise ERROR_ONLY_PROJECT_ROLE_TYPE_ALLOWED()
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         return role_binding_mgr.create_role_binding(params)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
@@ -260,9 +249,6 @@ class ProjectService(BaseService):
 
         if role_binding_vos.count() == 0:
             raise ERROR_NOT_FOUND(key='user_id', value=user_id)
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return role_binding_mgr.update_role_binding_by_vo(params, role_binding_vos[0])
 

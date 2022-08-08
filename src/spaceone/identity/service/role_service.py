@@ -34,9 +34,6 @@ class RoleService(BaseService):
 
         params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
 
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
-
         return self.role_mgr.create_role(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -66,9 +63,6 @@ class RoleService(BaseService):
 
         if 'policies' in params:
             params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
-
-        if 'tags' in params:
-            params['tags'] = utils.dict_to_tags(params['tags'])
 
         return self.role_mgr.update_role(params)
 
@@ -110,7 +104,6 @@ class RoleService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['role_id', 'name', 'role_type', 'policy_id', 'domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['role_id', 'name'])
     def list(self, params):
         """ List roles
@@ -134,7 +127,6 @@ class RoleService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['role_id', 'name'])
     def stat(self, params):
         """

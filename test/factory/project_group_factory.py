@@ -13,12 +13,7 @@ class ProjectGroupFactory(factory.mongoengine.MongoEngineFactory):
     name = factory.LazyAttribute(lambda o: utils.random_string())
     parent_project_group = None
     parent_project_group_id = None
-    tags = [
-        {
-            'key': 'tag_key',
-            'value': 'tag_value'
-        }
-    ]
+    tags = {'tag_key': 'tag_value'}
     domain_id = utils.generate_id('domain')
     created_by = factory.Faker('name')
     created_at = factory.Faker('date_time')
