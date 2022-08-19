@@ -255,6 +255,7 @@ class TestAPIKey(unittest.TestCase):
             'api_key_id': self.api_key.api_key_id,
             'domain_id': self.domain.domain_id
         }
+
         api_key_info = self.identity_v1.APIKey.get(
             params,
             metadata=(('token', self.owner_token),)
