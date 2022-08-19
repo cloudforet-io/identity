@@ -59,7 +59,7 @@ class AuthorizationManager(BaseManager):
 
     @staticmethod
     def _check_user_scope(user_id, domain_id, role_type, request_user_id, require_user_id):
-        if role_type == 'PROJECT':
+        if role_type in ['PROJECT', 'USER']:
             if require_user_id and request_user_id is None:
                 _LOGGER.debug(f'[_check_user_scope] user_id is required.'
                               f' (user_id = {user_id}, user_domain_id = {domain_id},'
