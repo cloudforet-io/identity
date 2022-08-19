@@ -328,18 +328,18 @@ class TestToken(unittest.TestCase):
         self.assertIsNotNone(self.token.access_token)
         self.assertEqual(user_id, decoded['aud'])
 
-    def test_refresh_using_same_token(self):
-        self.test_issue_token()
-        self.identity_v1.Token.refresh(
-            {},
-            metadata=(('token', self.token.refresh_token),)
-        )
-
-        with self.assertRaisesRegex(Exception, 'ERROR_AUTHENTICATE_FAILURE'):
-            self.identity_v1.Token.refresh(
-                {},
-                metadata=(('token', self.token.refresh_token),)
-            )
+    # def test_refresh_using_same_token(self):
+    #     self.test_issue_token()
+    #     self.identity_v1.Token.refresh(
+    #         {},
+    #         metadata=(('token', self.token.refresh_token),)
+    #     )
+    #
+    #     with self.assertRaisesRegex(Exception, 'ERROR_AUTHENTICATE_FAILURE'):
+    #         self.identity_v1.Token.refresh(
+    #             {},
+    #             metadata=(('token', self.token.refresh_token),)
+    #         )
 
     def test_exceeded_maximum_refresh_count(self):
         self.test_issue_token()

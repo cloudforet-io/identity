@@ -645,10 +645,6 @@ class TestProject(unittest.TestCase):
                         'fields': [{
                             'operator': 'count',
                             'name': 'Count'
-                        }, {
-                            'key': 'project_member.user.user_id',
-                            'name': 'project_member_count',
-                            'operator': 'size'
                         }]
                     }
                 }, {

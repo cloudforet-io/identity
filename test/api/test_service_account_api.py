@@ -36,7 +36,7 @@ class _MockServiceAccountService(BaseService):
         return ServiceAccountFactory(**params)
 
     def list(self, params):
-        return ServiceAccountFactory.build_batch(10, **params), 10
+        return ServiceAccountFactory.build_batch(10, **params), 10, {}
 
 
 class TestServiceAccountAPI(unittest.TestCase):
