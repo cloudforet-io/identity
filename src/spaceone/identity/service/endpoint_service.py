@@ -12,7 +12,7 @@ class EndpointService(BaseService):
         super().__init__(*args, **kwargs)
         self.endpoint_mgr: EndpointManager = self.locator.get_manager('EndpointManager')
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
     @append_query_filter(['service'])
     @append_keyword_filter(['service'])
     def list(self, params):
