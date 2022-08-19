@@ -155,10 +155,7 @@ class ProjectService(BaseService):
 
         return project_vos, total_count, self._get_project_groups_info(project_vos)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['project_id', 'name'])
