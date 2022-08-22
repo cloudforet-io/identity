@@ -34,28 +34,45 @@ class AuthorizationManager(BaseManager):
                                  request_domain_id, request_project_id, request_project_group_id, request_user_id,
                                  require_project_id, require_project_group_id, require_user_id, require_domain_id):
 
+        if scope == 'SYSTEM':
+            # Excluding system api checking process
+            # self._check_system_scope(user_id, domain_id, role_type)
+            pass
+        elif scope == 'PUBLIC':
+            # No Check Public Resource
+            pass
+        elif scope in ['DOMAIN', 'PUBLIC_OR_DOMAIN']:
+            self._check_domain_scope(user_id, domain_id, role_type, request_domain_id, require_domain_id)
+        elif scope in ['PROJECT', 'DOMAIN_OR_PROJECT']:
+            self._check_domain_scope(user_id, domain_id, role_type, request_domain_id, require_domain_id)
+            self._check_project_scope(user_id, domain_id, role_type, projects, project_groups,
+                                      request_project_id, request_project_group_id,
+                                      require_project_id, require_project_group_id)
+        elif scope == 'USER':
+            self._check_domain_scope(user_id, domain_id, role_type, request_domain_id, require_domain_id)
+            self._check_user_scope(user_id, domain_id, role_type, request_user_id, require_user_id)
+
+    @staticmethod
+    def _check_system_scope(user_id, domain_id, role_type):
+        if role_type != 'SYSTEM':
+            _LOGGER.debug(f'[_check_system_scope] system api is not allowed.'
+                          f' (user_id = {user_id}, user_domain_id = {domain_id})')
+            raise ERROR_PERMISSION_DENIED()
+
+    @staticmethod
+    def _check_domain_scope(user_id, domain_id, role_type, request_domain_id, require_domain_id):
         if role_type != 'SYSTEM':
             if require_domain_id and request_domain_id is None:
+                _LOGGER.debug(f'[_check_domain_scope] domain_id is required.'
+                              f' (user_id = {user_id}, user_domain_id = {domain_id},'
+                              f' request_domain_id = {request_domain_id})')
                 raise ERROR_PERMISSION_DENIED()
 
-        if role_type == 'USER':
-            self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
-            self._check_user_scope(user_id, domain_id, role_type, request_user_id, require_user_id)
-        else:
-            if scope == 'SYSTEM':
-                # Excluding system api checking process
-                # self._check_system_scope(user_id, domain_id, role_type)
-                pass
-            elif scope == 'DOMAIN':
-                self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
-            elif scope == 'PROJECT':
-                self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
-                self._check_project_scope(user_id, domain_id, role_type, projects, project_groups,
-                                          request_project_id, request_project_group_id,
-                                          require_project_id, require_project_group_id)
-            elif scope == 'USER':
-                self._check_domain_scope(user_id, domain_id, role_type, request_domain_id)
-                self._check_user_scope(user_id, domain_id, role_type, request_user_id, require_user_id)
+            if request_domain_id and request_domain_id != domain_id:
+                _LOGGER.debug(f'[_check_domain_scope] domain_id is not allowed.'
+                              f' (user_id = {user_id}, user_domain_id = {domain_id},'
+                              f' request_domain_id = {request_domain_id})')
+                raise ERROR_PERMISSION_DENIED()
 
     @staticmethod
     def _check_user_scope(user_id, domain_id, role_type, request_user_id, require_user_id):
@@ -70,22 +87,6 @@ class AuthorizationManager(BaseManager):
                 _LOGGER.debug(f'[_check_user_scope] user role_type can only access self resource.'
                               f' (user_id = {user_id}, user_domain_id = {domain_id},'
                               f' request_user_id = {request_user_id})')
-                raise ERROR_PERMISSION_DENIED()
-
-    @staticmethod
-    def _check_system_scope(user_id, domain_id, role_type):
-        if role_type != 'SYSTEM':
-            _LOGGER.debug(f'[_check_system_scope] system api is not allowed.'
-                          f' (user_id = {user_id}, user_domain_id = {domain_id})')
-            raise ERROR_PERMISSION_DENIED()
-
-    @staticmethod
-    def _check_domain_scope(user_id, domain_id, role_type, request_domain_id):
-        if role_type in ['DOMAIN', 'PROJECT']:
-            if request_domain_id and request_domain_id != domain_id:
-                _LOGGER.debug(f'[_check_domain_scope] domain_id is not allowed.'
-                              f' (user_id = {user_id}, user_domain_id = {domain_id},'
-                              f' request_domain_id = {request_domain_id})')
                 raise ERROR_PERMISSION_DENIED()
 
     @staticmethod
