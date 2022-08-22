@@ -122,11 +122,7 @@ class AuthorizationService(BaseService):
         role_binding_vos = role_binding_mgr.get_user_role_bindings(user_id, domain_id)
 
         role_type = None
-        user_roles = {
-            'SYSTEM': [],
-            'DOMAIN': [],
-            'PROJECT': {}
-        }
+        request_roles = []
         projects = []
         project_groups = []
         for role_binding_vo in role_binding_vos:
@@ -142,15 +138,17 @@ class AuthorizationService(BaseService):
                 if role_binding_vo.project_id:
                     project_id = role_binding_vo.project_id
                     projects.append(project_id)
-                    user_roles[rb_role_type][project_id] = [rb_role_id]
+                    if project_id in project_path:
+                        request_roles.append(rb_role_id)
+
                 elif role_binding_vo.project_group_id:
                     project_group_id = role_binding_vo.project_group_id
                     project_groups.append(project_group_id)
-                    user_roles[rb_role_type][project_group_id] = [rb_role_id]
-            else:
-                user_roles[rb_role_type].append(rb_role_id)
 
-        request_roles = self._get_request_roles_by_scope(role_type, user_roles, scope, project_path)
+                    if project_group_id in project_path:
+                        request_roles.append(rb_role_id)
+            else:
+                request_roles.append(rb_role_id)
 
         return role_type or 'USER', list(set(request_roles)), list(set(projects)), list(set(project_groups))
 
@@ -195,12 +193,8 @@ class AuthorizationService(BaseService):
         project_group_vo = self.project_group_mgr.get_project_group(project_group_id, domain_id)
         related_project_groups = self._get_related_project_group(project_group_vo, [project_group_vo])
 
-        project_vos, total_count = self.project_mgr.list_projects({
-            'filter': [{'k': 'project_group', 'v': related_project_groups, 'o': 'in'}]
-        })
-        project_group_vos, total_count = self.project_group_mgr.list_project_groups({
-            'filter': [{'k': 'parent_project_group', 'v': related_project_groups, 'o': 'in'}]
-        })
+        project_vos = self.project_mgr.filter_projects(project_group=related_project_groups)
+        project_group_vos = self.project_group_mgr.filter_project_groups(parent_project_group=related_project_groups)
 
         projects = [project_vo.project_id for project_vo in project_vos]
         project_groups = [project_group_vo.project_group_id for project_group_vo in project_group_vos]
