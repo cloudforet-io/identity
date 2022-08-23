@@ -86,7 +86,7 @@ class ProjectManager(BaseManager):
 
     @cache.cacheable(key='project-path:{domain_id}:{project_id}:{project_group_id}', expire=3600)
     def get_project_path(self, project_id, project_group_id, domain_id):
-        project_path = []
+        project_path = None
         if project_id:
             try:
                 project_vo = self.get_project(project_id, domain_id)
