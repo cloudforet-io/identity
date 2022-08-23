@@ -138,14 +138,20 @@ class AuthorizationService(BaseService):
                 if role_binding_vo.project_id:
                     project_id = role_binding_vo.project_id
                     projects.append(project_id)
-                    if project_id in project_path:
+                    if scope == 'PROJECT':
+                        if project_id in project_path:
+                            request_roles.append(rb_role_id)
+                    else:
                         request_roles.append(rb_role_id)
 
                 elif role_binding_vo.project_group_id:
                     project_group_id = role_binding_vo.project_group_id
                     project_groups.append(project_group_id)
 
-                    if project_group_id in project_path:
+                    if scope == 'PROJECT':
+                        if project_group_id in project_path:
+                            request_roles.append(rb_role_id)
+                    else:
                         request_roles.append(rb_role_id)
             else:
                 request_roles.append(rb_role_id)
