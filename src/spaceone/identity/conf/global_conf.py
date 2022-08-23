@@ -1,3 +1,5 @@
+ROOT_DOMAIN_NAME = 'root'
+
 DATABASE_AUTO_CREATE_INDEX = True
 DATABASES = {
     'default': {

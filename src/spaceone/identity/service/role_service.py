@@ -1,6 +1,7 @@
 from spaceone.core.service import *
-from spaceone.core import utils
-from spaceone.identity.manager import RoleManager, PolicyManager
+from spaceone.core.error import *
+from spaceone.core import config
+from spaceone.identity.manager import RoleManager, PolicyManager, DomainManager
 
 
 @authentication_handler
@@ -31,6 +32,10 @@ class RoleService(BaseService):
         Returns:
             role_vo (object)
         """
+
+        # The system role type is allowed only in the root domain.
+        if params['role_type'] == 'SYSTEM':
+            self._check_system_role_type(params['domain_id'])
 
         params['policies'] = self._check_policy_info(params['policies'], params['domain_id'])
 
@@ -156,3 +161,11 @@ class RoleService(BaseService):
             change_policies.append(policy)
 
         return change_policies
+
+    def _check_system_role_type(self, domain_id):
+        root_domain_name = config.get_global('ROOT_DOMAIN_NAME', 'root')
+        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
+        domain_vo = domain_mgr.get_domain(domain_id)
+
+        if root_domain_name != domain_vo.name:
+            raise ERROR_PERMISSION_DENIED()
