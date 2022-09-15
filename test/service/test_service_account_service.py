@@ -70,6 +70,8 @@ class TestServiceAccountService(unittest.TestCase):
     def test_create_service_account(self, *args):
         params = {
             'name': 'SpaceONE',
+            'service_account_type': 'GENERAL',
+            'trusted_service_account_id': 'xxxx',
             'provider': 'aws',
             'data': {
                 'account_id': '000321654'

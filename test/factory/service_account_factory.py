@@ -11,6 +11,8 @@ class ServiceAccountFactory(factory.mongoengine.MongoEngineFactory):
         model = ServiceAccount
 
     service_account_id = factory.LazyAttribute(lambda o: utils.generate_id('sa'))
+    service_account_type = 'GENERAL'
+    trusted_service_account_id = None
     name = factory.LazyAttribute(lambda o: utils.random_string())
     data = {
         'account_id': '00123456'
