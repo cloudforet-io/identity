@@ -13,7 +13,7 @@ class ServiceAccount(MongoModel):
     project_id = StringField(max_length=40)
     trusted_service_account_id = StringField(max_length=40, null=True, default=None)
     tags = DictField()
-    scope = StringField(max_length=40, choices=('DOMAIN', 'PROJECT'))
+    scope = StringField(max_length=40, choices=('DOMAIN', 'PROJECT'), default='PROJECT')
     domain_id = StringField(max_length=255)
     created_at = DateTimeField(auto_now_add=True)
 
