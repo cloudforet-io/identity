@@ -12,11 +12,14 @@ def ServiceAccountInfo(service_account_vo: ServiceAccount, minimal=False, projec
     info = {
         'service_account_id': service_account_vo.service_account_id,
         'name': service_account_vo.name,
-        'provider': service_account_vo.provider
+        'provider': service_account_vo.provider,
+        'service_account_type': service_account_vo.service_account_type
     }
 
     if not minimal:
         info.update({
+            'trusted_service_account_id': service_account_vo.trusted_service_account_id,
+            'scope': service_account_vo.scope,
             'data': change_struct_type(service_account_vo.data),
             'tags': change_struct_type(service_account_vo.tags),
             'domain_id': service_account_vo.domain_id,

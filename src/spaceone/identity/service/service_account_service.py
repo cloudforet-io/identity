@@ -6,6 +6,7 @@ from spaceone.core import utils
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.provider_manager import ProviderManager
+from spaceone.identity.error.error_service_account import *
 
 
 @authentication_handler
@@ -22,14 +23,16 @@ class ServiceAccountService(BaseService):
         'authorization.scope': 'PROJECT',
         'authorization.require_project_id': True
     })
-    @check_required(['name', 'data', 'provider', 'domain_id'])
+    @check_required(['name', 'data', 'provider', 'service_account_type', 'domain_id'])
     def create(self, params):
         """
         Args:
             params (dict): {
                 'name': 'str',
+                'service_account_type': 'str',
                 'data': 'dict',
                 'provider': 'str',
+                'trusted_service_account_id': 'str',
                 'project_id': 'str',
                 'tags': 'dict',
                 'domain_id': 'str'
@@ -38,6 +41,21 @@ class ServiceAccountService(BaseService):
         Returns:
             service_account_vo (object)
         """
+        domain_id = params['domain_id']
+        service_account_type = params['service_account_type']
+
+        if service_account_type == 'TRUST':
+            params.update({
+                'trusted_service_account_id': None,
+                'scope': 'DOMAIN'
+            })
+        elif service_account_type == 'GENERAL':
+            params['scope'] = 'PROJECT'
+
+            if trusted_service_account_id := params.get('trusted_service_account_id'):
+                self._validation_trusted_service_account_check(trusted_service_account_id, domain_id)
+        else:
+            raise ERROR_INVALID_PARAMETER(key='service_account_type', reason=f'{service_account_type}')
 
         self._check_data(params['data'], params['provider'])
 
@@ -57,7 +75,6 @@ class ServiceAccountService(BaseService):
                 'data': 'dict',
                 'project_id': 'str',
                 'tags': 'dict',
-                'release_project': 'bool',
                 'domain_id': 'str'
             }
 
@@ -68,24 +85,18 @@ class ServiceAccountService(BaseService):
         service_account_id = params['service_account_id']
         domain_id = params['domain_id']
         project_id = params.get('project_id')
-        release_project = params.get('release_project')
 
         service_account_vo = self.service_account_mgr.get_service_account(service_account_id, domain_id)
 
         if 'data' in params:
             self._check_data(params['data'], service_account_vo.provider)
 
-        if release_project:
-            params['project'] = None
-            params['project_id'] = None
-        elif project_id:
+        if project_id:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(params, service_account_vo)
 
-        if release_project:
-            self.service_account_mgr.release_secret_project(service_account_id, domain_id)
-        elif project_id:
+        if project_id:
             self.service_account_mgr.update_secret_project(service_account_id, project_id, domain_id)
 
         return service_account_vo
@@ -133,14 +144,18 @@ class ServiceAccountService(BaseService):
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
     @change_only_key({'project_info': 'project'}, key_path='query.only')
-    @append_query_filter(['service_account_id', 'name', 'provider', 'project_id', 'domain_id', 'user_projects'])
+    @append_query_filter(['service_account_id', 'service_account_type', 'trusted_service_account_id',
+                          'name', 'provider', 'scope', 'project_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
     def list(self, params):
         """
         Args:
             params (dict): {
                     'service_account_id': 'str',
+                    'service_account_type': 'str',
+                    'trusted_service_account_id': 'str',
                     'name': 'str',
+                    'scope': 'str',
                     'provider': 'str',
                     'project_id': 'str',
                     'domain_id': 'str',
@@ -192,6 +207,18 @@ class ServiceAccountService(BaseService):
         else:
             if data != {}:
                 raise ERROR_INVALID_PARAMETER(key='data', reason='data format is invalid.')
+
+    def _validation_trusted_service_account_check(self, trusted_service_account_id, domain_id):
+        query = {
+            'filter': [
+                {'k': 'service_account_id', 'v': trusted_service_account_id, 'o': 'eq'},
+                {'k': 'service_account_type', 'v': 'TRUST', 'o': 'eq'},
+                {'k': 'domain_id', 'v': domain_id, 'o': 'eq'},
+            ]
+        }
+        results, total_count = self.service_account_mgr.list_service_accounts(query)
+        if total_count == 0:
+            raise ERROR_NOT_FOUND_TRUSTED_SERVICE_ACCOUNT_ID(trusted_service_account_id=trusted_service_account_id)
 
     def _get_project(self, project_id, domain_id):
         project_mgr: ProjectManager = self.locator.get_manager('ProjectManager')
