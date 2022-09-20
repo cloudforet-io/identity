@@ -44,6 +44,9 @@ class ServiceAccountService(BaseService):
         domain_id = params['domain_id']
         service_account_type = params['service_account_type']
 
+        if 'project_id' in params and params['service_account_type'] == 'TRUSTED':
+            raise ERROR_PERMISSION_DENIED()
+
         if service_account_type == 'TRUSTED':
             params.update({
                 'trusted_service_account_id': None,
@@ -212,7 +215,7 @@ class ServiceAccountService(BaseService):
         query = {
             'filter': [
                 {'k': 'service_account_id', 'v': trusted_service_account_id, 'o': 'eq'},
-                {'k': 'service_account_type', 'v': 'TRUST', 'o': 'eq'},
+                {'k': 'service_account_type', 'v': 'TRUSTED', 'o': 'eq'},
                 {'k': 'domain_id', 'v': domain_id, 'o': 'eq'},
             ]
         }
