@@ -44,7 +44,7 @@ class ServiceAccountService(BaseService):
         domain_id = params['domain_id']
         service_account_type = params['service_account_type']
 
-        if service_account_type == 'TRUST':
+        if service_account_type == 'TRUSTED':
             params.update({
                 'trusted_service_account_id': None,
                 'scope': 'DOMAIN'
