@@ -215,7 +215,7 @@ class ServiceAccountService(BaseService):
         query = {
             'filter': [
                 {'k': 'service_account_id', 'v': trusted_service_account_id, 'o': 'eq'},
-                {'k': 'service_account_type', 'v': 'TRUST', 'o': 'eq'},
+                {'k': 'service_account_type', 'v': 'TRUSTED', 'o': 'eq'},
                 {'k': 'domain_id', 'v': domain_id, 'o': 'eq'},
             ]
         }
