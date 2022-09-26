@@ -97,6 +97,9 @@ class ServiceAccountService(BaseService):
         if project_id:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
 
+        if 'trusted_service_account_id' in params:
+            self._validation_trusted_service_account_check(params['trusted_service_account_id'], domain_id)
+
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(params, service_account_vo)
 
         if project_id:
