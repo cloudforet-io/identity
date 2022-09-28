@@ -23,6 +23,7 @@ class ServiceAccount(MongoModel):
             'data',
             'project',
             'project_id',
+            'trusted_service_account_id',
             'tags'
         ],
         'minimal_fields': [
