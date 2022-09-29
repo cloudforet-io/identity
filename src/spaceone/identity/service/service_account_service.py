@@ -78,6 +78,7 @@ class ServiceAccountService(BaseService):
                 'data': 'dict',
                 'project_id': 'str',
                 'tags': 'dict',
+                'release_service_account': 'bool',
                 'domain_id': 'str'
             }
 
@@ -99,6 +100,9 @@ class ServiceAccountService(BaseService):
 
         if 'trusted_service_account_id' in params:
             self._validation_trusted_service_account_check(params['trusted_service_account_id'], domain_id)
+
+        if params.get('release_trusted_service_account') is True:
+            params['trusted_service_account_id'] = None
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(params, service_account_vo)
 
