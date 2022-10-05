@@ -10,7 +10,7 @@ class ServiceAccount(MongoModel):
     service_account_type = StringField(max_length=40, choices=('TRUSTED', 'GENERAL'), default='GENERAL')
     provider = StringField(max_length=40)
     project = ReferenceField('Project', null=True, default=None, reverse_delete_rule=DENY)
-    project_id = StringField(max_length=40)
+    project_id = StringField(max_length=40, default=None, null=True)
     trusted_service_account_id = StringField(max_length=40, null=True, default=None)
     tags = DictField()
     scope = StringField(max_length=40, choices=('DOMAIN', 'PROJECT'), default='PROJECT')
@@ -33,8 +33,8 @@ class ServiceAccount(MongoModel):
             'provider'
         ],
         'change_query_keys': {
-            'user_projects': 'project.project_id',
-            'project_id': 'project.project_id'
+            'user_projects': 'project_id',
+            'project_id': 'project_id'
         },
         'reference_query_keys': {
             'project': Project
@@ -46,6 +46,8 @@ class ServiceAccount(MongoModel):
             'provider',
             'project',
             'project_id',
-            'domain_id',
+            'trusted_service_account_id',
+            'scope',
+            'domain_id'
         ]
     }
