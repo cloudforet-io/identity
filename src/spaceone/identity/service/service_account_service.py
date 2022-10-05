@@ -20,7 +20,7 @@ class ServiceAccountService(BaseService):
         self.service_account_mgr: ServiceAccountManager = self.locator.get_manager('ServiceAccountManager')
 
     @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
+        'authorization.scope': 'DOMAIN_OR_PROJECT',
         'authorization.require_project_id': True
     })
     @check_required(['name', 'data', 'provider', 'service_account_type', 'domain_id'])
@@ -67,7 +67,7 @@ class ServiceAccountService(BaseService):
 
         return self.service_account_mgr.create_service_account(params)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
     def update(self, params):
         """
@@ -111,7 +111,7 @@ class ServiceAccountService(BaseService):
 
         return service_account_vo
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
     def delete(self, params):
         """
@@ -132,7 +132,7 @@ class ServiceAccountService(BaseService):
         self.service_account_mgr.delete_service_account_secrets(service_account_id, domain_id)
         self.service_account_mgr.delete_service_account(service_account_id, domain_id)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
     @change_only_key({'project_info': 'project'})
     def get(self, params):
@@ -151,7 +151,7 @@ class ServiceAccountService(BaseService):
         return self.service_account_mgr.get_service_account(params['service_account_id'], params['domain_id'],
                                                             params.get('only'))
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['domain_id'])
     @change_only_key({'project_info': 'project'}, key_path='query.only')
     @append_query_filter(['service_account_id', 'service_account_type', 'trusted_service_account_id',
@@ -183,7 +183,7 @@ class ServiceAccountService(BaseService):
 
         return service_account_vos, total_count, self._get_project_info(service_account_vos)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['project_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['service_account_id', 'name', 'provider'])
