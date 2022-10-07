@@ -56,7 +56,16 @@ DEFAULT_PROVIDERS = [{
         }
     },
     "capability": {
-        "supported_schema": ["aws_access_key", "aws_assume_role"]
+        "general_service_account_schema": [
+            "aws_assume_role"
+        ],
+        "trusted_service_account_schema": [
+            "aws_access_key"
+        ],
+        "support_trusted_service_account": True,
+        "supported_schema": [
+            "aws_access_key"
+        ]
     },
     "tags": {
         'color': '#FF9900',
@@ -421,16 +430,22 @@ aws_access_key = {
             "aws_access_key_id",
             "aws_secret_access_key"
         ],
+        "order": [
+            "aws_access_key_id",
+            "aws_secret_access_key"
+        ],
         "properties": {
             "aws_access_key_id": {
                 "title": "AWS Access Key",
                 "type": "string",
+                "format": "password",
                 "minLength": 4
             },
             "aws_secret_access_key": {
+                "title": "AWS Secret Key",
                 "type": "string",
-                "minLength": 4,
-                "title": "AWS Secret Key"
+                "format": "password",
+                "minLength": 4
             }
         },
         "type": "object"
@@ -445,51 +460,31 @@ aws_assume_role = {
     "service_type": "secret.credentials",
     "schema": {
         "required": [
-            "aws_access_key_id",
-            "aws_secret_access_key",
+            "external_id",
+            "role_arn"
+        ],
+        "order": [
+            "external_id",
             "role_arn"
         ],
         "properties": {
+            "external_id": {
+                "minLength": 4.0,
+                "title": "External ID",
+                "markdown": "[How to use an external ID?](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html)",
+                "type": "string",
+                "format": "generate_id"
+            },
             "role_arn": {
-                "title": "Role ARN",
                 "type": "string",
-                "minLength": 4
-            },
-            "aws_access_key_id": {
-                "title": "AWS Access Key",
-                "type": "string",
-                "minLength": 4
-            },
-            "aws_secret_access_key": {
-                "type": "string",
-                "minLength": 4,
-                "title": "AWS Secret Key"
+                "minLength": 4.0,
+                "title": "Role ARN"
             }
         },
         "type": "object"
     },
     "labels": ["AWS", "Assume Role"],
     "tags": {'description': 'AWS Assume Role'}
-}
-
-google_api_key = {
-    "name": "google_api_key",
-    "service_type": "secret.credentials",
-    "schema": {
-        "required": [
-            "api_key"
-        ],
-        "properties": {
-            "api_key": {
-                "title": "API Key",
-                "type": "string",
-                "minLength": 4
-            }
-        },
-        "type": "object"
-    },
-    "labels": ["Google Cloud", "GCP"],
-    "tags": {'description': 'Google API Key'}
 }
 
 google_oauth2_credentials = {
@@ -509,59 +504,85 @@ google_oauth2_credentials = {
             "client_x509_cert_url"
         ],
         "properties": {
-            "type": {
-                "title": "Type",
+            "client_x509_cert_url": {
+                "examples": [
+                    "https://www.googleapis.com/..."
+                ],
+                "minLength": 4.0,
                 "type": "string",
-                "minLength": 4,
-                "default": "service_account"
-            },
-            "project_id": {
-                "title": "Project ID",
-                "type": "string",
-                "minLength": 4
-            },
-            "private_key_id": {
-                "title": "Private Key ID",
-                "type": "string",
-                "minLength": 4
-            },
-            "private_key": {
-                "title": "Private Key",
-                "type": "string",
-                "minLength": 4
-            },
-            "client_email": {
-                "title": "Client Email",
-                "type": "string",
-                "minLength": 4
-            },
-            "client_id": {
-                "title": "Client ID",
-                "type": "string",
-                "minLength": 4
+                "title": "Client X509 Cert URL"
             },
             "auth_uri": {
                 "title": "Auth URI",
+                "minLength": 4.0,
+                "default": "https://acounts.google.com/o/oauth2/auth",
+                "type": "string"
+            },
+            "private_key_id": {
+                "examples": [
+                    "771823abcd..."
+                ],
+                "minLength": 4.0,
                 "type": "string",
-                "minLength": 4,
-                "default": "https://acounts.google.com/o/oauth2/auth"
+                "title": "Private Key ID"
+            },
+            "zone": {
+                "examples": [
+                    "asia-northeast3"
+                ],
+                "type": "string",
+                "title": "Region",
+                "minLength": 4.0
+            },
+            "type": {
+                "minLength": 4.0,
+                "type": "string",
+                "default": "service_account",
+                "title": "Type"
+            },
+            "client_email": {
+                "title": "Client Email",
+                "examples": [
+                    "<api-name>api@project-id.iam.gserviceaccount.com(opens in new tab)"
+                ],
+                "type": "string",
+                "minLength": 4.0
+            },
+            "auth_provider_x509_cert_url": {
+                "title": "Auth Provider Cert URL",
+                "minLength": 4.0,
+                "default": "https://www.googleapis.com/oauth2/v1/certs",
+                "type": "string"
+            },
+            "private_key": {
+                "minLength": 4.0,
+                "examples": [
+                    "-----BEGIN"
+                ],
+                "type": "string",
+                "title": "Private Key"
             },
             "token_uri": {
                 "title": "Token URI",
-                "type": "string",
-                "minLength": 4,
-                "default": "https://oauth2.googleapis.com/token"
+                "minLength": 4.0,
+                "default": "https://oauth2.googleapis.com/token",
+                "type": "string"
             },
-            "auth_provider_x509_cert_url": {
-                "title": "Auth Provider X509 Cert URL",
-                "type": "string",
-                "minLength": 4,
-                "default": "https://www.googleapis.com/oauth2/v1/certs"
+            "project_id": {
+                "minLength": 4.0,
+                "title": "Project ID",
+                "examples": [
+                    "project-id"
+                ],
+                "type": "string"
             },
-            "client_x509_cert_url": {
-                "title": "Client X509 Cert URL",
+            "client_id": {
+                "examples": [
+                    "10118252....."
+                ],
+                "minLength": 4.0,
                 "type": "string",
-                "minLength": 4
+                "title": "Client ID"
             }
         },
         "type": "object"
@@ -575,10 +596,16 @@ azure_client_secret = {
     "service_type": "secret.credentials",
     "schema": {
         "required": [
-            "client_id",
-            "client_secret",
+            "subscription_id",
             "tenant_id",
-            "subscription_id"
+            "client_id",
+            "client_secret"
+        ],
+        "order": [
+            "subscription_id",
+            "tenant_id",
+            "client_id",
+            "client_secret"
         ],
         "properties": {
             "client_id": {
@@ -589,6 +616,7 @@ azure_client_secret = {
             "client_secret": {
                 "title": "Client Secret",
                 "type": "string",
+                "format": "password",
                 "minLength": 4
             },
             "tenant_id": {
@@ -613,19 +641,18 @@ spaceone_api_key = {
     "service_type": "secret.credentials",
     "schema": {
         "required": [
-            "api_key_id",
+            "api_key",
+            "endpoint"
+        ],
+        "order": [
             "api_key",
             "endpoint"
         ],
         "properties": {
-            "api_key_id": {
-                "title": "API Key ID",
-                "type": "string",
-                "minLength": 4
-            },
             "api_key": {
                 "title": "API Key",
                 "type": "string",
+                "format": "password",
                 "minLength": 4
             },
             "endpoint": {
@@ -652,11 +679,13 @@ alibaba_cloud_access_key_pair = {
             "ali_access_key_id": {
                 "title": "Alibaba Cloud AccessKey ID",
                 "type": "string",
+                "format": "password",
                 "minLength": 4
             },
             "ali_access_key_secret": {
                 "title": "Alibaba Cloud AccessKey Secret",
                 "type": "string",
+                "format": "password",
                 "minLength": 4
             }
         },
