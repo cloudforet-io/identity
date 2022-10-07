@@ -451,8 +451,7 @@ aws_access_key = {
         "type": "object"
     },
     "labels": ["AWS"],
-    "tags": {'description': 'AWS Access Key'}
-
+    "tags": {"description": "AWS Access Key"}
 }
 
 aws_assume_role = {
@@ -484,7 +483,7 @@ aws_assume_role = {
         "type": "object"
     },
     "labels": ["AWS", "Assume Role"],
-    "tags": {'description': 'AWS Assume Role'}
+    "tags": {"description": "AWS Assume Role"}
 }
 
 google_oauth2_credentials = {
@@ -588,7 +587,7 @@ google_oauth2_credentials = {
         "type": "object"
     },
     "labels": ["Google Cloud", "GCP", "OAuth2.0"],
-    "tags": {'description': 'Google OAuth2 Credentials'}
+    "tags": {"description": "Google OAuth2 Credentials"}
 }
 
 azure_client_secret = {
@@ -633,7 +632,7 @@ azure_client_secret = {
         "type": "object"
     },
     "labels": ["Azure"],
-    "tags": {'description': 'Azure Client Secret'}
+    "tags": {"description": "Azure Client Secret"}
 }
 
 spaceone_api_key = {
@@ -664,7 +663,7 @@ spaceone_api_key = {
         "type": "object"
     },
     "labels": ["SpaceONE"],
-    "tags": {'description': 'SpaceONE API Key'}
+    "tags": {"description": "SpaceONE API Key"}
 }
 
 alibaba_cloud_access_key_pair = {
@@ -692,7 +691,7 @@ alibaba_cloud_access_key_pair = {
         "type": "object"
     },
     "labels": ["Alibaba"],
-    "tags": {'description': "Alibaba Cloud AccessKey Pair"}
+    "tags": {"description": "Alibaba Cloud AccessKey Pair"}
 }
 
 oci_api_key = {
@@ -730,7 +729,7 @@ oci_api_key = {
         "type": "object"
     },
     "labels": ["Oracle"],
-    "tags": {'description': "Oracle Cloud Infrastructure Access Configuration"}
+    "tags": {"description": "Oracle Cloud Infrastructure Access Configuration"}
 }
 
 openstack_credentials = {
