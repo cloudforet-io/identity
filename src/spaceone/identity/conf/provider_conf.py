@@ -57,7 +57,7 @@ DEFAULT_PROVIDERS = [{
     },
     "capability": {
         "general_service_account_schema": [
-            "aws_assume_role"
+            "aws_assume_role_with_external_id"
         ],
         "trusted_service_account_schema": [
             "aws_access_key"
