@@ -79,26 +79,50 @@ class ServiceAccountManager(BaseManager):
                 'domain_id': domain_id
             })
 
-    def delete_service_account_secrets(self, service_account_id, domain_id):
+    def delete_service_account_secrets(self, service_account_id, domain_id, service_account_type):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        response = self._list_secrets(secret_connector, service_account_id, domain_id)
-        for secret_info in response.get('results', []):
-            secret_connector.dispatch('Secret.delete', {
-                'secret_id': secret_info['secret_id'],
-                'domain_id': domain_id
-            })
+        if service_account_type == 'TRUSTED':
+            response = self._list_trusted_secrets(secret_connector, service_account_id, domain_id)
+            for trusted_secret_info in response.get('results', []):
+                secret_connector.dispatch('TrustedSecret.delete', {
+                    'secret_id': trusted_secret_info['trusted_secret_id'],
+                    'domain_id': domain_id
+                })
+        else:
+            response = self._list_secrets(secret_connector, service_account_id, domain_id)
+            for secret_info in response.get('results', []):
+                secret_connector.dispatch('Secret.delete', {
+                    'secret_id': secret_info['secret_id'],
+                    'domain_id': domain_id
+                })
 
-    def check_service_account_secrets(self, service_account_id, domain_id):
+    def check_service_account_secrets(self, service_account_id, domain_id, service_account_type):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        response = self._list_secrets(secret_connector, service_account_id, domain_id)
-        total_count = response.get('total_count', 0)
 
-        if total_count > 0:
-            raise ERROR_EXIST_RESOURCE(parent='ServiceAccount', child='Secret')
+        if service_account_type == 'TRUSTED':
+            response = self._list_trusted_secrets(secret_connector, service_account_id, domain_id)
+            total_count = response.get('total_count', 0)
+
+            if total_count > 0:
+                raise ERROR_EXIST_RESOURCE(parent='ServiceAccount', child='TrustedSecret')
+        else:
+            response = self._list_secrets(secret_connector, service_account_id, domain_id)
+
+            total_count = response.get('total_count', 0)
+
+            if total_count > 0:
+                raise ERROR_EXIST_RESOURCE(parent='ServiceAccount', child='Secret')
 
     @staticmethod
     def _list_secrets(secret_connector, service_account_id, domain_id):
         return secret_connector.dispatch('Secret.list', {
+            'service_account_id': service_account_id,
+            'domain_id': domain_id
+        })
+
+    @staticmethod
+    def _list_trusted_secrets(secret_connector, service_account_id, domain_id):
+        return secret_connector.dispatch('TrustedSecret.list', {
             'service_account_id': service_account_id,
             'domain_id': domain_id
         })
