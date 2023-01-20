@@ -1,11 +1,10 @@
 from jsonschema import validate
 
 from spaceone.core.service import *
-from spaceone.core.error import *
-from spaceone.core import utils
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.provider_manager import ProviderManager
+from spaceone.identity.model.service_account_model import ServiceAccount
 from spaceone.identity.error.error_service_account import *
 
 
@@ -45,7 +44,8 @@ class ServiceAccountService(BaseService):
         service_account_type = params['service_account_type']
 
         if 'project_id' in params and params['service_account_type'] == 'TRUSTED':
-            raise ERROR_PERMISSION_DENIED()
+            raise ERROR_INVALID_PARAMETER(key='project_id',
+                                          reason='Trusted service account cannot configure a project.')
 
         if service_account_type == 'TRUSTED':
             params.update({
@@ -90,12 +90,16 @@ class ServiceAccountService(BaseService):
         domain_id = params['domain_id']
         project_id = params.get('project_id')
 
-        service_account_vo = self.service_account_mgr.get_service_account(service_account_id, domain_id)
+        service_account_vo: ServiceAccount = self.service_account_mgr.get_service_account(service_account_id, domain_id)
 
         if 'data' in params:
             self._check_data(params['data'], service_account_vo.provider)
 
         if project_id:
+            if service_account_vo.service_account_type == 'TRUSTED':
+                raise ERROR_INVALID_PARAMETER(key='project_id',
+                                              reason='Trusted service account cannot configure a project.')
+
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
 
         if 'trusted_service_account_id' in params:
@@ -127,10 +131,16 @@ class ServiceAccountService(BaseService):
 
         service_account_id = params['service_account_id']
         domain_id = params['domain_id']
+        service_account_vo: ServiceAccount = self.service_account_mgr.get_service_account(service_account_id, domain_id)
 
-        # self.service_account_mgr.check_service_account_secrets(service_account_id, domain_id)
-        self.service_account_mgr.delete_service_account_secrets(service_account_id, domain_id)
-        self.service_account_mgr.delete_service_account(service_account_id, domain_id)
+        self.service_account_mgr.check_service_account_secrets(service_account_id, domain_id,
+                                                               service_account_vo.service_account_type)
+        self.service_account_mgr.delete_service_account_secrets(service_account_id, domain_id,
+                                                                service_account_vo.service_account_type)
+
+        service_account_vo.delete()
+
+
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
