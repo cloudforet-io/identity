@@ -133,14 +133,12 @@ class ServiceAccountService(BaseService):
         domain_id = params['domain_id']
         service_account_vo: ServiceAccount = self.service_account_mgr.get_service_account(service_account_id, domain_id)
 
-        self.service_account_mgr.check_service_account_secrets(service_account_id, domain_id,
-                                                               service_account_vo.service_account_type)
+        # self.service_account_mgr.check_service_account_secrets(service_account_id, domain_id,
+        #                                                        service_account_vo.service_account_type)
         self.service_account_mgr.delete_service_account_secrets(service_account_id, domain_id,
                                                                 service_account_vo.service_account_type)
 
         service_account_vo.delete()
-
-
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_PROJECT'})
     @check_required(['service_account_id', 'domain_id'])
