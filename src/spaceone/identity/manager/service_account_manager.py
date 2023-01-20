@@ -85,7 +85,7 @@ class ServiceAccountManager(BaseManager):
             response = self._list_trusted_secrets(secret_connector, service_account_id, domain_id)
             for trusted_secret_info in response.get('results', []):
                 secret_connector.dispatch('TrustedSecret.delete', {
-                    'secret_id': trusted_secret_info['trusted_secret_id'],
+                    'trusted_secret_id': trusted_secret_info['trusted_secret_id'],
                     'domain_id': domain_id
                 })
         else:
