@@ -8,6 +8,7 @@ class User(MongoModel):
     name = StringField(max_length=128, default='')
     state = StringField(max_length=20, choices=('ENABLED', 'DISABLED', 'PENDING'))
     email = StringField(max_length=255, default='')
+    email_verified = BooleanField(default=False)
     user_type = StringField(max_length=20, choices=('USER', 'API_USER'))
     backend = StringField(max_length=20, choices=('LOCAL', 'EXTERNAL'))
     required_actions = ListField(StringField(choices=('UPDATE_USER',)), default=[])
@@ -24,6 +25,7 @@ class User(MongoModel):
             'name',
             'state',
             'email',
+            'email_verified',
             'required_actions',
             'language',
             'timezone',
