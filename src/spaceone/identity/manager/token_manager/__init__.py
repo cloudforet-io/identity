@@ -41,6 +41,7 @@ class TokenManager(BaseManager, ABC):
         identity_conf = config.get_global('IDENTITY') or {}
         token_conf = identity_conf.get('token', {})
         self.CONST_TOKEN_TIMEOUT = token_conf.get('token_timeout', 1800)
+        self.CONST_TEMPORARY_TOKEN_TIMEOUT = token_conf.get('temporary_token_timeout')
         self.CONST_REFRESH_TIMEOUT = token_conf.get('refresh_timeout', 3600)
         self.CONST_REFRESH_TTL = token_conf.get('refresh_ttl', -1)
         self.CONST_REFRESH_ONCE = token_conf.get('refresh_once', True)
@@ -51,6 +52,9 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.old_refresh_key = None
+
+    def issue_temporary_token(self, **kwargs):
+        raise NotImplementedError('TokenManager.issue_temporary_token not implemented!')
 
     def issue_token(self, **kwargs):
         raise NotImplementedError('TokenManager.issue_token not implemented!')
@@ -75,6 +79,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
     def issue_access_token(self, user_type, user_id, domain_id, **kwargs):
         private_jwk = self._get_private_jwk(kwargs)
         permissions = kwargs.get('permissions')
+        verify_code = kwargs.get('verify_code')
         timeout = kwargs.get('timeout')
         if timeout is None:
             timeout = self.CONST_TOKEN_TIMEOUT
@@ -90,6 +95,10 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
 
         if permissions:
             payload['permissions'] = permissions
+
+        if verify_code:
+            payload['verify_code'] = verify_code
+            self.set_verify_code_cache(domain_id, user_id, verify_code)
 
         encoded = JWTUtil.encode(payload, private_jwk)
         return encoded
@@ -151,3 +160,13 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
                 cache.delete(f'refresh-token:{self.old_refresh_key}')
 
             cache.set(f'refresh-token:{new_refresh_key}', '', expire=self.CONST_REFRESH_TIMEOUT)
+
+    def set_verify_code_cache(self, domain_id, user_id, verify_code):
+        if cache.is_set():
+            cache.delete(f'verify-code:{domain_id}:{user_id}')
+            cache.set(f'verify-code:{domain_id}:{user_id}', verify_code, expire=self.CONST_TEMPORARY_TOKEN_TIMEOUT)
+
+    @staticmethod
+    def get_verify_code(domain_id, user_id):
+        if cache.is_set():
+            return cache.get(f'verify-code:{domain_id}:{user_id}')

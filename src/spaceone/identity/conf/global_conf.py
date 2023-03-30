@@ -1,5 +1,5 @@
 ROOT_DOMAIN_NAME = 'root'
-
+CONSOLE_DOMAIN = ''
 DATABASE_AUTO_CREATE_INDEX = True
 DATABASES = {
     'default': {
@@ -24,6 +24,7 @@ CACHES = {
 
 IDENTITY = {
     'token': {
+        'temporary_token_timeout': 3600,
         'token_timeout': 1200,
         'refresh_timeout': 1800,
         'refresh_ttl': 18,
