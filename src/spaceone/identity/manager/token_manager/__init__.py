@@ -1,5 +1,6 @@
 import logging
 import time
+import random
 from abc import abstractmethod, ABC, ABCMeta
 
 from spaceone.core import config, utils, cache
@@ -22,6 +23,10 @@ class TokenManager(BaseManager, ABC):
         self._load_conf()
 
     @abstractmethod
+    def issue_temporary_token(self, **kwargs):
+        pass
+
+    @abstractmethod
     def issue_token(self, **kwargs):
         pass
 
@@ -41,6 +46,7 @@ class TokenManager(BaseManager, ABC):
         identity_conf = config.get_global('IDENTITY') or {}
         token_conf = identity_conf.get('token', {})
         self.CONST_TOKEN_TIMEOUT = token_conf.get('token_timeout', 1800)
+        self.CONST_VERIFY_CODE_TIMEOUT = token_conf.get('verify_code_timeout', 3600)
         self.CONST_REFRESH_TIMEOUT = token_conf.get('refresh_timeout', 3600)
         self.CONST_REFRESH_TTL = token_conf.get('refresh_ttl', -1)
         self.CONST_REFRESH_ONCE = token_conf.get('refresh_once', True)
@@ -51,6 +57,9 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.old_refresh_key = None
+
+    def issue_temporary_token(self, **kwargs):
+        raise NotImplementedError('TokenManager.issue_temporary_token not implemented!')
 
     def issue_token(self, **kwargs):
         raise NotImplementedError('TokenManager.issue_token not implemented!')
@@ -151,3 +160,22 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
                 cache.delete(f'refresh-token:{self.old_refresh_key}')
 
             cache.set(f'refresh-token:{new_refresh_key}', '', expire=self.CONST_REFRESH_TIMEOUT)
+
+    def create_verify_code(self, domain_id, user_id):
+        if cache.is_set():
+            verify_code = self._generate_verify_code()
+            cache.delete(f'verify-code:{domain_id}:{user_id}')
+            cache.set(f'verify-code:{domain_id}:{user_id}', verify_code, expire=self.CONST_VERIFY_CODE_TIMEOUT)
+            return verify_code
+
+    @staticmethod
+    def check_verify_code(domain_id, user_id, verify_code):
+        if cache.is_set():
+            cached_verify_code = cache.get(f'verify-code:{domain_id}:{user_id}')
+            if cached_verify_code == verify_code:
+                return True
+        return False
+
+    @staticmethod
+    def _generate_verify_code():
+        return str(random.randint(100000, 999999))

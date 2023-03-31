@@ -32,6 +32,7 @@ class TokenService(BaseService):
                 'user_type': 'str',
                 'timeout': 'int',
                 'refresh_count': 'int',
+                'verify_code': 'str',
                 'domain_id': 'str'
             }
 
@@ -47,6 +48,7 @@ class TokenService(BaseService):
         domain_id = params['domain_id']
         timeout = params.get('timeout')
         refresh_count = params.get('refresh_count')
+        verify_code = params.get('verify_code')
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(domain_id=domain_id)
@@ -54,8 +56,17 @@ class TokenService(BaseService):
         token_manager = self._get_token_manager(user_id, user_type, domain_id)
         token_manager.authenticate(user_id, domain_id, params['credentials'])
 
-        return token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,
-                                         timeout=timeout, ttl=refresh_count)
+        token_info = token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,
+                                               timeout=timeout, ttl=refresh_count)
+
+        if verify_code and token_manager.check_verify_code(domain_id, user_id, verify_code):
+            self.user_mgr.update_user({
+                'user_id': user_id,
+                'domain_id': domain_id,
+                'email_verified': True
+            })
+
+        return token_info
 
     @transaction
     def refresh(self, params):

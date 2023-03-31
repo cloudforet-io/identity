@@ -31,3 +31,27 @@ class ERROR_INCORRECT_USER_ID_FORMAT(ERROR_INVALID_ARGUMENT):
 
 class ERROR_NOT_ALLOWED_ACTIONS(ERROR_INVALID_ARGUMENT):
     _message = 'External or API user are supported for actions. (action = {action})'
+
+
+class ERROR_VERIFICATION_UNAVAILABLE(ERROR_INVALID_ARGUMENT):
+    _message = 'Email verification incomplete. (user_id = {user_id})'
+
+
+class ERROR_INVALID_VERIFY_CODE(ERROR_VERIFICATION_UNAVAILABLE):
+    _message = 'Invalid verify token. (verify_code = {verify_code})'
+
+
+class ERROR_UNABLE_TO_RESET_PASSWORD(ERROR_INVALID_ARGUMENT):
+    _message = 'Unable to reset password. (user_id = {user_id})'
+
+
+class ERROR_PASSWORD_NOT_CHANGED(ERROR_UNABLE_TO_RESET_PASSWORD):
+    _message = 'The requested password is the same as the previous password. (user_id = {user_id})'
+
+
+class ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(ERROR_UNABLE_TO_RESET_PASSWORD):
+    _message = 'Unable to reset password in external authentication system. (user_id = {user_id})'
+
+
+class ERROR_UNABLE_TO_RESET_PASSWORD_WITHOUT_EMAIL(ERROR_UNABLE_TO_RESET_PASSWORD):
+    _message = 'Unable to reset password without email. (user_id = {user_id})'
