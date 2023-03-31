@@ -14,6 +14,10 @@ JINJA_ENV = Environment(
     autoescape=select_autoescape()
 )
 
+LANGUAGE_MAPPER = {
+    'en': 'en'
+}
+
 
 class EmailManager(BaseManager):
 
@@ -22,8 +26,7 @@ class EmailManager(BaseManager):
         self.smtp_connector: SMTPConnector = self.locator.get_connector('SMTPConnector')
 
     def send_reset_password_email(self, user_id, email, reset_password_link, language):
-        if not os.path.exists(f'{TEMPLATE_PATH}/reset_password_link_{language}.html'):
-            language = 'en'
+        language = LANGUAGE_MAPPER.get(language, 'en')
 
         template = JINJA_ENV.get_template(f'reset_password_link_{language}.html')
         email_contents = template.render(user_name=user_id, reset_password_link=reset_password_link)
@@ -32,8 +35,7 @@ class EmailManager(BaseManager):
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_verification_email(self, user_id, email, verification_code, language):
-        if not os.path.exists(f'{TEMPLATE_PATH}/reset_password_link_{language}.html'):
-            language = 'en'
+        language = LANGUAGE_MAPPER.get(language, 'en')
 
         template = JINJA_ENV.get_template(f'verification_code_{language}.html')
         email_contents = template.render(user_name=user_id, verification_code=verification_code)

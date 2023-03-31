@@ -24,7 +24,7 @@ CACHES = {
 
 IDENTITY = {
     'token': {
-        'temporary_token_timeout': 3600,
+        'verify_code_timeout': 3600,
         'token_timeout': 1200,
         'refresh_timeout': 1800,
         'refresh_ttl': 18,
@@ -55,6 +55,13 @@ CONNECTORS = {
             'secret': 'grpc://secret:50051',
             'repository': 'grpc://repository:50051'
         }
+    },
+    'SMTPConnector': {
+        'host': 'smtp.mail.com',
+        'port': '1234',
+        'user': 'cloudforet',
+        'password': '1234',
+        'from_email': 'support@cloudforet.com'
     }
 }
 

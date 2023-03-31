@@ -42,7 +42,7 @@ class ERROR_UNABLE_TO_RESET_PASSWORD(ERROR_INVALID_ARGUMENT):
 
 
 class ERROR_PASSWORD_NOT_CHANGED(ERROR_UNABLE_TO_RESET_PASSWORD):
-    _message = 'Password is not changed. (user_id = {user_id})'
+    _message = 'The requested password is the same as the previous password. (user_id = {user_id})'
 
 
 class ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(ERROR_UNABLE_TO_RESET_PASSWORD):

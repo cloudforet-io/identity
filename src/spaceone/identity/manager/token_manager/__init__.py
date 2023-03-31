@@ -46,7 +46,7 @@ class TokenManager(BaseManager, ABC):
         identity_conf = config.get_global('IDENTITY') or {}
         token_conf = identity_conf.get('token', {})
         self.CONST_TOKEN_TIMEOUT = token_conf.get('token_timeout', 1800)
-        self.CONST_TEMPORARY_TOKEN_TIMEOUT = token_conf.get('temporary_token_timeout')
+        self.CONST_VERIFY_CODE_TIMEOUT = token_conf.get('verify_code_timeout', 3600)
         self.CONST_REFRESH_TIMEOUT = token_conf.get('refresh_timeout', 3600)
         self.CONST_REFRESH_TTL = token_conf.get('refresh_ttl', -1)
         self.CONST_REFRESH_ONCE = token_conf.get('refresh_once', True)
@@ -163,9 +163,9 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
 
     def generate_verify_code(self, domain_id, user_id):
         if cache.is_set():
-            verify_code = str(random.randint(100000, 999999))
+            verify_code = self._generate_verify_code()
             cache.delete(f'verify-code:{domain_id}:{user_id}')
-            cache.set(f'verify-code:{domain_id}:{user_id}', verify_code, expire=self.CONST_TEMPORARY_TOKEN_TIMEOUT)
+            cache.set(f'verify-code:{domain_id}:{user_id}', verify_code, expire=self.CONST_VERIFY_CODE_TIMEOUT)
             return verify_code
 
     @staticmethod
@@ -175,3 +175,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
             if cached_verify_code == verify_code:
                 return True
         return False
+
+    @staticmethod
+    def _generate_verify_code():
+        return str(random.randint(100000, 999999))
