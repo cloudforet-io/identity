@@ -27,7 +27,6 @@ class SMTPConnector(BaseConnector):
         self.smtp.connect(host, port)
         self.smtp.ehlo()
         self.smtp.starttls()
-        self.smtp.ehlo()
         self.smtp.login(user, password)
 
     def send_email(self, to_emails, subject, contents):
