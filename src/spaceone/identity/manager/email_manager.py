@@ -27,19 +27,25 @@ class EmailManager(BaseManager):
 
     def send_reset_password_email(self, user_id, email, reset_password_link, language):
         language = LANGUAGE_MAPPER.get(language, 'en')
+        service_name = self._get_service_name()
 
         template = JINJA_ENV.get_template(f'reset_password_link_{language}.html')
-        email_contents = template.render(user_name=user_id, reset_password_link=reset_password_link)
-        subject = '[SpaceONE] Reset your password'
+        email_contents = template.render(user_name=user_id, reset_password_link=reset_password_link, service_name=service_name)
+        subject = f'[{service_name}] Reset your password'
 
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_verification_email(self, user_id, email, verification_code, language):
         language = LANGUAGE_MAPPER.get(language, 'en')
+        service_name = self._get_service_name()
 
         template = JINJA_ENV.get_template(f'verification_code_{language}.html')
-        email_contents = template.render(user_name=user_id, verification_code=verification_code)
-        subject = '[SpaceONE] Verify your email address'
+        email_contents = template.render(user_name=user_id, verification_code=verification_code, service_name=service_name)
+        subject = f'[{service_name}] Verify your email address'
 
         self.smtp_connector.send_email(email, subject, email_contents)
+
+    @staticmethod
+    def _get_service_name():
+        return config.get_global('SERVICE_NAME')
 
