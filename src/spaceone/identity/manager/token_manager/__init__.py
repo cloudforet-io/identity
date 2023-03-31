@@ -161,9 +161,9 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
 
             cache.set(f'refresh-token:{new_refresh_key}', '', expire=self.CONST_REFRESH_TIMEOUT)
 
-    def generate_verify_code(self, domain_id, user_id):
+    def create_verify_code(self, domain_id, user_id):
         if cache.is_set():
-            verify_code = self.create_verify_code()
+            verify_code = self._generate_verify_code()
             cache.delete(f'verify-code:{domain_id}:{user_id}')
             cache.set(f'verify-code:{domain_id}:{user_id}', verify_code, expire=self.CONST_VERIFY_CODE_TIMEOUT)
             return verify_code
@@ -177,5 +177,5 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         return False
 
     @staticmethod
-    def create_verify_code():
+    def _generate_verify_code():
         return str(random.randint(100000, 999999))
