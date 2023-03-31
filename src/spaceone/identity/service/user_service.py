@@ -186,8 +186,12 @@ class UserService(BaseService):
         domain_id = params['domain_id']
         backend = user_vo.backend
         email = user_vo.email
+        language = user_vo.language
 
         self.check_reset_password_eligibility(backend, email, user_id)
+
+        if user_vo.email_verified is False:
+            raise ERROR_VERIFICATION_UNAVAILABLE(user_id=user_id)
 
         self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
         token = self._issue_temporary_token(user_id, domain_id)
@@ -195,7 +199,7 @@ class UserService(BaseService):
         reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
 
         email_manager: EmailManager = self.locator.get_manager('EmailManager')
-        email_manager.send_reset_password_email(user_id, email, reset_password_link)
+        email_manager.send_reset_password_email(user_id, email, reset_password_link, language)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'actions', 'domain_id'])
@@ -396,8 +400,6 @@ class UserService(BaseService):
 
         console_domain = config.get_global('CONSOLE_DOMAIN')
         console_domain = console_domain.format(domain_name=domain_name)
-
-        print(verify_code)
 
         if verify_code:
             return f'{console_domain}?sso_access_token={token}&verify_code={verify_code}'

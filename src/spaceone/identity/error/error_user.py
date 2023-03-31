@@ -33,7 +33,11 @@ class ERROR_NOT_ALLOWED_ACTIONS(ERROR_INVALID_ARGUMENT):
     _message = 'External or API user are supported for actions. (action = {action})'
 
 
-class ERROR_INVALID_VERIFY_CODE(ERROR_INVALID_ARGUMENT):
+class ERROR_VERIFICATION_UNAVAILABLE(ERROR_INVALID_ARGUMENT):
+    _message = 'Email verification incomplete. (user_id = {user_id})'
+
+
+class ERROR_INVALID_VERIFY_CODE(ERROR_VERIFICATION_UNAVAILABLE):
     _message = 'Invalid verify token. (verify_code = {verify_code})'
 
 
