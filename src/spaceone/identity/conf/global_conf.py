@@ -1,5 +1,6 @@
 ROOT_DOMAIN_NAME = 'root'
 CONSOLE_DOMAIN = ''
+SERVICE_NAME = 'Cloudforet'
 DATABASE_AUTO_CREATE_INDEX = True
 DATABASES = {
     'default': {
