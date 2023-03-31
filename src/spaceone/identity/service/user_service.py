@@ -70,7 +70,7 @@ class UserService(BaseService):
             self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
 
             token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
-            verify_code = token_manager.generate_verify_code(domain_id, user_id)
+            verify_code = token_manager.create_verify_code(domain_id, user_id)
 
             token = self._issue_temporary_token(user_id, domain_id)
             reset_password_link = self._get_console_sso_url(domain_id, token['access_token'], verify_code)
@@ -129,7 +129,7 @@ class UserService(BaseService):
         email = params.get('email', user_vo.email)
 
         token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
-        verify_code = token_manager.generate_verify_code(domain_id, user_id)
+        verify_code = token_manager.create_verify_code(domain_id, user_id)
 
         email_manager: EmailManager = self.locator.get_manager('EmailManager')
         email_manager.send_verification_email(user_id, email, verify_code, user_vo.language)
