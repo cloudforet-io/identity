@@ -47,5 +47,5 @@ class EmailManager(BaseManager):
 
     @staticmethod
     def _get_service_name():
-        return config.get_global('SERVICE_NAME')
+        return config.get_global('EMAIL_SERVICE_NAME')
 

@@ -398,7 +398,7 @@ class UserService(BaseService):
     def _get_console_sso_url(self, domain_id, token, verify_code=None):
         domain_name = self._get_domain_name(domain_id)
 
-        console_domain = config.get_global('CONSOLE_DOMAIN')
+        console_domain = config.get_global('EMAIL_CONSOLE_DOMAIN')
         console_domain = console_domain.format(domain_name=domain_name)
 
         if verify_code:
