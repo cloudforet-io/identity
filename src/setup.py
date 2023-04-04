@@ -43,5 +43,8 @@ setup(
         'mongomock',
         'pytz'
     ],
+    package_data={
+        'spaceone': ['identity/template/*.html']
+    },
     zip_safe=False,
 )
