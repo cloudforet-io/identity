@@ -18,6 +18,7 @@ def UserInfo(user_vo: User, minimal=False):
     if not minimal:
         info.update({
             'email': user_vo.email,
+            'email_verified': user_vo.email_verified,
             'backend': user_vo.backend,
             'required_actions': user_vo.required_actions,
             'language': user_vo.language,
