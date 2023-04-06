@@ -65,7 +65,7 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.create_user(params, domain_vo)
         if reset_password:
-            self.check_reset_password_eligibility(params['backend'], email, user_id)
+            self._check_reset_password_eligibility(params['backend'], email, user_id)
 
             self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
 
@@ -166,7 +166,7 @@ class UserService(BaseService):
         else:
             raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction
     @check_required(['user_id', 'domain_id'])
     def reset_password(self, params):
         """ Reset password
@@ -188,7 +188,7 @@ class UserService(BaseService):
         email = user_vo.email
         language = user_vo.language
 
-        self.check_reset_password_eligibility(backend, email, user_id)
+        self._check_reset_password_eligibility(backend, email, user_id)
 
         if user_vo.email_verified is False:
             raise ERROR_VERIFICATION_UNAVAILABLE(user_id=user_id)
@@ -435,7 +435,7 @@ class UserService(BaseService):
                 raise ERROR_NOT_ALLOWED_EXTERNAL_AUTHENTICATION()
 
     @staticmethod
-    def check_reset_password_eligibility(backend, email, user_id):
+    def _check_reset_password_eligibility(backend, email, user_id):
         if backend == 'EXTERNAL':
             raise ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(user_id=user_id)
         elif email is None:
