@@ -1,4 +1,6 @@
 import pytz
+import random
+import string
 from spaceone.core.service import *
 from spaceone.core import config, utils
 from spaceone.identity.error.error_user import *
@@ -63,11 +65,17 @@ class UserService(BaseService):
         if 'timezone' in params:
             self._check_timezone(params['timezone'])
 
+        if reset_password:
+            params['password'] = params.get('password', self._generate_random_password())
+
         user_vo = self.user_mgr.create_user(params, domain_vo)
         if reset_password:
             self._check_reset_password_eligibility(params['backend'], email, user_id)
 
-            self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+            self.user_mgr.update_user_by_vo({
+                'password': self._generate_random_password(),
+                'required_actions': ['UPDATE_PASSWORD']
+            }, user_vo)
 
             token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
             verify_code = token_manager.create_verify_code(domain_id, user_id)
@@ -440,3 +448,7 @@ class UserService(BaseService):
             raise ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(user_id=user_id)
         elif email is None:
             raise ERROR_UNABLE_TO_RESET_PASSWORD_WITHOUT_EMAIL(user_id=user_id)
+
+    @staticmethod
+    def _generate_random_password():
+        return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(12))
