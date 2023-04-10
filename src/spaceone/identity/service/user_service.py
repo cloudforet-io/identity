@@ -1,6 +1,7 @@
 import pytz
 import random
 import string
+import re
 from spaceone.core.service import *
 from spaceone.core import config, utils
 from spaceone.identity.error.error_user import *
@@ -29,6 +30,7 @@ class UserService(BaseService):
                 'password': 'str',
                 'name': 'str',
                 'email': 'str',
+                'reset_password': 'bool',
                 'user_type': 'str',
                 'backend': 'str',
                 'language': 'str',
@@ -66,25 +68,31 @@ class UserService(BaseService):
             self._check_timezone(params['timezone'])
 
         if reset_password:
-            params['password'] = params.get('password', self._generate_random_password())
+            params['password'] = self._generate_temporary_password()
 
         user_vo = self.user_mgr.create_user(params, domain_vo)
         if reset_password:
-            self._check_reset_password_eligibility(params['backend'], email, user_id)
+            self._check_reset_password_eligibility(user_id, params['backend'], email)
 
-            self.user_mgr.update_user_by_vo({
-                'password': self._generate_random_password(),
-                'required_actions': ['UPDATE_PASSWORD']
-            }, user_vo)
-
-            token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
-            verify_code = token_manager.create_verify_code(domain_id, user_id)
-
-            token = self._issue_temporary_token(user_id, domain_id)
-            reset_password_link = self._get_console_sso_url(domain_id, token['access_token'], verify_code)
-
+            language = params['language']
+            reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
             email_manager: EmailManager = self.locator.get_manager('EmailManager')
-            email_manager.send_reset_password_email(user_id, email, reset_password_link, params['language'])
+
+            if reset_password_type == 'ACCESS_TOKEN':
+                token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+                verify_code = token_manager.create_verify_code(domain_id, user_id)
+                token = self._issue_temporary_token(user_id, domain_id)
+                reset_password_link = self._get_console_sso_url(domain_id, token['access_token'], verify_code)
+
+                user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+                email_manager.send_reset_password_email_when_user_added(user_id, email, reset_password_link, language)
+            elif reset_password_type == 'PASSWORD':
+                temp_password = self._generate_temporary_password()
+                console_link = self._get_console_url(domain_id)
+
+                user_vo = self.user_mgr.update_user_by_vo({'password': temp_password}, user_vo)
+                user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+                email_manager.send_temporary_password_email_when_user_added(user_id, email, console_link, temp_password, language)
 
         return user_vo
 
@@ -99,6 +107,7 @@ class UserService(BaseService):
                 'password': 'str',
                 'name': 'str',
                 'email': 'str',
+                'reset_password' : 'bool',
                 'language': 'str',
                 'timezone': 'str',
                 'tags': 'dict',
@@ -112,7 +121,36 @@ class UserService(BaseService):
         if 'timezone' in params:
             self._check_timezone(params['timezone'])
 
-        return self.user_mgr.update_user(params)
+        user_vo = self.user_mgr.get_user(params['user_id'], params['domain_id'])
+
+        if params.get('reset_password'):
+            domain_id = params['domain_id']
+            user_id = user_vo.user_id
+            backend = user_vo.backend
+            email = user_vo.email
+            language = user_vo.language
+
+            self._check_reset_password_eligibility(user_id, backend, email)
+
+            reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
+            email_manager: EmailManager = self.locator.get_manager('EmailManager')
+
+            if reset_password_type == 'ACCESS_TOKEN':
+                token = self._issue_temporary_token(user_id, domain_id)
+                reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
+
+                user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+                email_manager.send_reset_password_email(user_id, email, reset_password_link, language)
+            elif reset_password_type == 'PASSWORD':
+                temp_password = self._generate_temporary_password()
+                console_link = self._get_console_url(domain_id)
+                del params['password']
+
+                user_vo = self.user_mgr.update_user_by_vo({'password': temp_password}, user_vo)
+                user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+                email_manager.send_temporary_password_email(user_id, email, console_link, temp_password, language)
+
+        return self.user_mgr.update_user_by_vo(params, user_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'domain_id'])
@@ -196,18 +234,24 @@ class UserService(BaseService):
         email = user_vo.email
         language = user_vo.language
 
-        self._check_reset_password_eligibility(backend, email, user_id)
+        self._check_reset_password_eligibility(user_id, backend, email)
 
         if user_vo.email_verified is False:
             raise ERROR_VERIFICATION_UNAVAILABLE(user_id=user_id)
 
-        self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
-        token = self._issue_temporary_token(user_id, domain_id)
-
-        reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
-
+        reset_password_type = config.get_global('RESET_PASSWORD_TYPE', 'ACCESS_TOKEN')
         email_manager: EmailManager = self.locator.get_manager('EmailManager')
-        email_manager.send_reset_password_email(user_id, email, reset_password_link, language)
+        if reset_password_type == 'ACCESS_TOKEN':
+            token = self._issue_temporary_token(user_id, domain_id)
+            reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
+            email_manager.send_reset_password_email(user_id, email, reset_password_link, language)
+
+        elif reset_password_type == 'PASSWORD':
+            temp_password = self._generate_temporary_password()
+            self.user_mgr.update_user_by_vo({'password': temp_password}, user_vo)
+            self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+            console_link = self._get_console_url(domain_id)
+            email_manager.send_temporary_password_email(user_id, email, console_link, temp_password, language)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'actions', 'domain_id'])
@@ -414,6 +458,12 @@ class UserService(BaseService):
         else:
             return f'{console_domain}?sso_access_token={token}'
 
+    def _get_console_url(self, domain_id):
+        domain_name = self._get_domain_name(domain_id)
+
+        console_domain = config.get_global('EMAIL_CONSOLE_DOMAIN')
+        return console_domain.format(domain_name=domain_name)
+
     @staticmethod
     def _get_default_config(vo, item):
         DEFAULT = {
@@ -443,12 +493,16 @@ class UserService(BaseService):
                 raise ERROR_NOT_ALLOWED_EXTERNAL_AUTHENTICATION()
 
     @staticmethod
-    def _check_reset_password_eligibility(backend, email, user_id):
+    def _check_reset_password_eligibility(user_id, backend, email):
         if backend == 'EXTERNAL':
             raise ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(user_id=user_id)
         elif email is None:
             raise ERROR_UNABLE_TO_RESET_PASSWORD_WITHOUT_EMAIL(user_id=user_id)
 
     @staticmethod
-    def _generate_random_password():
-        return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(12))
+    def _generate_temporary_password():
+        while True:
+            random_password = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(12))
+            if re.search('[a-z]', random_password) and re.search('[A-Z]', random_password) and re.search('[0-9]', random_password):
+                return random_password
+
