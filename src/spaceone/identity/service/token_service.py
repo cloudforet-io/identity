@@ -59,7 +59,7 @@ class TokenService(BaseService):
         token_info = token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,
                                                timeout=timeout, ttl=refresh_count)
 
-        if verify_code and token_manager.check_verify_code(domain_id, user_id, verify_code):
+        if verify_code and token_manager.check_verify_code(user_id, domain_id, verify_code):
             self.user_mgr.update_user({
                 'user_id': user_id,
                 'domain_id': domain_id,
