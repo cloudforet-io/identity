@@ -68,31 +68,30 @@ class UserService(BaseService):
             self._check_timezone(params['timezone'])
 
         if reset_password:
-            params['password'] = self._generate_temporary_password()
-
-        user_vo = self.user_mgr.create_user(params, domain_vo)
-        if reset_password:
             self._check_reset_password_eligibility(user_id, params['backend'], email)
 
-            language = params['language']
-            reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
             email_manager: EmailManager = self.locator.get_manager('EmailManager')
+            language = params['language']
+            params['required_actions'] = ['UPDATE_PASSWORD']
+            params['password'] = self._generate_temporary_password()
 
+            reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
             if reset_password_type == 'ACCESS_TOKEN':
                 token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
-                verify_code = token_manager.create_verify_code(domain_id, user_id)
                 token = self._issue_temporary_token(user_id, domain_id)
-                reset_password_link = self._get_console_sso_url(domain_id, token['access_token'], verify_code)
+                verify_code = token_manager.create_verify_code(user_id, domain_id)
+                reset_password_link = self._get_console_sso_url(domain_id, token, verify_code)
 
-                user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+                user_vo = self.user_mgr.create_user(params, domain_vo)
                 email_manager.send_reset_password_email_when_user_added(user_id, email, reset_password_link, language)
-            elif reset_password_type == 'PASSWORD':
-                temp_password = self._generate_temporary_password()
+            else:
+                temp_password = params['password']
                 console_link = self._get_console_url(domain_id)
 
-                user_vo = self.user_mgr.update_user_by_vo({'password': temp_password}, user_vo)
-                user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+                user_vo = self.user_mgr.create_user(params, domain_vo)
                 email_manager.send_temporary_password_email_when_user_added(user_id, email, console_link, temp_password, language)
+        else:
+            user_vo = self.user_mgr.create_user(params, domain_vo)
 
         return user_vo
 
@@ -144,13 +143,14 @@ class UserService(BaseService):
             elif reset_password_type == 'PASSWORD':
                 temp_password = self._generate_temporary_password()
                 console_link = self._get_console_url(domain_id)
-                del params['password']
 
                 user_vo = self.user_mgr.update_user_by_vo({'password': temp_password}, user_vo)
                 user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
                 email_manager.send_temporary_password_email(user_id, email, console_link, temp_password, language)
+        else:
+            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
 
-        return self.user_mgr.update_user_by_vo(params, user_vo)
+        return user_vo
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'domain_id'])
@@ -175,7 +175,7 @@ class UserService(BaseService):
         email = params.get('email', user_vo.email)
 
         token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
-        verify_code = token_manager.create_verify_code(domain_id, user_id)
+        verify_code = token_manager.create_verify_code(user_id, domain_id)
 
         email_manager: EmailManager = self.locator.get_manager('EmailManager')
         email_manager.send_verification_email(user_id, email, verify_code, user_vo.language)
@@ -206,7 +206,7 @@ class UserService(BaseService):
 
         token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
 
-        if token_manager.check_verify_code(domain_id, user_id, verify_code):
+        if token_manager.check_verify_code(user_id, domain_id, verify_code):
             params['email_verified'] = True
             return self.user_mgr.update_user(params)
         else:
