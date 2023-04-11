@@ -9,9 +9,9 @@ from spaceone.identity.model import Domain, User
 from spaceone.identity.manager import UserManager, DomainManager, DomainSecretManager, LocalTokenManager, EmailManager
 
 
-@authentication_handler
-@authorization_handler
-@mutation_handler
+@authentication_handler(exclude=['reset_password'])
+@authorization_handler(exclude=['reset_password'])
+@mutation_handler(exclude=['reset_password'])
 @event_handler
 class UserService(BaseService):
 
