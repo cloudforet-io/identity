@@ -161,7 +161,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
 
             cache.set(f'refresh-token:{new_refresh_key}', '', expire=self.CONST_REFRESH_TIMEOUT)
 
-    def create_verify_code(self, domain_id, user_id):
+    def create_verify_code(self, user_id, domain_id):
         if cache.is_set():
             verify_code = self._generate_verify_code()
             cache.delete(f'verify-code:{domain_id}:{user_id}')
@@ -169,7 +169,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
             return verify_code
 
     @staticmethod
-    def check_verify_code(domain_id, user_id, verify_code):
+    def check_verify_code(user_id, domain_id, verify_code):
         if cache.is_set():
             cached_verify_code = cache.get(f'verify-code:{domain_id}:{user_id}')
             if cached_verify_code == verify_code:
