@@ -127,9 +127,14 @@ class UserService(BaseService):
             user_id = user_vo.user_id
             backend = user_vo.backend
             email = user_vo.email
+            email_verified = user_vo.get('email_verified', False)
+
             language = user_vo.language
 
             self._check_reset_password_eligibility(user_id, backend, email)
+
+            if email_verified is False:
+                raise ERROR_VERIFICATION_UNAVAILABLE(user_id=user_id)
 
             reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
             email_manager: EmailManager = self.locator.get_manager('EmailManager')
