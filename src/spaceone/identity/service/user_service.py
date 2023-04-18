@@ -80,7 +80,7 @@ class UserService(BaseService):
                 token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
                 token = self._issue_temporary_token(user_id, domain_id)
                 verify_code = token_manager.create_verify_code(user_id, domain_id)
-                reset_password_link = self._get_console_sso_url(domain_id, token, verify_code)
+                reset_password_link = self._get_console_sso_url(domain_id, token['access_token'], verify_code)
 
                 user_vo = self.user_mgr.create_user(params, domain_vo)
                 email_manager.send_reset_password_email_when_user_added(user_id, email, reset_password_link, language)
