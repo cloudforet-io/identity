@@ -38,7 +38,7 @@ class ERROR_VERIFICATION_UNAVAILABLE(ERROR_INVALID_ARGUMENT):
 
 
 class ERROR_INVALID_VERIFY_CODE(ERROR_VERIFICATION_UNAVAILABLE):
-    _message = 'Invalid verify token. (verify_code = {verify_code})'
+    _message = 'Invalid verify code. (verify_code = {verify_code})'
 
 
 class ERROR_UNABLE_TO_RESET_PASSWORD(ERROR_INVALID_ARGUMENT):
