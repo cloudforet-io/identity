@@ -30,7 +30,7 @@ LANGUAGE_MAPPER = {
         'temp_password': 'Your password has been changed',
         'verify_email': 'Verify your notification email',
     },
-    'jp': {
+    'ja': {
         'reset_password': 'パスワードリセットのご案内',
         'temp_password': '仮パスワード発行のご案内',
         'verify_email': '通知メールアカウント認証のご案内',
