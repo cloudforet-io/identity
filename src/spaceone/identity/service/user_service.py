@@ -126,7 +126,7 @@ class UserService(BaseService):
             domain_id = params['domain_id']
             user_id = user_vo.user_id
             backend = user_vo.backend
-            email = user_vo.email
+            email = params.get('email', user_vo.email)
             email_verified = user_vo.email_verified
 
             language = user_vo.language
@@ -138,21 +138,20 @@ class UserService(BaseService):
 
             reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
             email_manager: EmailManager = self.locator.get_manager('EmailManager')
+            temp_password = self._generate_temporary_password()
+            params['password'] = temp_password
+
+            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
+            user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
 
             if reset_password_type == 'ACCESS_TOKEN':
                 token = self._issue_temporary_token(user_id, domain_id)
                 reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
 
-                user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
-                user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
                 email_manager.send_reset_password_email(user_id, email, reset_password_link, language)
             elif reset_password_type == 'PASSWORD':
                 console_link = self._get_console_url(domain_id)
-                temp_password = self._generate_temporary_password()
-                params['password'] = temp_password
 
-                user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
-                user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
                 email_manager.send_temporary_password_email(user_id, email, console_link, temp_password, language)
         else:
             user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
