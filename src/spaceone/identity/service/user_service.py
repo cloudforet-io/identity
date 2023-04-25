@@ -167,6 +167,7 @@ class UserService(BaseService):
             params (dict): {
                 'user_id': 'str',
                 'email': 'str',
+                'force': 'bool',
                 'domain_id': 'str'
             }
 
@@ -179,15 +180,22 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         email = params.get('email', user_vo.email)
+        force = params.get('force', False)
 
-        token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
-        verify_code = token_manager.create_verify_code(user_id, domain_id)
+        if force:
+            params['email_verified'] = True
+            user_vo = self.user_mgr.update_user(params)
+        else:
+            params['email_verified'] = False
+            user_vo = self.user_mgr.update_user(params)
 
-        email_manager: EmailManager = self.locator.get_manager('EmailManager')
-        email_manager.send_verification_email(user_id, email, verify_code, user_vo.language)
-        params['email_verified'] = False
+            token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+            verify_code = token_manager.create_verify_code(user_id, domain_id)
 
-        return self.user_mgr.update_user(params)
+            email_manager: EmailManager = self.locator.get_manager('EmailManager')
+            email_manager.send_verification_email(user_id, email, verify_code, user_vo.language)
+
+        return user_vo
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'verify_code', 'domain_id'])
