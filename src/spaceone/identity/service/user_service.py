@@ -72,6 +72,7 @@ class UserService(BaseService):
 
             email_manager: EmailManager = self.locator.get_manager('EmailManager')
             language = params['language']
+            params['email_verified'] = True
             params['required_actions'] = ['UPDATE_PASSWORD']
             params['password'] = self._generate_temporary_password()
 
