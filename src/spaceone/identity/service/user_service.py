@@ -72,16 +72,13 @@ class UserService(BaseService):
 
             email_manager: EmailManager = self.locator.get_manager('EmailManager')
             language = params['language']
-            params['email_verified'] = True
             params['required_actions'] = ['UPDATE_PASSWORD']
             params['password'] = self._generate_temporary_password()
 
             reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
             if reset_password_type == 'ACCESS_TOKEN':
-                token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
                 token = self._issue_temporary_token(user_id, domain_id)
-                verify_code = token_manager.create_verify_code(user_id, domain_id)
-                reset_password_link = self._get_console_sso_url(domain_id, token['access_token'], verify_code)
+                reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
 
                 user_vo = self.user_mgr.create_user(params, domain_vo)
                 email_manager.send_reset_password_email_when_user_added(user_id, email, reset_password_link, language)
@@ -462,16 +459,13 @@ class UserService(BaseService):
         local_token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
         return local_token_manager.issue_temporary_token(user_id, domain_id, private_jwk=private_jwk, timeout=timeout)
 
-    def _get_console_sso_url(self, domain_id, token, verify_code=None):
+    def _get_console_sso_url(self, domain_id, token):
         domain_name = self._get_domain_name(domain_id)
 
         console_domain = config.get_global('EMAIL_CONSOLE_DOMAIN')
         console_domain = console_domain.format(domain_name=domain_name)
 
-        if verify_code:
-            return f'{console_domain}?sso_access_token={token}&verify_code={verify_code}'
-        else:
-            return f'{console_domain}?sso_access_token={token}'
+        return f'{console_domain}?sso_access_token={token}'
 
     def _get_console_url(self, domain_id):
         domain_name = self._get_domain_name(domain_id)
