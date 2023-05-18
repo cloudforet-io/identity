@@ -450,8 +450,8 @@ class UserService(BaseService):
         return domain_vo.name
 
     def _issue_temporary_token(self, user_id, domain_id):
-        # issue token
-        timeout = 3600
+        identity_conf = config.get_global('identity') or {}
+        timeout = identity_conf.get('temporary_token_timeout', 86400)
 
         domain_secret_mgr: DomainSecretManager = self.locator.get_manager('DomainSecretManager')
         private_jwk = domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
