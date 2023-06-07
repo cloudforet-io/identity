@@ -11,8 +11,8 @@ _LOGGER = logging.getLogger(__name__)
 
 class AuthorizationManager(BaseManager):
 
-    def __init__(self, transaction):
-        super().__init__(transaction)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     @cache.cacheable(key='user-permissions:{domain_id}:{user_id}:{service}:{resource}:{verb}:{request_roles}',
                      expire=3600)
