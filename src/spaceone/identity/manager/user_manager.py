@@ -16,8 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 
 class UserManager(BaseManager):
 
-    def __init__(self, transaction):
-        super().__init__(transaction)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.user_model: User = self.locator.get_model('User')
 
     def create_user(self, params, domain_vo: Domain, is_first_login_user=False):
