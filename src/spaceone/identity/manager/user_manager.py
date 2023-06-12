@@ -16,8 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 
 class UserManager(BaseManager):
 
-    def __init__(self, transaction):
-        super().__init__(transaction)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.user_model: User = self.locator.get_model('User')
 
     def create_user(self, params, domain_vo: Domain, is_first_login_user=False):
@@ -100,16 +100,23 @@ class UserManager(BaseManager):
             _LOGGER.info(f'[update_user._rollback] Revert Data : {old_data["name"], ({old_data["user_id"]})}')
             user_vo.update(old_data)
 
-        if params.get('password'):
+        required_actions = list(user_vo.required_actions)
+        is_change_required_actions = False
+
+        if new_password := params.get('password'):
+            if PasswordCipher().checkpw(new_password, user_vo.password):
+                raise ERROR_PASSWORD_NOT_CHANGED(user_id=user_vo.user_id)
+
             self._check_password_format(params['password'])
             hashed_pw = PasswordCipher().hashpw(params['password'])
             params['password'] = hashed_pw
 
-            required_actions = list(user_vo.required_actions)
-
             if 'UPDATE_PASSWORD' in required_actions:
                 required_actions.remove('UPDATE_PASSWORD')
-                params['required_actions'] = required_actions
+                is_change_required_actions = True
+
+        if is_change_required_actions:
+            params['required_actions'] = required_actions
 
         self.transaction.add_rollback(_rollback, user_vo.to_dict())
 

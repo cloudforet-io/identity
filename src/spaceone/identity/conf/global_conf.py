@@ -1,5 +1,8 @@
 ROOT_DOMAIN_NAME = 'root'
-
+EMAIL_CONSOLE_DOMAIN = ''
+EMAIL_SERVICE_NAME = 'Cloudforet'
+# ACCESS_TOKEN (default) / PASSWORD
+RESET_PASSWORD_TYPE = 'ACCESS_TOKEN'
 DATABASE_AUTO_CREATE_INDEX = True
 DATABASES = {
     'default': {
@@ -24,6 +27,8 @@ CACHES = {
 
 IDENTITY = {
     'token': {
+        'verify_code_timeout': 3600,
+        'temporary_token_timeout': 86400,  # 24 hours
         'token_timeout': 1200,
         'refresh_timeout': 1800,
         'refresh_ttl': 18,
@@ -54,6 +59,13 @@ CONNECTORS = {
             'secret': 'grpc://secret:50051',
             'repository': 'grpc://repository:50051'
         }
+    },
+    'SMTPConnector': {
+        'host': 'smtp.mail.com',
+        'port': '1234',
+        'user': 'cloudforet',
+        'password': '1234',
+        'from_email': 'support@cloudforet.com'
     }
 }
 

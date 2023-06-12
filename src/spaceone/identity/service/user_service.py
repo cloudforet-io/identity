@@ -1,14 +1,17 @@
 import pytz
+import random
+import string
+import re
 from spaceone.core.service import *
-from spaceone.core import utils
+from spaceone.core import config, utils
 from spaceone.identity.error.error_user import *
 from spaceone.identity.model import Domain, User
-from spaceone.identity.manager import UserManager, DomainManager
+from spaceone.identity.manager import UserManager, DomainManager, DomainSecretManager, LocalTokenManager, EmailManager
 
 
-@authentication_handler
-@authorization_handler
-@mutation_handler
+@authentication_handler(exclude=['reset_password'])
+@authorization_handler(exclude=['reset_password'])
+@mutation_handler(exclude=['reset_password'])
 @event_handler
 class UserService(BaseService):
 
@@ -27,6 +30,7 @@ class UserService(BaseService):
                 'password': 'str',
                 'name': 'str',
                 'email': 'str',
+                'reset_password': 'bool',
                 'user_type': 'str',
                 'backend': 'str',
                 'language': 'str',
@@ -42,6 +46,9 @@ class UserService(BaseService):
         params['user_type'] = params.get('user_type', 'USER')
         params['backend'] = params.get('backend', 'LOCAL')
         domain_id = params['domain_id']
+        user_id = params['user_id']
+        email = params.get('email')
+        reset_password = params.get('reset_password', False)
 
         domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
         domain_vo: Domain = domain_mgr.get_domain(domain_id)
@@ -60,7 +67,31 @@ class UserService(BaseService):
         if 'timezone' in params:
             self._check_timezone(params['timezone'])
 
-        return self.user_mgr.create_user(params, domain_vo)
+        if reset_password:
+            self._check_reset_password_eligibility(user_id, params['backend'], email)
+
+            email_manager: EmailManager = self.locator.get_manager('EmailManager')
+            language = params['language']
+            params['required_actions'] = ['UPDATE_PASSWORD']
+            params['password'] = self._generate_temporary_password()
+
+            reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
+            if reset_password_type == 'ACCESS_TOKEN':
+                token = self._issue_temporary_token(user_id, domain_id)
+                reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
+
+                user_vo = self.user_mgr.create_user(params, domain_vo)
+                email_manager.send_reset_password_email_when_user_added(user_id, email, reset_password_link, language)
+            else:
+                temp_password = params['password']
+                console_link = self._get_console_url(domain_id)
+
+                user_vo = self.user_mgr.create_user(params, domain_vo)
+                email_manager.send_temporary_password_email_when_user_added(user_id, email, console_link, temp_password, language)
+        else:
+            user_vo = self.user_mgr.create_user(params, domain_vo)
+
+        return user_vo
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'domain_id'])
@@ -73,6 +104,7 @@ class UserService(BaseService):
                 'password': 'str',
                 'name': 'str',
                 'email': 'str',
+                'reset_password' : 'bool',
                 'language': 'str',
                 'timezone': 'str',
                 'tags': 'dict',
@@ -86,7 +118,152 @@ class UserService(BaseService):
         if 'timezone' in params:
             self._check_timezone(params['timezone'])
 
-        return self.user_mgr.update_user(params)
+        user_vo = self.user_mgr.get_user(params['user_id'], params['domain_id'])
+
+        if params.get('reset_password'):
+            domain_id = params['domain_id']
+            user_id = user_vo.user_id
+            backend = user_vo.backend
+            email = params.get('email', user_vo.email)
+            email_verified = user_vo.email_verified
+
+            language = user_vo.language
+
+            self._check_reset_password_eligibility(user_id, backend, email)
+
+            if email_verified is False:
+                raise ERROR_VERIFICATION_UNAVAILABLE(user_id=user_id)
+
+            reset_password_type = config.get_global('RESET_PASSWORD_TYPE')
+            email_manager: EmailManager = self.locator.get_manager('EmailManager')
+            temp_password = self._generate_temporary_password()
+            params['password'] = temp_password
+
+            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
+            user_vo = self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+
+            if reset_password_type == 'ACCESS_TOKEN':
+                token = self._issue_temporary_token(user_id, domain_id)
+                reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
+
+                email_manager.send_reset_password_email(user_id, email, reset_password_link, language)
+            elif reset_password_type == 'PASSWORD':
+                console_link = self._get_console_url(domain_id)
+
+                email_manager.send_temporary_password_email(user_id, email, console_link, temp_password, language)
+        else:
+            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
+
+        return user_vo
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['user_id', 'domain_id'])
+    def verify_email(self, params):
+        """ Verify email
+
+        Args:
+            params (dict): {
+                'user_id': 'str',
+                'email': 'str',
+                'force': 'bool',
+                'domain_id': 'str'
+            }
+
+
+        Returns:
+            UserInfo
+        """
+        user_id = params['user_id']
+        domain_id = params['domain_id']
+
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        email = params.get('email', user_vo.email)
+        force = params.get('force', False)
+
+        if force:
+            params['email_verified'] = True
+            user_vo = self.user_mgr.update_user(params)
+        else:
+            params['email_verified'] = False
+            user_vo = self.user_mgr.update_user(params)
+
+            token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+            verify_code = token_manager.create_verify_code(user_id, domain_id)
+
+            email_manager: EmailManager = self.locator.get_manager('EmailManager')
+            email_manager.send_verification_email(user_id, email, verify_code, user_vo.language)
+
+        return user_vo
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['user_id', 'verify_code', 'domain_id'])
+    def confirm_email(self, params):
+        """ Confirm email
+
+        Args:
+            params (dict): {
+                'user_id': 'str',
+                'verify_code': 'str',
+                'domain_id': 'str'
+            }
+
+
+        Returns:
+            None
+        """
+
+        user_id = params['user_id']
+        domain_id = params['domain_id']
+        verify_code = params['verify_code']
+
+        token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+
+        if token_manager.check_verify_code(user_id, domain_id, verify_code):
+            params['email_verified'] = True
+            return self.user_mgr.update_user(params)
+        else:
+            raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
+
+    @transaction
+    @check_required(['user_id', 'domain_id'])
+    def reset_password(self, params):
+        """ Reset password
+
+        Args:
+            params (dict): {
+                'user_id': 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
+        user_vo: User = self.user_mgr.get_user(params['user_id'], params['domain_id'])
+        user_id = params['user_id']
+        domain_id = params['domain_id']
+        backend = user_vo.backend
+        email = user_vo.email
+        language = user_vo.language
+
+        self._check_reset_password_eligibility(user_id, backend, email)
+
+        if user_vo.email_verified is False:
+            raise ERROR_VERIFICATION_UNAVAILABLE(user_id=user_id)
+
+        reset_password_type = config.get_global('RESET_PASSWORD_TYPE', 'ACCESS_TOKEN')
+        email_manager: EmailManager = self.locator.get_manager('EmailManager')
+        if reset_password_type == 'ACCESS_TOKEN':
+            token = self._issue_temporary_token(user_id, domain_id)
+            reset_password_link = self._get_console_sso_url(domain_id, token['access_token'])
+            email_manager.send_reset_password_email(user_id, email, reset_password_link, language)
+
+        elif reset_password_type == 'PASSWORD':
+            temp_password = self._generate_temporary_password()
+            self.user_mgr.update_user_by_vo({'password': temp_password}, user_vo)
+            self.user_mgr.update_user_by_vo({'required_actions': ['UPDATE_PASSWORD']}, user_vo)
+            console_link = self._get_console_url(domain_id)
+            email_manager.send_temporary_password_email(user_id, email, console_link, temp_password, language)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'actions', 'domain_id'])
@@ -267,6 +444,35 @@ class UserService(BaseService):
         query = params.get('query', {})
         return self.user_mgr.stat_users(query)
 
+    def _get_domain_name(self, domain_id):
+        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
+        domain_vo: Domain = domain_mgr.get_domain(domain_id)
+        return domain_vo.name
+
+    def _issue_temporary_token(self, user_id, domain_id):
+        identity_conf = config.get_global('identity') or {}
+        timeout = identity_conf.get('temporary_token_timeout', 86400)
+
+        domain_secret_mgr: DomainSecretManager = self.locator.get_manager('DomainSecretManager')
+        private_jwk = domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
+
+        local_token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+        return local_token_manager.issue_temporary_token(user_id, domain_id, private_jwk=private_jwk, timeout=timeout)
+
+    def _get_console_sso_url(self, domain_id, token):
+        domain_name = self._get_domain_name(domain_id)
+
+        console_domain = config.get_global('EMAIL_CONSOLE_DOMAIN')
+        console_domain = console_domain.format(domain_name=domain_name)
+
+        return f'{console_domain}?sso_access_token={token}'
+
+    def _get_console_url(self, domain_id):
+        domain_name = self._get_domain_name(domain_id)
+
+        console_domain = config.get_global('EMAIL_CONSOLE_DOMAIN')
+        return console_domain.format(domain_name=domain_name)
+
     @staticmethod
     def _get_default_config(vo, item):
         DEFAULT = {
@@ -294,3 +500,18 @@ class UserService(BaseService):
         if backend == 'EXTERNAL':
             if not domain_vo.plugin_info:
                 raise ERROR_NOT_ALLOWED_EXTERNAL_AUTHENTICATION()
+
+    @staticmethod
+    def _check_reset_password_eligibility(user_id, backend, email):
+        if backend == 'EXTERNAL':
+            raise ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(user_id=user_id)
+        elif email is None:
+            raise ERROR_UNABLE_TO_RESET_PASSWORD_WITHOUT_EMAIL(user_id=user_id)
+
+    @staticmethod
+    def _generate_temporary_password():
+        while True:
+            random_password = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(12))
+            if re.search('[a-z]', random_password) and re.search('[A-Z]', random_password) and re.search('[0-9]', random_password):
+                return random_password
+

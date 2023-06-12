@@ -19,6 +19,26 @@ class User(BaseAPI, user_pb2_grpc.UserServicer):
         with self.locator.get_service('UserService', metadata) as user_svc:
             return self.locator.get_info('UserInfo', user_svc.update(params))
 
+    def verify_email(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('UserService', metadata) as user_svc:
+            user_svc.verify_email(params)
+            return self.locator.get_info('EmptyInfo')
+
+    def confirm_email(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('UserService', metadata) as user_svc:
+            return self.locator.get_info('UserInfo', user_svc.confirm_email(params))
+
+    def reset_password(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('UserService', metadata) as user_svc:
+            user_svc.reset_password(params)
+            return self.locator.get_info('EmptyInfo')
+
     def set_required_actions(self, request, context):
         params, metadata = self.parse_request(request, context)
 

@@ -33,6 +33,17 @@ class LocalTokenManager(JWTManager):
         else:
             raise ERROR_AUTHENTICATION_FAILURE(user_id=self.user.user_id)
 
+    def issue_temporary_token(self, user_id, domain_id, **kwargs):
+        permissions = [
+            'identity.User.get',
+            'identity.User.update'
+        ]
+
+        # Issue token
+        access_token = self.issue_access_token('USER', user_id, domain_id, permissions=permissions, **kwargs)
+
+        return {'access_token': access_token}
+
     def issue_token(self, **kwargs):
         if self.is_authenticated is False:
             raise ERROR_NOT_AUTHENTICATED()

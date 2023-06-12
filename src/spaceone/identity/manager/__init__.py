@@ -15,3 +15,4 @@ from spaceone.identity.manager.token_manager.local_token_manager import LocalTok
 from spaceone.identity.manager.token_manager.external_token_manager import ExternalTokenManager
 from spaceone.identity.manager.token_manager.domain_owner_token_manager import DomainOwnerTokenManager
 from spaceone.identity.manager.endpoint_manager import EndpointManager
+from spaceone.identity.manager.email_manager import EmailManager

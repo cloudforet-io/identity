@@ -54,8 +54,10 @@ class TokenService(BaseService):
         token_manager = self._get_token_manager(user_id, user_type, domain_id)
         token_manager.authenticate(user_id, domain_id, params['credentials'])
 
-        return token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,
-                                         timeout=timeout, ttl=refresh_count)
+        token_info = token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,
+                                               timeout=timeout, ttl=refresh_count)
+
+        return token_info
 
     @transaction
     def refresh(self, params):
