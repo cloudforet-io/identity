@@ -4,6 +4,8 @@ metadata:
   name: identity 
 build:
   platforms: ["linux/amd64"]
+  tagPolicy:
+    sha256: {}
   artifacts:
     - image: ${IMAGE_REPOSITORY}/identity
       docker:

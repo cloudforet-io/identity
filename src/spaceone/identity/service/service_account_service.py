@@ -176,6 +176,7 @@ class ServiceAccountService(BaseService):
                     'scope': 'str',
                     'provider': 'str',
                     'project_id': 'str',
+                    'has_secret': 'bool',
                     'domain_id': 'str',
                     'query': 'dict (spaceone.api.core.v1.Query)',
                     'user_projects': 'list', // from meta
@@ -185,7 +186,12 @@ class ServiceAccountService(BaseService):
             results (list): 'list of service_account_vo'
             total_count (int)
         """
+
         query = params.get('query', {})
+
+        has_secret = params.get('has_secret', False)
+        if has_secret:
+            query = self._append_secret_filter(query, params['domain_id'])
 
         service_account_vos, total_count = self.service_account_mgr.list_service_accounts(query)
 
@@ -256,3 +262,14 @@ class ServiceAccountService(BaseService):
             projects_info[project_vo.project_id] = project_vo
 
         return projects_info
+
+    def _append_secret_filter(self, query, domain_id):
+        service_account_ids = self.service_account_mgr.get_all_service_account_ids_using_secret(domain_id)
+        query['filter'] = query.get('filter', [])
+        query['filter'].append({
+            'k': 'service_account_id',
+            'v': service_account_ids,
+            'o': 'in'
+        })
+
+        return query
