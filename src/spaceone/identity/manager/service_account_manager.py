@@ -96,6 +96,24 @@ class ServiceAccountManager(BaseManager):
                     'domain_id': domain_id
                 })
 
+    def get_all_service_account_ids_using_secret(self, domain_id):
+        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
+        response = secret_connector.dispatch('Secret.stat', {
+            'query': {
+                'distinct': 'service_account_id',
+                'filter': [
+                    {
+                        'k': 'service_account_id',
+                        'v': None,
+                        'o': 'not'
+                    }
+                ]
+            },
+            'domain_id': domain_id
+        })
+
+        return response.get('results', [])
+
     def check_service_account_secrets(self, service_account_id, domain_id, service_account_type):
         secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
 
