@@ -206,6 +206,7 @@ class ServiceAccountService(BaseService):
         Args:
             params (dict): {
                 'domain_id': 'str',
+                'has_secret': 'bool',
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
                 'user_projects': 'list', // from meta
             }
@@ -216,6 +217,11 @@ class ServiceAccountService(BaseService):
         """
 
         query = params.get('query', {})
+
+        has_secret = params.get('has_secret', False)
+        if has_secret:
+            query = self._append_secret_filter(query, params['domain_id'])
+
         return self.service_account_mgr.stat_service_accounts(query)
 
     def _check_data(self, data, provider):
