@@ -4,7 +4,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from spaceone.core.connector import BaseConnector
-from spaceone.identity.error.error_user import *
+from spaceone.identity.error.error_user import ERROR_UNABLE_TO_CONNECT_SMTP_SERVER
+
 __all__ = ['SMTPConnector']
 
 _LOGGER = logging.getLogger(__name__)
