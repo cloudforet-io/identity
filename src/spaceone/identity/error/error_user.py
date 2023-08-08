@@ -55,3 +55,7 @@ class ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(ERROR_UNABLE_TO_RESET_PASS
 
 class ERROR_UNABLE_TO_RESET_PASSWORD_WITHOUT_EMAIL(ERROR_UNABLE_TO_RESET_PASSWORD):
     _message = 'Unable to reset password without email. (user_id = {user_id})'
+
+
+class ERROR_UNABLE_TO_CONNECT_SMTP_SERVER(ERROR_INVALID_ARGUMENT):
+    _message = 'Unable to connect SMTP. Please Contact your administrator.'
