@@ -219,7 +219,7 @@ DEFAULT_PROVIDERS = [{
             "azure_subscription_id"
         ],
         "trusted_service_account_schema": [
-            "azure_client_secret_without_subscription_id",
+            "azure_credentials",
         ],
         "support_trusted_service_account": True,
         "supported_schema": ["azure_client_secret"]
