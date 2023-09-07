@@ -125,6 +125,13 @@ DEFAULT_PROVIDERS = [{
         }
     },
     "capability": {
+        "general_service_account_schema": [
+            "google_cloud_project_id"
+        ],
+        "trusted_service_account_schema": [
+            "google_oauth2_credentials"
+        ],
+        "support_trusted_service_account": True,
         "supported_schema": ["google_oauth2_credentials"]
     },
     "tags": {
@@ -208,6 +215,13 @@ DEFAULT_PROVIDERS = [{
         }
     },
     "capability": {
+        "general_service_account_schema": [
+            "azure_subscription_id"
+        ],
+        "trusted_service_account_schema": [
+            "azure_client_secret_without_subscription_id",
+        ],
+        "support_trusted_service_account": True,
         "supported_schema": ["azure_client_secret"]
     },
     "tags": {
