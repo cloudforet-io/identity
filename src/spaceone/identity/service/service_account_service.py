@@ -60,7 +60,7 @@ class ServiceAccountService(BaseService):
         else:
             raise ERROR_INVALID_PARAMETER(key='service_account_type', reason=f'{service_account_type}')
 
-        self._check_data(params['data'], params['provider'])
+        self._check_data(params['data'], params['provider'], domain_id)
 
         if 'project_id' in params:
             params['project'] = self._get_project(params['project_id'], params['domain_id'])
@@ -93,7 +93,7 @@ class ServiceAccountService(BaseService):
         service_account_vo: ServiceAccount = self.service_account_mgr.get_service_account(service_account_id, domain_id)
 
         if 'data' in params:
-            self._check_data(params['data'], service_account_vo.provider)
+            self._check_data(params['data'], service_account_vo.provider, domain_id)
 
         if project_id:
             if service_account_vo.service_account_type == 'TRUSTED':
@@ -224,9 +224,9 @@ class ServiceAccountService(BaseService):
 
         return self.service_account_mgr.stat_service_accounts(query)
 
-    def _check_data(self, data, provider):
+    def _check_data(self, data, provider, domain_id):
         provider_mgr: ProviderManager = self.locator.get_manager('ProviderManager')
-        provider_vo = provider_mgr.get_provider(provider)
+        provider_vo = provider_mgr.get_provider(provider, domain_id)
         schema = provider_vo.template.get('service_account', {}).get('schema')
 
         if schema:
