@@ -22,6 +22,7 @@ class ProviderService(BaseService):
             params (dict): {
                 'provider': 'str',
                 'name': 'str',
+                'order': 'int',
                 'template': 'dict',
                 'metadata': 'dict',
                 'capability': 'dict',
@@ -45,6 +46,7 @@ class ProviderService(BaseService):
             params (dict): {
                 'provider': 'str',
                 'name': 'str',
+                'order': 'int',
                 'template': 'dict',
                 'metadata': 'dict',
                 'capability': 'dict',
@@ -89,12 +91,15 @@ class ProviderService(BaseService):
         Returns:
             provider_vo (object)
         """
-        self._create_default_provider()
-        return self.provider_mgr.get_provider(params['provider'], params.get('only'))
+
+        domain_id = params['domain_id']
+
+        self._create_default_provider(domain_id)
+        return self.provider_mgr.get_provider(params['provider'], domain_id, params.get('only'))
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    @append_query_filter(['provider', 'name'])
+    @append_query_filter(['provider', 'name', 'domain_id'])
     @append_keyword_filter(['provider', 'name'])
     def list(self, params):
         """
@@ -110,11 +115,15 @@ class ProviderService(BaseService):
             results (list): 'list of provider_vo'
             total_count (int)
         """
-        self._create_default_provider()
+
+        domain_id = params['domain_id']
+
+        self._create_default_provider(domain_id)
         return self.provider_mgr.list_providers(params.get('query', {}))
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
+    @append_query_filter(['domain_id'])
     @append_keyword_filter(['provider', 'name'])
     def stat(self, params):
         """
@@ -132,10 +141,10 @@ class ProviderService(BaseService):
         query = params.get('query', {})
         return self.provider_mgr.stat_providers(query)
 
-    @cache.cacheable(key='provider:default:init', expire=300)
-    def _create_default_provider(self):
-        provider_vos, total_count = self.provider_mgr.list_providers()
+    @cache.cacheable(key='provider:{domain_id}:default:init', expire=300)
+    def _create_default_provider(self, domain_id):
+        provider_vos = self.provider_mgr.filter_providers(domain_id=domain_id)
         installed_providers = [provider_vo.provider for provider_vo in provider_vos]
-        self.provider_mgr.create_default_providers(installed_providers)
+        self.provider_mgr.create_default_providers(installed_providers, domain_id)
 
         return True
