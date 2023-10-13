@@ -1,6 +1,7 @@
 DEFAULT_PROVIDERS = [{
     "provider": "aws",
     "name": "AWS",
+    "order": 1,
     "template": {
         "service_account": {
             "schema": {
@@ -76,6 +77,7 @@ DEFAULT_PROVIDERS = [{
     "provider": "google_cloud",
     "version": "v1",
     "name": "Google Cloud",
+    "order": 2,
     "template": {
         "service_account": {
             "schema": {
@@ -143,6 +145,7 @@ DEFAULT_PROVIDERS = [{
 }, {
     "provider": "azure",
     "name": "Azure",
+    "order": 3,
     "template": {
         "service_account": {
             "schema": {

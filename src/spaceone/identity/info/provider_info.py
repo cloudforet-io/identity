@@ -10,7 +10,8 @@ __all__ = ['ProviderInfo', 'ProvidersInfo']
 def ProviderInfo(provider_vo: Provider, minimal=False):
     info = {
         'provider': provider_vo.provider,
-        'name': provider_vo.name
+        'name': provider_vo.name,
+        'order': provider_vo.order
     }
 
     if not minimal:
@@ -19,6 +20,7 @@ def ProviderInfo(provider_vo: Provider, minimal=False):
             'metadata': change_struct_type(provider_vo.metadata),
             'capability': change_struct_type(provider_vo.capability),
             'tags': change_struct_type(provider_vo.tags),
+            'domain_id': provider_vo.domain_id,
             'created_at': utils.datetime_to_iso8601(provider_vo.created_at)
         })
 
