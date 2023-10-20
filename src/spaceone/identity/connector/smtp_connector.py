@@ -3,7 +3,10 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from spaceone.identity.error.error_smtp import *
+
 from spaceone.core.connector import BaseConnector
+
 
 __all__ = ['SMTPConnector']
 
@@ -23,11 +26,15 @@ class SMTPConnector(BaseConnector):
         self.set_smtp(host, port, user, password)
 
     def set_smtp(self, host, port, user, password):
-        self.smtp = smtplib.SMTP(host, port)
-        self.smtp.connect(host, port)
-        self.smtp.ehlo()
-        self.smtp.starttls()
-        self.smtp.login(user, password)
+        try:
+            self.smtp = smtplib.SMTP(host, port)
+            self.smtp.connect(host, port)
+            self.smtp.ehlo()
+            self.smtp.starttls()
+            self.smtp.login(user, password)
+        except Exception as e:
+            _LOGGER.error(f'[set_smtp] set smtp failed : Please check smtp config {e}')
+            raise ERROR_SMTP_CONNECTION_FAILED()
 
     def send_email(self, to_emails, subject, contents):
         multipart_msg = MIMEMultipart("alternative")
