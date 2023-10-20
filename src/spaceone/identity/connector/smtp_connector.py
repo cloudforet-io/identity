@@ -3,8 +3,10 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from spaceone.identity.error.error_smtp import *
+
 from spaceone.core.connector import BaseConnector
-from spaceone.core.error import ERROR_UNKNOWN
+
 
 __all__ = ['SMTPConnector']
 
@@ -31,8 +33,8 @@ class SMTPConnector(BaseConnector):
             self.smtp.starttls()
             self.smtp.login(user, password)
         except Exception as e:
-            _LOGGER.error(f'[set_smtp] set smtp failed : Please check smtp config')
-            raise ERROR_UNKNOWN(message='Please contact to administrator.')
+            _LOGGER.error(f'[set_smtp] set smtp failed : Please check smtp config {e}')
+            raise ERROR_SMTP_CONNECTION_FAILED()
 
     def send_email(self, to_emails, subject, contents):
         multipart_msg = MIMEMultipart("alternative")
