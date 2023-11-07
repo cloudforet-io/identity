@@ -376,6 +376,37 @@ class UserService(BaseService):
 
         return self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
 
+    @transaction(append_meta={'authorization.scope': 'USER'})
+    @check_required(['user_id', 'verify_code', 'domain_id'])
+    def confirm_mfa(self, params):
+        """ Confirm MFA
+            Args:
+            params (dict): {
+                'user_id': 'str',
+                'verify_code': 'str',
+                'domain_id': 'str'
+            return Empty
+        """
+
+        user_id = params['user_id']
+        domain_id = params['domain_id']
+        verify_code = params['verify_code']
+
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+
+        if token_manager.check_mfa_verify_code(user_id, domain_id, verify_code):
+            if user_vo.mfa.get('state', 'DISABLED') in ['DISABLED', 'PENDING']:
+                params = {'mfa': user_vo.mfa}
+            elif user_vo.mfa.get('state', 'DISABLED') == 'ENABLED':
+                params = {'mfa': {'state': 'DISABLED'}}
+
+            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
+        else:
+            raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
+
+        return user_vo
+
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'domain_id'])
     def enable(self, params):

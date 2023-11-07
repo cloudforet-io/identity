@@ -185,5 +185,13 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         return False
 
     @staticmethod
+    def check_mfa_verify_code(user_id, domain_id, verify_code):
+        if cache.is_set():
+            cached_verify_code = cache.get(f'mfa-verify-code:{domain_id}:{user_id}')
+            if cached_verify_code == verify_code:
+                return True
+        return False
+
+    @staticmethod
     def _generate_verify_code():
         return str(random.randint(100000, 999999))
