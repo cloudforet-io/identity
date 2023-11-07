@@ -55,7 +55,8 @@ class User(BaseAPI, user_pb2_grpc.UserServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('UserService', metadata) as user_svc:
-            return self.locator.get_info('UserInfo', user_svc.disable_mfa(params))
+            user_svc.disable_mfa(params)
+            return self.locator.get_info('EmptyInfo')
 
     def confirm_mfa(self, request, context):
         params, metadata = self.parse_request(request, context)

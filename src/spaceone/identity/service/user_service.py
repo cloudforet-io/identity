@@ -332,7 +332,7 @@ class UserService(BaseService):
         if mfa_type == 'EMAIL':
             mfa['mfa_type'] = mfa_type
             mfa['email'] = options.get('email')
-            mfa['state'] = 'PENDING'
+            mfa['state'] = mfa.get('state', 'DISABLED')
 
             user_vo = self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
             verify_code = token_manager.create_verify_code(user_id, domain_id)
@@ -341,6 +341,40 @@ class UserService(BaseService):
             raise ERROR_NOT_SUPPORTED_MFA_TYPE(mfa_type=mfa_type)
 
         return user_vo
+
+    @transaction(append_meta={'authorization.scope': 'USER'})
+    @check_required(['user_id', 'domain_id'])
+    def disable_mfa(self, params):
+        """ Disable MFA
+            Args:
+            params (dict): {
+                'user_id': 'str',
+                'force': 'bool',
+                'domain_id': 'str'
+            return Empty
+        """
+        user_id = params['user_id']
+        domain_id = params['domain_id']
+        force = params.get('force', False)
+
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        mfa = getattr(user_vo, 'mfa', {}) or {}
+        mfa_state = mfa.get('state', 'DISABLED')
+        email = mfa.get('email')
+
+        if mfa_state == 'DISABLED':
+            raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
+
+        # todo : need to check scope
+        if force:
+            mfa = {'state': 'DISABLED'}
+        else:
+            email_manager: EmailManager = self.locator.get_manager('EmailManager')
+            token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+            verify_code = token_manager.create_mfa_verify_code(user_id, domain_id)
+            email_manager.send_mfa_verification_email(user_id, email, verify_code, user_vo.language)
+
+        return self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'domain_id'])
