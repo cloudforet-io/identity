@@ -5,6 +5,7 @@ import re
 from spaceone.core.service import *
 from spaceone.core import config, utils
 from spaceone.identity.error.error_user import *
+from spaceone.identity.error.error_mfa import *
 from spaceone.identity.model import Domain, User
 from spaceone.identity.manager import UserManager, DomainManager, DomainSecretManager, LocalTokenManager, EmailManager
 
@@ -87,7 +88,8 @@ class UserService(BaseService):
                 console_link = self._get_console_url(domain_id)
 
                 user_vo = self.user_mgr.create_user(params, domain_vo)
-                email_manager.send_temporary_password_email_when_user_added(user_id, email, console_link, temp_password, language)
+                email_manager.send_temporary_password_email_when_user_added(user_id, email, console_link, temp_password,
+                                                                            language)
         else:
             user_vo = self.user_mgr.create_user(params, domain_vo)
 
@@ -292,6 +294,53 @@ class UserService(BaseService):
         required_actions = list(set(user_vo.required_actions + new_actions))
 
         return self.user_mgr.update_user_by_vo({'required_actions': required_actions}, user_vo)
+
+    @transaction(append_meta={'authorization.scope': 'USER'})
+    @check_required(['user_id', 'mfa_type', 'options', 'domain_id'])
+    def enable_mfa(self, params):
+        """ Enable MFA
+
+        Args:
+            params (dict): {
+                'user_id': 'str',
+                'mfa_type': 'dict',
+                'options': 'dict'
+                'domain_id': 'str'
+            }
+
+        Returns:
+            user_vo (object)
+        """
+
+        user_id = params['user_id']
+        mfa_type = params['mfa_type']
+        options = params['options']
+        domain_id = params['domain_id']
+
+        email_manager: EmailManager = self.locator.get_manager('EmailManager')
+        token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        mfa = getattr(user_vo, 'mfa', {}) or {}
+
+        if mfa.get('state', 'DISABLED') == 'ENABLED':
+            raise ERROR_MFA_ALREADY_ENABLED(user_id=user_id)
+
+        if not options:
+            raise ERROR_REQUIRED_PARAMETER(key='options')
+
+        if mfa_type == 'EMAIL':
+            mfa['mfa_type'] = mfa_type
+            mfa['email'] = options.get('email')
+            mfa['state'] = 'PENDING'
+
+            user_vo = self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
+            verify_code = token_manager.create_verify_code(user_id, domain_id)
+            email_manager.send_mfa_verification_email(user_id, user_vo.mfa.get('email'), verify_code, user_vo.language)
+        else:
+            raise ERROR_NOT_SUPPORTED_MFA_TYPE(mfa_type=mfa_type)
+
+        return user_vo
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_id', 'domain_id'])
@@ -514,4 +563,3 @@ class UserService(BaseService):
             random_password = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(12))
             if re.search('[a-z]', random_password) and re.search('[A-Z]', random_password) and re.search('[0-9]', random_password):
                 return random_password
-

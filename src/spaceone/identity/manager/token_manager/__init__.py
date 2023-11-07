@@ -47,6 +47,7 @@ class TokenManager(BaseManager, ABC):
         token_conf = identity_conf.get('token', {})
         self.CONST_TOKEN_TIMEOUT = token_conf.get('token_timeout', 1800)
         self.CONST_VERIFY_CODE_TIMEOUT = token_conf.get('verify_code_timeout', 3600)
+        self.CONST_MFA_VERIFY_CODE_TIMEOUT = token_conf.get('mfa_verify_code_timeout', 300)
         self.CONST_REFRESH_TIMEOUT = token_conf.get('refresh_timeout', 3600)
         self.CONST_REFRESH_TTL = token_conf.get('refresh_ttl', -1)
         self.CONST_REFRESH_ONCE = token_conf.get('refresh_once', True)
@@ -166,6 +167,13 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
             verify_code = self._generate_verify_code()
             cache.delete(f'verify-code:{domain_id}:{user_id}')
             cache.set(f'verify-code:{domain_id}:{user_id}', verify_code, expire=self.CONST_VERIFY_CODE_TIMEOUT)
+            return verify_code
+
+    def create_mfa_verify_code(self, user_id, domain_id):
+        if cache.is_set():
+            verify_code = self._generate_verify_code()
+            cache.delete(f'mfa-verify-code:{domain_id}:{user_id}')
+            cache.set(f'mfa-verify-code:{domain_id}:{user_id}', verify_code, expire=self.CONST_VERIFY_CODE_TIMEOUT)
             return verify_code
 
     @staticmethod

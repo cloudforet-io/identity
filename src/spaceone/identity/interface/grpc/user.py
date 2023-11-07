@@ -45,6 +45,24 @@ class User(BaseAPI, user_pb2_grpc.UserServicer):
         with self.locator.get_service('UserService', metadata) as user_svc:
             return self.locator.get_info('UserInfo', user_svc.set_required_actions(params))
 
+    def enable_mfa(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('UserService', metadata) as user_svc:
+            return self.locator.get_info('UserInfo', user_svc.enable_mfa(params))
+
+    def disable_mfa(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('UserService', metadata) as user_svc:
+            return self.locator.get_info('UserInfo', user_svc.disable_mfa(params))
+
+    def confirm_mfa(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('UserService', metadata) as user_svc:
+            return self.locator.get_info('UserInfo', user_svc.confirm_mfa(params))
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
 

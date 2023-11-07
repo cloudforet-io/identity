@@ -20,6 +20,7 @@ def UserInfo(user_vo: User, minimal=False):
             'email': user_vo.email,
             'email_verified': user_vo.email_verified,
             'backend': user_vo.backend,
+            'mfa': change_struct_type(user_vo.mfa),
             'required_actions': user_vo.required_actions,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
