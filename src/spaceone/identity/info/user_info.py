@@ -7,6 +7,16 @@ from spaceone.identity.model.user_model import User
 __all__ = ['UserInfo', 'UsersInfo']
 
 
+def MFAInfo(mfa_vo):
+    mfa_info = {
+        'mfa_type': mfa_vo.mfa_type,
+        'state': mfa_vo.state,
+        'options': change_struct_type(mfa_vo.options),
+    }
+
+    return mfa_info
+
+
 def UserInfo(user_vo: User, minimal=False):
     info = {
         'user_id': user_vo.user_id,
@@ -20,7 +30,7 @@ def UserInfo(user_vo: User, minimal=False):
             'email': user_vo.email,
             'email_verified': user_vo.email_verified,
             'backend': user_vo.backend,
-            'mfa': change_struct_type(user_vo.mfa),
+            'mfa': MFAInfo(user_vo.mfa),
             'required_actions': user_vo.required_actions,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
