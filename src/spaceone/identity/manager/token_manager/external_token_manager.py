@@ -32,6 +32,7 @@ class ExternalTokenManager(JWTManager):
 
         endpoint = self.domain_mgr.get_auth_plugin_endpoint_by_vo(self.domain)
         auth_user_info = self._authenticate_with_plugin(endpoint, credentials)
+        credentials['user_id'] = auth_user_info.get('user_id')
 
         _LOGGER.info(f'[authenticate] Authentication success. (user_id={auth_user_info.get("user_id")})')
 
