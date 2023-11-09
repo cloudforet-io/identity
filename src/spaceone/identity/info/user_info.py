@@ -8,6 +8,9 @@ __all__ = ['UserInfo', 'UsersInfo']
 
 
 def MFAInfo(mfa_vo):
+    if mfa_vo is None:
+        return None
+
     mfa_info = {
         'mfa_type': mfa_vo.mfa_type,
         'state': mfa_vo.state,
@@ -30,7 +33,7 @@ def UserInfo(user_vo: User, minimal=False):
             'email': user_vo.email,
             'email_verified': user_vo.email_verified,
             'backend': user_vo.backend,
-            'mfa': MFAInfo(user_vo.mfa) if user_vo.mfa else None,
+            'mfa': MFAInfo(user_vo.mfa),
             'required_actions': user_vo.required_actions,
             'language': user_vo.language,
             'timezone': user_vo.timezone,
