@@ -57,8 +57,14 @@ class TokenService(BaseService):
         token_manager = self._get_token_manager(user_id, user_type, domain_id)
         token_manager.authenticate(user_id, domain_id, params['credentials'])
 
-        if user_type == 'USER' and verify_code and self.is_authenticated:
-            self._check_mfa_validation(user_id, domain_id, verify_code, token_manager)
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        user_mfa = user_vo.mfa.to_dict()
+
+        if user_mfa.get('state', 'DISABLED') == 'ENABLED':
+            if verify_code:
+                token_manager.check_mfa_verify_code(user_id, domain_id, verify_code)
+            else:
+                raise ERROR_MFA_REQUIRED(user_id=user_id)
 
         token_info = token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,
                                                timeout=timeout, ttl=refresh_count)
@@ -116,8 +122,8 @@ class TokenService(BaseService):
 
     def _check_mfa_validation(self, user_id, domain_id, verify_code, token_manager):
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        mfa = getattr(user_vo, 'mfa')
-        if mfa.get('state') == 'ENABLED' and verify_code is None:
+        user_mfa = user_vo.mfa.to_dict()
+        if user_mfa.get('state') == 'ENABLED' and verify_code is None:
             raise ERROR_MFA_REQUIRED(user_id=user_id)
         return token_manager.check_mfa_verify_code(user_id, domain_id, verify_code)
 

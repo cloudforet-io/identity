@@ -2,6 +2,15 @@ from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
 
 
+class MFA(EmbeddedDocument):
+    state = StringField(max_length=20, choices=('ENABLED', 'DISABLED'))
+    mfa_type = StringField(max_length=20)
+    options = DictField()
+
+    def to_dict(self):
+        return dict(self.to_mongo())
+
+
 class User(MongoModel):
     user_id = StringField(max_length=40, unique_with='domain_id', required=True)
     password = BinaryField(default=None)
@@ -11,7 +20,7 @@ class User(MongoModel):
     email_verified = BooleanField(default=False)
     user_type = StringField(max_length=20, choices=('USER', 'API_USER'))
     backend = StringField(max_length=20, choices=('LOCAL', 'EXTERNAL'))
-    mfa = DictField()
+    mfa = EmbeddedDocumentField(MFA)
     required_actions = ListField(StringField(choices=('UPDATE_PASSWORD',)), default=[])
     language = StringField(max_length=7, default='en')
     timezone = StringField(max_length=50, default='UTC')

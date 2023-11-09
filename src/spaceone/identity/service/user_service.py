@@ -321,20 +321,20 @@ class UserService(BaseService):
         token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        mfa = getattr(user_vo, 'mfa', {}) or {}
+        user_mfa = user_vo.mfa.to_dict()
 
-        if mfa.get('state', 'DISABLED') == 'ENABLED':
+        if user_mfa.get('state', 'DISABLED') == 'ENABLED':
             raise ERROR_MFA_ALREADY_ENABLED(user_id=user_id)
 
         if not options:
             raise ERROR_REQUIRED_PARAMETER(key='options')
 
         if mfa_type == 'EMAIL':
-            mfa['mfa_type'] = mfa_type
-            mfa['options'] = options
-            mfa['state'] = mfa.get('state', 'DISABLED')
+            user_mfa['mfa_type'] = mfa_type
+            user_mfa['options'] = options
+            user_mfa['state'] = user_mfa.get('state', 'DISABLED')
 
-            user_vo = self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
+            user_vo = self.user_mgr.update_user_by_vo({'mfa': user_mfa}, user_vo)
             verify_code = token_manager.create_mfa_verify_code(user_id, domain_id)
             email_manager.send_mfa_verification_email(user_id, user_vo.mfa['options']['email'], verify_code, user_vo.language)
         else:
@@ -358,22 +358,21 @@ class UserService(BaseService):
         force = params.get('force', False)
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        mfa = getattr(user_vo, 'mfa', {}) or {}
-        mfa_state = mfa.get('state', 'DISABLED')
-        email = mfa.get('email')
+        user_mfa = user_vo.mfa.to_dict()
 
-        if mfa_state == 'DISABLED':
+        if user_mfa.get('state', 'DISABLED') == 'DISABLED':
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
         if force:
-            mfa = {'state': 'DISABLED'}
+            user_mfa = {'state': 'DISABLED'}
+            self.user_mgr.update_user_by_vo({'mfa': user_mfa}, user_vo)
         else:
+            email = user_mfa['options'].get('email')
+
             email_manager: EmailManager = self.locator.get_manager('EmailManager')
             token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
             verify_code = token_manager.create_mfa_verify_code(user_id, domain_id)
             email_manager.send_mfa_verification_email(user_id, email, verify_code, user_vo.language)
-
-        return self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_id', 'verify_code', 'domain_id'])
@@ -395,12 +394,12 @@ class UserService(BaseService):
         token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
 
         if token_manager.check_mfa_verify_code(user_id, domain_id, verify_code):
-            mfa = getattr(user_vo, 'mfa', {})
-            if user_vo.mfa.get('state', 'DISABLED') == 'ENABLED':
-                mfa = {'state': 'DISABLED'}
-            elif user_vo.mfa.get('state', 'DISABLED') == 'DISABLED':
-                mfa['state'] = 'ENABLED'
-            user_vo = self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
+            user_mfa = user_vo.mfa.to_dict()
+            if user_mfa.get('state', 'DISABLED') == 'ENABLED':
+                user_mfa = {'state': 'DISABLED'}
+            elif user_mfa.get('state', 'DISABLED') == 'DISABLED':
+                user_mfa['state'] = 'ENABLED'
+            user_vo = self.user_mgr.update_user_by_vo({'mfa': user_mfa}, user_vo)
         else:
             raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 
