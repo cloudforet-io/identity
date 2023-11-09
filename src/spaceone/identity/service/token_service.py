@@ -5,6 +5,7 @@ from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
 from spaceone.core.service import *
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import *
+from spaceone.identity.error.error_mfa import ERROR_MFA_REQUIRED
 from spaceone.identity.manager import DomainManager, DomainSecretManager, UserManager
 from spaceone.identity.model import User, Domain
 
@@ -32,6 +33,7 @@ class TokenService(BaseService):
                 'user_type': 'str',
                 'timeout': 'int',
                 'refresh_count': 'int',
+                'verify_code': 'str',
                 'domain_id': 'str'
             }
 
@@ -47,12 +49,16 @@ class TokenService(BaseService):
         domain_id = params['domain_id']
         timeout = params.get('timeout')
         refresh_count = params.get('refresh_count')
+        verify_code = params.get('verify_code')
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(domain_id=domain_id)
 
         token_manager = self._get_token_manager(user_id, user_type, domain_id)
         token_manager.authenticate(user_id, domain_id, params['credentials'])
+
+        if user_type == 'USER' and verify_code and self.is_authenticated:
+            self._check_mfa_validation(user_id, domain_id, verify_code, token_manager)
 
         token_info = token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,
                                                timeout=timeout, ttl=refresh_count)
@@ -107,6 +113,13 @@ class TokenService(BaseService):
                 return self.locator.get_manager('ExternalTokenManager')
         else:
             return self.locator.get_manager('ExternalTokenManager')
+
+    def _check_mfa_validation(self, user_id, domain_id, verify_code, token_manager):
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        mfa = getattr(user_vo, 'mfa')
+        if mfa.get('state') == 'ENABLED' and verify_code is None:
+            raise ERROR_MFA_REQUIRED(user_id=user_id)
+        return token_manager.check_mfa_verify_code(user_id, domain_id, verify_code)
 
     @cache.cacheable(key='user-backend:{domain_id}:{user_id}', expire=600)
     def _get_user_backend(self, user_id, domain_id):
