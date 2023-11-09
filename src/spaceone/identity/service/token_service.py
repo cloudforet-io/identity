@@ -58,7 +58,7 @@ class TokenService(BaseService):
         token_manager.authenticate(user_id, domain_id, params['credentials'])
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        user_mfa = user_vo.mfa.to_dict()
+        user_mfa = user_vo.mfa if user_vo.mfa else {}
 
         if user_mfa.get('state', 'DISABLED') == 'ENABLED':
             if verify_code:
@@ -119,13 +119,6 @@ class TokenService(BaseService):
                 return self.locator.get_manager('ExternalTokenManager')
         else:
             return self.locator.get_manager('ExternalTokenManager')
-
-    def _check_mfa_validation(self, user_id, domain_id, verify_code, token_manager):
-        user_vo = self.user_mgr.get_user(user_id, domain_id)
-        user_mfa = user_vo.mfa.to_dict()
-        if user_mfa.get('state') == 'ENABLED' and verify_code is None:
-            raise ERROR_MFA_REQUIRED(user_id=user_id)
-        return token_manager.check_mfa_verify_code(user_id, domain_id, verify_code)
 
     @cache.cacheable(key='user-backend:{domain_id}:{user_id}', expire=600)
     def _get_user_backend(self, user_id, domain_id):
