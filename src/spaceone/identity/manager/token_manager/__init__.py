@@ -189,6 +189,7 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
         if cache.is_set():
             cached_verify_code = cache.get(f'mfa-verify-code:{domain_id}:{user_id}')
             if cached_verify_code == verify_code:
+                cache.delete(f'mfa-verify-code:{domain_id}:{user_id}')
                 return True
         return False
 

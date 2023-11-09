@@ -331,12 +331,12 @@ class UserService(BaseService):
 
         if mfa_type == 'EMAIL':
             mfa['mfa_type'] = mfa_type
-            mfa['email'] = options.get('email')
+            mfa['options'] = options
             mfa['state'] = mfa.get('state', 'DISABLED')
 
             user_vo = self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
-            verify_code = token_manager.create_verify_code(user_id, domain_id)
-            email_manager.send_mfa_verification_email(user_id, user_vo.mfa.get('email'), verify_code, user_vo.language)
+            verify_code = token_manager.create_mfa_verify_code(user_id, domain_id)
+            email_manager.send_mfa_verification_email(user_id, user_vo.mfa['options']['email'], verify_code, user_vo.language)
         else:
             raise ERROR_NOT_SUPPORTED_MFA_TYPE(mfa_type=mfa_type)
 
@@ -365,7 +365,6 @@ class UserService(BaseService):
         if mfa_state == 'DISABLED':
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
-        # todo : need to check scope
         if force:
             mfa = {'state': 'DISABLED'}
         else:
@@ -396,12 +395,12 @@ class UserService(BaseService):
         token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
 
         if token_manager.check_mfa_verify_code(user_id, domain_id, verify_code):
-            if user_vo.mfa.get('state', 'DISABLED') in ['DISABLED', 'PENDING']:
-                params = {'mfa': user_vo.mfa}
-            elif user_vo.mfa.get('state', 'DISABLED') == 'ENABLED':
-                params = {'mfa': {'state': 'DISABLED'}}
-
-            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
+            mfa = getattr(user_vo, 'mfa', {})
+            if user_vo.mfa.get('state', 'DISABLED') == 'ENABLED':
+                mfa = {'state': 'DISABLED'}
+            elif user_vo.mfa.get('state', 'DISABLED') == 'DISABLED':
+                mfa['state'] = 'ENABLED'
+            user_vo = self.user_mgr.update_user_by_vo({'mfa': mfa}, user_vo)
         else:
             raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 
