@@ -321,7 +321,7 @@ class UserService(BaseService):
         token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        user_mfa = user_vo.mfa.to_dict()
+        user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
 
         if user_mfa.get('state', 'DISABLED') == 'ENABLED':
             raise ERROR_MFA_ALREADY_ENABLED(user_id=user_id)
@@ -358,7 +358,7 @@ class UserService(BaseService):
         force = params.get('force', False)
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        user_mfa = user_vo.mfa.to_dict()
+        user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
 
         if user_mfa.get('state', 'DISABLED') == 'DISABLED':
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
@@ -394,7 +394,7 @@ class UserService(BaseService):
         token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
 
         if token_manager.check_mfa_verify_code(user_id, domain_id, verify_code):
-            user_mfa = user_vo.mfa.to_dict()
+            user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
             if user_mfa.get('state', 'DISABLED') == 'ENABLED':
                 user_mfa = {'state': 'DISABLED'}
             elif user_mfa.get('state', 'DISABLED') == 'DISABLED':

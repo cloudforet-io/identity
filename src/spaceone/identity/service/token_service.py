@@ -57,8 +57,11 @@ class TokenService(BaseService):
         token_manager = self._get_token_manager(user_id, user_type, domain_id)
         token_manager.authenticate(user_id, domain_id, params['credentials'])
 
+        if user_type == 'EXTERNAL':
+            user_id = params['credentials'].get('user_id')
+
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        user_mfa = user_vo.mfa if user_vo.mfa else {}
+        user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
 
         if user_mfa.get('state', 'DISABLED') == 'ENABLED':
             if verify_code:
