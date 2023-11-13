@@ -1,92 +1,68 @@
-from spaceone.api.identity.v1 import domain_pb2, domain_pb2_grpc
 from spaceone.core.pygrpc import BaseAPI
+from spaceone.api.identity.v2 import domain_pb2, domain_pb2_grpc
+from spaceone.identity.service.domain_service import DomainService
 
 
 class Domain(BaseAPI, domain_pb2_grpc.DomainServicer):
-
     pb2 = domain_pb2
     pb2_grpc = domain_pb2_grpc
 
     def create(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.create(params)
-            return self.locator.get_info('DomainInfo', data)
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.create(params)
+        return self.dict_to_message(response)
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.update(params)
-            return self.locator.get_info('DomainInfo', data)
-
-    def change_auth_plugin(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.change_auth_plugin(params)
-            return self.locator.get_info('DomainInfo', data)
-
-    def update_plugin(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.update_plugin(params)
-            return self.locator.get_info('DomainInfo', data)
-
-    def verify_plugin(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.verify_plugin(params)
-            return self.locator.get_info('EmptyInfo')
-
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.update(params)
+        return self.dict_to_message(response)
 
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            domain_svc.delete(params)
-            return self.locator.get_info('EmptyInfo')
+        domain_svc = DomainService(metadata)
+        domain_svc.delete(params)
+        return self.empty()
 
     def enable(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.enable(params)
-            return self.locator.get_info('DomainInfo', data)
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.enable(params)
+        return self.dict_to_message(response)
 
     def disable(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.disable(params)
-            return self.locator.get_info('DomainInfo', data)
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.disable(params)
+        return self.dict_to_message(response)
 
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.get(params)
+        return self.dict_to_message(response)
 
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.get(params)
-            return self.locator.get_info('DomainInfo', data)
-
-    def list(self, request, context):
+    def get_metadata(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data, total_count = domain_svc.list(params)
-            return self.locator.get_info('DomainsInfo', data, total_count, minimal=self.get_minimal(params))
-
-    def stat(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            return self.locator.get_info('StatisticsInfo', domain_svc.stat(params))
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.get_metadata(params)
+        return self.dict_to_message(response)
 
     def get_public_key(self, request, context):
         params, metadata = self.parse_request(request, context)
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.get_public_key(params)
+        return self.dict_to_message(response)
 
-        with self.locator.get_service('DomainService', metadata) as domain_svc:
-            data = domain_svc.get_public_key(params)
-            return self.locator.get_info('DomainPublicKeyInfo', data['pub_jwk'], data['domain_id'])
+    def list(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.list(params)
+        return self.dict_to_message(response)
+
+    def stat(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        domain_svc = DomainService(metadata)
+        response: dict = domain_svc.stat(params)
+        return self.dict_to_message(response)

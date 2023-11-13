@@ -1,49 +1,44 @@
-from spaceone.api.identity.v1 import policy_pb2, policy_pb2_grpc
 from spaceone.core.pygrpc import BaseAPI
+from spaceone.api.identity.v2 import policy_pb2, policy_pb2_grpc
+from spaceone.identity.service.policy_service import PolicyService
 
 
 class Policy(BaseAPI, policy_pb2_grpc.PolicyServicer):
-
     pb2 = policy_pb2
     pb2_grpc = policy_pb2_grpc
 
     def create(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('PolicyService', metadata) as policy_svc:
-            data = policy_svc.create(params)
-            return self.locator.get_info('PolicyInfo', data)
+        policy_svc = PolicyService(metadata)
+        response: dict = policy_svc.create(params)
+        return self.dict_to_message(response)
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('PolicyService', metadata) as policy_svc:
-            data = policy_svc.update(params)
-            return self.locator.get_info('PolicyInfo', data)
+        policy_svc = PolicyService(metadata)
+        response: dict = policy_svc.update(params)
+        return self.dict_to_message(response)
 
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('PolicyService', metadata) as policy_svc:
-            policy_svc.delete(params)
-            return self.locator.get_info('EmptyInfo')
+        policy_svc = PolicyService(metadata)
+        policy_svc.delete(params)
+        return self.empty()
 
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('PolicyService', metadata) as policy_svc:
-            data = policy_svc.get(params)
-            return self.locator.get_info('PolicyInfo', data)
+        policy_svc = PolicyService(metadata)
+        response: dict = policy_svc.get(params)
+        return self.dict_to_message(response)
 
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('PolicyService', metadata) as policy_svc:
-            policy_vos, total_count = policy_svc.list(params)
-            return self.locator.get_info('PoliciesInfo', policy_vos, total_count, minimal=self.get_minimal(params))
+        policy_svc = PolicyService(metadata)
+        response: dict = policy_svc.list(params)
+        return self.dict_to_message(response)
 
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('PolicyService', metadata) as policy_svc:
-            return self.locator.get_info('StatisticsInfo', policy_svc.stat(params))
+        policy_svc = PolicyService(metadata)
+        response: dict = policy_svc.stat(params)
+        return self.dict_to_message(response)
