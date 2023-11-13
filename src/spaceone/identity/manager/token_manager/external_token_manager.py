@@ -24,7 +24,7 @@ class ExternalTokenManager(JWTManager):
 
         # Add User ID for External Authentication
         if user_id:
-            credentials[user_id] = user_id
+            credentials['user_id'] = user_id
 
         self.domain: Domain = self.domain_mgr.get_domain(domain_id)
 
@@ -32,7 +32,6 @@ class ExternalTokenManager(JWTManager):
 
         endpoint = self.domain_mgr.get_auth_plugin_endpoint_by_vo(self.domain)
         auth_user_info = self._authenticate_with_plugin(endpoint, credentials)
-        credentials['user_id'] = auth_user_info.get('user_id')
 
         _LOGGER.info(f'[authenticate] Authentication success. (user_id={auth_user_info.get("user_id")})')
 

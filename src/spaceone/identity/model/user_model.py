@@ -3,7 +3,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class MFA(EmbeddedDocument):
-    state = StringField(max_length=20, choices=('ENABLED', 'DISABLED'))
+    state = StringField(max_length=20, choices=('ENABLED', 'DISABLED'), default='DISABLED')
     mfa_type = StringField(max_length=20)
     options = DictField()
 

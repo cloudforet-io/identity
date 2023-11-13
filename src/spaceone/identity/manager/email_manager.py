@@ -1,5 +1,6 @@
 import logging
 import os
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from spaceone.core import config, utils
@@ -86,17 +87,6 @@ class EmailManager(BaseManager):
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_verification_email(self, user_id, email, verification_code, language):
-        service_name = self._get_service_name()
-        language_map_info = LANGUAGE_MAPPER.get(language, 'default')
-
-        template = JINJA_ENV.get_template(f'verification_code_{language}.html')
-        email_contents = template.render(user_name=user_id, verification_code=verification_code, service_name=service_name)
-        subject = f'[{service_name}] {language_map_info["verify_email"]}'
-
-        self.smtp_connector.send_email(email, subject, email_contents)
-
-    # todo: need to change
-    def send_mfa_verification_email(self, user_id, email, verification_code, language):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, 'default')
 
