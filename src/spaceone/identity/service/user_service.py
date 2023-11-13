@@ -8,6 +8,7 @@ from spaceone.identity.error.error_user import *
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.model import Domain, User
 from spaceone.identity.manager import UserManager, DomainManager, DomainSecretManager, LocalTokenManager, EmailManager
+from spaceone.identity.manager.mfa_manager import MFAManager
 
 
 @authentication_handler(exclude=['reset_password'])
@@ -317,28 +318,25 @@ class UserService(BaseService):
         options = params['options']
         domain_id = params['domain_id']
 
-        email_manager: EmailManager = self.locator.get_manager('EmailManager')
-        token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
-
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+
+        if not options:
+            raise ERROR_REQUIRED_PARAMETER(key='options')
 
         if user_mfa.get('state', 'DISABLED') == 'ENABLED':
             raise ERROR_MFA_ALREADY_ENABLED(user_id=user_id)
 
-        if not options:
-            raise ERROR_REQUIRED_PARAMETER(key='options')
+        mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
 
         if mfa_type == 'EMAIL':
             user_mfa['mfa_type'] = mfa_type
             user_mfa['options'] = options
             user_mfa['state'] = user_mfa.get('state', 'DISABLED')
-
+            mfa_manager.enable_mfa(user_id, domain_id, user_mfa, user_vo.language)
             user_vo = self.user_mgr.update_user_by_vo({'mfa': user_mfa}, user_vo)
-            verify_code = token_manager.create_mfa_verify_code(user_id, domain_id)
-            email_manager.send_mfa_verification_email(user_id, user_vo.mfa['options']['email'], verify_code, user_vo.language)
         else:
-            raise ERROR_NOT_SUPPORTED_MFA_TYPE(mfa_type=mfa_type)
+            raise ERROR_NOT_SUPPORTED_MFA_TYPE(support_mfa_types=['EMAIL'])
 
         return user_vo
 
@@ -359,20 +357,18 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        mfa_type = user_mfa.get('mfa_type')
 
-        if user_mfa.get('state', 'DISABLED') == 'DISABLED':
+        if user_mfa.get('state', 'DISABLED') == 'DISABLED' or mfa_type is None:
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
+
+        mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
 
         if force:
             user_mfa = {'state': 'DISABLED'}
             self.user_mgr.update_user_by_vo({'mfa': user_mfa}, user_vo)
-        else:
-            email = user_mfa['options'].get('email')
-
-            email_manager: EmailManager = self.locator.get_manager('EmailManager')
-            token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
-            verify_code = token_manager.create_mfa_verify_code(user_id, domain_id)
-            email_manager.send_mfa_verification_email(user_id, email, verify_code, user_vo.language)
+        elif mfa_type == 'EMAIL':
+            mfa_manager.disable_mfa(user_id, domain_id, user_mfa, user_vo.language)
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_id', 'verify_code', 'domain_id'])
@@ -391,15 +387,21 @@ class UserService(BaseService):
         verify_code = params['verify_code']
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        token_manager: LocalTokenManager = self.locator.get_manager('LocalTokenManager')
+        mfa_type = user_vo.mfa.mfa_type
 
-        if token_manager.check_mfa_verify_code(user_id, domain_id, verify_code):
-            user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
-            if user_mfa.get('state', 'DISABLED') == 'ENABLED':
-                user_mfa = {'state': 'DISABLED'}
-            elif user_mfa.get('state', 'DISABLED') == 'DISABLED':
-                user_mfa['state'] = 'ENABLED'
-            user_vo = self.user_mgr.update_user_by_vo({'mfa': user_mfa}, user_vo)
+        if not mfa_type:
+            raise ERROR_MFA_NOT_ENABLED(user_id=user_id)
+
+        mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
+
+        if mfa_type == 'EMAIL':
+            if mfa_manager.confirm_mfa(user_id, domain_id, verify_code):
+                user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+                if user_mfa.get('state', 'DISABLED') == 'ENABLED':
+                    user_mfa = {'state': 'DISABLED'}
+                elif user_mfa.get('state', 'DISABLED') == 'DISABLED':
+                    user_mfa['state'] = 'ENABLED'
+                user_vo = self.user_mgr.update_user_by_vo({'mfa': user_mfa}, user_vo)
         else:
             raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 

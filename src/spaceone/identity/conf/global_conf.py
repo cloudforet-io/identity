@@ -28,12 +28,14 @@ CACHES = {
 IDENTITY = {
     'token': {
         'verify_code_timeout': 3600,
-        'mfa_verify_code_timeout': 300,
         'temporary_token_timeout': 86400,  # 24 hours
         'token_timeout': 1200,
         'refresh_timeout': 1800,
         'refresh_ttl': 18,
         'refresh_once': False
+    },
+    'mfa': {
+        'mfa_verify_code_timeout': 300
     }
 }
 

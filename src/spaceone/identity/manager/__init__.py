@@ -16,3 +16,4 @@ from spaceone.identity.manager.token_manager.external_token_manager import Exter
 from spaceone.identity.manager.token_manager.domain_owner_token_manager import DomainOwnerTokenManager
 from spaceone.identity.manager.endpoint_manager import EndpointManager
 from spaceone.identity.manager.email_manager import EmailManager
+from spaceone.identity.manager.mfa_manager.email_mfa_manger import EmailMFAManager
