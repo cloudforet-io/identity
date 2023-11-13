@@ -7,6 +7,7 @@ from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import *
 from spaceone.identity.error.error_mfa import ERROR_MFA_REQUIRED
 from spaceone.identity.manager import DomainManager, DomainSecretManager, UserManager
+from spaceone.identity.manager.mfa_manager import MFAManager
 from spaceone.identity.model import User, Domain
 
 _LOGGER = logging.getLogger(__name__)
@@ -64,6 +65,9 @@ class TokenService(BaseService):
             if verify_code:
                 token_manager.check_mfa_verify_code(user_id, domain_id, verify_code)
             else:
+                mfa_email = user_mfa['options'].get('email')
+                mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get('mfa_type'))
+                mfa_manager.send_mfa_authentication_email(user_id, domain_id, mfa_email, user_vo.language)
                 raise ERROR_MFA_REQUIRED(user_id=user_id)
 
         token_info = token_manager.issue_token(private_jwk=private_jwk, refresh_private_jwk=refresh_private_jwk,

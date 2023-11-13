@@ -18,24 +18,20 @@ JINJA_ENV = Environment(
 
 LANGUAGE_MAPPER = {
     'default': {
-        'reset_password': 'Reset your password',
-        'temp_password': 'Your password has been changed',
-        'verify_email': 'Verify your notification email',
+        'verify_mfa_email': 'Verify your MFA email',
+        'authentication_mfa_email': 'Your multi-factor authentication code.',
     },
     'ko': {
-        'reset_password': '비밀번호 재설정 안내',
-        'temp_password': '임시 비밀번호 발급 안내',
-        'verify_email': '알림전용 이메일 계정 인증 안내',
+        'verify_mfa_email': 'MFA 이메일 계정 인증 안내',
+        'authentication_mfa_email': 'MFA 인증 코드 발송',
     },
     'en': {
-        'reset_password': 'Reset your password',
-        'temp_password': 'Your password has been changed',
-        'verify_email': 'Verify your notification email',
+        'verify_mfa_email': 'Verify your MFA email',
+        'authentication_mfa_email': 'Your multi-factor authentication code.',
     },
     'ja': {
-        'reset_password': 'パスワードリセットのご案内',
-        'temp_password': '仮パスワード発行のご案内',
-        'verify_email': '通知メールアカウント認証のご案内',
+        'verify_mfa_email': 'MFAメールアカウント認証のご案内',
+        'authentication_mfa_email': 'MFA認証コード送信',
     }
 
 }
@@ -62,10 +58,22 @@ class EmailMFAManager(MFAManager):
         language_map_info = LANGUAGE_MAPPER.get(language, 'default')
         verify_code = self.create_mfa_verify_code(user_id, domain_id)
 
-        template = JINJA_ENV.get_template(f'verification_code_{language}.html')
+        template = JINJA_ENV.get_template(f'verification_MFA_code_{language}.html')
         email_contents = template.render(user_name=user_id, verification_code=verify_code,
                                          service_name=service_name)
-        subject = f'[{service_name}] {language_map_info["verify_email"]}'
+        subject = f'[{service_name}] {language_map_info["verify_mfa_email"]}'
+
+        self.smtp_connector.send_email(email, subject, email_contents)
+
+    def send_mfa_authentication_email(self, user_id, domain_id, email, language):
+        service_name = self._get_service_name()
+        language_map_info = LANGUAGE_MAPPER.get(language, 'default')
+        verify_code = self.create_mfa_verify_code(user_id, domain_id)
+
+        template = JINJA_ENV.get_template(f'authentication_code_{language}.html')
+        email_contents = template.render(user_name=user_id, verification_code=verify_code,
+                                         service_name=service_name)
+        subject = f'[{service_name}] {language_map_info["authentication_mfa_email"]}'
 
         self.smtp_connector.send_email(email, subject, email_contents)
 
