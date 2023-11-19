@@ -1,5 +1,6 @@
 from typing import Union, Literal
 from pydantic import BaseModel
+from pydantic.utils import GetterDict
 
 __all__ = [
     "DomainCreateRequest",
@@ -7,7 +8,7 @@ __all__ = [
     "DomainRequest",
     "DomainGetMetadataRequest",
     "DomainSearchQueryRequest",
-    "DomainStatQuery",
+    "DomainStatQueryRequest",
     "State",
 ]
 
@@ -40,5 +41,5 @@ class DomainSearchQueryRequest(BaseModel):
     state: Union[State, None] = None
 
 
-class DomainStatQuery(BaseModel):
+class DomainStatQueryRequest(BaseModel):
     query: dict
