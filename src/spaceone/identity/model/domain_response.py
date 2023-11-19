@@ -1,6 +1,7 @@
-from datetime import datetime
 from typing import List, Union, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, validator, Extra
+
+from spaceone.core.utils import datetime_to_iso8601
 
 from spaceone.identity.model.domain_request import State
 
@@ -14,12 +15,16 @@ __all__ = [
 ExternalAuthState = Literal["ENABLED", "DISABLED"]
 
 
-class DomainResponse(BaseModel):
+class DomainResponse(BaseModel, extra=Extra.ignore):
     domain_id: Union[str, None] = None
     name: Union[str, None] = None
     state: Union[State, None] = None
     tags: Union[dict, None] = {}
-    created_at: Union[datetime, None] = None
+    created_at: Union[str, None] = None
+
+    _convert_datetime = validator("created_at", pre=True, allow_reuse=True)(
+        datetime_to_iso8601
+    )
 
 
 class DomainMetadataResponse(BaseModel):

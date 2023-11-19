@@ -1,10 +1,14 @@
 from datetime import datetime
-from typing import Union, List
+from typing import Union, List, Literal
 from pydantic import BaseModel
 
-from spaceone.identity.model.user_request import State, UserType, Backend, RoleType
+from spaceone.identity.model.user_request import State, UserType, AuthType
 
 __all__ = ["UserResponse", "UsersResponse"]
+
+RoleType = Literal[
+    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "NO_RULE"
+]
 
 
 class UserResponse(BaseModel):
@@ -13,7 +17,7 @@ class UserResponse(BaseModel):
     state: Union[State, None] = None
     email_verified: Union[bool, None] = None
     user_type: Union[UserType, None] = None
-    backend: Union[Backend, None] = None
+    auth_type: Union[AuthType, None] = None
     role_type: Union[RoleType, None] = None
     mfa: Union[dict, None] = None
     required_actions: Union[List[str], None] = None

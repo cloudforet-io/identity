@@ -18,16 +18,12 @@ __all__ = [
     "UserDisableRequest",
     "UserGetRequest",
     "UserType",
-    "Backend",
+    "AuthType",
     "State",
-    "RoleType",
 ]
 
 State = Literal["ENABLED", "DISABLED", "PENDING"]
-Backend = Literal["LOCAL", "EXTERNAL"]
-RoleType = Literal[
-    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "NO_RULE"
-]
+AuthType = Literal["LOCAL", "EXTERNAL"]
 UserType = Literal["USER", "API_USER"]
 
 
@@ -37,7 +33,7 @@ class UserCreateRequest(BaseModel):
     name: Union[str, None] = None
     email: Union[str, None] = None
     user_type: Union[UserType, None] = None
-    backend: Backend
+    auth_type: AuthType
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
@@ -125,10 +121,10 @@ class UserSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     user_id: Union[str, None] = None
     name: Union[str, None] = None
-    state: Union[str, None] = None
+    state: Union[State, None] = None
     email: Union[str, None] = None
-    user_type: Union[str, None] = None
-    backend: Union[str, None] = None
+    user_type: Union[UserType, None] = None
+    AuthType: Union[AuthType, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
