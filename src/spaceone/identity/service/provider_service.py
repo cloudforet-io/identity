@@ -133,6 +133,8 @@ class ProviderService(BaseService):
         return ProvidersResponse(results=providers_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @append_query_filter(['domain_id'])
+    @append_keyword_filter(['provider', 'name'])
     @convert_model
     def stat(self, params: ProviderStatQueryRequest) -> dict:
         """ stat providers
