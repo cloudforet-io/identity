@@ -15,11 +15,11 @@ class ProviderManager(BaseManager):
         self.provider_model = Provider
 
     def create_provider(self, params: dict) -> Provider:
-        def _rollback(provider_vo: Provider):
-            _LOGGER.info(f'[create_provider._rollback] Create provider : {provider_vo.provider}')
-            provider_vo.delete()
+        def _rollback(vo: Provider):
+            _LOGGER.info(f'[create_provider._rollback] Delete provider : {vo.provider}')
+            vo.delete()
 
-        provider_vo: Provider = self.provider_model.create(params)
+        provider_vo = self.provider_model.create(params)
         self.transaction.add_rollback(_rollback, provider_vo)
 
         return provider_vo
@@ -29,7 +29,7 @@ class ProviderManager(BaseManager):
             _LOGGER.info(f'[update_provider._rollback] Revert Data : {old_data["provider"]}')
             provider_vo.update(old_data)
 
-        provider_vo: Provider = self.get_provider(params['provider'], params['domain_id'])
+        provider_vo = self.get_provider(params['provider'], params['domain_id'])
         self.transaction.add_rollback(_rollback, provider_vo.to_dict())
 
         return provider_vo.update(params)
@@ -41,7 +41,7 @@ class ProviderManager(BaseManager):
     def get_provider(self, provider: str, domain_id: str) -> Provider:
         return self.provider_model.get(provider=provider, domain_id=domain_id)
 
-    def filter_providers(self, **conditions) -> Tuple[Provider, ...]:
+    def filter_providers(self, **conditions) -> List[Provider]:
         return self.provider_model.filter(**conditions)
 
     def list_providers(self, query: dict) -> Tuple[list, int]:
