@@ -1,6 +1,5 @@
 from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
-from spaceone.identity.model.project_model import Project
 
 
 class ServiceAccount(MongoModel):
