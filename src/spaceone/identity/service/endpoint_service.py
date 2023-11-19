@@ -10,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EndpointService(BaseService):
-    @transaction
+    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
     # @append_query_filter(['service'])
     # @append_keyword_filter(['service'])
     @convert_model
@@ -24,17 +24,14 @@ class EndpointService(BaseService):
             }
 
         Returns:
-            EndpointsResponse: {
-                'results': 'list',
-                'total_count': 'int'
-            }
+            EndpointsResponse
         """
 
         endpoint_mgr: EndpointManager = EndpointManager()
-        endpoints_data, total_count = endpoint_mgr.list_endpoints(params.service)
+        endpoints_info, total_count = endpoint_mgr.list_endpoints(params.service)
 
         return EndpointsResponse(
-            results=endpoints_data,
+            results=endpoints_info,
             total_count=total_count
         )
 
