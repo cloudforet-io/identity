@@ -1,7 +1,10 @@
 import logging
+from datetime import datetime
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.core.utils import datetime_to_iso8601
+
 from spaceone.identity.model.domain_db_model import Domain
 
 _LOGGER = logging.getLogger(__name__)
@@ -81,3 +84,14 @@ class DomainManager(BaseManager):
 
     def list_domains(self, query):
         return self.domain_model.query(**query)
+
+    def stat_domains(self, query):
+        return self._convert_stat_request_result(self.domain_model.stat(**query))
+
+    @staticmethod
+    def _convert_stat_request_result(stats_data: dict) -> dict:
+        for index, stat_data in enumerate(stats_data["results"]):
+            for key, value in stat_data.items():
+                if isinstance(value, datetime):
+                    stats_data["results"][index][key] = datetime_to_iso8601(value)
+        return stats_data

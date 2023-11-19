@@ -1,5 +1,6 @@
 import logging
-from typing import Union
+from typing import Union, List
+
 from spaceone.core.service import (
     BaseService,
     transaction,
@@ -41,14 +42,14 @@ class DomainService(BaseService):
         admin["domain_id"] = domain_vo.domain_id
 
         # create admin user with policy and role
-        self.user_mgr.create_user(admin, domain_vo)
-        return DomainResponse(**domain_vo.to_dict())
+        self.user_mgr.create_user(params=admin)
+        return DomainResponse.from_orm(domain_vo)
 
     @transaction
     @convert_model
     def update(self, params: DomainUpdateRequest) -> Union[DomainResponse, dict]:
         domain_vo = self.domain_mgr.update_domain(params.dict())
-        return DomainResponse(**domain_vo.to_dict())
+        return DomainResponse.from_orm(domain_vo)
 
     @transaction
     @convert_model
@@ -58,18 +59,20 @@ class DomainService(BaseService):
     @transaction
     @convert_model
     def enable(self, params: DomainRequest) -> Union[DomainResponse, dict]:
-        return {}
+        domain_vo = self.domain_mgr.enable_domain(params.dict().get("domain_id"))
+        return DomainResponse.from_orm(domain_vo)
 
     @transaction
     @convert_model
     def disable(self, params: DomainRequest) -> Union[DomainResponse, dict]:
-        return {}
+        domain_vo = self.domain_mgr.disable_domain(params.dict().get("domain_id"))
+        return DomainResponse.from_orm(domain_vo)
 
     @transaction
     @convert_model
     def get(self, params: DomainRequest) -> Union[DomainResponse, dict]:
         domain_vo = self.domain_mgr.get_domain(params.dict().get("domain_id"))
-        return DomainResponse(**domain_vo.to_dict())
+        return DomainResponse.from_orm(domain_vo)
 
     @transaction
     @convert_model
@@ -86,15 +89,23 @@ class DomainService(BaseService):
         return {}
 
     @transaction
-    @append_query_filter(["domain_id", "name"])
-    @append_keyword_filter(["domain_id", "name"])
+    # @append_query_filter(["domain_id", "name"])
+    # @append_keyword_filter(["domain_id", "name"])
     @convert_model
     def list(self, params: DomainSearchQueryRequest) -> Union[DomainsResponse, dict]:
         query = params.dict().get("query", {})
-        domain_vos = self.domain_mgr.list_domains(query)
-        return {}
+
+        # todo : remove when spacectl template is modified
+        only = [field for field in query.get("only", []) if "plugin_info" not in field]
+        query["only"] = only
+
+        domain_vos, total_count = self.domain_mgr.list_domains(query)
+
+        return DomainsResponse(results=list(domain_vos), total_count=total_count)
 
     @transaction
     @convert_model
-    def stat(self, params: DomainStatQuery) -> dict:
-        return {}
+    def stat(self, params: DomainStatQueryRequest) -> dict:
+        query = params.dict().get("query", {})
+
+        return self.domain_mgr.stat_domains(query)
