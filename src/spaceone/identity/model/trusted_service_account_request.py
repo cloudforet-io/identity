@@ -52,9 +52,11 @@ class TrustedServiceAccountSearchQueryRequest(BaseModel):
     scope: Union[Scope, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
+    user_workspaces: Union[list, None] = None
 
 
 class TrustedServiceAccountStatQueryRequest(BaseModel):
     query: dict
     workspace_id: Union[str, None] = None
     domain_id: str
+    user_workspaces: Union[list, None] = None
