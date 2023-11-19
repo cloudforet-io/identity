@@ -23,7 +23,7 @@ class ProviderCreateRequest(BaseModel):
 
 
 class ProviderUpdateRequest(BaseModel):
-    provider_id: str
+    provider: str
     name: Union[str, None] = None
     order: Union[int, None] = None
     template: Union[dict, None] = None
@@ -34,12 +34,12 @@ class ProviderUpdateRequest(BaseModel):
 
 
 class ProviderDeleteRequest(BaseModel):
-    provider_id: str
+    provider: str
     domain_id: str
 
 
 class ProviderGetRequest(BaseModel):
-    provider_id: str
+    provider: str
     domain_id: str
 
 

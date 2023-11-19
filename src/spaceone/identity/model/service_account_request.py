@@ -6,7 +6,6 @@ __all__ = [
     "ServiceAccountCreateRequest",
     "ServiceAccountUpdateRequest",
     "ServiceAccountChangeTrustedServiceAccountRequest",
-    "ServiceAccountChangeProjectRequest",
     "ServiceAccountDeleteRequest",
     "ServiceAccountGetRequest",
     "ServiceAccountSearchQueryRequest",
@@ -32,6 +31,7 @@ class ServiceAccountUpdateRequest(BaseModel):
     tags: Union[dict, None] = None
     workspace_id: str
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ServiceAccountChangeTrustedServiceAccountRequest(BaseModel):
@@ -39,25 +39,21 @@ class ServiceAccountChangeTrustedServiceAccountRequest(BaseModel):
     trusted_service_account_id: str
     workspace_id: str
     domain_id: str
-
-
-class ServiceAccountChangeProjectRequest(BaseModel):
-    service_account_id: str
-    project_id: str
-    workspace_id: str
-    domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ServiceAccountDeleteRequest(BaseModel):
     service_account_id: str
     workspace_id: str
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ServiceAccountGetRequest(BaseModel):
     service_account_id: str
     workspace_id: Union[str, None] = None
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ServiceAccountSearchQueryRequest(BaseModel):
@@ -70,9 +66,13 @@ class ServiceAccountSearchQueryRequest(BaseModel):
     project_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
+    user_workspaces: Union[list, None] = None
+    user_projects: Union[list, None] = None
 
 
 class ServiceAccountStatQueryRequest(BaseModel):
     query: dict
     workspace_id: Union[str, None] = None
     domain_id: str
+    user_workspaces: Union[list, None] = None
+    user_projects: Union[list, None] = None

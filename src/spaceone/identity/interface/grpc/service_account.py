@@ -27,12 +27,6 @@ class ServiceAccount(BaseAPI, service_account_pb2_grpc.ServiceAccountServicer):
         response: dict = service_account_svc.change_trusted_service_account(params)
         return self.dict_to_message(response)
 
-    def change_project(self, request, context):
-        params, metadata = self.parse_request(request, context)
-        service_account_svc = ServiceAccountService(metadata)
-        response: dict = service_account_svc.change_project(params)
-        return self.dict_to_message(response)
-
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
         service_account_svc = ServiceAccountService(metadata)
