@@ -139,7 +139,7 @@ class ProviderService(BaseService):
 
         Args:
             params (ProviderStatQueryRequest): {
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'domain_id': 'str'    # required
             }
 
