@@ -65,4 +65,4 @@ class Domain(BaseAPI, domain_pb2_grpc.DomainServicer):
         params, metadata = self.parse_request(request, context)
         domain_svc = DomainService(metadata)
         response: dict = domain_svc.stat(params)
-        return self.dict_to_message(response)
+        return self.struct_to_message(response)

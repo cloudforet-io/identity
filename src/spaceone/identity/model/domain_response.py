@@ -15,7 +15,7 @@ __all__ = [
 ExternalAuthState = Literal["ENABLED", "DISABLED"]
 
 
-class DomainResponse(BaseModel, extra=Extra.ignore):
+class DomainResponse(BaseModel, extra=Extra.ignore, orm_mode=True):
     domain_id: Union[str, None] = None
     name: Union[str, None] = None
     state: Union[State, None] = None
@@ -27,19 +27,19 @@ class DomainResponse(BaseModel, extra=Extra.ignore):
     )
 
 
-class DomainMetadataResponse(BaseModel):
+class DomainMetadataResponse(BaseModel, orm_mode=True):
     domain_id: Union[str, None] = None
     name: Union[str, None] = None
     external_auth_state: ExternalAuthState
     metadata_info: Union[dict, None] = None
 
 
-class DomainSecretResponse(BaseModel):
+class DomainSecretResponse(BaseModel, orm_mode=True):
     domain_id: Union[str, None] = None
     key: Union[str, None] = None
     key_type: Union[str, None] = None
 
 
-class DomainsResponse(BaseModel):
+class DomainsResponse(BaseModel, orm_mode=True):
     results: List[DomainResponse]
     total_count: int
