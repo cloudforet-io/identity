@@ -1,1 +1,1 @@
-name = 'identity'
+__name__ = "identity"

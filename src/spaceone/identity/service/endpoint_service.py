@@ -1,31 +1,16 @@
-from spaceone.core.service import *
-from spaceone.identity.manager.endpoint_manager import EndpointManager
+import logging
+from typing import Union
+from spaceone.core.service import BaseService, transaction, convert_model
+from spaceone.identity.model.endpoint_request import *
+from spaceone.identity.model.endpoint_response import *
 
 
-@authentication_handler
-@authorization_handler
-@mutation_handler
-@event_handler
+_LOGGER = logging.getLogger(__name__)
+
+
 class EndpointService(BaseService):
+    @transaction
+    @convert_model
+    def list(self, params: EndpointSearchQueryRequest) -> Union[EndpointsResponse, dict]:
+        return {}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.endpoint_mgr: EndpointManager = self.locator.get_manager('EndpointManager')
-
-    @transaction(append_meta={'authorization.scope': 'PUBLIC'})
-    @append_query_filter(['service'])
-    @append_keyword_filter(['service'])
-    def list(self, params):
-        """
-        Args:
-            params (dict): {
-                    'query': 'dict (spaceone.api.core.v1.Query)',
-                    'service': 'str',
-                    'endpoint_type': 'str'
-                }
-
-        Returns:
-            results (list): list of endpoint_vo
-            total_count (int)
-        """
-        return self.endpoint_mgr.list_endpoints(params.get('query', {}), params.get('endpoint_type', 'public'))
