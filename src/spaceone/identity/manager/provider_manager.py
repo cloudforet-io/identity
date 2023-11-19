@@ -1,7 +1,9 @@
 import logging
+from jsonschema import validate
 from typing import Tuple, List
 
 from spaceone.core.manager import BaseManager
+from spaceone.core.error import *
 from spaceone.identity.conf.provider_conf import DEFAULT_PROVIDERS
 from spaceone.identity.model.provider_db import Provider
 
@@ -56,3 +58,13 @@ class ProviderManager(BaseManager):
                 _LOGGER.debug(f'Create default provider: {provider["name"]}')
                 provider['domain_id'] = domain_id
                 self.create_provider(provider)
+
+    def check_data_by_schema(self, provider: str, domain_id: str, data: dict) -> None:
+        provider_vo = self.get_provider(provider, domain_id)
+        schema = provider_vo.template.get('service_account', {}).get('schema')
+
+        if schema:
+            try:
+                validate(instance=data, schema=schema)
+            except Exception as e:
+                raise ERROR_INVALID_PARAMETER(key='data', reason=e)
