@@ -1,147 +1,160 @@
+import logging
+from typing import Union
 from spaceone.core import cache
-from spaceone.core.service import *
-from spaceone.core import utils
+from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
+from spaceone.identity.model.provider_request import *
+from spaceone.identity.model.provider_response import *
 from spaceone.identity.manager.provider_manager import ProviderManager
 
+_LOGGER = logging.getLogger(__name__)
 
-@authentication_handler
-@authorization_handler
-@mutation_handler
-@event_handler
+
 class ProviderService(BaseService):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.provider_mgr: ProviderManager = self.locator.get_manager('ProviderManager')
+        self.provider_mgr = ProviderManager()
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['provider', 'name', 'domain_id'])
-    def create(self, params):
-        """
+    @convert_model
+    def create(self, params: ProviderCreateRequest) -> Union[ProviderResponse, dict]:
+        """ create provider
+
         Args:
-            params (dict): {
-                'provider': 'str',
+            params (ProviderCreateRequest): {
+                'provider': 'str',      # required
+                'name': 'str',          # required
+                'order': 'int',
+                'template': 'dict',
+                'metadata': 'dict',
+                'capability': 'dict',
+                'tags': 'dict',
+                'domain_id': 'str'      # required
+            }
+
+        Returns:
+            ProviderResponse
+        """
+
+        # TODO: validate a template data
+        # TODO: validate a capability data
+
+        provider_vo = self.provider_mgr.create_provider(params.dict())
+        return ProviderResponse(**provider_vo.to_dict())
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @convert_model
+    def update(self, params: ProviderUpdateRequest) -> Union[ProviderResponse, dict]:
+        """ update provider
+
+        Args:
+            params (ProviderUpdateRequest): {
+                'provider': 'str',      # required
                 'name': 'str',
                 'order': 'int',
                 'template': 'dict',
                 'metadata': 'dict',
                 'capability': 'dict',
                 'tags': 'dict',
-                'domain_id': 'str'
+                'domain_id': 'str'      # required
             }
 
         Returns:
-            provider_vo (object)
+            ProviderResponse
         """
+
         # TODO: validate a template data
         # TODO: validate a capability data
 
-        return self.provider_mgr.create_provider(params)
+        provider_vo = self.provider_mgr.update_provider(params.dict())
+        return ProviderResponse(**provider_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['provider', 'domain_id'])
-    def update(self, params):
-        """
+    @convert_model
+    def delete(self, params: ProviderDeleteRequest) -> None:
+        """ delete provider
+
         Args:
-            params (dict): {
-                'provider': 'str',
-                'name': 'str',
-                'order': 'int',
-                'template': 'dict',
-                'metadata': 'dict',
-                'capability': 'dict',
-                'tags': 'list',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            provider_vo (object)
-        """
-        # TODO: validate a template data
-        # TODO: validate a capability data
-
-        return self.provider_mgr.update_provider(params)
-
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['provider', 'domain_id'])
-    def delete(self, params):
-        """
-        Args:
-            params (dict): {
-                'provider': 'str',
-                'domain_id': 'str'
+            params (ProviderDeleteRequest): {
+                'provider': 'str',      # required
+                'domain_id': 'str'      # required
             }
 
         Returns:
             None
         """
-        self.provider_mgr.delete_provider(params['provider'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['provider', 'domain_id'])
-    def get(self, params):
-        """
+        self.provider_mgr.delete_provider(params.provider, params.domain_id)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @convert_model
+    def get(self, params: ProviderGetRequest) -> Union[ProviderResponse, dict]:
+        """ delete provider
+
         Args:
-            params (dict): {
-                'provider': 'str',
-                'only': 'list',
-                'domain_id': 'str'
+            params (ProviderGetRequest): {
+                'provider': 'str',      # required
+                'domain_id': 'str'      # required
             }
 
         Returns:
-            provider_vo (object)
+            ProviderResponse
         """
 
-        domain_id = params['domain_id']
+        provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
+        return ProviderResponse(**provider_vo.to_dict())
 
-        self._create_default_provider(domain_id)
-        return self.provider_mgr.get_provider(params['provider'], domain_id, params.get('only'))
-
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['domain_id'])
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @append_query_filter(['provider', 'name', 'domain_id'])
     @append_keyword_filter(['provider', 'name'])
-    def list(self, params):
-        """
+    @convert_model
+    def list(self, params: ProviderSearchQueryRequest) -> Union[ProvidersResponse, dict]:
+        """ list providers
+
         Args:
-            params (dict): {
-                    'query': 'dict (spaceone.api.core.v1.Query)',
-                    'provider': 'str',
-                    'name': 'str',
-                    'domain_id': 'str'
-                }
-
-        Returns:
-            results (list): 'list of provider_vo'
-            total_count (int)
-        """
-
-        domain_id = params['domain_id']
-
-        self._create_default_provider(domain_id)
-        return self.provider_mgr.list_providers(params.get('query', {}))
-
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
-    @append_keyword_filter(['provider', 'name'])
-    def stat(self, params):
-        """
-        Args:
-            params (dict): {
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
-                'domain_id': 'str'
+            params (ProviderSearchQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
+                'provider': 'str',
+                'name': 'str',
+                'domain_id': 'str'    # required
             }
 
         Returns:
-            values (list): 'list of statistics data'
-            total_count (int)
+            ProvidersResponse
         """
 
-        query = params.get('query', {})
+        query = params.query or {}
+
+        self._create_default_provider(params.domain_id)
+
+        providers_vos, total_count = self.provider_mgr.list_providers(query)
+
+        providers_info = [provider_vo.to_dict() for provider_vo in providers_vos]
+        return ProvidersResponse(results=providers_info, total_count=total_count)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @convert_model
+    def stat(self, params: ProviderStatQueryRequest) -> dict:
+        """ stat providers
+
+        Args:
+            params (ProviderStatQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'domain_id': 'str'    # required
+            }
+
+        Returns:
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
+
+        """
+
+        query = params.query or {}
         return self.provider_mgr.stat_providers(query)
 
-    @cache.cacheable(key='provider:{domain_id}:default:init', expire=300)
+    @cache.cacheable(key='identity:provider:{domain_id}:default:init', expire=300)
     def _create_default_provider(self, domain_id):
         provider_vos = self.provider_mgr.filter_providers(domain_id=domain_id)
         installed_providers = [provider_vo.provider for provider_vo in provider_vos]
