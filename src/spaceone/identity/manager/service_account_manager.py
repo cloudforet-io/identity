@@ -1,9 +1,9 @@
 import logging
+from typing import Tuple, List
 
-from spaceone.core.error import *
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
-from spaceone.identity.model.service_account_model import ServiceAccount
+from spaceone.identity.model.service_account_db import ServiceAccount
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,29 +12,32 @@ class ServiceAccountManager(BaseManager):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.service_account_model: ServiceAccount = self.locator.get_model('ServiceAccount')
+        self.service_account_model = ServiceAccount
 
-    def create_service_account(self, params):
-        def _rollback(service_account_vo):
+    def create_service_account(self, params: dict) -> ServiceAccount:
+        def _rollback(vo: ServiceAccount):
             _LOGGER.info(f'[create_service_account._rollback] '
-                         f'Create service_account : {service_account_vo.name} '
-                         f'({service_account_vo.service_account_id})')
+                         f'Delete service account: {vo.name} ({vo.service_account_id})')
             service_account_vo.delete()
 
-        service_account_vo: ServiceAccount = self.service_account_model.create(params)
+        service_account_vo = self.service_account_model.create(params)
         self.transaction.add_rollback(_rollback, service_account_vo)
 
         return service_account_vo
 
-    def update_service_account(self, params):
-        service_account_vo: ServiceAccount = self.get_service_account(params['service_account_id'],
-                                                                      params['domain_id'])
+    def update_service_account(self, params: dict) -> ServiceAccount:
+        service_account_vo = self.get_service_account(
+            params['service_account_id'],
+            params['domain_id'],
+            params['workspace_id'],
+            params.get('user_projects')
+        )
 
         return self.update_service_account_by_vo(params, service_account_vo)
 
-    def update_service_account_by_vo(self, params, service_account_vo):
+    def update_service_account_by_vo(self, params: dict, service_account_vo: ServiceAccount) -> ServiceAccount:
         def _rollback(old_data):
-            _LOGGER.info(f'[update_service_account._rollback] Revert Data : '
+            _LOGGER.info(f'[update_service_account_by_vo._rollback] Revert Data : '
                          f'{old_data["service_account_id"]}')
             service_account_vo.update(old_data)
 
@@ -42,62 +45,64 @@ class ServiceAccountManager(BaseManager):
 
         return service_account_vo.update(params)
 
-    def delete_service_account(self, service_account_id, domain_id):
-        service_account_vo: ServiceAccount = self.get_service_account(service_account_id, domain_id)
+    @staticmethod
+    def delete_service_account_by_vo(service_account_vo: ServiceAccount) -> None:
         service_account_vo.delete()
 
-    def get_service_account(self, service_account_id, domain_id, only=None):
-        return self.service_account_model.get(service_account_id=service_account_id, domain_id=domain_id, only=only)
+    def get_service_account(
+        self, service_account_id: str, domain_id: str, workspace_id: str, user_projects: List[str] = None,
+    ) -> ServiceAccount:
 
-    def list_service_accounts(self, query={}):
+        conditions = {
+            'service_account_id': service_account_id,
+            'domain_id': domain_id,
+            'workspace_id': workspace_id,
+        }
+
+        if user_projects:
+            conditions['project_id'] = user_projects
+
+        return self.service_account_model.get(**conditions)
+
+    def filter_service_accounts(self, **conditions) -> List[ServiceAccount]:
+        return self.service_account_model.filter(**conditions)
+
+    def list_service_accounts(self, query: dict) -> Tuple[list, int]:
         return self.service_account_model.query(**query)
 
-    def stat_service_accounts(self, query):
+    def stat_service_accounts(self, query: dict) -> dict:
         return self.service_account_model.stat(**query)
 
-    def update_secret_project(self, service_account_id, project_id, domain_id):
-        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        response = self._list_secrets(secret_connector, service_account_id, domain_id)
-        secrets = response.get('results', [])
+    def update_secret_project(
+        self, service_account_id: str, domain_id: str, workspace_id: str, project_id: str
+    ) -> None:
+        secret_connector = SpaceConnector(service='secret')
+        response = self._list_secrets(secret_connector, service_account_id, domain_id, workspace_id)
 
-        for secret_info in secrets:
+        for secret_info in response.get('results', []):
             secret_connector.dispatch('Secret.update', {
                 'secret_id': secret_info['secret_id'],
                 'project_id': project_id,
-                'domain_id': domain_id
+                'domain_id': domain_id,
+                'workspace_id': workspace_id
             })
 
-    def release_secret_project(self, service_account_id, domain_id):
-        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        response = self._list_secrets(secret_connector, service_account_id, domain_id)
-        secrets = response.get('results', [])
+    def delete_secrets(
+        self, service_account_id: str, domain_id: str, workspace_id: str
+    ) -> None:
+        secret_connector = SpaceConnector(service='secret')
+        response = self._list_secrets(secret_connector, service_account_id, domain_id, workspace_id)
 
-        for secret_info in secrets:
-            secret_connector.dispatch('Secret.update', {
+        for secret_info in response.get('results', []):
+            secret_connector.dispatch('Secret.delete', {
                 'secret_id': secret_info['secret_id'],
-                'release_project': True,
-                'domain_id': domain_id
+                'domain_id': domain_id,
+                'workspace_id': workspace_id
             })
 
-    def delete_service_account_secrets(self, service_account_id, domain_id, service_account_type):
-        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        if service_account_type == 'TRUSTED':
-            response = self._list_trusted_secrets(secret_connector, service_account_id, domain_id)
-            for trusted_secret_info in response.get('results', []):
-                secret_connector.dispatch('TrustedSecret.delete', {
-                    'trusted_secret_id': trusted_secret_info['trusted_secret_id'],
-                    'domain_id': domain_id
-                })
-        else:
-            response = self._list_secrets(secret_connector, service_account_id, domain_id)
-            for secret_info in response.get('results', []):
-                secret_connector.dispatch('Secret.delete', {
-                    'secret_id': secret_info['secret_id'],
-                    'domain_id': domain_id
-                })
-
-    def get_all_service_account_ids_using_secret(self, domain_id):
-        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
+    @staticmethod
+    def get_all_service_account_ids_using_secret(domain_id: str, workspace_id: str) -> List[str]:
+        secret_connector = SpaceConnector(service='secret')
         response = secret_connector.dispatch('Secret.stat', {
             'query': {
                 'distinct': 'service_account_id',
@@ -109,38 +114,18 @@ class ServiceAccountManager(BaseManager):
                     }
                 ]
             },
-            'domain_id': domain_id
+            'domain_id': domain_id,
+            'workspace_id': workspace_id
         })
 
         return response.get('results', [])
 
-    def check_service_account_secrets(self, service_account_id, domain_id, service_account_type):
-        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-
-        if service_account_type == 'TRUSTED':
-            response = self._list_trusted_secrets(secret_connector, service_account_id, domain_id)
-            total_count = response.get('total_count', 0)
-
-            if total_count > 0:
-                raise ERROR_EXIST_RESOURCE(parent='ServiceAccount', child='TrustedSecret')
-        else:
-            response = self._list_secrets(secret_connector, service_account_id, domain_id)
-
-            total_count = response.get('total_count', 0)
-
-            if total_count > 0:
-                raise ERROR_EXIST_RESOURCE(parent='ServiceAccount', child='Secret')
-
     @staticmethod
-    def _list_secrets(secret_connector, service_account_id, domain_id):
+    def _list_secrets(
+            secret_connector: SpaceConnector, service_account_id: str, domain_id: str, workspace_id: str
+    ) -> dict:
         return secret_connector.dispatch('Secret.list', {
             'service_account_id': service_account_id,
-            'domain_id': domain_id
-        })
-
-    @staticmethod
-    def _list_trusted_secrets(secret_connector, service_account_id, domain_id):
-        return secret_connector.dispatch('TrustedSecret.list', {
-            'service_account_id': service_account_id,
-            'domain_id': domain_id
+            'domain_id': domain_id,
+            'workspace_id': workspace_id
         })

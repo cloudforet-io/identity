@@ -5,15 +5,13 @@ from spaceone.identity.model.project_model import Project
 
 class ServiceAccount(MongoModel):
     service_account_id = StringField(max_length=40, generate_id='sa', unique=True)
-    name = StringField(max_length=255, unique_with='domain_id')
-    data = DictField()
-    service_account_type = StringField(max_length=40, choices=('TRUSTED', 'GENERAL'), default='GENERAL')
+    name = StringField(max_length=255, unique_with=['domain_id', 'workspace_id'])
+    data = DictField(default=None)
     provider = StringField(max_length=40)
-    project = ReferenceField('Project', null=True, default=None, reverse_delete_rule=DENY)
-    project_id = StringField(max_length=40, default=None, null=True)
-    trusted_service_account_id = StringField(max_length=40, null=True, default=None)
     tags = DictField()
-    scope = StringField(max_length=40, choices=('DOMAIN', 'PROJECT'), default='PROJECT')
+    trusted_service_account_id = StringField(max_length=40, null=True, default=None)
+    project_id = StringField(max_length=40)
+    workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=255)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -21,33 +19,28 @@ class ServiceAccount(MongoModel):
         'updatable_fields': [
             'name',
             'data',
-            'project',
-            'project_id',
+            'tags',
             'trusted_service_account_id',
-            'tags'
+            'project_id'
         ],
         'minimal_fields': [
             'service_account_id',
-            'service_account_type',
             'name',
             'provider'
+            'trusted_service_account_id',
+            'project_id'
         ],
         'change_query_keys': {
             'user_projects': 'project_id',
-            'project_id': 'project_id'
-        },
-        'reference_query_keys': {
-            'project': Project
+            'user_workspaces': 'workspace_id'
         },
         'ordering': ['name'],
         'indexes': [
-            # 'service_account_id',
             'name',
             'provider',
-            'project',
-            'project_id',
             'trusted_service_account_id',
-            'scope',
+            'project_id',
+            'workspace_id',
             'domain_id'
         ]
     }
