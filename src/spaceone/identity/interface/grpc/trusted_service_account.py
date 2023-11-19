@@ -1,15 +1,15 @@
 from spaceone.core.pygrpc import BaseAPI
-from spaceone.api.identity.v2 import trusted_account_pb2, trusted_account_pb2_grpc
+from spaceone.api.identity.v2 import trusted_service_account_pb2, trusted_service_account_pb2_grpc
 from spaceone.identity.service.trusted_service_account_service import (
     TrustedServiceAccountService,
 )
 
 
 class TrustedServiceAccount(
-    BaseAPI, trusted_account_pb2_grpc.TrustedServiceAccountServicer
+    BaseAPI, trusted_service_account_pb2_grpc.TrustedServiceAccountServicer
 ):
-    pb2 = trusted_account_pb2
-    pb2_grpc = trusted_account_pb2_grpc
+    pb2 = trusted_service_account_pb2
+    pb2_grpc = trusted_service_account_pb2_grpc
 
     def create(self, request, context):
         params, metadata = self.parse_request(request, context)
