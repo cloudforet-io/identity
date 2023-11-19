@@ -5,15 +5,13 @@ from spaceone.core.manager import BaseManager
 
 _LOGGER = logging.getLogger(__name__)
 
-ENDPOINT_MAP = {
-    'public': 'ENDPOINTS',
-    'internal': 'INTERNAL_ENDPOINTS'
-}
-
 
 class EndpointManager(BaseManager):
 
-    def list_endpoints(self, query={}, endpoint_type='public'):
-        endpoint_map = ENDPOINT_MAP.get(endpoint_type, 'ENDPOINTS')
-        endpoints = config.get_global(endpoint_map, [])
+    def list_endpoints(self, service=None):
+        endpoints = config.get_global('ENDPOINTS', [])
+
+        if service:
+            endpoints = [endpoint for endpoint in endpoints if endpoint.get('service') == service]
+
         return endpoints, len(endpoints)
