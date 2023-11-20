@@ -1,8 +1,7 @@
 import logging
-from typing import Union
 from spaceone.core.service import BaseService, transaction, convert_model
-from spaceone.identity.model.authorization_request import *
-from spaceone.identity.model.authorization_response import *
+from spaceone.identity.model.authorization.request import *
+from spaceone.identity.model.authorization.response import *
 
 _LOGGER = logging.getLogger(__name__)
 

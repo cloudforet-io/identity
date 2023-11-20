@@ -2,7 +2,9 @@ from datetime import datetime
 from typing import Union, List, Literal
 from pydantic import BaseModel
 
-from spaceone.identity.model.user_request import State, UserType, AuthType
+from spaceone.core import utils
+
+from spaceone.identity.model.user.request import State, UserType, AuthType
 
 __all__ = ["UserResponse", "UsersResponse"]
 
@@ -27,6 +29,12 @@ class UserResponse(BaseModel):
     domain_id: str
     created_at: Union[datetime, None] = None
     last_accessed_at: Union[datetime, None] = None
+
+    def dict(self, *args, **kwargs):
+        data = super().dict(*args, **kwargs)
+        data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
+        data["last_accessed_at"] = utils.datetime_to_iso8601(data["last_accessed_at"])
+        return data
 
 
 class UsersResponse(BaseModel):

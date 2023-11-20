@@ -42,9 +42,7 @@ IDENTITY = {
         "refresh_ttl": 18,
         "refresh_once": False,
     },
-    "mfa": {
-        "mfa_verify_code_timeout": 300
-    },
+    "mfa": {"mfa_verify_code_timeout": 300},
 }
 
 # Handler Settings
@@ -74,11 +72,11 @@ CONNECTORS = {
         },
     },
     "SMTPConnector": {
-        "host": "smtp.mail.com",
-        "port": "1234",
-        "user": "cloudforet",
-        "password": "1234",
-        "from_email": "support@cloudforet.com",
+        # "host": "smtp.mail.com",
+        # "port": "1234",
+        # "user": "cloudforet",
+        # "password": "1234",
+        # "from_email": "support@cloudforet.com",
     },
 }
 

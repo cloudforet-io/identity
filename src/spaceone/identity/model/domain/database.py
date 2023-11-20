@@ -8,7 +8,7 @@ class Domain(MongoModel):
     domain_id = StringField(max_length=40, generate_id="domain", unique=True)
     name = StringField(max_length=255)
     state = StringField(max_length=20, default="ENABLED")
-    tags = DictField()
+    tags = DictField(default=None)
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
 

@@ -23,7 +23,7 @@ class WorkspaceCreateRequest(BaseModel):
 class WorkspaceUpdateRequest(BaseModel):
     workspace_id: str
     name: Union[str, None] = None
-    tags: Union[dict, None] = {}
+    tags: Union[dict, None] = None
     domain_id: str
 
 
