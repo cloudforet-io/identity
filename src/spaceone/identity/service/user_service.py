@@ -402,8 +402,8 @@ class UserService(BaseService):
                 elif user_mfa.get('state', 'DISABLED') == 'DISABLED':
                     user_mfa['state'] = 'ENABLED'
                 user_vo = self.user_mgr.update_user_by_vo({'mfa': user_mfa}, user_vo)
-        else:
-            raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
+            else:
+                raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 
         return user_vo
 
