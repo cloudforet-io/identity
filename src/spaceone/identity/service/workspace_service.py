@@ -27,9 +27,9 @@ class WorkspaceService(BaseService):
         """Create workspace
         Args:
             params (dict): {
-                'name': 'str',
-                'tags': 'dict',
-                'domain_id': 'str'
+                'name': 'str', # required
+                'tags': 'dict', # required
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
@@ -45,10 +45,10 @@ class WorkspaceService(BaseService):
         """Update workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
+                'workspace_id': 'str', # required
                 'name': 'str',
                 'tags': 'dict'
-                'domain_id': 'str'
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
@@ -67,8 +67,8 @@ class WorkspaceService(BaseService):
         """Delete workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str', # required
+                'domain_id': 'str' # required
             }
         Returns:
             None
@@ -84,8 +84,8 @@ class WorkspaceService(BaseService):
         """Enable workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str', # required
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
@@ -104,8 +104,8 @@ class WorkspaceService(BaseService):
         """Disable workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str', # required
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
@@ -123,8 +123,8 @@ class WorkspaceService(BaseService):
         """Get workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str', # required
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
