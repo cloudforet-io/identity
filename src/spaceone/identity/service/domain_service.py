@@ -1,5 +1,5 @@
 import logging
-from typing import Union, List
+from typing import Union
 
 from spaceone.core.service import (
     BaseService,
@@ -11,10 +11,8 @@ from spaceone.core.service import (
 
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.user_manager import UserManager
-
-# from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.model.domain_request import *
-from spaceone.identity.model.domain_response import *
+from spaceone.identity.model.domain.request import *
+from spaceone.identity.model.domain.response import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,10 +27,15 @@ class DomainService(BaseService):
     @transaction
     @convert_model
     def create(self, params: DomainCreateRequest) -> Union[DomainResponse, dict]:
-        """
+        """Create Domain
         Args:
-        :param params:
-        :return:
+            params (dict): {
+                'name': 'str',
+                'admin': 'dict',
+                'tags': 'dict'
+            }
+        Returns:
+            DomainResponse:
         """
 
         domain_vo = self.domain_mgr.create_domain(params.dict())
@@ -42,57 +45,130 @@ class DomainService(BaseService):
         admin["domain_id"] = domain_vo.domain_id
 
         # create admin user with policy and role
-        self.user_mgr.create_user(params=admin)
-        return DomainResponse.from_orm(domain_vo)
+        self.user_mgr.create_user(admin)
+        return DomainResponse(**domain_vo.to_dict())
 
     @transaction
     @convert_model
     def update(self, params: DomainUpdateRequest) -> Union[DomainResponse, dict]:
-        domain_vo = self.domain_mgr.update_domain(params.dict())
-        return DomainResponse.from_orm(domain_vo)
+        """Update domain
+        Args:
+            params (dict): {
+                'domain_id': 'str',
+                'tags': 'dict'
+            }
+        Returns:
+            DomainResponse:
+        """
+        domain_vo = self.domain_mgr.get_domain(params.domain_id)
+        domain_vo = self.domain_mgr.update_domain_by_vo(params.dict(), domain_vo)
+        return DomainResponse(**domain_vo.to_dict())
 
     @transaction
     @convert_model
-    def delete(self, params: DomainRequest) -> None:
-        self.domain_mgr.delete_domain(params.dict().get("domain_id"))
+    def delete(self, params: DomainDeleteRequest) -> None:
+        """Delete Domain
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+        Returns:
+            Empty:
+        """
+        domain_vo = self.domain_mgr.get_domain(params.domain_id)
+        self.domain_mgr.delete_domain_by_vo(domain_vo)
 
     @transaction
     @convert_model
-    def enable(self, params: DomainRequest) -> Union[DomainResponse, dict]:
-        domain_vo = self.domain_mgr.enable_domain(params.dict().get("domain_id"))
-        return DomainResponse.from_orm(domain_vo)
+    def enable(self, params: DomainEnableRequest) -> Union[DomainResponse, dict]:
+        """Enable Domain
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+        Returns:
+            DomainResponse:
+        """
+        domain_vo = self.domain_mgr.get_domain(params.domain_id)
+        domain_vo = self.domain_mgr.enable_domain(domain_vo)
+        return DomainResponse(**domain_vo.to_dict())
 
     @transaction
     @convert_model
-    def disable(self, params: DomainRequest) -> Union[DomainResponse, dict]:
-        domain_vo = self.domain_mgr.disable_domain(params.dict().get("domain_id"))
-        return DomainResponse.from_orm(domain_vo)
+    def disable(self, params: DomainDisableRequest) -> Union[DomainResponse, dict]:
+        """Disable Domain
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+        Returns:
+            DomainResponse:
+        """
+        domain_vo = self.domain_mgr.disable_domain(params.domain_id)
+        return DomainResponse(**domain_vo.to_dict())
 
     @transaction
     @convert_model
-    def get(self, params: DomainRequest) -> Union[DomainResponse, dict]:
-        domain_vo = self.domain_mgr.get_domain(params.dict().get("domain_id"))
-        return DomainResponse.from_orm(domain_vo)
+    def get(self, params: DomainGetRequest) -> Union[DomainResponse, dict]:
+        """Get Domain
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+        Returns:
+            DomainResponse:
+        """
+
+        domain_vo = self.domain_mgr.get_domain(params.domain_id)
+        return DomainResponse(**domain_vo.to_dict())
 
     @transaction
     @convert_model
     def get_metadata(
         self, params: DomainGetMetadataRequest
     ) -> Union[DomainMetadataResponse, dict]:
+        """GetMetadata domain
+        Args:
+            params (dict): {
+                'name': 'str'
+            }
+        Returns:
+            DomainMetadataResponse:
+        """
         return {}
 
     @transaction
     @convert_model
     def get_public_key(
-        self, params: DomainRequest
+        self, params: DomainGetPublicKeyRequest
     ) -> Union[DomainSecretResponse, dict]:
+        """GetPublicKey domain
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+        Returns:
+            DomainSecretResponse:
+        """
         return {}
 
     @transaction
-    # @append_query_filter(["domain_id", "name"])
-    # @append_keyword_filter(["domain_id", "name"])
+    @append_query_filter(["domain_id", "name"])
+    @append_keyword_filter(["domain_id", "name"])
     @convert_model
     def list(self, params: DomainSearchQueryRequest) -> Union[DomainsResponse, dict]:
+        """List domain
+        Args:
+            params (dict): {
+                'query': 'dict',
+                'domain_id': 'str',
+                'name': 'str',
+                'state': 'str'
+            }
+        Returns:
+            DomainsResponse:
+        """
+
         query = params.dict().get("query", {})
 
         # todo : remove when spacectl template is modified
@@ -100,12 +176,20 @@ class DomainService(BaseService):
         query["only"] = only
 
         domain_vos, total_count = self.domain_mgr.list_domains(query)
-
-        return DomainsResponse(results=list(domain_vos), total_count=total_count)
+        domains_info = [domain_vo.to_dict() for domain_vo in domain_vos]
+        return DomainsResponse(results=domains_info, total_count=total_count)
 
     @transaction
     @convert_model
     def stat(self, params: DomainStatQueryRequest) -> dict:
+        """Stat domain
+        Args:
+            params (dict): {
+                'query': 'dict'
+            }
+        Returns:
+            dict:
+        """
         query = params.dict().get("query", {})
 
         return self.domain_mgr.stat_domains(query)

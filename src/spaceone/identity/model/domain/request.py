@@ -5,8 +5,12 @@ from pydantic.utils import GetterDict
 __all__ = [
     "DomainCreateRequest",
     "DomainUpdateRequest",
-    "DomainRequest",
+    "DomainDeleteRequest",
+    "DomainEnableRequest",
+    "DomainDisableRequest",
+    "DomainGetRequest",
     "DomainGetMetadataRequest",
+    "DomainGetPublicKeyRequest",
     "DomainSearchQueryRequest",
     "DomainStatQueryRequest",
     "State",
@@ -26,12 +30,28 @@ class DomainUpdateRequest(BaseModel):
     tags: Union[dict, None] = {}
 
 
-class DomainRequest(BaseModel):
+class DomainDeleteRequest(BaseModel):
+    domain_id: str
+
+
+class DomainEnableRequest(BaseModel):
+    domain_id: str
+
+
+class DomainDisableRequest(BaseModel):
+    domain_id: str
+
+
+class DomainGetRequest(BaseModel):
     domain_id: str
 
 
 class DomainGetMetadataRequest(BaseModel):
     name: str
+
+
+class DomainGetPublicKeyRequest(BaseModel):
+    domain_id: str
 
 
 class DomainSearchQueryRequest(BaseModel):

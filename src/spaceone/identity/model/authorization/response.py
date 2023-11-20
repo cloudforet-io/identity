@@ -1,7 +1,7 @@
-from typing import Union, Literal, List
+from typing import Union, List
 from pydantic import BaseModel
 
-from spaceone.identity.model.authorization_request import RoleType
+from spaceone.identity.model.authorization.request import RoleType
 
 
 class AuthorizationResponse(BaseModel):
