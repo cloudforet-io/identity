@@ -71,7 +71,7 @@ class EmailMFAManager(MFAManager):
         verify_code = self.create_mfa_verify_code(user_id, domain_id)
 
         template = JINJA_ENV.get_template(f'authentication_code_{language}.html')
-        email_contents = template.render(user_name=user_id, verification_code=verify_code,
+        email_contents = template.render(user_name=user_id, authentication_code=verify_code,
                                          service_name=service_name)
         subject = f'[{service_name}] {language_map_info["authentication_mfa_email"]}'
 
