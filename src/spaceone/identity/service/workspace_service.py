@@ -9,6 +9,8 @@ from spaceone.core.service import (
     append_keyword_filter,
 )
 
+from spaceone.identity.error.error_workspace import *
+from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.workspace.request import *
 from spaceone.identity.model.workspace.response import *
@@ -19,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 class WorkspaceService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.domain_mgr = DomainManager()
         self.workspace_mgr = WorkspaceManager()
 
     @transaction(append_meta={"authorization.scope": "WORKSPACE"})
@@ -27,9 +30,9 @@ class WorkspaceService(BaseService):
         """Create workspace
         Args:
             params (dict): {
-                'name': 'str',
-                'tags': 'dict',
-                'domain_id': 'str'
+                'name': 'str', # required
+                'tags': 'dict', # required
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
@@ -45,10 +48,10 @@ class WorkspaceService(BaseService):
         """Update workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
+                'workspace_id': 'str', # required
                 'name': 'str',
                 'tags': 'dict'
-                'domain_id': 'str'
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
@@ -67,8 +70,8 @@ class WorkspaceService(BaseService):
         """Delete workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str', # required
+                'domain_id': 'str' # required
             }
         Returns:
             None
@@ -84,8 +87,8 @@ class WorkspaceService(BaseService):
         """Enable workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str', # required
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
@@ -104,8 +107,8 @@ class WorkspaceService(BaseService):
         """Disable workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str', # required
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
@@ -123,8 +126,8 @@ class WorkspaceService(BaseService):
         """Get workspace
         Args:
             params (dict): {
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str', # required
+                'domain_id': 'str' # required
             }
         Returns:
             WorkspaceResponse:
