@@ -153,7 +153,7 @@ class DomainService(BaseService):
         return {}
 
     @transaction
-    @append_query_filter(["domain_id", "name"])
+    @append_query_filter(["domain_id", "name", "state"])
     @append_keyword_filter(["domain_id", "name"])
     @convert_model
     def list(self, params: DomainSearchQueryRequest) -> Union[DomainsResponse, dict]:

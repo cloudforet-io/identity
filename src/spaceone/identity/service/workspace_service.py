@@ -9,6 +9,8 @@ from spaceone.core.service import (
     append_keyword_filter,
 )
 
+from spaceone.identity.error.error_workspace import *
+from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.workspace.request import *
 from spaceone.identity.model.workspace.response import *
@@ -19,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 class WorkspaceService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.domain_mgr = DomainManager()
         self.workspace_mgr = WorkspaceManager()
 
     @transaction(append_meta={"authorization.scope": "WORKSPACE"})

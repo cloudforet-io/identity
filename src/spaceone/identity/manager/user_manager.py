@@ -96,6 +96,9 @@ class UserManager(BaseManager):
     def get_user(self, user_id, domain_id):
         return self.user_model.get(user_id=user_id, domain_id=domain_id)
 
+    def list_users(self, query):
+        return self.user_model.query(**query)
+
     @staticmethod
     def _check_user_id_format(user_id):
         rule = r"[^@]+@[^@]+\.[^@]+"
