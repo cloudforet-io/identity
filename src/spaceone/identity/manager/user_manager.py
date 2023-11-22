@@ -1,6 +1,7 @@
 import logging
 import re
 
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.lib.cipher import PasswordCipher
@@ -16,7 +17,7 @@ class UserManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.user_model = User
 
-    def create_user(self, params, is_first_login_user=False):
+    def create_user(self, params: dict, is_first_login_user=False) -> User:
         def _rollback(vo: User):
             _LOGGER.info(
                 f"[create_user._rollback] Delete user : {vo.name} ({vo.user_id})"
@@ -64,7 +65,7 @@ class UserManager(BaseManager):
 
         return user_vo
 
-    def update_user_by_vo(self, params, user_vo):
+    def update_user_by_vo(self, params: dict, user_vo: User) -> User:
         def _rollback(old_data):
             _LOGGER.info(
                 f'[update_user._rollback] Revert Data : {old_data["name"], ({old_data["user_id"]})}'
@@ -93,20 +94,57 @@ class UserManager(BaseManager):
 
         return user_vo.update(params)
 
-    def get_user(self, user_id, domain_id):
+    @staticmethod
+    def delete_user_by_vo(user_vo: User) -> None:
+        domain_id = user_vo.domain_id
+        user_id = user_vo.user_id
+        user_vo.delete()
+
+        cache.delete_pattern(f"user-state:{domain_id}:{user_id}")
+        cache.delete_pattern(f"role-bindings:{domain_id}:{user_id}*")
+        cache.delete_pattern(f"user-permissions:{domain_id}:{user_id}*")
+        cache.delete_pattern(f"user-scopes:{domain_id}:{user_id}*")
+
+    def enable_user(self, user_vo: User) -> User:
+        def _rollback(old_data):
+            _LOGGER.info(f"[enable_user._rollback] Revert Data : {old_data}")
+            user_vo.update(old_data)
+
+        if user_vo.state != "ENABLED":
+            self.transaction.add_rollback(_rollback, user_vo.to_dict())
+            user_vo.update({"state": "ENABLED"})
+
+            cache.delete_pattern(f"user-state:{user_vo.domain_id}:{user_vo.user_id}")
+
+        return user_vo
+
+    def disable_user(self, user_vo: User) -> User:
+        def _rollback(old_data):
+            _LOGGER.info(f"[disable_user._rollback] Revert Data : {old_data}")
+            user_vo.update(old_data)
+
+        if user_vo.state != "DISABLED":
+            self.transaction.add_rollback(_rollback, user_vo.to_dict())
+            user_vo.update({"state": "DISABLED"})
+
+            cache.delete_pattern(f"user-state:{user_vo.domain_id}:{user_vo.user_id}")
+
+        return user_vo
+
+    def get_user(self, user_id: str, domain_id: str) -> User:
         return self.user_model.get(user_id=user_id, domain_id=domain_id)
 
-    def list_users(self, query):
+    def list_users(self, query: dict) -> tuple[list, int]:
         return self.user_model.query(**query)
 
     @staticmethod
-    def _check_user_id_format(user_id):
+    def _check_user_id_format(user_id: str) -> None:
         rule = r"[^@]+@[^@]+\.[^@]+"
         if not re.match(rule, user_id):
             raise ERROR_INCORRECT_USER_ID_FORMAT(rule="Email format required.")
 
     @staticmethod
-    def _check_password_format(password):
+    def _check_password_format(password: str) -> None:
         if len(password) < 8:
             raise ERROR_INCORRECT_PASSWORD_FORMAT(rule="At least 9 characters long.")
         elif not re.search("[a-z]", password):
