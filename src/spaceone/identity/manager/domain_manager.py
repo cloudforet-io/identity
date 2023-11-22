@@ -59,7 +59,7 @@ class DomainManager(BaseManager):
 
         return domain_vo
 
-    def disable_domain(self, domain_id):
+    def disable_domain(self, domain_id: str) -> Domain:
         def _rollback(old_data):
             _LOGGER.info(
                 f'[disable_domain._rollback] Revert Data : {old_data["name"]} ({old_data["domain_id"]})'
@@ -76,13 +76,16 @@ class DomainManager(BaseManager):
 
         return domain_vo
 
-    def get_domain(self, domain_id):
+    def get_domain(self, domain_id: str) -> Domain:
         return self.domain_model.get(domain_id=domain_id)
 
-    def list_domains(self, query):
+    def get_domain_by_name(self, name: str) -> Domain:
+        return self.domain_model.get(name=name)
+
+    def list_domains(self, query: dict) -> dict:
         return self.domain_model.query(**query)
 
-    def stat_domains(self, query):
+    def stat_domains(self, query: dict) -> dict:
         return self._convert_stat_request_result(self.domain_model.stat(**query))
 
     @staticmethod

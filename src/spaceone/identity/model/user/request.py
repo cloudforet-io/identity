@@ -124,7 +124,7 @@ class UserSearchQueryRequest(BaseModel):
     state: Union[State, None] = None
     email: Union[str, None] = None
     user_type: Union[UserType, None] = None
-    AuthType: Union[AuthType, None] = None
+    auth_type: Union[AuthType, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
