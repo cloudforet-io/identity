@@ -42,8 +42,7 @@ class DomainMetadataResponse(BaseModel):
 
 class DomainSecretResponse(BaseModel):
     domain_id: Union[str, None] = None
-    key: Union[str, None] = None
-    key_type: Union[str, None] = None
+    public_key: Union[str, None] = None
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
