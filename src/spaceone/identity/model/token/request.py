@@ -11,5 +11,5 @@ class TokenIssueRequest(BaseModel):
     auth_type: AuthType
     timeout: Union[int, None] = None
     refresh_count: Union[int, None] = None
-    verify_count: Union[int, None] = None
+    verify_code: Union[int, None] = None
     domain_id: str

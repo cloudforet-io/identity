@@ -10,6 +10,7 @@ from spaceone.core.service import (
 )
 
 from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.model.domain.request import *
 from spaceone.identity.model.domain.response import *
@@ -21,6 +22,7 @@ class DomainService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain_mgr = DomainManager()
+        self.domain_secret_mgr = DomainSecretManager()
         self.user_mgr = UserManager()
         # self.role_manager = RoleManager()
 
@@ -39,12 +41,16 @@ class DomainService(BaseService):
         """
 
         domain_vo = self.domain_mgr.create_domain(params.dict())
+
+        # create domain secret
+        self.domain_secret_mgr.create_domain_secret(domain_vo.domain_id)
+
+        # create admin user with policy and role
         admin = params.admin
         admin["auth_type"] = "LOCAL"
         admin["user_type"] = "USER"
         admin["domain_id"] = domain_vo.domain_id
 
-        # create admin user with policy and role
         self.user_mgr.create_user(admin)
         return DomainResponse(**domain_vo.to_dict())
 
@@ -150,7 +156,13 @@ class DomainService(BaseService):
         Returns:
             DomainSecretResponse:
         """
-        return {}
+        pub_jwk = self.domain_secret_mgr.get_domain_public_key(params.domain_id)
+        return DomainSecretResponse(
+            **{
+                "public_key": str(pub_jwk),
+                "domain_id": params.domain_id,
+            }
+        )
 
     @transaction
     @append_query_filter(["domain_id", "name", "state"])
