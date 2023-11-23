@@ -14,11 +14,13 @@ from spaceone.identity.interface.grpc.policy import Policy
 from spaceone.identity.interface.grpc.role import Role
 from spaceone.identity.interface.grpc.role_binding import RoleBinding
 from spaceone.identity.interface.grpc.user import User
-from spaceone.identity.interface.grpc.user_group import UserGroup
+
+# from spaceone.identity.interface.grpc.user_group import UserGroup
 
 # from spaceone.identity.interface.grpc.api_key import APIKey
 from spaceone.identity.interface.grpc.token import Token
-from spaceone.identity.interface.grpc.authorization import Authorization
+
+# from spaceone.identity.interface.grpc.authorization import Authorization
 
 _all_ = ["app"]
 
@@ -35,7 +37,7 @@ app.add_service(Policy)
 app.add_service(Role)
 app.add_service(RoleBinding)
 app.add_service(User)
-app.add_service(UserGroup)
+# app.add_service(UserGroup)
 # app.add_service(APIKey)
 app.add_service(Token)
-app.add_service(Authorization)
+# app.add_service(Authorization)
