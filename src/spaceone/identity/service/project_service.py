@@ -42,7 +42,6 @@ class ProjectService(BaseService):
             ProjectResponse:
         """
 
-        self.workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
         project_vo = self.project_mgr.create_project(params.dict())
 
         return ProjectResponse(**project_vo.to_dict())
@@ -66,7 +65,9 @@ class ProjectService(BaseService):
         project_vo = self.project_mgr.get_project(
             params.project_id, params.workspace_id, params.domain_id
         )
-        project_vo = self.project_mgr.update_project_by_vo(params.dict(), project_vo)
+        project_vo = self.project_mgr.update_project_by_vo(
+            params.dict(exclude_unset=True), project_vo
+        )
 
         return ProjectResponse(**project_vo.to_dict())
 
@@ -90,7 +91,9 @@ class ProjectService(BaseService):
         project_vo = self.project_mgr.get_project(
             params.project_id, params.workspace_id, params.domain_id
         )
-        project_vo = self.project_mgr.update_project_by_vo(params.dict(), project_vo)
+        project_vo = self.project_mgr.update_project_by_vo(
+            params.dict(exclude_unset=True), project_vo
+        )
 
         return ProjectResponse(**project_vo.to_dict())
 
@@ -113,7 +116,9 @@ class ProjectService(BaseService):
         project_vo = self.project_mgr.get_project(
             params.project_id, params.workspace_id, params.domain_id
         )
-        project_vo = self.project_mgr.update_project_by_vo(params.dict(), project_vo)
+        project_vo = self.project_mgr.update_project_by_vo(
+            params.dict(exclude_unset=True), project_vo
+        )
         return ProjectResponse(**project_vo.to_dict())
 
     @transaction(append_meta={"authorization.scope": "WORKSPACE"})
@@ -148,7 +153,7 @@ class ProjectService(BaseService):
             params.users = list(set(users))
 
             project_vo = self.project_mgr.update_project_by_vo(
-                params.dict(), project_vo
+                params.dict(exclude_unset=True), project_vo
             )
 
         return ProjectResponse(**project_vo.to_dict())
@@ -165,7 +170,9 @@ class ProjectService(BaseService):
         )
 
         params.users = list(set(project_vo.users) - set(params.users))
-        project_vo = self.project_mgr.update_project_by_vo(params.dict(), project_vo)
+        project_vo = self.project_mgr.update_project_by_vo(
+            params.dict(exclude_unset=True), project_vo
+        )
 
         return ProjectResponse(**project_vo.to_dict())
 

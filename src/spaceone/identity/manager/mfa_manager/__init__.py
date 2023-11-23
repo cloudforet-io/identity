@@ -6,6 +6,7 @@ from spaceone.core import config, utils, cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.error.error_mfa import ERROR_NOT_SUPPORTED_MFA_TYPE
+from spaceone.identity.error.error_user import ERROR_INVALID_VERIFY_CODE
 
 __all__ = ["BaseMFAManager", "MFAManager"]
 _LOGGER = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
             if cached_verify_code == verify_code:
                 cache.delete(f"mfa-verify-code:{domain_id}:{user_id}")
                 return True
-        return False
+        raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 
     @staticmethod
     def _generate_verify_code():
