@@ -9,6 +9,7 @@ from spaceone.core.service import (
     append_keyword_filter,
 )
 
+from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.user_manager import UserManager
@@ -143,8 +144,25 @@ class DomainService(BaseService):
         Returns:
             DomainMetadataResponse:
         """
+        domain_vo = self.domain_mgr.get_domain_by_name(params.name)
+        external_auth_mgr = ExternalAuthManager()
+        try:
+            external_auth_vo = external_auth_mgr.get_external_auth(domain_vo.domain_id)
+            params = {
+                "domain_id": domain_vo.domain_id,
+                "name": domain_vo.name,
+                "external_auth_state": external_auth_vo.state,
+                "metadata": external_auth_vo.plugin_info.get("metadata", {}),
+            }
+        except Exception as e:
+            params = {
+                "domain_id": domain_vo.domain_id,
+                "name": domain_vo.name,
+                "external_auth_state": "DISABLED",
+                "metadata": {},
+            }
 
-        return {}
+        return DomainMetadataResponse(**params)
 
     @transaction
     @convert_model

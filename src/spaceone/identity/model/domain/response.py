@@ -33,7 +33,7 @@ class DomainMetadataResponse(BaseModel):
     domain_id: Union[str, None] = None
     name: Union[str, None] = None
     external_auth_state: ExternalAuthState
-    metadata_info: Union[dict, None] = None
+    metadata: Union[dict, None] = None
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
