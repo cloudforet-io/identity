@@ -1,5 +1,5 @@
 import logging
-from jsonschema import validate
+from jsonschema import validate, exceptions
 from typing import Tuple, List
 
 from spaceone.core.manager import BaseManager
@@ -66,5 +66,5 @@ class ProviderManager(BaseManager):
         if schema:
             try:
                 validate(instance=data, schema=schema)
-            except Exception as e:
-                raise ERROR_INVALID_PARAMETER(key='data', reason=e)
+            except exceptions.ValidationError as e:
+                raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)
