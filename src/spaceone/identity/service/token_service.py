@@ -62,11 +62,11 @@ class TokenService(BaseService):
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
 
         if user_mfa.get('state', 'DISABLED') == 'ENABLED':
+            mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get('mfa_type'))
             if verify_code:
-                token_manager.check_mfa_verify_code(user_id, domain_id, verify_code)
+                mfa_manager.check_mfa_verify_code(user_id, domain_id, verify_code)
             else:
                 mfa_email = user_mfa['options'].get('email')
-                mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get('mfa_type'))
                 mfa_manager.send_mfa_authentication_email(user_id, domain_id, mfa_email, user_vo.language)
                 raise ERROR_MFA_REQUIRED(user_id=user_id)
 
