@@ -1,6 +1,7 @@
 import logging
 import re
 
+from typing import Tuple
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
@@ -134,7 +135,7 @@ class UserManager(BaseManager):
     def get_user(self, user_id: str, domain_id: str) -> User:
         return self.user_model.get(user_id=user_id, domain_id=domain_id)
 
-    def list_users(self, query: dict) -> tuple[list, int]:
+    def list_users(self, query: dict) -> Tuple[list, int]:
         return self.user_model.query(**query)
 
     @staticmethod
