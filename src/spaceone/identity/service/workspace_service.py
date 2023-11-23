@@ -9,7 +9,6 @@ from spaceone.core.service import (
     append_keyword_filter,
 )
 
-from spaceone.identity.error.error_workspace import *
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.workspace.request import *

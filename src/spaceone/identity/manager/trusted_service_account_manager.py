@@ -3,7 +3,7 @@ from typing import Tuple, List
 
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
-from spaceone.identity.model.trusted_service_account_db import TrustedServiceAccount
+from spaceone.identity.model.trusted_service_account.database import TrustedServiceAccount
 
 _LOGGER = logging.getLogger(__name__)
 

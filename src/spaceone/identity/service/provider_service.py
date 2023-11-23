@@ -2,8 +2,8 @@ import logging
 from typing import Union
 from spaceone.core import cache
 from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
-from spaceone.identity.model.provider_request import *
-from spaceone.identity.model.provider_response import *
+from spaceone.identity.model.provider.request import *
+from spaceone.identity.model.provider.response import *
 from spaceone.identity.manager.provider_manager import ProviderManager
 
 _LOGGER = logging.getLogger(__name__)

@@ -5,7 +5,7 @@ from typing import Tuple, List
 from spaceone.core.manager import BaseManager
 from spaceone.core.error import *
 from spaceone.identity.conf.provider_conf import DEFAULT_PROVIDERS
-from spaceone.identity.model.provider_db import Provider
+from spaceone.identity.model.provider.database import Provider
 
 _LOGGER = logging.getLogger(__name__)
 

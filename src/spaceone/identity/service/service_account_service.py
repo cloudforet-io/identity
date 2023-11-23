@@ -2,8 +2,8 @@ import logging
 from typing import Union
 from spaceone.core.service import (BaseService, transaction, convert_model, append_query_filter,
                                    append_keyword_filter, set_query_page_limit)
-from spaceone.identity.model.service_account_request import *
-from spaceone.identity.model.service_account_response import *
+from spaceone.identity.model.service_account.request import *
+from spaceone.identity.model.service_account.response import *
 from spaceone.identity.manager.provider_manager import ProviderManager
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.trusted_service_account_manager import TrustedServiceAccountManager
