@@ -1,5 +1,6 @@
 from spaceone.core.pygrpc.server import GRPCServer
 from spaceone.identity.interface.grpc.domain import Domain
+from spaceone.identity.interface.grpc.external_auth import ExternalAuth
 from spaceone.identity.interface.grpc.endpoint import Endpoint
 from spaceone.identity.interface.grpc.provider import Provider
 from spaceone.identity.interface.grpc.workspace import Workspace
@@ -26,6 +27,7 @@ _all_ = ["app"]
 
 app = GRPCServer()
 app.add_service(Domain)
+app.add_service(ExternalAuth)
 app.add_service(Endpoint)
 app.add_service(Provider)
 app.add_service(Workspace)

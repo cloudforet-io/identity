@@ -22,7 +22,7 @@ class Plugin(BaseModel):
 
 class ExternalAuthSetRequest(BaseModel):
     domain_id: str
-    external_auth_id: Plugin
+    plugin_info: Plugin
 
 
 class ExternalAuthUnsetRequest(BaseModel):
