@@ -10,6 +10,7 @@ class PolicyResponse(BaseModel):
     name: Union[str, None]
     permissions: Union[List[str], None]
     tags: Union[dict, None]
+    is_managed: Union[bool, None]
     domain_id: Union[str, None]
     created_at: Union[datetime, None]
 

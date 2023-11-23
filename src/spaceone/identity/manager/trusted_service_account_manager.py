@@ -25,12 +25,6 @@ class TrustedServiceAccountManager(BaseManager):
 
         return trusted_account_vo
 
-    def update_trusted_service_account(self, params: dict) -> TrustedServiceAccount:
-        trusted_account_vo = self.get_trusted_service_account(
-            params['trusted_service_account_id'], params['domain_id'], params.get('workspace_id'))
-
-        return self.update_trusted_service_account_by_vo(params, trusted_account_vo)
-
     def update_trusted_service_account_by_vo(
         self, params: dict, trusted_account_vo: TrustedServiceAccount
     ) -> TrustedServiceAccount:
@@ -50,11 +44,16 @@ class TrustedServiceAccountManager(BaseManager):
     def get_trusted_service_account(
         self, trusted_service_account_id: str, domain_id: str, workspace_id: str = None
     ) -> TrustedServiceAccount:
-        return self.trusted_account_model.get(
-            trusted_service_account_id=trusted_service_account_id,
-            domain_id=domain_id,
-            workspace_id=workspace_id
-        )
+
+        conditions = {
+            'trusted_service_account_id': trusted_service_account_id,
+            'domain_id': domain_id,
+        }
+
+        if workspace_id:
+            conditions['workspace_id'] = workspace_id
+
+        return self.trusted_account_model.get(**conditions)
 
     def filter_trusted_service_accounts(self, **conditions) -> List[TrustedServiceAccount]:
         return self.trusted_account_model.filter(**conditions)

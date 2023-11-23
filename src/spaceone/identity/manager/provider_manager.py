@@ -26,12 +26,13 @@ class ProviderManager(BaseManager):
 
         return provider_vo
 
-    def update_provider(self, params: dict) -> Provider:
+    def update_provider_by_vo(
+        self, params: dict, provider_vo: Provider
+    ) -> Provider:
         def _rollback(old_data):
             _LOGGER.info(f'[update_provider._rollback] Revert Data : {old_data["provider"]}')
             provider_vo.update(old_data)
 
-        provider_vo = self.get_provider(params['provider'], params['domain_id'])
         self.transaction.add_rollback(_rollback, provider_vo.to_dict())
 
         return provider_vo.update(params)

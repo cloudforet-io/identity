@@ -1,6 +1,5 @@
 from typing import Union
-from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 __all__ = [
     "WorkspaceCreateRequest",

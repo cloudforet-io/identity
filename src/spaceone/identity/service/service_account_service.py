@@ -44,10 +44,11 @@ class ServiceAccountService(BaseService):
         provider_mgr.check_data_by_schema(params.provider, params.domain_id, params.data)
 
         # Check trusted service account
-        trusted_service_account_mgr = TrustedServiceAccountManager()
-        trusted_service_account_mgr.get_trusted_service_account(
-            params.trusted_service_account_id, params.domain_id, params.workspace_id
-        )
+        if params.trusted_service_account_id:
+            trusted_service_account_mgr = TrustedServiceAccountManager()
+            trusted_service_account_mgr.get_trusted_service_account(
+                params.trusted_service_account_id, params.domain_id, params.workspace_id
+            )
 
         service_account_vo = self.service_account_mgr.create_service_account(params.dict())
         return ServiceAccountResponse(**service_account_vo.to_dict())
@@ -83,7 +84,7 @@ class ServiceAccountService(BaseService):
             provider_mgr.check_data_by_schema(service_account_vo.provider, params.domain_id, params.data)
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
-            params.dict(), service_account_vo
+            params.dict(exclude_unset=True), service_account_vo
         )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
@@ -151,7 +152,7 @@ class ServiceAccountService(BaseService):
     @transaction(append_meta={'authorization.scope': 'PROJECT_READ'})
     @convert_model
     def get(self, params: ServiceAccountGetRequest) -> Union[ServiceAccountResponse, dict]:
-        """ delete service account
+        """ get service account
 
          Args:
             params (ServiceAccountDeleteRequest): {

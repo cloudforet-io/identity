@@ -1,6 +1,7 @@
 import logging
 from typing import Union
 from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
+from spaceone.core.error import *
 from spaceone.identity.model.trusted_service_account.request import *
 from spaceone.identity.model.trusted_service_account.response import *
 from spaceone.identity.manager.provider_manager import ProviderManager
@@ -34,6 +35,13 @@ class TrustedServiceAccountService(BaseService):
         Returns:
             TrustedServiceAccountResponse:
         """
+
+        # Check Scope
+        if params.scope == 'DOMAIN':
+            params.workspace_id = None
+        else:
+            if not params.workspace_id:
+                raise ERROR_REQUIRED_PARAMETER(key='workspace_id')
 
         # Check data by schema
         provider_mgr = ProviderManager()
@@ -71,7 +79,7 @@ class TrustedServiceAccountService(BaseService):
             provider_mgr.check_data_by_schema(trusted_account_vo.provider, params.domain_id, params.data)
 
         trusted_account_vo = self.trusted_account_mgr.update_trusted_service_account_by_vo(
-            params.dict(), trusted_account_vo
+            params.dict(exclude_unset=True), trusted_account_vo
         )
 
         return TrustedServiceAccountResponse(**trusted_account_vo.to_dict())
@@ -96,9 +104,9 @@ class TrustedServiceAccountService(BaseService):
             params.trusted_service_account_id, params.domain_id, params.workspace_id
         )
 
-        self.trusted_account_mgr.delete_trusted_secrets(
-            params.trusted_service_account_id, params.workspace_id, params.domain_id
-        )
+        # self.trusted_account_mgr.delete_trusted_secrets(
+        #     params.trusted_service_account_id, params.workspace_id, params.domain_id
+        # )
         self.trusted_account_mgr.delete_trusted_service_account_by_vo(trusted_account_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})

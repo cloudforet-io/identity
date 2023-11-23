@@ -63,10 +63,15 @@ class ProviderService(BaseService):
             ProviderResponse:
         """
 
+        provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
+
         # TODO: validate a template data
         # TODO: validate a capability data
 
-        provider_vo = self.provider_mgr.update_provider(params.dict())
+        provider_vo = self.provider_mgr.update_provider_by_vo(
+            params.dict(exclude_unset=True), provider_vo
+        )
+
         return ProviderResponse(**provider_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
