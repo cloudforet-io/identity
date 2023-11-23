@@ -94,5 +94,4 @@ class DomainSecretManager(BaseManager):
             "domain_id": domain_id,
             "domain": domain_vo,
         }
-        print("generate domain secrer", data)
         return data
