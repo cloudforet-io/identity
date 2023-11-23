@@ -7,7 +7,7 @@ class ServiceAccount(MongoModel):
     name = StringField(max_length=255, unique_with=['domain_id', 'workspace_id'])
     data = DictField(default=None)
     provider = StringField(max_length=40)
-    tags = DictField()
+    tags = DictField(default=None)
     trusted_service_account_id = StringField(max_length=40, null=True, default=None)
     project_id = StringField(max_length=40)
     workspace_id = StringField(max_length=40)
