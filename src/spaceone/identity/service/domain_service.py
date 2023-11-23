@@ -67,7 +67,9 @@ class DomainService(BaseService):
             DomainResponse:
         """
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
-        domain_vo = self.domain_mgr.update_domain_by_vo(params.dict(), domain_vo)
+        domain_vo = self.domain_mgr.update_domain_by_vo(
+            params.dict(exclude_unset=True), domain_vo
+        )
         return DomainResponse(**domain_vo.to_dict())
 
     @transaction
@@ -141,6 +143,7 @@ class DomainService(BaseService):
         Returns:
             DomainMetadataResponse:
         """
+
         return {}
 
     @transaction
