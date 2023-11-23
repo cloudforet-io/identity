@@ -5,7 +5,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from spaceone.core import config, utils
 from spaceone.core.manager import BaseManager
-from spaceone.identity_v1.connector.smtp_connector import SMTPConnector
+from spaceone.identity.connector.smtp_connector import SMTPConnector
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ LANGUAGE_MAPPER = {
 class EmailManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.smtp_connector: SMTPConnector = self.locator.get_connector("SMTPConnector")
+        self.smtp_connector = SMTPConnector()
 
     def send_reset_password_email(self, user_id, email, reset_password_link, language):
         service_name = self._get_service_name()

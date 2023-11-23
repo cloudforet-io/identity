@@ -1,4 +1,4 @@
-from typing import Union, List, Literal
+from typing import Union, Literal
 from pydantic import BaseModel
 
 __all__ = [
@@ -17,7 +17,7 @@ Scope = Literal["DOMAIN", "WORKSPACE"]
 class RoleBindingCreateRequest(BaseModel):
     user_id: str
     role_id: str
-    is_managed_role: bool
+    role_type: Union[str, None] = None
     scope: Scope
     workspace_id: Union[str, None] = None
     domain_id: str
@@ -26,7 +26,8 @@ class RoleBindingCreateRequest(BaseModel):
 class RoleBindingUpdateRoleRequest(BaseModel):
     role_binding_id: str
     role_id: str
-    is_managed_role: bool
+    role_type: Union[str, None] = None
+    workspace_id: Union[str, None] = None
     domain_id: str
 
 

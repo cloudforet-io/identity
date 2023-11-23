@@ -2,8 +2,8 @@ import logging
 from typing import Union
 from spaceone.core.service import (BaseService, transaction, convert_model, append_query_filter,
                                    append_keyword_filter, set_query_page_limit)
-from spaceone.identity.model.service_account_request import *
-from spaceone.identity.model.service_account_response import *
+from spaceone.identity.model.service_account.request import *
+from spaceone.identity.model.service_account.response import *
 from spaceone.identity.manager.provider_manager import ProviderManager
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.trusted_service_account_manager import TrustedServiceAccountManager
@@ -36,7 +36,7 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            ServiceAccountResponse
+            ServiceAccountResponse:
         """
 
         # Check data by schema
@@ -44,10 +44,11 @@ class ServiceAccountService(BaseService):
         provider_mgr.check_data_by_schema(params.provider, params.domain_id, params.data)
 
         # Check trusted service account
-        trusted_service_account_mgr = TrustedServiceAccountManager()
-        trusted_service_account_mgr.get_trusted_service_account(
-            params.trusted_service_account_id, params.domain_id, params.workspace_id
-        )
+        if params.trusted_service_account_id:
+            trusted_service_account_mgr = TrustedServiceAccountManager()
+            trusted_service_account_mgr.get_trusted_service_account(
+                params.trusted_service_account_id, params.domain_id, params.workspace_id
+            )
 
         service_account_vo = self.service_account_mgr.create_service_account(params.dict())
         return ServiceAccountResponse(**service_account_vo.to_dict())
@@ -70,7 +71,7 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            ServiceAccountResponse
+            ServiceAccountResponse:
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
@@ -83,7 +84,7 @@ class ServiceAccountService(BaseService):
             provider_mgr.check_data_by_schema(service_account_vo.provider, params.domain_id, params.data)
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
-            params.dict(), service_account_vo
+            params.dict(exclude_unset=True), service_account_vo
         )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
@@ -105,7 +106,8 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            ServiceAccountResponse
+
+            ServiceAccountResponse:
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
@@ -150,7 +152,7 @@ class ServiceAccountService(BaseService):
     @transaction(append_meta={'authorization.scope': 'PROJECT_READ'})
     @convert_model
     def get(self, params: ServiceAccountGetRequest) -> Union[ServiceAccountResponse, dict]:
-        """ delete service account
+        """ get service account
 
          Args:
             params (ServiceAccountDeleteRequest): {
@@ -161,7 +163,7 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-             ServiceAccountResponse
+             ServiceAccountResponse:
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
@@ -195,7 +197,7 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            ServiceAccountsResponse
+            ServiceAccountsResponse:
         """
 
         query = params.query or {}

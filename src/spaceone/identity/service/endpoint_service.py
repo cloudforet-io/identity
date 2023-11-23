@@ -25,7 +25,7 @@ class EndpointService(BaseService):
             }
 
         Returns:
-            EndpointsResponse
+            EndpointsResponse:
         """
 
         endpoint_mgr: EndpointManager = EndpointManager()

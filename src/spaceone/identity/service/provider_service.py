@@ -2,8 +2,8 @@ import logging
 from typing import Union
 from spaceone.core import cache
 from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
-from spaceone.identity.model.provider_request import *
-from spaceone.identity.model.provider_response import *
+from spaceone.identity.model.provider.request import *
+from spaceone.identity.model.provider.response import *
 from spaceone.identity.manager.provider_manager import ProviderManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            ProviderResponse
+            ProviderResponse:
         """
 
         # TODO: validate a template data
@@ -60,13 +60,18 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            ProviderResponse
+            ProviderResponse:
         """
+
+        provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
 
         # TODO: validate a template data
         # TODO: validate a capability data
 
-        provider_vo = self.provider_mgr.update_provider(params.dict())
+        provider_vo = self.provider_mgr.update_provider_by_vo(
+            params.dict(exclude_unset=True), provider_vo
+        )
+
         return ProviderResponse(**provider_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -84,7 +89,8 @@ class ProviderService(BaseService):
             None
         """
 
-        self.provider_mgr.delete_provider(params.provider, params.domain_id)
+        provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
+        self.provider_mgr.delete_provider_by_vo(provider_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @convert_model
@@ -98,7 +104,7 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            ProviderResponse
+            ProviderResponse:
         """
 
         provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
@@ -120,16 +126,16 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            ProvidersResponse
+            ProvidersResponse:
         """
 
         query = params.query or {}
 
         self._create_default_provider(params.domain_id)
 
-        providers_vos, total_count = self.provider_mgr.list_providers(query)
+        provider_vos, total_count = self.provider_mgr.list_providers(query)
 
-        providers_info = [provider_vo.to_dict() for provider_vo in providers_vos]
+        providers_info = [provider_vo.to_dict() for provider_vo in provider_vos]
         return ProvidersResponse(results=providers_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})

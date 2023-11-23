@@ -37,7 +37,6 @@ class UserService(BaseService):
         self.user_mgr = UserManager()
         self.domain_mgr = DomainManager()
         self.domain_secret_mgr = DomainSecretManager()
-        self.email_manager = EmailManager()
 
     @transaction(append_meta={"authorization.scope": "DOMAIN_OR_WORKSPACE"})
     @convert_model

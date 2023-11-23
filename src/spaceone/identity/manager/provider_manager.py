@@ -1,11 +1,11 @@
 import logging
-from jsonschema import validate
+from jsonschema import validate, exceptions
 from typing import Tuple, List
 
 from spaceone.core.manager import BaseManager
 from spaceone.core.error import *
 from spaceone.identity.conf.provider_conf import DEFAULT_PROVIDERS
-from spaceone.identity.model.provider_db import Provider
+from spaceone.identity.model.provider.database import Provider
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,18 +26,19 @@ class ProviderManager(BaseManager):
 
         return provider_vo
 
-    def update_provider(self, params: dict) -> Provider:
+    def update_provider_by_vo(
+        self, params: dict, provider_vo: Provider
+    ) -> Provider:
         def _rollback(old_data):
             _LOGGER.info(f'[update_provider._rollback] Revert Data : {old_data["provider"]}')
             provider_vo.update(old_data)
 
-        provider_vo = self.get_provider(params['provider'], params['domain_id'])
         self.transaction.add_rollback(_rollback, provider_vo.to_dict())
 
         return provider_vo.update(params)
 
-    def delete_provider(self, provider: str, domain_id: str) -> None:
-        provider_vo = self.get_provider(provider, domain_id)
+    @staticmethod
+    def delete_provider_by_vo(provider_vo: Provider) -> None:
         provider_vo.delete()
 
     def get_provider(self, provider: str, domain_id: str) -> Provider:
@@ -66,5 +67,5 @@ class ProviderManager(BaseManager):
         if schema:
             try:
                 validate(instance=data, schema=schema)
-            except Exception as e:
-                raise ERROR_INVALID_PARAMETER(key='data', reason=e)
+            except exceptions.ValidationError as e:
+                raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)
