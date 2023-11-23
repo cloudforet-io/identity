@@ -32,7 +32,7 @@ class TrustedServiceAccountService(BaseService):
             }
 
         Returns:
-            TrustedServiceAccountResponse
+            TrustedServiceAccountResponse:
         """
 
         # Check data by schema
@@ -58,7 +58,7 @@ class TrustedServiceAccountService(BaseService):
             }
 
         Returns:
-            TrustedServiceAccountResponse
+            TrustedServiceAccountResponse:
         """
 
         trusted_account_vo = self.trusted_account_mgr.get_trusted_service_account(
@@ -114,7 +114,7 @@ class TrustedServiceAccountService(BaseService):
             }
 
         Returns:
-            TrustedServiceAccountResponse
+            TrustedServiceAccountResponse:
         """
 
         trusted_account_vo = self.trusted_account_mgr.get_trusted_service_account(
@@ -145,7 +145,7 @@ class TrustedServiceAccountService(BaseService):
             }
 
         Returns:
-            TrustedServiceAccountsResponse
+            TrustedServiceAccountsResponse:
         """
 
         query = params.query or {}

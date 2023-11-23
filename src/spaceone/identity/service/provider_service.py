@@ -33,7 +33,7 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            ProviderResponse
+            ProviderResponse:
         """
 
         # TODO: validate a template data
@@ -60,7 +60,7 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            ProviderResponse
+            ProviderResponse:
         """
 
         # TODO: validate a template data
@@ -98,7 +98,7 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            ProviderResponse
+            ProviderResponse:
         """
 
         provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
@@ -120,7 +120,7 @@ class ProviderService(BaseService):
             }
 
         Returns:
-            ProvidersResponse
+            ProvidersResponse:
         """
 
         query = params.query or {}

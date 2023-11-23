@@ -36,7 +36,7 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            ServiceAccountResponse
+            ServiceAccountResponse:
         """
 
         # Check data by schema
@@ -70,7 +70,7 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            ServiceAccountResponse
+            ServiceAccountResponse:
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
@@ -105,7 +105,8 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            ServiceAccountResponse
+
+            ServiceAccountResponse:
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
@@ -161,7 +162,7 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-             ServiceAccountResponse
+             ServiceAccountResponse:
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
@@ -195,7 +196,7 @@ class ServiceAccountService(BaseService):
             }
 
         Returns:
-            ServiceAccountsResponse
+            ServiceAccountsResponse:
         """
 
         query = params.query or {}
