@@ -4,7 +4,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 class Policy(MongoModel):
     policy_id = StringField(max_length=40, generate_id='policy', unique_with='domain_id')
-    name = StringField(max_length=255)
+    name = StringField(max_length=255, unique_with='domain_id')
     permissions = ListField(StringField())
     permissions_hash = StringField()
     tags = DictField(default=None)

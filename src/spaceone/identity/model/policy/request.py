@@ -20,7 +20,7 @@ class PolicyCreateRequest(BaseModel):
 
 class PolicyUpdateRequest(BaseModel):
     policy_id: str
-    name: str
+    name: Union[str, None] = None
     permissions: Union[List[str], None] = None
     tags: Union[dict, None] = None
     domain_id: str

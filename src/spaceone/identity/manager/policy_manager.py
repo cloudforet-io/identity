@@ -23,7 +23,10 @@ class PolicyManager(BaseManager):
                          f'Delete policy: {vo.name} ({vo.policy_id})')
             vo.delete()
 
-        params['permissions_hash'] = utils.dict_to_hash(params['permissions'])
+        params['permissions'] = list(set(params['permissions']))
+        params['permissions_hash'] = utils.dict_to_hash(
+            {'permissions': params['permissions']}
+        )
 
         policy_vo = self.policy_model.create(params)
         self.transaction.add_rollback(_rollback, policy_vo)
@@ -39,8 +42,11 @@ class PolicyManager(BaseManager):
 
         self.transaction.add_rollback(_rollback, policy_vo.to_dict())
 
-        if permissions := params.get('permissions'):
-            params['permissions_hash'] = utils.dict_to_hash(permissions)
+        if 'permissions' in params:
+            params['permissions'] = list(set(params['permissions']))
+            params['permissions_hash'] = utils.dict_to_hash(
+                {'permissions': params['permissions']}
+            )
 
         return policy_vo.update(params)
 
@@ -48,7 +54,7 @@ class PolicyManager(BaseManager):
     def delete_policy_by_vo(policy_vo: Policy) -> None:
         # Check policy is used (role)
         role_mgr = RoleManager()
-        role_vos = role_mgr.filter_roles(policy_id=policy_vo.policy_id, domain_id=policy_vo.domain_id)
+        role_vos = role_mgr.filter_roles(policies=policy_vo.policy_id, domain_id=policy_vo.domain_id)
 
         for role_vo in role_vos:
             raise ERROR_POLICY_IN_USED(role_id=role_vo.role_id)
