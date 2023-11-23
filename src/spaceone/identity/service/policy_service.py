@@ -1,6 +1,6 @@
 import logging
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model
+from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
 from spaceone.identity.model.policy.request import *
 from spaceone.identity.model.policy.response import *
 from spaceone.identity.manager.policy_manager import PolicyManager
@@ -97,6 +97,8 @@ class PolicyService(BaseService):
         return PolicyResponse(**policy_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @append_query_filter(['policy_id', 'name', 'domain_id'])
+    @append_keyword_filter(['policy_id', 'name'])
     @convert_model
     def list(self, params: PolicySearchQueryRequest) -> Union[PoliciesResponse, dict]:
         """ list policies
@@ -120,6 +122,8 @@ class PolicyService(BaseService):
         return PoliciesResponse(results=policies_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @append_query_filter(['domain_id'])
+    @append_keyword_filter(['policy_id', 'name'])
     @convert_model
     def stat(self, params: PolicyStatQueryRequest) -> dict:
         """ stat policies

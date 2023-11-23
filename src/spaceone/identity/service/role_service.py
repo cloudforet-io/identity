@@ -1,6 +1,6 @@
 import logging
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model
+from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
 from spaceone.identity.model.role.request import *
 from spaceone.identity.model.role.response import *
 from spaceone.identity.manager.role_manager import RoleManager
@@ -110,6 +110,8 @@ class RoleService(BaseService):
         return RoleResponse(**role_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @append_query_filter(['role_id', 'role_type', 'policy_id', 'domain_id'])
+    @append_keyword_filter(['role_id', 'name'])
     @convert_model
     def list(self, params: RoleSearchQueryRequest) -> Union[RolesResponse, dict]:
         """ list roles
@@ -134,6 +136,8 @@ class RoleService(BaseService):
         return RolesResponse(results=roles_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @append_query_filter(['domain_id'])
+    @append_keyword_filter(['role_id', 'name'])
     @convert_model
     def stat(self, params: RoleStatQueryRequest) -> dict:
         """ stat roles

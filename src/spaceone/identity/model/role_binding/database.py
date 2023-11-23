@@ -27,6 +27,9 @@ class RoleBinding(MongoModel):
             'role_id',
             'workspace_id'
         ],
+        'change_query_keys': {
+            'user_workspaces': 'workspace_id'
+        },
         'indexes': [
             'role_type',
             'user_id',

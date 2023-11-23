@@ -1,6 +1,6 @@
 import logging
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model
+from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
 from spaceone.core.error import *
 from spaceone.identity.model.role_binding.request import *
 from spaceone.identity.model.role_binding.response import *
@@ -50,6 +50,14 @@ class RoleBindingService(BaseService):
         # Check role
         role_mgr = RoleManager()
         role_vo = role_mgr.get_role(params.role_id, params.domain_id)
+
+        if params.scope == 'DOMAIN':
+            if role_vo.role_type not in ['DOMAIN_ADMIN', 'SYSTEM_ADMIN']:
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=['DOMAIN_ADMIN'])
+        elif params.scope == 'WORKSPACE':
+            if role_vo.role_type not in ['WORKSPACE_ADMIN', 'WORKSPACE_MEMBER']:
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=['WORKSPACE_ADMIN', 'WORKSPACE_MEMBER'])
+
         params.role_type = role_vo.role_type
 
         rb_vo = self.role_binding_manager.create_role_binding(params.dict())
@@ -141,6 +149,10 @@ class RoleBindingService(BaseService):
         return RoleBindingResponse(**rb_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @append_query_filter([
+        'role_binding_id', 'user_id', 'role_id', 'scope', 'workspace_id', 'domain_id', 'user_workspaces'
+    ])
+    @append_keyword_filter(['role_binding_id', 'user_id', 'role_id'])
     @convert_model
     def list(self, params: RoleBindingSearchQueryRequest) -> Union[RoleBindingsResponse, dict]:
         """ list role bindings
@@ -154,6 +166,7 @@ class RoleBindingService(BaseService):
                 'role_id': 'str',
                 'workspace_id': 'str',
                 'domain_id': 'str',                     # required
+                'user_workspaces': 'list'               # from meta
             }
 
         Returns:
@@ -167,6 +180,8 @@ class RoleBindingService(BaseService):
         return RoleBindingsResponse(results=rbs_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @append_query_filter(['domain_id', 'workspace_id', 'user_workspaces'])
+    @append_keyword_filter(['role_binding_id', 'user_id', 'role_id'])
     @convert_model
     def stat(self, params: RoleBindingStatQueryRequest) -> dict:
         """ stat role bindings
@@ -176,6 +191,7 @@ class RoleBindingService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'str',
                 'domain_id': 'str',         # required
+                'user_workspaces': 'list'   # from meta
             }
 
         Returns:

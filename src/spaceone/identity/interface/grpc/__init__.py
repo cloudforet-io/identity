@@ -3,7 +3,7 @@ from spaceone.identity.interface.grpc.domain import Domain
 from spaceone.identity.interface.grpc.endpoint import Endpoint
 from spaceone.identity.interface.grpc.provider import Provider
 from spaceone.identity.interface.grpc.workspace import Workspace
-from spaceone.identity.interface.grpc.project_group import ProjectGroup
+# from spaceone.identity.interface.grpc.project_group import ProjectGroup
 from spaceone.identity.interface.grpc.project import Project
 from spaceone.identity.interface.grpc.trusted_service_account import (
     TrustedServiceAccount,
@@ -25,7 +25,7 @@ app.add_service(Domain)
 app.add_service(Endpoint)
 app.add_service(Provider)
 app.add_service(Workspace)
-app.add_service(ProjectGroup)
+# app.add_service(ProjectGroup)
 app.add_service(Project)
 app.add_service(TrustedServiceAccount)
 app.add_service(ServiceAccount)

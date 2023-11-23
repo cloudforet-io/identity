@@ -13,6 +13,7 @@ class RoleBindingResponse(BaseModel):
     scope: Union[Scope, None] = None
     user_id: Union[str, None] = None
     role_id: Union[str, None] = None
+    role_type: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
