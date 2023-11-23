@@ -39,7 +39,7 @@ class EmailMFAManager(MFAManager):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.smtp_connector: SMTPConnector = self.locator.get_connector("SMTPConnector")
+        self.smtp_connector = SMTPConnector()
 
     def enable_mfa(self, user_id, domain_id, user_mfa, language):
         self.send_mfa_verify_email(

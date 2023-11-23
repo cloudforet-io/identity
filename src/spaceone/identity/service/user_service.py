@@ -165,7 +165,9 @@ class UserService(BaseService):
             temp_password = self._generate_temporary_password()
             params.password = temp_password
 
-            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
+            user_vo = self.user_mgr.update_user_by_vo(
+                params.dict(exclude_unset=True), user_vo
+            )
             user_vo = self.user_mgr.update_user_by_vo(
                 {"required_actions": ["UPDATE_PASSWORD"]}, user_vo
             )
@@ -186,7 +188,9 @@ class UserService(BaseService):
                     user_id, email, console_link, temp_password, language
                 )
         else:
-            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
+            user_vo = self.user_mgr.update_user_by_vo(
+                params.dict(exclude_unset=True), user_vo
+            )
 
         return UserResponse(**user_vo.to_dict())
 
@@ -214,7 +218,7 @@ class UserService(BaseService):
         email = params.email or user_vo.email
         force = params.force or False
 
-        params = params.dict()
+        params = params.dict(exclude_unset=True)
         if force:
             params.update({"email_verified": True})
             self.user_mgr.update_user_by_vo(params, user_vo)
@@ -246,7 +250,7 @@ class UserService(BaseService):
 
 
         Returns:
-            None
+            UserResponse:
         """
 
         user_id = params.user_id
@@ -257,9 +261,10 @@ class UserService(BaseService):
         if token_manager.check_verify_code(user_id, domain_id, verify_code):
             user_vo = self.user_mgr.get_user(user_id, domain_id)
 
-            params = params.dict()
+            params = params.dict(exclude_unset=True)
             params["email_verified"] = True
-            return self.user_mgr.update_user_by_vo(params, user_vo)
+            user_vo = self.user_mgr.update_user_by_vo(params, user_vo)
+            return UserResponse(**user_vo.to_dict())
         else:
             raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 
