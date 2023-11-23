@@ -1,142 +1,145 @@
-from spaceone.core.service import *
-from spaceone.core import utils
-from spaceone.identity.manager import PolicyManager
+import logging
+from typing import Union
+from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
+from spaceone.identity.model.policy.request import *
+from spaceone.identity.model.policy.response import *
+from spaceone.identity.manager.policy_manager import PolicyManager
+
+_LOGGER = logging.getLogger(__name__)
 
 
-@authentication_handler
-@authorization_handler
-@mutation_handler
-@event_handler
 class PolicyService(BaseService):
 
-    def __init__(self, metadata):
-        super().__init__(metadata)
-        self.policy_mgr: PolicyManager = self.locator.get_manager('PolicyManager')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.policy_mgr = PolicyManager()
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['name', 'permissions', 'domain_id'])
-    def create(self, params):
-        """ Create policy
+    @convert_model
+    def create(self, params: PolicyCreateRequest) -> Union[PolicyResponse, dict]:
+        """ create policy
 
-        Args:
-            params (dict): {
-                'name': 'str',
-                'permissions': 'list',
+         Args:
+            params (PolicyCreateRequest): {
+                'name': 'str',                      # required
+                'permissions': 'list',              # required
                 'tags': 'dict',
-                'domain_id': 'str'
+                'domain_id': 'str'                  # required
             }
 
         Returns:
-            policy_vo (object)
+            PolicyResponse:
         """
 
-        return self.policy_mgr.create_policy(params)
+        policy_vo = self.policy_mgr.create_policy(params.dict())
+        return PolicyResponse(**policy_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['policy_id', 'domain_id'])
-    def update(self, params):
-        """ Update policy
+    @convert_model
+    def update(self, params: PolicyUpdateRequest) -> Union[PolicyResponse, dict]:
+        """ update policy
 
-        Args:
-            params (dict): {
-                'policy_id': 'str',
+         Args:
+            params (PolicyUpdateRequest): {
+                'policy_id': 'str',         # required
                 'name': 'str',
                 'permissions': 'list',
                 'tags': 'dict',
-                'domain_id': 'str'
+                'domain_id': 'str',         # required
             }
 
         Returns:
-            policy_vo (object)
+            PolicyResponse:
         """
 
-        return self.policy_mgr.update_policy(params)
+        policy_vo = self.policy_mgr.get_policy(params.policy_id, params.domain_id)
+
+        policy_vo = self.policy_mgr.update_policy_by_vo(
+            params.dict(exclude_unset=True), policy_vo
+        )
+
+        return PolicyResponse(**policy_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['policy_id', 'domain_id'])
-    def delete(self, params):
-        """ Delete policy
+    @convert_model
+    def delete(self, params: PolicyDeleteRequest) -> None:
+        """ delete policy
 
-        Args:
-            params (dict): {
-                'policy_id': 'str',
-                'domain_id': 'str'
+         Args:
+            params (PolicyDeleteRequest): {
+                'policy_id': 'str',             # required
+                'domain_id': 'str',             # required
             }
 
         Returns:
             None
         """
 
-        self.policy_mgr.delete_policy(params['policy_id'], params['domain_id'])
+        policy_vo = self.policy_mgr.get_policy(params.policy_id, params.domain_id)
+        self.policy_mgr.delete_policy_by_vo(policy_vo)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['policy_id', 'domain_id'])
-    def get(self, params):
-        """ Get policy
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @convert_model
+    def get(self, params: PolicyGetRequest) -> Union[PolicyResponse, dict]:
+        """ get policy
 
-        Args:
-            params (dict): {
-                'policy_id': 'str',
-                'domain_id': 'str',
-                'only': 'list'
+         Args:
+            params (PolicyGetRequest): {
+                'policy_id': 'str',             # required
+                'domain_id': 'str',             # required
             }
 
         Returns:
-            domain_vo (object)
+             PolicyResponse:
         """
 
-        return self.policy_mgr.get_policy(params['policy_id'], params['domain_id'], params.get('only'))
+        policy_vo = self.policy_mgr.get_policy(params.policy_id, params.domain_id)
+        return PolicyResponse(**policy_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['domain_id'])
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @append_query_filter(['policy_id', 'name', 'domain_id'])
     @append_keyword_filter(['policy_id', 'name'])
-    def list(self, params):
-        """ List polices
+    @convert_model
+    def list(self, params: PolicySearchQueryRequest) -> Union[PoliciesResponse, dict]:
+        """ list policies
 
         Args:
-            params (dict): {
+            params (PolicySearchQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'policy_id': 'str',
                 'name': 'str',
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)'
+                'domain_id': 'str',                     # required
             }
 
         Returns:
-            results (list): 'list of policy_vo'
-            total_count (int)
+            PoliciesResponse:
         """
 
-        query = self._append_policy_type_filter(params.get('query', {}))
-        return self.policy_mgr.list_policies(query)
+        query = params.query or {}
+        policy_vos, total_count = self.policy_mgr.list_policies(query)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['query', 'domain_id'])
+        policies_info = [policy_vo.to_dict() for policy_vo in policy_vos]
+        return PoliciesResponse(results=policies_info, total_count=total_count)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @append_query_filter(['domain_id'])
     @append_keyword_filter(['policy_id', 'name'])
-    def stat(self, params):
-        """
+    @convert_model
+    def stat(self, params: PolicyStatQueryRequest) -> dict:
+        """ stat policies
+
         Args:
-            params (dict): {
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+            params (PolicyStatQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
+                'domain_id': 'str',         # required
             }
 
         Returns:
-            values (list): 'list of statistics data'
-            total_count (int)
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
         """
 
-        query = self._append_policy_type_filter(params.get('query', {}))
+        query = params.query or {}
         return self.policy_mgr.stat_policies(query)
-
-    @staticmethod
-    def _append_policy_type_filter(query):
-        query['filter'] = query.get('filter', [])
-        query['filter'].append({
-            'k': 'policy_type',
-            'v': 'CUSTOM',
-            'o': 'eq'
-        })
-
-        return query

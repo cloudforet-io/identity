@@ -1,83 +1,50 @@
-from spaceone.api.identity.v1 import project_group_pb2, project_group_pb2_grpc
 from spaceone.core.pygrpc import BaseAPI
+from spaceone.api.identity.v2 import project_group_pb2, project_group_pb2_grpc
+from spaceone.identity.service.project_group_service import ProjectGroupService
 
 
 class ProjectGroup(BaseAPI, project_group_pb2_grpc.ProjectGroupServicer):
-
     pb2 = project_group_pb2
     pb2_grpc = project_group_pb2_grpc
 
     def create(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            return self.locator.get_info('ProjectGroupInfo', project_group_svc.create(params))
+        project_svc = ProjectGroupService(metadata)
+        response: dict = project_svc.create(params)
+        return self.dict_to_message(response)
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
+        project_svc = ProjectGroupService(metadata)
+        response: dict = project_svc.update(params)
+        return self.dict_to_message(response)
 
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            return self.locator.get_info('ProjectGroupInfo', project_group_svc.update(params))
+    def change_parent_group(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        project_svc = ProjectGroupService(metadata)
+        response: dict = project_svc.change_parent_group(params)
+        return self.dict_to_message(response)
 
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            project_group_svc.delete(params)
-            return self.locator.get_info('EmptyInfo')
+        project_svc = ProjectGroupService(metadata)
+        project_svc.delete(params)
+        return self.empty()
 
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            return self.locator.get_info('ProjectGroupInfo', project_group_svc.get(params))
+        project_svc = ProjectGroupService(metadata)
+        response: dict = project_svc.get(params)
+        return self.dict_to_message(response)
 
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            project_group_vos, total_count, parent_project_groups_info = project_group_svc.list(params)
-            return self.locator.get_info('ProjectGroupsInfo', project_group_vos, total_count,
-                                         minimal=self.get_minimal(params),
-                                         parent_project_groups_info=parent_project_groups_info)
+        project_svc = ProjectGroupService(metadata)
+        response: dict = project_svc.list(params)
+        return self.dict_to_message(response)
 
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            return self.locator.get_info('StatisticsInfo', project_group_svc.stat(params))
-
-    def add_member(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            return self.locator.get_info('ProjectGroupRoleBindingInfo', project_group_svc.add_member(params))
-
-    def modify_member(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            return self.locator.get_info('ProjectGroupRoleBindingInfo', project_group_svc.modify_member(params))
-
-    def remove_member(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            project_group_svc.remove_member(params)
-            return self.locator.get_info('EmptyInfo')
-
-    def list_members(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            project_group_map_vos, total_count = project_group_svc.list_members(params)
-            return self.locator.get_info('ProjectGroupRoleBindingsInfo', project_group_map_vos, total_count,
-                                         minimal=self.get_minimal(params))
-
-    def list_projects(self, request, context):
-        params, metadata = self.parse_request(request, context)
-
-        with self.locator.get_service('ProjectGroupService', metadata) as project_group_svc:
-            project_vos, total_count, project_groups_info = project_group_svc.list_projects(params)
-            return self.locator.get_info('ProjectGroupProjectsInfo', project_vos, total_count,
-                                         minimal=self.get_minimal(params), project_groups_info=project_groups_info)
+        project_svc = ProjectGroupService(metadata)
+        response: dict = project_svc.stat(params)
+        return self.dict_to_message(response)

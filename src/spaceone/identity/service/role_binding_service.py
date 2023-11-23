@@ -1,144 +1,205 @@
-from spaceone.core.service import *
-from spaceone.core import utils
-from spaceone.identity.manager import RoleBindingManager
+import logging
+from typing import Union
+from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
+from spaceone.core.error import *
+from spaceone.identity.model.role_binding.request import *
+from spaceone.identity.model.role_binding.response import *
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.role_manager import RoleManager
+from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_ROLE_TYPE
+
+_LOGGER = logging.getLogger(__name__)
 
 
-@authentication_handler
-@authorization_handler
-@mutation_handler
-@event_handler
 class RoleBindingService(BaseService):
 
-    def __init__(self, metadata):
-        super().__init__(metadata)
-        self.role_binding_mgr: RoleBindingManager = self.locator.get_manager('RoleBindingManager')
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.role_binding_manager = RoleBindingManager()
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['resource_type', 'resource_id', 'role_id', 'domain_id'])
-    def create(self, params):
-        """ Create role binding
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @convert_model
+    def create(self, params: RoleBindingCreateRequest) -> Union[RoleBindingResponse, dict]:
+        """ create role binding
 
-        Args:
-            params (dict): {
-                'resource_type': 'str',
-                'resource_id': 'str',
-                'role_id': 'str',
-                'project_id': 'str',
-                'project_group_id': 'str',
-                'labels': 'list',
-                'tags': 'dict',
-                'domain_id': 'str'
+         Args:
+            params (RoleBindingCreateRequest): {
+                'user_id': 'str',                   # required
+                'role_id': 'str',                   # required
+                'scope': 'str',                     # required
+                'workspace_id': 'str',
+                'domain_id': 'str'                  # required
             }
 
         Returns:
-            role_binding_vo (object)
+            RoleBindingResponse:
         """
 
-        return self.role_binding_mgr.create_role_binding(params)
+        # Check Scope
+        if params.scope == 'DOMAIN':
+            params.workspace_id = None
+        else:
+            if not params.workspace_id:
+                raise ERROR_REQUIRED_PARAMETER(key='workspace_id')
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['role_binding_id', 'domain_id'])
-    def update(self, params):
-        """ Update role binding
+        # Check user
+        user_mgr = UserManager()
+        user_mgr.get_user(params.user_id, params.domain_id)
 
-        Args:
-            params (dict): {
-                'role_binding_id': 'str',
-                'labels': 'list',
-                'tags': 'dict',
-                'domain_id': 'str'
+        # Check role
+        role_mgr = RoleManager()
+        role_vo = role_mgr.get_role(params.role_id, params.domain_id)
+
+        if params.scope == 'DOMAIN':
+            if role_vo.role_type not in ['DOMAIN_ADMIN', 'SYSTEM_ADMIN']:
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=['DOMAIN_ADMIN'])
+        elif params.scope == 'WORKSPACE':
+            if role_vo.role_type not in ['WORKSPACE_ADMIN', 'WORKSPACE_MEMBER']:
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=['WORKSPACE_ADMIN', 'WORKSPACE_MEMBER'])
+
+        params.role_type = role_vo.role_type
+
+        rb_vo = self.role_binding_manager.create_role_binding(params.dict())
+        return RoleBindingResponse(**rb_vo.to_dict())
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @convert_model
+    def update_role(self, params: RoleBindingUpdateRoleRequest) -> Union[RoleBindingResponse, dict]:
+        """ update role of role binding
+
+         Args:
+            params (RoleBindingUpdateRoleRequest): {
+                'role_binding_id': 'str',           # required
+                'role_id': 'str',                   # required
+                'workspace_id': 'str',
+                'domain_id': 'str',                 # required
             }
 
         Returns:
-            role_binding_vo (object)
+            RoleBindingResponse:
         """
 
-        return self.role_binding_mgr.update_role_binding(params)
+        rb_vo = self.role_binding_manager.get_role_binding(
+            params.role_binding_id, params.domain_id, params.workspace_id
+        )
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['role_binding_id', 'domain_id'])
-    def delete(self, params):
-        """ Delete role binding
+        # Check role
+        role_mgr = RoleManager()
+        role_vo = role_mgr.get_role(params.role_id, params.domain_id)
 
-        Args:
-            params (dict): {
-                'role_binding_id': 'str',
-                'domain_id': 'str'
+        if rb_vo.role_type in ['WORKSPACE_OWNER', 'WORKSPACE_MEMBER']:
+            if role_vo.role_type not in ['WORKSPACE_OWNER', 'WORKSPACE_MEMBER']:
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER'])
+        elif rb_vo.role_type != role_vo.role_type:
+            raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=[rb_vo.role_type])
+
+        rb_vo = self.role_binding_manager.update_role_binding_by_vo(
+            {
+                'role_id': params.role_id,
+                'role_type': role_vo.role_type
+            },
+            rb_vo
+        )
+
+        return RoleBindingResponse(**rb_vo.to_dict())
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @convert_model
+    def delete(self, params: RoleBindingDeleteRequest) -> None:
+        """ delete role binding
+
+         Args:
+            params (RoleBindingDeleteRequest): {
+                'role_binding_id': 'str',       # required
+                'workspace_id': 'str',
+                'domain_id': 'str',             # required
             }
 
         Returns:
             None
         """
 
-        self.role_binding_mgr.delete_role_binding(params['role_binding_id'], params['domain_id'])
+        rb_vo = self.role_binding_manager.get_role_binding(
+            params.role_binding_id, params.domain_id, params.workspace_id
+        )
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['role_binding_id', 'domain_id'])
-    @change_only_key({'project_group_info': 'project_group', 'project_info': 'project', 'role_info': 'role'})
-    def get(self, params):
-        """ Get role binding
+        self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
 
-        Args:
-            params (dict): {
-                'role_binding_id': 'str',
-                'domain_id': 'str',
-                'only': 'list'
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @convert_model
+    def get(self, params: RoleBindingGetRequest) -> Union[RoleBindingResponse, dict]:
+        """ get role binding
+
+         Args:
+            params (RoleBindingGetRequest): {
+                'role_binding_id': 'str',       # required
+                'workspace_id': 'str',
+                'domain_id': 'str',             # required
             }
 
         Returns:
-            role_binding_vo (object)
+             RoleBindingResponse:
         """
 
-        return self.role_binding_mgr.get_role_binding(params['role_binding_id'], params['domain_id'],
-                                                      params.get('only'))
+        rb_vo = self.role_binding_manager.get_role_binding(
+            params.role_binding_id, params.domain_id, params.workspace_id
+        )
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['domain_id'])
-    @change_only_key({'project_group_info': 'project_group', 'project_info': 'project', 'role_info': 'role'},
-                     key_path='query.only')
-    @append_query_filter(['role_binding_id', 'resource_type', 'resource_id', 'role_id', 'role_type',
-                          'project_id', 'project_group_id', 'domain_id'])
-    @append_keyword_filter(['role_binding_id', 'resource_id', 'name'])
-    def list(self, params):
-        """ List role bindings
+        return RoleBindingResponse(**rb_vo.to_dict())
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @append_query_filter([
+        'role_binding_id', 'user_id', 'role_id', 'scope', 'workspace_id', 'domain_id', 'user_workspaces'
+    ])
+    @append_keyword_filter(['role_binding_id', 'user_id', 'role_id'])
+    @convert_model
+    def list(self, params: RoleBindingSearchQueryRequest) -> Union[RoleBindingsResponse, dict]:
+        """ list role bindings
 
         Args:
-            params (dict): {
+            params (RoleBindingSearchQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'role_binding_id': 'str',
-                'resource_type': 'str',
-                'resource_id': 'str',
+                'scope': 'str',
+                'user_id': 'str',
                 'role_id': 'str',
-                'role_type': 'str',
-                'project_id': 'str',
-                'project_group_id': 'str',
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)'
+                'workspace_id': 'str',
+                'domain_id': 'str',                     # required
+                'user_workspaces': 'list'               # from meta
             }
 
         Returns:
-            results (list): 'list of role_binding_vo'
-            total_count (int)
+            RoleBindingsResponse:
         """
-        query = params.get('query', {})
 
-        return self.role_binding_mgr.list_role_bindings(params.get('query', {}))
+        query = params.query or {}
+        rb_vos, total_count = self.role_binding_manager.list_role_bindings(query)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
-    @append_keyword_filter(['role_binding_id', 'resource_type', 'resource_id'])
-    def stat(self, params):
-        """
+        rbs_info = [rb_vo.to_dict() for rb_vo in rb_vos]
+        return RoleBindingsResponse(results=rbs_info, total_count=total_count)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @append_query_filter(['domain_id', 'workspace_id', 'user_workspaces'])
+    @append_keyword_filter(['role_binding_id', 'user_id', 'role_id'])
+    @convert_model
+    def stat(self, params: RoleBindingStatQueryRequest) -> dict:
+        """ stat role bindings
+
         Args:
-            params (dict): {
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+            params (RoleBindingStatQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
+                'workspace_id': 'str',
+                'domain_id': 'str',         # required
+                'user_workspaces': 'list'   # from meta
             }
 
         Returns:
-            values (list): 'list of statistics data'
-            total_count (int)
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
         """
 
-        query = params.get('query', {})
-        return self.role_binding_mgr.stat_role_bindings(query)
+        query = params.query or {}
+        return self.role_binding_manager.stat_role_bindings(query)

@@ -1,89 +1,63 @@
-import re
 import logging
+import re
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
-from spaceone.core.connector.space_connector import SpaceConnector
-from spaceone.identity.connector import AuthPluginConnector
+
 from spaceone.identity.lib.cipher import PasswordCipher
-from spaceone.identity.model import Domain
-from spaceone.identity.model.user_model import User
 from spaceone.identity.error.error_user import *
-from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.model.domain.database import Domain
+from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class UserManager(BaseManager):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user_model: User = self.locator.get_model('User')
+        self.user_model = User
 
-    def create_user(self, params, domain_vo: Domain, is_first_login_user=False):
-        def _rollback(user_vo):
-            _LOGGER.info(f'[create_user._rollback] Delete user : {user_vo.name} ({user_vo.user_id})')
-            user_vo.delete()
+    def create_user(self, params: dict, is_first_login_user=False) -> User:
+        def _rollback(vo: User):
+            _LOGGER.info(
+                f"[create_user._rollback] Delete user : {vo.name} ({vo.user_id})"
+            )
+            vo.delete()
 
-        params['state'] = params.get('state', 'ENABLED')
+        params["state"] = params.get("state", "ENABLED")
 
         # If user create external authentication, call find action.
-        if params['backend'] == 'EXTERNAL':
+        if params["auth_type"] == "EXTERNAL":
             if not is_first_login_user:
-                found_users, count = self.find_user(
-                    {
-                        'user_id': params['user_id']
-                    },
-                    domain_vo
-                )
-
-                if count == 1:
-                    found_user = found_users[0]
-                    _LOGGER.debug(f'[create_user] found user: {found_user}')
-
-                    if found_user.get('state') in ['ENABLED', 'DISABLED']:
-                        params['state'] = found_user['state']
-                    else:
-                        params['state'] = 'PENDING'
-
-                    if 'name' not in params:
-                        params['name'] = found_user.get('name')
-
-                    if 'email' not in params:
-                        params['email'] = found_user.get('email')
-
-                elif count > 1:
-                    raise ERROR_TOO_MANY_USERS_IN_EXTERNAL_AUTH(user_id=params['user_id'])
-                else:
-                    raise ERROR_NOT_FOUND_USER_IN_EXTERNAL_AUTH(user_id=params['user_id'])
+                pass
 
         else:
-            if params['user_type'] == 'API_USER':
-                params['password'] = None
+            if params["user_type"] == "API_USER":
+                params["password"] = None
             else:
-                self._check_user_id_format(params['user_id'])
+                self._check_user_id_format(params["user_id"])
 
-                password = params.get('password')
+                password = params.get("password")
                 if password:
                     self._check_password_format(password)
                 else:
-                    raise ERROR_REQUIRED_PARAMETER(key='password')
+                    raise ERROR_REQUIRED_PARAMETER(key="password")
 
                 hashed_pw = PasswordCipher().hashpw(password)
-                params['password'] = hashed_pw
+                params["password"] = hashed_pw
 
-        user_name = params.get('name')
-        user_email = params.get('email')
+        user_name = params.get("name")
+        user_email = params.get("email")
 
         if user_name:
-            params['name'] = user_name.strip()
+            params["name"] = user_name.strip()
         else:
-            params['name'] = ''
+            params["name"] = ""
 
         if user_email:
-            params['email'] = user_email.strip()
+            params["email"] = user_email.strip()
         else:
-            params['email'] = ''
+            params["email"] = ""
 
         user_vo = self.user_model.create(params)
 
@@ -91,142 +65,95 @@ class UserManager(BaseManager):
 
         return user_vo
 
-    def update_user(self, params):
-        user_vo: User = self.get_user(params['user_id'], params['domain_id'])
-        return self.update_user_by_vo(params, user_vo)
-
-    def update_user_by_vo(self, params, user_vo):
+    def update_user_by_vo(self, params: dict, user_vo: User) -> User:
         def _rollback(old_data):
-            _LOGGER.info(f'[update_user._rollback] Revert Data : {old_data["name"], ({old_data["user_id"]})}')
+            _LOGGER.info(
+                f'[update_user._rollback] Revert Data : {old_data["name"], ({old_data["user_id"]})}'
+            )
             user_vo.update(old_data)
 
         required_actions = list(user_vo.required_actions)
         is_change_required_actions = False
 
-        if new_password := params.get('password'):
+        if new_password := params.get("password"):
             if PasswordCipher().checkpw(new_password, user_vo.password):
                 raise ERROR_PASSWORD_NOT_CHANGED(user_id=user_vo.user_id)
 
-            self._check_password_format(params['password'])
-            hashed_pw = PasswordCipher().hashpw(params['password'])
-            params['password'] = hashed_pw
+            self._check_password_format(params["password"])
+            hashed_pw = PasswordCipher().hashpw(params["password"])
+            params["password"] = hashed_pw
 
-            if 'UPDATE_PASSWORD' in required_actions:
-                required_actions.remove('UPDATE_PASSWORD')
+            if "UPDATE_PASSWORD" in required_actions:
+                required_actions.remove("UPDATE_PASSWORD")
                 is_change_required_actions = True
 
         if is_change_required_actions:
-            params['required_actions'] = required_actions
+            params["required_actions"] = required_actions
 
         self.transaction.add_rollback(_rollback, user_vo.to_dict())
 
         return user_vo.update(params)
 
-    def delete_user(self, user_id, domain_id):
-        user_vo = self.get_user(user_id, domain_id)
+    @staticmethod
+    def delete_user_by_vo(user_vo: User) -> None:
+        domain_id = user_vo.domain_id
+        user_id = user_vo.user_id
         user_vo.delete()
 
-        cache.delete_pattern(f'user-state:{domain_id}:{user_id}')
-        cache.delete_pattern(f'role-bindings:{domain_id}:{user_id}*')
-        cache.delete_pattern(f'user-permissions:{domain_id}:{user_id}*')
-        cache.delete_pattern(f'user-scopes:{domain_id}:{user_id}*')
+        cache.delete_pattern(f"user-state:{domain_id}:{user_id}")
+        cache.delete_pattern(f"role-bindings:{domain_id}:{user_id}*")
+        cache.delete_pattern(f"user-permissions:{domain_id}:{user_id}*")
+        cache.delete_pattern(f"user-scopes:{domain_id}:{user_id}*")
 
-    def enable_user(self, user_id, domain_id):
+    def enable_user(self, user_vo: User) -> User:
         def _rollback(old_data):
-            _LOGGER.info(f'[enable_user._rollback] Revert Data : {old_data}')
+            _LOGGER.info(f"[enable_user._rollback] Revert Data : {old_data}")
             user_vo.update(old_data)
 
-        user_vo: User = self.get_user(user_id, domain_id)
-
-        if user_vo.state != 'ENABLED':
+        if user_vo.state != "ENABLED":
             self.transaction.add_rollback(_rollback, user_vo.to_dict())
-            user_vo.update({'state': 'ENABLED'})
+            user_vo.update({"state": "ENABLED"})
 
-            cache.delete_pattern(f'user-state:{domain_id}:{user_id}')
+            cache.delete_pattern(f"user-state:{user_vo.domain_id}:{user_vo.user_id}")
 
         return user_vo
 
-    def disable_user(self, user_id, domain_id):
+    def disable_user(self, user_vo: User) -> User:
         def _rollback(old_data):
-            _LOGGER.info(f'[disable_user._rollback] Revert Data : {old_data}')
+            _LOGGER.info(f"[disable_user._rollback] Revert Data : {old_data}")
             user_vo.update(old_data)
 
-        user_vo: User = self.get_user(user_id, domain_id)
-
-        if user_vo.state != 'DISABLED':
+        if user_vo.state != "DISABLED":
             self.transaction.add_rollback(_rollback, user_vo.to_dict())
-            user_vo.update({'state': 'DISABLED'})
+            user_vo.update({"state": "DISABLED"})
 
-            cache.delete_pattern(f'user-state:{domain_id}:{user_id}')
+            cache.delete_pattern(f"user-state:{user_vo.domain_id}:{user_vo.user_id}")
 
         return user_vo
 
-    def get_user(self, user_id, domain_id, only=None):
-        return self.user_model.get(user_id=user_id, domain_id=domain_id, only=only)
+    def get_user(self, user_id: str, domain_id: str) -> User:
+        return self.user_model.get(user_id=user_id, domain_id=domain_id)
 
-    def filter_users(self, **conditions):
-        return self.user_model.filter(**conditions)
-
-    def list_users(self, query):
+    def list_users(self, query: dict) -> tuple[list, int]:
         return self.user_model.query(**query)
 
-    def stat_users(self, query):
-        return self.user_model.stat(**query)
-
-    def find_user(self, search, domain_vo: Domain):
-        keyword = search.get('keyword')
-        user_id = search.get('user_id')
-
-        domain_mgr: DomainManager = self.locator.get_manager('DomainManager')
-
-        endpoint = domain_mgr.get_auth_plugin_endpoint_by_vo(domain_vo)
-
-        response = self._call_find(keyword, user_id, domain_vo, endpoint)
-        results = response.get('results', [])
-        total_count = response.get('total_count', 0)
-
-        return results, total_count
-
     @staticmethod
-    def _check_user_id_format(user_id):
+    def _check_user_id_format(user_id: str) -> None:
         rule = r"[^@]+@[^@]+\.[^@]+"
         if not re.match(rule, user_id):
-            raise ERROR_INCORRECT_USER_ID_FORMAT(rule='Email format required.')
+            raise ERROR_INCORRECT_USER_ID_FORMAT(rule="Email format required.")
 
     @staticmethod
-    def _check_password_format(password):
+    def _check_password_format(password: str) -> None:
         if len(password) < 8:
-            raise ERROR_INCORRECT_PASSWORD_FORMAT(rule='At least 9 characters long.')
+            raise ERROR_INCORRECT_PASSWORD_FORMAT(rule="At least 9 characters long.")
         elif not re.search("[a-z]", password):
-            raise ERROR_INCORRECT_PASSWORD_FORMAT(rule='Contains at least one lowercase character')
+            raise ERROR_INCORRECT_PASSWORD_FORMAT(
+                rule="Contains at least one lowercase character"
+            )
         elif not re.search("[A-Z]", password):
-            raise ERROR_INCORRECT_PASSWORD_FORMAT(rule='Contains at least one uppercase character')
+            raise ERROR_INCORRECT_PASSWORD_FORMAT(
+                rule="Contains at least one uppercase character"
+            )
         elif not re.search("[0-9]", password):
-            raise ERROR_INCORRECT_PASSWORD_FORMAT(rule='Contains at least one number')
-
-    def _call_find(self, keyword, user_id, domain_vo, endpoint):
-        options = domain_vo.plugin_info.options
-
-        auth_plugin_conn: AuthPluginConnector = self.locator.get_connector('AuthPluginConnector')
-        auth_plugin_conn.initialize(endpoint)
-
-        secret_data, schema = self._get_auth_plugin_secret(domain_vo.to_dict())
-        return auth_plugin_conn.call_find(keyword, user_id, options, secret_data, schema)
-
-    def _get_auth_plugin_secret(self, domain_data):
-        """
-        Return: (secret_data, schema)
-                Default: ({}, None)
-        """
-        domain_id = domain_data['domain_id']
-        plugin_info = domain_data.get('plugin_info', {})
-        secret_id = plugin_info.get('secret_id')
-
-        if secret_id is None:
-            return {}, None
-
-        secret_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='secret')
-        secret = secret_connector.dispatch('Secret.get', {'secret_id': secret_id, 'domain_id': domain_id})
-        secret_data = secret_connector.dispatch('Secret.get_data', {'secret_id': secret_id, 'domain_id': domain_id})
-
-        return secret_data.get('data', {}), secret_data.get('schema')
+            raise ERROR_INCORRECT_PASSWORD_FORMAT(rule="Contains at least one number")

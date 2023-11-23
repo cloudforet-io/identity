@@ -1,149 +1,49 @@
-from spaceone.core.service import *
-from spaceone.identity.manager import APIKeyManager, UserManager
+import logging
+from typing import Union
+from spaceone.core.service import BaseService, transaction, convert_model
+from spaceone.identity.model.api_key.request import *
+from spaceone.identity.model.api_key.response import *
+
+_LOGGER = logging.getLogger(__name__)
 
 
-@authentication_handler(exclude=['get'])
-@authorization_handler(exclude=['get'])
-@mutation_handler
-@event_handler
 class APIKeyService(BaseService):
+    @transaction
+    @convert_model
+    def create(self, params: APIKeyCreateRequest) -> Union[APIKeyResponse, dict]:
+        return {}
 
-    def __init__(self, metadata):
-        super().__init__(metadata)
-        self.api_key_mgr: APIKeyManager = self.locator.get_manager('APIKeyManager')
+    @transaction
+    @convert_model
+    def update(self, params: APIKeyUpdateRequest) -> Union[APIKeyResponse, dict]:
+        return {}
 
-    @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['user_id', 'domain_id'])
-    def create(self, params):
-        """ Create api key
+    @transaction
+    @convert_model
+    def enable(self, params: APIKeyEnableRequest) -> Union[APIKeyResponse, dict]:
+        return {}
 
-        Args:
-            params (dict): {
-                'user_id': 'str',
-                'domain_id': 'str'
-            }
+    @transaction
+    @convert_model
+    def disable(self, params: APIKeyDisableRequest) -> Union[APIKeyResponse, dict]:
+        return {}
 
-        Returns:
-            api_key_vo (object)
-        """
+    @transaction
+    @convert_model
+    def delete(self, params: APIKeyDeleteRequest) -> None:
+        pass
 
-        user_id = params['user_id']
-        domain_id = params['domain_id']
+    @transaction
+    @convert_model
+    def get(self, params: APIKeyGetRequest) -> Union[APIKeyResponse, dict]:
+        return {}
 
-        # Check user is exists.
-        user_mgr: UserManager = self.locator.get_manager('UserManager')
-        user_vo = user_mgr.get_user(user_id=user_id, domain_id=domain_id)
+    @transaction
+    @convert_model
+    def list(self, params: APIKeySearchQueryRequest) -> Union[APIKeysResponse, dict]:
+        return {}
 
-        return self.api_key_mgr.create_api_key(user_vo, domain_id)
-
-    @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['api_key_id', 'domain_id'])
-    def enable(self, params):
-        """ Enable api key
-
-        Args:
-            params (dict): {
-                'api_key_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            api_key_vo (object)
-        """
-
-        return self.api_key_mgr.enable_api_key(params['api_key_id'], params['domain_id'])
-
-    @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['api_key_id', 'domain_id'])
-    def disable(self, params):
-        """ Disable api key
-
-        Args:
-            params (dict): {
-                'api_key_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            api_key_vo (object)
-        """
-
-        return self.api_key_mgr.disable_api_key(params['api_key_id'], params['domain_id'])
-
-    @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['api_key_id', 'domain_id'])
-    def delete(self, params):
-        """ Delete api key
-
-        Args:
-            params (dict): {
-                'api_key_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            None
-        """
-
-        self.api_key_mgr.delete_api_key(params['api_key_id'], params['domain_id'])
-
-    @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['api_key_id', 'domain_id'])
-    def get(self, params):
-        """ Get api key
-
-        Args:
-            params (dict): {
-                'api_key_id': 'str',
-                'domain_id': 'str',
-                'only': 'list'
-            }
-
-        Returns:
-            api_key_vo (object)
-        """
-
-        return self.api_key_mgr.get_api_key(params['api_key_id'], params['domain_id'], params.get('only'))
-
-    @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['domain_id'])
-    @append_query_filter(['api_key_id', 'state', 'user_id', 'domain_id'])
-    @append_keyword_filter(['api_key_id', 'user_id'])
-    def list(self, params):
-        """ List api keys
-
-        Args:
-            params (dict): {
-                'api_key_id': 'str',
-                'state': 'str',
-                'user_id': 'str',
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)'
-            }
-
-        Returns:
-            results (list): 'list of api_key_vo'
-            total_count (int)
-        """
-
-        return self.api_key_mgr.list_api_keys(params.get('query', {}))
-
-    @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
-    @append_keyword_filter(['api_key_id', 'user_id'])
-    def stat(self, params):
-        """
-        Args:
-            params (dict): {
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
-            }
-
-        Returns:
-            values (list): 'list of statistics data'
-            total_count (int)
-        """
-
-        query = params.get('query', {})
-        return self.api_key_mgr.stat_api_keys(query)
+    @transaction
+    @convert_model
+    def stat(self, params: APIKeyStatQueryRequest) -> dict:
+        return {}
