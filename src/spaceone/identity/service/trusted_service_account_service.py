@@ -157,7 +157,6 @@ class TrustedServiceAccountService(BaseService):
         """
 
         query = params.query or {}
-
         trusted_account_vos, total_count = self.trusted_account_mgr.list_trusted_service_accounts(query)
 
         trusted_accounts_info = [trusted_account_vo.to_dict() for trusted_account_vo in trusted_account_vos]

@@ -3,12 +3,18 @@ from typing import Union
 from spaceone.core.service import BaseService, transaction, convert_model
 from spaceone.identity.model.role.request import *
 from spaceone.identity.model.role.response import *
+from spaceone.identity.manager.role_manager import RoleManager
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class RoleService(BaseService):
-    @transaction
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.role_mgr = RoleManager()
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @convert_model
     def create(self, params: RoleCreateRequest) -> Union[RoleResponse, dict]:
         """ create role
@@ -26,9 +32,11 @@ class RoleService(BaseService):
         Returns:
             RoleResponse:
         """
-        return {}
 
-    @transaction
+        role_vo = self.role_mgr.create_role(params.dict())
+        return RoleResponse(**role_vo.to_dict())
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @convert_model
     def update(self, params: RoleUpdateRequest) -> Union[RoleResponse, dict]:
         """ update role
@@ -46,9 +54,16 @@ class RoleService(BaseService):
         Returns:
             RoleResponse:
         """
-        return {}
 
-    @transaction
+        role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
+
+        role_vo = self.role_mgr.update_role_by_vo(
+            params.dict(exclude_unset=True), role_vo
+        )
+
+        return RoleResponse(**role_vo.to_dict())
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @convert_model
     def delete(self, params: RoleDeleteRequest) -> None:
         """ delete role
@@ -62,9 +77,11 @@ class RoleService(BaseService):
         Returns:
             None
         """
-        pass
 
-    @transaction
+        role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
+        self.role_mgr.delete_role_by_vo(role_vo)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @convert_model
     def get(self, params: RoleGetRequest) -> Union[RoleResponse, dict]:
         """ get role
@@ -78,9 +95,11 @@ class RoleService(BaseService):
         Returns:
              RoleResponse:
         """
-        return {}
 
-    @transaction
+        role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
+        return RoleResponse(**role_vo.to_dict())
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @convert_model
     def list(self, params: RoleSearchQueryRequest) -> Union[RolesResponse, dict]:
         """ list roles
@@ -97,9 +116,14 @@ class RoleService(BaseService):
         Returns:
             RolesResponse:
         """
-        return {}
 
-    @transaction
+        query = params.query or {}
+        role_vos, total_count = self.role_mgr.list_roles(query)
+
+        roles_info = [role_vo.to_dict() for role_vo in role_vos]
+        return RolesResponse(results=roles_info, total_count=total_count)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @convert_model
     def stat(self, params: RoleStatQueryRequest) -> dict:
         """ stat roles
@@ -116,4 +140,6 @@ class RoleService(BaseService):
                 'total_count': 'int'
             }
         """
-        return {}
+
+        query = params.query or {}
+        return self.role_mgr.stat_roles(query)

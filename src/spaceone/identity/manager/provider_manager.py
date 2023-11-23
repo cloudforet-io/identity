@@ -37,8 +37,8 @@ class ProviderManager(BaseManager):
 
         return provider_vo.update(params)
 
-    def delete_provider(self, provider: str, domain_id: str) -> None:
-        provider_vo = self.get_provider(provider, domain_id)
+    @staticmethod
+    def delete_provider_by_vo(provider_vo: Provider) -> None:
         provider_vo.delete()
 
     def get_provider(self, provider: str, domain_id: str) -> Provider:

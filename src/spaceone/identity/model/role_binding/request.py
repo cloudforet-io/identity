@@ -17,6 +17,7 @@ Scope = Literal["DOMAIN", "WORKSPACE"]
 class RoleBindingCreateRequest(BaseModel):
     user_id: str
     role_id: str
+    role_type: Union[str, None] = None
     scope: Scope
     workspace_id: Union[str, None] = None
     domain_id: str
@@ -25,6 +26,7 @@ class RoleBindingCreateRequest(BaseModel):
 class RoleBindingUpdateRoleRequest(BaseModel):
     role_binding_id: str
     role_id: str
+    role_type: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 

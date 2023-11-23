@@ -89,7 +89,8 @@ class ProviderService(BaseService):
             None
         """
 
-        self.provider_mgr.delete_provider(params.provider, params.domain_id)
+        provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
+        self.provider_mgr.delete_provider_by_vo(provider_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @convert_model
@@ -132,9 +133,9 @@ class ProviderService(BaseService):
 
         self._create_default_provider(params.domain_id)
 
-        providers_vos, total_count = self.provider_mgr.list_providers(query)
+        provider_vos, total_count = self.provider_mgr.list_providers(query)
 
-        providers_info = [provider_vo.to_dict() for provider_vo in providers_vos]
+        providers_info = [provider_vo.to_dict() for provider_vo in provider_vos]
         return ProvidersResponse(results=providers_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})

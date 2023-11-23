@@ -3,11 +3,17 @@ from typing import Union
 from spaceone.core.service import BaseService, transaction, convert_model
 from spaceone.identity.model.policy.request import *
 from spaceone.identity.model.policy.response import *
+from spaceone.identity.manager.policy_manager import PolicyManager
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class PolicyService(BaseService):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.policy_mgr = PolicyManager()
+
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @convert_model
     def create(self, params: PolicyCreateRequest) -> Union[PolicyResponse, dict]:
@@ -24,7 +30,9 @@ class PolicyService(BaseService):
         Returns:
             PolicyResponse:
         """
-        return {}
+
+        policy_vo = self.policy_mgr.create_policy(params.dict())
+        return PolicyResponse(**policy_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @convert_model
@@ -44,7 +52,13 @@ class PolicyService(BaseService):
             PolicyResponse:
         """
 
-        return {}
+        policy_vo = self.policy_mgr.get_policy(params.policy_id, params.domain_id)
+
+        policy_vo = self.policy_mgr.update_policy_by_vo(
+            params.dict(exclude_unset=True), policy_vo
+        )
+
+        return PolicyResponse(**policy_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @convert_model
@@ -60,7 +74,9 @@ class PolicyService(BaseService):
         Returns:
             None
         """
-        pass
+
+        policy_vo = self.policy_mgr.get_policy(params.policy_id, params.domain_id)
+        self.policy_mgr.delete_policy_by_vo(policy_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @convert_model
@@ -76,7 +92,9 @@ class PolicyService(BaseService):
         Returns:
              PolicyResponse:
         """
-        return {}
+
+        policy_vo = self.policy_mgr.get_policy(params.policy_id, params.domain_id)
+        return PolicyResponse(**policy_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @convert_model
@@ -94,7 +112,12 @@ class PolicyService(BaseService):
         Returns:
             PoliciesResponse:
         """
-        return {}
+
+        query = params.query or {}
+        policy_vos, total_count = self.policy_mgr.list_policies(query)
+
+        policies_info = [policy_vo.to_dict() for policy_vo in policy_vos]
+        return PoliciesResponse(results=policies_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
     @convert_model
@@ -113,4 +136,6 @@ class PolicyService(BaseService):
                 'total_count': 'int'
             }
         """
-        return {}
+
+        query = params.query or {}
+        return self.policy_mgr.stat_policies(query)
