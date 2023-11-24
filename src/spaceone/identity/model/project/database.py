@@ -1,5 +1,4 @@
 from mongoengine import *
-from spaceone.core.error import *
 from spaceone.core.model.mongo_model import MongoModel
 
 
@@ -37,21 +36,3 @@ class Project(MongoModel):
             "domain_id",
         ],
     }
-
-    @classmethod
-    def create(cls, data):
-        project_vos = cls.filter(name=data["name"])
-        if project_vos.count() > 0:
-            raise ERROR_NOT_UNIQUE(key="name", value=data["name"])
-
-        return super().create(data)
-
-    def update(self, data):
-        if "name" in data:
-            project_vos = self.filter(
-                name=data["name"], project_id__ne=self.workspace_id
-            )
-            if project_vos.count() > 0:
-                raise ERROR_NOT_UNIQUE(key="name", value=data["name"])
-
-        return super().update(data)

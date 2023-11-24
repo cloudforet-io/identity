@@ -12,6 +12,8 @@ from spaceone.core.service import (
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
+from spaceone.identity.manager.role_manager import RoleManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.model.domain.request import *
 from spaceone.identity.model.domain.response import *
@@ -25,7 +27,7 @@ class DomainService(BaseService):
         self.domain_mgr = DomainManager()
         self.domain_secret_mgr = DomainSecretManager()
         self.user_mgr = UserManager()
-        # self.role_manager = RoleManager()
+        self.role_manager = RoleManager()
 
     @transaction
     @convert_model
@@ -52,7 +54,21 @@ class DomainService(BaseService):
         admin["user_type"] = "USER"
         admin["domain_id"] = domain_vo.domain_id
 
-        self.user_mgr.create_user(admin)
+        user_vo = self.user_mgr.create_user(admin)
+        role_vos, total_counts = self.role_manager.list_roles(
+            {"domain_id": domain_vo.domain_id}
+        )
+        for role_vo in role_vos:
+            if role_vo.role_type == "DOMAIN_ADMIN":
+                role_binding_mgr = RoleBindingManager()
+                params_rb = {
+                    "user_id": user_vo.user_id,
+                    "role_id": role_vo.role_id,
+                    "scope": "DOMAIN",
+                    "domain_id": user_vo.domain_id,
+                }
+                role_binding_mgr.create_role_binding(params_rb)
+
         return DomainResponse(**domain_vo.to_dict())
 
     @transaction

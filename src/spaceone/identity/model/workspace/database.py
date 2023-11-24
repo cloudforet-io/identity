@@ -7,7 +7,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 class Workspace(MongoModel):
     workspace_id = StringField(max_length=40, generate_id="workspace", unique=True)
-    name = StringField(max_length=255)
+    name = StringField(max_length=255, unique_with="domain_id")
     state = StringField(max_length=20, default="ENABLED")
     tags = DictField(default=None)
     domain_id = StringField(max_length=40)
@@ -31,7 +31,7 @@ class Workspace(MongoModel):
 
     @classmethod
     def create(cls, data):
-        workspace_vos = cls.filter(name=data["name"], domain_id=data["domain_id"])
+        workspace_vos = cls.filter(name=data["name"])
         if workspace_vos.count() > 0:
             raise ERROR_NOT_UNIQUE(key="name", value=data["name"])
 
