@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Tuple, List
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
@@ -45,45 +45,17 @@ class ProjectManager(BaseManager):
             f"project-state:{project_vo.domain_id}:{project_vo.workspace_id}:{project_vo.project_id}"
         )
 
-    #
-    # def enable_workspace(self, workspace_vo: Workspace) -> Workspace:
-    #     def _rollback(old_data):
-    #         _LOGGER.info(
-    #             f'[enable_workspace._rollback] Revert Data : {old_data["name"]} ({old_data["workspace_id"]})'
-    #         )
-    #         workspace_vo.update(old_data)
-    #
-    #     if workspace_vo.state != "ENABLED":
-    #         self.transaction.add_rollback(_rollback, workspace_vo.to_dict())
-    #         workspace_vo.update({"state": "ENABLED"})
-    #
-    #         cache.delete_pattern(
-    #             f"workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
-    #         )
-    #
-    #     return workspace_vo
-    #
-    # def disable_workspace(self, workspace_vo: Workspace) -> Workspace:
-    #     def _rollback(old_data):
-    #         _LOGGER.info(
-    #             f'[disable_workspace._rollback] Revert Data : {old_data["name"]} ({old_data["workspace_id"]})'
-    #         )
-    #         workspace_vo.update(old_data)
-    #
-    #     if workspace_vo.state != "DISABLED":
-    #         self.transaction.add_rollback(_rollback, workspace_vo.to_dict())
-    #         workspace_vo.update({"state": "DISABLED"})
-    #
-    #         cache.delete_pattern(
-    #             f"workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
-    #         )
-    #
-    #     return workspace_vo
-    #
     def get_project(self, project_id, workspace_id, domain_id) -> Project:
-        return self.project_model.get(
-            project_id=project_id, workspace_id=workspace_id, domain_id=domain_id
-        )
+        conditions = {
+            "project_id": project_id,
+            "workspace_id": workspace_id,
+            "domain_id": domain_id,
+        }
+
+        return self.project_model.get(**conditions)
+
+    def filter_projects(self, query: dict) -> List[Project]:
+        return self.project_model.filter(**query)
 
     def list_projects(self, query: dict) -> Tuple[list, int]:
         return self.project_model.query(**query)

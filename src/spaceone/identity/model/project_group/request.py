@@ -42,7 +42,7 @@ class ProjectGroupDeleteRequest(BaseModel):
 
 
 class ProjectGroupGetRequest(BaseModel):
-    projectGroup_id: str
+    project_group_id: str
     workspace_id: str
     domain_id: str
 

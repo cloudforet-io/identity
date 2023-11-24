@@ -241,6 +241,8 @@ class ProjectService(BaseService):
         """
         query = params.query or {}
         project_vos, total_count = self.project_mgr.list_projects(query)
+        for project_vo in project_vos:
+            print(project_vo.to_dict())
         projects_info = [project_vo.to_dict() for project_vo in project_vos]
         return ProjectsResponse(results=projects_info, total_count=total_count)
 
