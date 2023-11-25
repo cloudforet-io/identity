@@ -9,7 +9,7 @@ __all__ = [
     "RoleSearchQueryRequest",
     "RoleStatQueryRequest",
     'RoleType',
-    'PagePermissionType',
+    'PagePermission',
 ]
 
 RoleType = Literal["SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
@@ -17,7 +17,7 @@ PagePermissionType = Literal["VIEW", "MANAGE"]
 
 
 class PagePermission(BaseModel):
-    pages: List[str]
+    page: str
     permission: PagePermissionType
 
 
