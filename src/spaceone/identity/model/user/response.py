@@ -18,7 +18,6 @@ class UserResponse(BaseModel):
     name: Union[str, None] = None
     state: Union[State, None] = None
     email_verified: Union[bool, None] = None
-    user_type: Union[UserType, None] = None
     auth_type: Union[AuthType, None] = None
     role_type: Union[RoleType, None] = None
     mfa: Union[dict, None] = None
