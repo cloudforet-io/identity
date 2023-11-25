@@ -3,8 +3,8 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class PagePermission(EmbeddedDocument):
-    pages = ListField(StringField())
-    permission = StringField(max_length=20, choices=('VIEW', 'MANAGE'))
+    page = StringField(required=True)
+    permission = StringField(max_length=20, choices=('VIEW', 'MANAGE'), required=True)
 
 
 class Role(MongoModel):

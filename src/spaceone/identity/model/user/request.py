@@ -32,7 +32,6 @@ class UserCreateRequest(BaseModel):
     password: Union[str, None] = None
     name: Union[str, None] = None
     email: Union[str, None] = None
-    user_type: Union[UserType, None] = None
     auth_type: AuthType
     language: Union[str, None] = None
     timezone: Union[str, None] = None
@@ -123,7 +122,6 @@ class UserSearchQueryRequest(BaseModel):
     name: Union[str, None] = None
     state: Union[State, None] = None
     email: Union[str, None] = None
-    user_type: Union[UserType, None] = None
     auth_type: Union[AuthType, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str

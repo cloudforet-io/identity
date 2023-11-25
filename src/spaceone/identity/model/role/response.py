@@ -3,7 +3,7 @@ from typing import Union, List
 from pydantic import BaseModel
 from spaceone.core import utils
 
-from spaceone.identity.model.role.request import RoleType, PagePermissionType
+from spaceone.identity.model.role.request import RoleType, PagePermission
 
 __all__ = ["RoleResponse", "RolesResponse"]
 
@@ -13,7 +13,7 @@ class RoleResponse(BaseModel):
     name: Union[str, None] = None
     role_type: Union[RoleType, None] = None
     policies: Union[List[str], None] = None
-    page_permissions: Union[List[PagePermissionType], None] = None
+    page_permissions: Union[List[PagePermission], None] = None
     tags: Union[dict, None] = None
     is_managed: Union[bool, None] = None
     domain_id: Union[str, None] = None
