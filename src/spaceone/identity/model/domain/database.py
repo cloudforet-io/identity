@@ -7,7 +7,7 @@ from spaceone.core.model.mongo_model import MongoModel
 class Domain(MongoModel):
     domain_id = StringField(max_length=40, generate_id="domain", unique=True)
     name = StringField(max_length=255)
-    state = StringField(max_length=20, default="ENABLED")
+    state = StringField(max_length=20, default="ENABLED", choices=("ENABLED", "DISABLED", "DELETED"))
     tags = DictField(default=None)
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
@@ -53,3 +53,21 @@ class Domain(MongoModel):
 
     def delete(self):
         self.update({"state": "DELETED", "deleted_at": datetime.utcnow()})
+
+
+class DomainSecret(MongoModel):
+    domain_key = StringField()
+    pub_jwk = DictField(required=True)
+    prv_jwk = DictField(required=True)
+    refresh_pub_jwk = DictField(required=True)
+    refresh_prv_jwk = DictField(required=True)
+    domain_id = StringField(max_length=40, unique=True)
+    domain = ReferenceField("Domain", reverse_delete_rule=CASCADE)
+    created_at = DateTimeField(auto_now_add=True)
+
+    meta = {
+        "ordering": ["domain_id"],
+        "indexes": [
+            "domain"
+        ],
+    }

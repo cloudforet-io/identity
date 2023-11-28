@@ -7,7 +7,6 @@ from spaceone.core.service import (
     append_query_filter,
     append_keyword_filter,
 )
-from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.model.project_group.request import *
 from spaceone.identity.model.project_group.response import *
@@ -18,7 +17,6 @@ _LOGGER = logging.getLogger(__name__)
 class ProjectGroupService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.project_mgr = ProjectManager()
         self.project_group_mgr = ProjectGroupManager()
 
     @transaction
@@ -30,19 +28,21 @@ class ProjectGroupService(BaseService):
 
         Args:
             params (dict): {
-                'name': 'str', # required
+                'name': 'str',              # required
                 'tags': 'dict',
                 'parent_group_id': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'workspace_id': 'str',      # required
+                'domain_id': 'str'          # required
             }
-
+        Returns:
+            ProjectGroupResponse:
         """
 
         if params.parent_group_id:
-            self.project_mgr.get_project(
+            self.project_group_mgr.get_project_group(
                 params.parent_group_id, params.workspace_id, params.domain_id
             )
+
         project_group_vo = self.project_group_mgr.create_project_group(params.dict())
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
@@ -55,13 +55,14 @@ class ProjectGroupService(BaseService):
 
         Args:
             params (dict): {
-                'project_group_id': 'str',
+                'project_group_id': 'str',      # required
                 'name': 'str',
                 'tags': 'dict',
-                'domain_id': 'str'
+                'domain_id': 'str',             # required
+                'workspace_id': 'str',          # required
             }
             Returns:
-                ProjectGroupResponse (object)
+                ProjectGroupResponse:
         """
 
         project_group_vo = self.project_group_mgr.get_project_group(
@@ -70,6 +71,7 @@ class ProjectGroupService(BaseService):
         project_group_vo = self.project_group_mgr.update_project_group_by_vo(
             params.dict(exclude_unset=True), project_group_vo
         )
+
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
     @transaction
@@ -81,22 +83,26 @@ class ProjectGroupService(BaseService):
 
         Args:
             params (dict): {
-                'project_group_id': 'str',
-                'parent_group_id': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'project_group_id': 'str',      # required
+                'parent_group_id': 'str',       # required
+                'workspace_id': 'str',          # required
+                'domain_id': 'str'              # required
             }
             Returns:
-                ProjectGroupResponse (object)
+                ProjectGroupResponse:
         """
-        self.project_group_mgr.get_project_group(
-            params.parent_group_id, params.workspace_id, params.domain_id
-        )
+
+        # Check parent project group is
+        if params.parent_group_id:
+            self.project_group_mgr.get_project_group(
+                params.parent_group_id, params.workspace_id, params.domain_id
+            )
+
         project_group_vo = self.project_group_mgr.get_project_group(
             params.project_group_id, params.workspace_id, params.domain_id
         )
         project_group_vo = self.project_group_mgr.update_project_group_by_vo(
-            params.dict(exclude_unset=True), project_group_vo
+            params.dict(), project_group_vo
         )
 
         return ProjectGroupResponse(**project_group_vo.to_dict())
@@ -108,18 +114,16 @@ class ProjectGroupService(BaseService):
 
         Args:
             params (dict): {
-                'project_group_id': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'project_group_id': 'str',      # required
+                'workspace_id': 'str',          # required
+                'domain_id': 'str'              # required
             }
         Returns:
             None
         """
 
-        project_group_vo = self.project_group_mgr.get_parent_project_group(
-            params.project_group_id,
-            params.workspace_id,
-            params.domain_id,
+        project_group_vo = self.project_group_mgr.get_project_group(
+            params.project_group_id, params.workspace_id, params.domain_id,
         )
 
         self.project_group_mgr.delete_project_group_by_vo(project_group_vo)
@@ -131,22 +135,23 @@ class ProjectGroupService(BaseService):
 
         Args:
             params (dict): {
-                'project_group_id': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'project_group_id': 'str',      # required
+                'workspace_id': 'str',          # required
+                'domain_id': 'str'              # required
             }
         Returns:
-            ProjectGroupResponse (object)
+            ProjectGroupResponse:
         """
 
         project_group_vo = self.project_group_mgr.get_project_group(
             params.project_group_id, params.workspace_id, params.domain_id
         )
+
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
     @transaction
     @append_query_filter(
-        ["project_group_id", "name", "parent_group_id", "workspace_id", "domain_id"]
+        ["project_group_id", "name", "parent_group_id", "workspace_id", "domain_id", "user_workspaces"]
     )
     @append_keyword_filter(["project_group_id", "name"])
     @convert_model
@@ -157,22 +162,42 @@ class ProjectGroupService(BaseService):
 
         Args:
             params (dict): {
-                'query': 'dict',
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'project_group_id': 'str',
                 'name': 'str',
                 'parent_group_id': 'str',
                 'workspace_id': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str',         # required
+                'user_workspaces': 'list'   # from meta
             }
         Returns:
             ProjectGroupsResponse:
         """
+
         query = params.query or {}
         project_vos, total_count = self.project_group_mgr.list_project_groups(query)
         projects_info = [project_vo.to_dict() for project_vo in project_vos]
         return ProjectGroupsResponse(results=projects_info, total_count=total_count)
 
     @transaction
+    @append_query_filter(["workspace_id", "domain_id", "user_workspaces"])
+    @append_keyword_filter(["project_group_id", "name"])
     @convert_model
     def stat(self, params: ProjectGroupStatQueryRequest) -> dict:
-        return {}
+        """Stat project groups
+        Args:
+            params (dict): {
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
+                'domain_id': 'str',         # required
+                'workspace_id': 'str',
+                'user_workspaces': 'list'   # from meta
+            }
+        Returns:
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
+        """
+
+        query = params.query or {}
+        return self.project_group_mgr.stat_project_groups(query)

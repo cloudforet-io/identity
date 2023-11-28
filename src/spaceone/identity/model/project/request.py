@@ -23,7 +23,7 @@ ProjectType = Literal["PRIVATE", "PUBLIC"]
 class ProjectCreateRequest(BaseModel):
     name: str
     project_type: ProjectType
-    tags: Union[dict, None] = {}
+    tags: Union[dict, None] = None
     project_group_id: Union[str, None] = None
     workspace_id: str
     domain_id: str
@@ -46,7 +46,7 @@ class ProjectUpdateProjectTypeRequest(BaseModel):
 
 class ProjectChangeProjectGroupRequest(BaseModel):
     project_id: str
-    project_group_id: str
+    project_group_id: Union[str, None] = None
     workspace_id: str
     domain_id: str
 
@@ -95,6 +95,7 @@ class ProjectSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     project_id: Union[str, None] = None
     name: Union[str, None] = None
+    project_type: Union[ProjectType, None] = None
     user_id: Union[str, None] = None
     user_group_id: Union[str, None] = None
     project_group_id: Union[str, None] = None

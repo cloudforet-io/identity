@@ -59,7 +59,7 @@ class WorkspaceService(BaseService):
             params.workspace_id, params.domain_id
         )
         workspace_vo = self.workspace_mgr.update_workspace_by_vo(
-            params.dict(), workspace_vo
+            params.dict(exclude_unset=True), workspace_vo
         )
         return WorkspaceResponse(**workspace_vo.to_dict())
 
@@ -131,36 +131,56 @@ class WorkspaceService(BaseService):
         Returns:
             WorkspaceResponse:
         """
+
         workspace_vo = self.workspace_mgr.get_workspace(
             params.workspace_id, params.domain_id
         )
         return WorkspaceResponse(**workspace_vo.to_dict())
 
     @transaction(append_meta={"authorization.scope": "WORKSPACE_READ"})
-    @append_query_filter(["workspace_id", "name", "domain_id"])
+    @append_query_filter(["workspace_id", "name", "domain_id", "user_workspaces"])
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def list(
         self, params: WorkspaceSearchQueryRequest
     ) -> Union[WorkspacesResponse, dict]:
-        """List workspace
+        """List workspaces
         Args:
             params (dict): {
-                'query': 'dict',
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'name': 'str',
                 'workspace_id': 'str',
-                'domain_id': 'str' #required
+                'domain_id': 'str',         # required
+                'user_workspaces': 'list'   # from meta
             }
         Returns:
             WorkspacesResponse:
         """
-        query = params.query or {}
 
+        query = params.query or {}
         workspace_vos, total_count = self.workspace_mgr.list_workspaces(query)
+
         workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
         return WorkspacesResponse(results=workspaces_info, total_count=total_count)
 
     @transaction(append_meta={"authorization.scope": "WORKSPACE_READ"})
+    @append_query_filter(["domain_id", "user_workspaces"])
+    @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def stat(self, params: WorkspaceStatQueryRequest) -> dict:
-        return {}
+        """Stat workspaces
+        Args:
+            params (dict): {
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
+                'domain_id': 'str',         # required
+                'user_workspaces': 'list'   # from meta
+            }
+        Returns:
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
+        """
+
+        query = params.query or {}
+        return self.workspace_mgr.stat_workspaces(query)

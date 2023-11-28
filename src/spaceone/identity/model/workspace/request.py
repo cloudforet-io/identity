@@ -15,7 +15,7 @@ __all__ = [
 
 class WorkspaceCreateRequest(BaseModel):
     name: str
-    tags: dict
+    tags: Union[dict, None] = None
     domain_id: str
 
 

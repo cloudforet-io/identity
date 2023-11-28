@@ -9,7 +9,8 @@ _LOGGER = logging.getLogger(__name__)
 
 class EndpointManager(BaseManager):
 
-    def list_endpoints(self, service: str = None) -> Tuple[list, int]:
+    @staticmethod
+    def list_endpoints(service: str = None) -> Tuple[list, int]:
         endpoints: list = config.get_global('ENDPOINTS', [])
 
         if service:

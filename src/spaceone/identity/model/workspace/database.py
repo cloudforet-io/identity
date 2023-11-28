@@ -21,6 +21,9 @@ class Workspace(MongoModel):
             "name",
             "state",
         ],
+        'change_query_keys': {
+            'user_workspaces': 'workspace_id'
+        },
         "ordering": ["name"],
         "indexes": ["name", "domain_id"],
     }

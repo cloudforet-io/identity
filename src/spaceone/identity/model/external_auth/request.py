@@ -16,7 +16,7 @@ class Plugin(BaseModel):
     upgrade_mode: Union[str, None] = None
     options: Union[dict, None] = None
     secret_data: Union[dict, None] = None
-    schema_name: Union[str, None] = Field(None, alias="schema")
+    schema_id: Union[str, None] = Field(None, alias="schema")
     metadata: dict
 
 

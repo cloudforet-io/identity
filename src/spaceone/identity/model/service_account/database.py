@@ -27,7 +27,8 @@ class ServiceAccount(MongoModel):
             'name',
             'provider'
             'trusted_service_account_id',
-            'project_id'
+            'project_id',
+            'workspace_id'
         ],
         'change_query_keys': {
             'user_projects': 'project_id',

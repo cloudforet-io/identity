@@ -28,11 +28,14 @@ class ExternalAuthService(BaseService):
         Returns:
             ExternalAuthResponse:
         """
+
         domain_mgr = DomainManager()
         domain_vo = domain_mgr.get_domain(params.domain_id)
+
         external_auth_vo = self.external_auth_mgr.set_external_auth(
             params.dict(), domain_vo
         )
+
         return ExternalAuthResponse(**external_auth_vo.to_dict())
 
     @transaction
@@ -40,6 +43,15 @@ class ExternalAuthService(BaseService):
     def unset(
         self, params: ExternalAuthUnsetRequest
     ) -> Union[ExternalAuthResponse, dict]:
+        """Unset external auth info
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+        Returns:
+            ExternalAuthResponse:
+        """
+
         return {}
 
     @transaction
@@ -53,5 +65,6 @@ class ExternalAuthService(BaseService):
         Returns:
             ExternalAuthResponse:
         """
+
         external_auth_vo = self.external_auth_mgr.get_external_auth(params.domain_id)
         return ExternalAuthResponse(**external_auth_vo.to_dict())

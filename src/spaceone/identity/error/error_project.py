@@ -1,27 +1,13 @@
 from spaceone.core.error import *
 
 
-class ERROR_EXIST_CHILD_PROJECT_GROUP(ERROR_BASE):
-    _message = "Child project group is exist. project_group_id = {project_group_id}"
+class ERROR_RELATED_SERVICE_ACCOUNT_EXIST(ERROR_INVALID_ARGUMENT):
+    _message = "Related service account is exist. (service_account_id = {service_account_id})"
 
 
-class ERROR_ALREADY_EXIST_USER_IN_PROJECT_GROUP(ERROR_BASE):
-    _message = (
-        'A user "{user_id}" is already exist in project group({project_group_id}).'
-    )
+class ERROR_USER_NOT_EXIST_IN_WORKSPACE(ERROR_INVALID_ARGUMENT):
+    _message = "User does not exist in workspace. (user_id = {user_id}, workspace_id = {workspace_id})"
 
 
-class ERROR_ALREADY_EXIST_USER_IN_PROJECT(ERROR_BASE):
-    _message = 'A user "{user_id}" is already exist in project({project_id}).'
-
-
-class ERROR_NOT_FOUND_USER_IN_PROJECT_GROUP(ERROR_BASE):
-    _message = 'A user "{user_id}" is not exist in project group({project_group_id}).'
-
-
-class ERROR_NOT_FOUND_USER_IN_PROJECT(ERROR_BASE):
-    _message = 'A user "{user_id}" is not exist in project({project_id}).'
-
-
-class ERROR_ONLY_PROJECT_ROLE_TYPE_ALLOWED(ERROR_INVALID_ARGUMENT):
-    _message = "Only project role type can be allowed."
+class ERROR_NOT_ALLOWED_ADD_USER_TO_PUBLIC_PROJECT(ERROR_INVALID_ARGUMENT):
+    _message = "Not allowed to add user to public project."

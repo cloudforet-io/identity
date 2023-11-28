@@ -13,7 +13,7 @@ class ProjectResponse(BaseModel):
     project_id: Union[str, None] = None
     name: Union[str, None] = None
     project_type: Union[ProjectType, None] = None
-    tags: Union[dict, None] = {}
+    tags: Union[dict, None] = None
     users: Union[List[str], None] = None
     user_groups: Union[List[str], None] = None
     project_group_id: Union[str, None] = None

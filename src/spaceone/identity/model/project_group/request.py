@@ -23,14 +23,14 @@ class ProjectGroupCreateRequest(BaseModel):
 class ProjectGroupUpdateRequest(BaseModel):
     project_group_id: str
     name: Union[str, None] = None
-    tags: Union[dict, None] = {}
+    tags: Union[dict, None] = None
     workspace_id: str
     domain_id: str
 
 
 class ProjectChangeParentGroupRequest(BaseModel):
     project_group_id: str
-    parent_group_id: str
+    parent_group_id: Union[str, None] = None
     workspace_id: str
     domain_id: str
 
