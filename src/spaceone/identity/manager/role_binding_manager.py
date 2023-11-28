@@ -1,8 +1,8 @@
 import logging
-from typing import Tuple, List
+from typing import Tuple
+from mongoengine import QuerySet
 
 from spaceone.core.manager import BaseManager
-from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.model.role_binding.database import RoleBinding
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class RoleBindingManager(BaseManager):
     def create_role_binding(self, params: dict) -> RoleBinding:
         def _rollback(vo: RoleBinding):
             _LOGGER.info(f'[create_role_binding._rollback] '
-                         f'Delete trusted service account: {vo.name} ({vo.role_binding_id})')
+                         f'Delete trusted service account: {vo.role_binding_id}')
             vo.delete()
 
         role_binding_vo = self.role_binding_model.create(params)
@@ -29,7 +29,7 @@ class RoleBindingManager(BaseManager):
         self, params: dict, role_binding_vo: RoleBinding
     ) -> RoleBinding:
         def _rollback(old_data):
-            _LOGGER.info(f'[update_role_binding_by_vo._rollback] Revert Data : '
+            _LOGGER.info(f'[update_role_binding_by_vo._rollback] Revert Data: '
                          f'{old_data["role_binding_id"]}')
             role_binding_vo.update(old_data)
 
@@ -55,10 +55,10 @@ class RoleBindingManager(BaseManager):
 
         return self.role_binding_model.get(**conditions)
 
-    def filter_role_bindings(self, **conditions) -> List[RoleBinding]:
+    def filter_role_bindings(self, **conditions) -> QuerySet:
         return self.role_binding_model.filter(**conditions)
 
-    def list_role_bindings(self, query: dict) -> Tuple[list, int]:
+    def list_role_bindings(self, query: dict) -> Tuple[QuerySet, int]:
         return self.role_binding_model.query(**query)
 
     def stat_role_bindings(self, query: dict) -> dict:

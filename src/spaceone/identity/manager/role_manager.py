@@ -1,7 +1,8 @@
 import logging
-from typing import Tuple, List
+from typing import Tuple
+from mongoengine import QuerySet
 
-from spaceone.core import cache, utils
+from spaceone.core import utils
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.model.role.database import Role
@@ -19,8 +20,7 @@ class RoleManager(BaseManager):
 
     def create_role(self, params: dict) -> Role:
         def _rollback(vo: Role):
-            _LOGGER.info(f'[create_role._rollback] '
-                         f'Delete role: {vo.name} ({vo.role_id})')
+            _LOGGER.info(f'[create_role._rollback] Delete role: {vo.name} ({vo.role_id})')
             vo.delete()
 
         params['policies'] = list(set(params['policies']))
@@ -40,7 +40,7 @@ class RoleManager(BaseManager):
             self, params: dict, role_vo: Role
     ) -> Role:
         def _rollback(old_data):
-            _LOGGER.info(f'[update_role_by_vo._rollback] Revert Data : {old_data["role_id"]}')
+            _LOGGER.info(f'[update_role_by_vo._rollback] Revert Data: {old_data["role_id"]}')
             role_vo.update(old_data)
 
         self.transaction.add_rollback(_rollback, role_vo.to_dict())
@@ -71,10 +71,10 @@ class RoleManager(BaseManager):
     def get_role(self, role_id: str, domain_id: str) -> Role:
         return self.role_model.get(role_id=role_id, domain_id=domain_id)
 
-    def filter_roles(self, **conditions) -> List[Role]:
+    def filter_roles(self, **conditions) -> QuerySet:
         return self.role_model.filter(**conditions)
 
-    def list_roles(self, query: dict) -> Tuple[list, int]:
+    def list_roles(self, query: dict) -> Tuple[QuerySet, int]:
         return self.role_model.query(**query)
 
     def stat_roles(self, query: dict) -> dict:
