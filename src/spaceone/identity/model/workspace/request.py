@@ -55,4 +55,5 @@ class WorkspaceSearchQueryRequest(BaseModel):
 
 class WorkspaceStatQueryRequest(BaseModel):
     query: dict
+    workspace_id: Union[str, None] = None
     domain_id: str

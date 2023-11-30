@@ -8,7 +8,6 @@ from spaceone.identity.interface.grpc.project import Project
 from spaceone.identity.interface.grpc.provider import Provider
 from spaceone.identity.interface.grpc.trusted_account import TrustedAccount
 from spaceone.identity.interface.grpc.service_account import ServiceAccount
-from spaceone.identity.interface.grpc.policy import Policy
 from spaceone.identity.interface.grpc.role import Role
 from spaceone.identity.interface.grpc.role_binding import RoleBinding
 from spaceone.identity.interface.grpc.user import User
@@ -29,7 +28,6 @@ app.add_service(Project)
 app.add_service(Provider)
 app.add_service(TrustedAccount)
 app.add_service(ServiceAccount)
-app.add_service(Policy)
 app.add_service(Role)
 app.add_service(RoleBinding)
 app.add_service(User)

@@ -32,7 +32,6 @@ class Project(MongoModel):
         ],
         "change_query_keys": {
             "user_projects": "project_id",
-            "user_workspaces": "workspace_id",
             "user_id": "users",
             "user_group_id": "user_groups",
         },

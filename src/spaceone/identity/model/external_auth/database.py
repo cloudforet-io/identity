@@ -6,7 +6,7 @@ class ExternalAuth(MongoModel):
     domain_id = StringField(max_length=40, unique=True)
     state = StringField(max_length=20, default="ENABLED", choices=("ENABLED", "DISABLED"))
     plugin_info = DictField(default=None)
-    updated_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
 
     meta = {
         "updatable_fields": [

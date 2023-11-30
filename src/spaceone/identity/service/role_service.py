@@ -4,7 +4,6 @@ from spaceone.core.service import BaseService, transaction, convert_model, appen
 from spaceone.identity.model.role.request import *
 from spaceone.identity.model.role.response import *
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.policy_manager import PolicyManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,7 +23,7 @@ class RoleService(BaseService):
             params (RoleCreateRequest): {
                 'name': 'str',                          # required
                 'role_type': 'list',                    # required
-                'policies': 'list',                     # required
+                'api_permissions': 'list',              # required
                 'page_permissions': 'list',
                 'tags': 'dict',
                 'domain_id': 'str'                      # required
@@ -34,9 +33,7 @@ class RoleService(BaseService):
             RoleResponse:
         """
 
-        policy_mgr = PolicyManager()
-        for policy_id in params.policies:
-            policy_mgr.get_policy(policy_id, params.domain_id)
+        # Check API Permissions
 
         role_vo = self.role_mgr.create_role(params.dict())
         return RoleResponse(**role_vo.to_dict())
@@ -50,7 +47,7 @@ class RoleService(BaseService):
             params (RoleUpdateRequest): {
                 'role_id': 'str',                       # required
                 'name': 'str',
-                'policies': 'list',
+                'api_permissions': 'list',
                 'page_permissions': 'list',
                 'tags': 'dict',
                 'domain_id': 'str'                      # required
@@ -62,10 +59,9 @@ class RoleService(BaseService):
 
         role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
 
-        if params.policies:
-            policy_mgr = PolicyManager()
-            for policy_id in params.policies:
-                policy_mgr.get_policy(policy_id, params.domain_id)
+        if params.api_permissions:
+            # Check API Permissions
+            pass
 
         role_vo = self.role_mgr.update_role_by_vo(
             params.dict(exclude_unset=True), role_vo
@@ -110,7 +106,7 @@ class RoleService(BaseService):
         return RoleResponse(**role_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
-    @append_query_filter(['role_id', 'role_type', 'policy_id', 'domain_id'])
+    @append_query_filter(['role_id', 'role_type', 'domain_id'])
     @append_keyword_filter(['role_id', 'name'])
     @convert_model
     def list(self, params: RoleSearchQueryRequest) -> Union[RolesResponse, dict]:
@@ -121,7 +117,6 @@ class RoleService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'role_id': 'str',
                 'role_type': 'str',
-                'policy_id': 'str',
                 'domain_id': 'str',                     # required
             }
 

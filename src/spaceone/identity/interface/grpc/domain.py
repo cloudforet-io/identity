@@ -45,10 +45,10 @@ class Domain(BaseAPI, domain_pb2_grpc.DomainServicer):
         response: dict = domain_svc.get(params)
         return self.dict_to_message(response)
 
-    def get_metadata(self, request, context):
+    def get_auth_info(self, request, context):
         params, metadata = self.parse_request(request, context)
         domain_svc = DomainService(metadata)
-        response: dict = domain_svc.get_metadata(params)
+        response: dict = domain_svc.get_auth_info(params)
         return self.dict_to_message(response)
 
     def get_public_key(self, request, context):

@@ -101,10 +101,12 @@ class ProjectSearchQueryRequest(BaseModel):
     project_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ProjectStatQueryRequest(BaseModel):
     query: dict
-    project_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
+    user_projects: Union[list, None] = None
+

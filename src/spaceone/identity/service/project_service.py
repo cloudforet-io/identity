@@ -33,7 +33,7 @@ class ProjectService(BaseService):
     def create(self, params: ProjectCreateRequest) -> Union[ProjectResponse, dict]:
         """Create project
         Args:
-            params (dict): {
+            params (ProjectCreateRequest): {
                 'name': 'str',              # required
                 'project_type': 'str',      # required
                 'tags': 'dict',
@@ -59,7 +59,7 @@ class ProjectService(BaseService):
     def update(self, params: ProjectUpdateRequest) -> Union[ProjectResponse, dict]:
         """Update project
         Args:
-            params (dict): {
+            params (ProjectUpdateRequest): {
                 'project_id': 'str',        # required
                 'name': 'str',
                 'tags': 'dict',
@@ -87,7 +87,7 @@ class ProjectService(BaseService):
     ) -> Union[ProjectResponse, dict]:
         """Update project type
         Args:
-            params (dict): {
+            params (ProjectUpdateProjectTypeRequest): {
                 'project_id': 'str',        # required
                 'project_type': 'str',      # required
                 'workspace_id': 'str',      # required
@@ -119,7 +119,7 @@ class ProjectService(BaseService):
     ) -> Union[ProjectResponse, dict]:
         """Change project group
         Args:
-            params (dict): {
+            params (ProjectChangeProjectGroupRequest): {
                 'project_id': 'str',            # required
                 'project_group_id': 'str',      # required
                 'workspace_id': 'str',          # required
@@ -148,7 +148,7 @@ class ProjectService(BaseService):
     def delete(self, params: ProjectDeleteRequest) -> None:
         """Delete project
         Args:
-            params (dict): {
+            params (ProjectDeleteRequest): {
                 'project_id': 'str', # required
                 'workspace_id': 'str', # required
                 'domain_id': 'str' # required
@@ -168,7 +168,7 @@ class ProjectService(BaseService):
     def add_users(self, params: ProjectAddUsersRequest) -> Union[ProjectResponse, dict]:
         """Add users to project
         Args:
-            params (dict): {
+            params (ProjectAddUsersRequest): {
                 'project_id': 'str',        # required
                 'users': 'list',            # required
                 'workspace_id': 'str',      # required
@@ -204,7 +204,7 @@ class ProjectService(BaseService):
     ) -> Union[ProjectResponse, dict]:
         """Remove users from project
         Args:
-            params (dict): {
+            params (ProjectRemoveUsersRequest): {
                 'project_id': 'str',        # required
                 'users': 'list',            # required
                 'workspace_id': 'str',      # required
@@ -250,10 +250,10 @@ class ProjectService(BaseService):
     def get(self, params: ProjectGetRequest) -> Union[ProjectResponse, dict]:
         """Get project
         Args:
-            params (dict): {
-                'project_id': 'str', # required
-                'workspace_id': 'str', # required
-                'domain_id': 'str' # required
+            params (ProjectGetRequest): {
+                'project_id': 'str',    # required
+                'workspace_id': 'str',  # required
+                'domain_id': 'str'      # required
             }
         Returns:
             ProjectResponse:
@@ -276,7 +276,6 @@ class ProjectService(BaseService):
             "project_group_id",
             "workspace_id",
             "domain_id",
-            "user_workspaces",
             "user_projects",
         ]
     )
@@ -285,7 +284,7 @@ class ProjectService(BaseService):
     def list(self, params: ProjectSearchQueryRequest) -> Union[ProjectsResponse, dict]:
         """List projects
         Args:
-            params (dict): {
+            params (ProjectSearchQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'project_id': 'str',
                 'name': 'str',
@@ -294,8 +293,7 @@ class ProjectService(BaseService):
                 'user_group_id': 'str',
                 'project_group_id': 'str',
                 'workspace_id': 'str',
-                'domain_id': 'str',          # required
-                'user_workspaces': 'list',  # from meta
+                'domain_id': 'str',         # required
                 'user_projects': 'list'     # from meta
             }
         Returns:
@@ -309,7 +307,7 @@ class ProjectService(BaseService):
         return ProjectsResponse(results=projects_info, total_count=total_count)
 
     @transaction(append_meta={"authorization.scope": "PROJECT_READ"})
-    @append_query_filter(['project_id', 'domain_id', 'user_workspaces', 'user_projects'])
+    @append_query_filter(['workspace_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(["project_id", "name"])
     @convert_model
     def stat(self, params: ProjectStatQueryRequest) -> dict:
@@ -319,7 +317,6 @@ class ProjectService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'str',
                 'domain_id': 'str',         # required
-                'user_workspaces': 'list',  # from meta
                 'user_projects': 'list'     # from meta
             }
         Returns:

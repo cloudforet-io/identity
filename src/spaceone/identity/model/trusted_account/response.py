@@ -3,13 +3,13 @@ from typing import Union, Literal, List
 from pydantic import BaseModel
 from spaceone.core import utils
 
-__all__ = ["TrustedServiceAccountResponse", "TrustedServiceAccountsResponse"]
+__all__ = ["TrustedAccountResponse", "TrustedAccountsResponse"]
 
 Scope = Literal["DOMAIN", "WORKSPACE"]
 
 
-class TrustedServiceAccountResponse(BaseModel):
-    trusted_service_account_id: Union[str, None] = None
+class TrustedAccountResponse(BaseModel):
+    trusted_account_id: Union[str, None] = None
     name: Union[str, None] = None
     data: Union[dict, None] = None
     provider: Union[str, None] = None
@@ -25,6 +25,6 @@ class TrustedServiceAccountResponse(BaseModel):
         return data
 
 
-class TrustedServiceAccountsResponse(BaseModel):
-    results: List[TrustedServiceAccountResponse]
+class TrustedAccountsResponse(BaseModel):
+    results: List[TrustedAccountResponse]
     total_count: int

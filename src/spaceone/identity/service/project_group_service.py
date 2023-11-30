@@ -27,7 +27,7 @@ class ProjectGroupService(BaseService):
         """Create project group
 
         Args:
-            params (dict): {
+            params (ProjectGroupCreateRequest): {
                 'name': 'str',              # required
                 'tags': 'dict',
                 'parent_group_id': 'str',
@@ -54,7 +54,7 @@ class ProjectGroupService(BaseService):
         """Update project group
 
         Args:
-            params (dict): {
+            params (ProjectGroupUpdateRequest): {
                 'project_group_id': 'str',      # required
                 'name': 'str',
                 'tags': 'dict',
@@ -82,7 +82,7 @@ class ProjectGroupService(BaseService):
         """Change parent project group
 
         Args:
-            params (dict): {
+            params (ProjectChangeParentGroupRequest): {
                 'project_group_id': 'str',      # required
                 'parent_group_id': 'str',       # required
                 'workspace_id': 'str',          # required
@@ -113,7 +113,7 @@ class ProjectGroupService(BaseService):
         """Delete project group
 
         Args:
-            params (dict): {
+            params (ProjectGroupDeleteRequest): {
                 'project_group_id': 'str',      # required
                 'workspace_id': 'str',          # required
                 'domain_id': 'str'              # required
@@ -134,7 +134,7 @@ class ProjectGroupService(BaseService):
         """Get project group
 
         Args:
-            params (dict): {
+            params (ProjectGroupGetRequest): {
                 'project_group_id': 'str',      # required
                 'workspace_id': 'str',          # required
                 'domain_id': 'str'              # required
@@ -151,7 +151,7 @@ class ProjectGroupService(BaseService):
 
     @transaction
     @append_query_filter(
-        ["project_group_id", "name", "parent_group_id", "workspace_id", "domain_id", "user_workspaces"]
+        ["project_group_id", "name", "parent_group_id", "workspace_id", "domain_id"]
     )
     @append_keyword_filter(["project_group_id", "name"])
     @convert_model
@@ -161,14 +161,13 @@ class ProjectGroupService(BaseService):
         """List project groups
 
         Args:
-            params (dict): {
+            params (ProjectGroupSearchQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'project_group_id': 'str',
                 'name': 'str',
                 'parent_group_id': 'str',
                 'workspace_id': 'str',
                 'domain_id': 'str',         # required
-                'user_workspaces': 'list'   # from meta
             }
         Returns:
             ProjectGroupsResponse:
@@ -180,17 +179,16 @@ class ProjectGroupService(BaseService):
         return ProjectGroupsResponse(results=projects_info, total_count=total_count)
 
     @transaction
-    @append_query_filter(["workspace_id", "domain_id", "user_workspaces"])
+    @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["project_group_id", "name"])
     @convert_model
     def stat(self, params: ProjectGroupStatQueryRequest) -> dict:
         """Stat project groups
         Args:
-            params (dict): {
+            params (ProjectGroupStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'domain_id': 'str',         # required
-                'workspace_id': 'str',
-                'user_workspaces': 'list'   # from meta
+                'workspace_id': 'str'
             }
         Returns:
             dict: {

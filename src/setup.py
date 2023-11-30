@@ -32,13 +32,20 @@ setup(
         "mongoengine",
         "langcodes",
         "bcrypt",
-        # 'bcrypt==3.1.6',
         "redis",
         "jinja2",
         "fakeredis",
         "mongomock",
         "pytz",
     ],
-    package_data={"spaceone": ["identity/template/*.html"]},
+    package_data={
+        "spaceone": [
+            "identity/template/*.html",
+            "identity/managed_resource/provider/*.yaml",
+            "identity/managed_resource/schema/*.yaml",
+            "identity/managed_resource/plugin/*.yaml",
+            "identity/managed_resource/role/*.yaml",
+        ]
+    },
     zip_safe=False,
 )

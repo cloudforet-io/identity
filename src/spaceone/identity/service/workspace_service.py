@@ -28,10 +28,10 @@ class WorkspaceService(BaseService):
     def create(self, params: WorkspaceCreateRequest) -> Union[WorkspaceResponse, dict]:
         """Create workspace
         Args:
-            params (dict): {
-                'name': 'str', # required
-                'tags': 'dict', # required
-                'domain_id': 'str' # required
+            params (WorkspaceCreateRequest): {
+                'name': 'str',          # required
+                'tags': 'dict',
+                'domain_id': 'str'      # required
             }
         Returns:
             WorkspaceResponse:
@@ -46,11 +46,11 @@ class WorkspaceService(BaseService):
     def update(self, params: WorkspaceUpdateRequest) -> Union[WorkspaceResponse, dict]:
         """Update workspace
         Args:
-            params (dict): {
-                'workspace_id': 'str', # required
+            params (WorkspaceUpdateRequest): {
+                'workspace_id': 'str',  # required
                 'name': 'str',
                 'tags': 'dict'
-                'domain_id': 'str' # required
+                'domain_id': 'str'      # required
             }
         Returns:
             WorkspaceResponse:
@@ -68,9 +68,9 @@ class WorkspaceService(BaseService):
     def delete(self, params: WorkspaceDeleteRequest) -> None:
         """Delete workspace
         Args:
-            params (dict): {
-                'workspace_id': 'str', # required
-                'domain_id': 'str' # required
+            params (WorkspaceDeleteRequest): {
+                'workspace_id': 'str',  # required
+                'domain_id': 'str'      # required
             }
         Returns:
             None
@@ -85,9 +85,9 @@ class WorkspaceService(BaseService):
     def enable(self, params: WorkspaceEnableRequest) -> Union[WorkspaceResponse, dict]:
         """Enable workspace
         Args:
-            params (dict): {
-                'workspace_id': 'str', # required
-                'domain_id': 'str' # required
+            params (WorkspaceEnableRequest): {
+                'workspace_id': 'str',  # required
+                'domain_id': 'str'      # required
             }
         Returns:
             WorkspaceResponse:
@@ -105,9 +105,9 @@ class WorkspaceService(BaseService):
     ) -> Union[WorkspaceResponse, dict]:
         """Disable workspace
         Args:
-            params (dict): {
-                'workspace_id': 'str', # required
-                'domain_id': 'str' # required
+            params (WorkspaceDisableRequest): {
+                'workspace_id': 'str',  # required
+                'domain_id': 'str'      # required
             }
         Returns:
             WorkspaceResponse:
@@ -124,9 +124,9 @@ class WorkspaceService(BaseService):
     def get(self, params: WorkspaceGetRequest) -> Union[WorkspaceResponse, dict]:
         """Get workspace
         Args:
-            params (dict): {
-                'workspace_id': 'str', # required
-                'domain_id': 'str' # required
+            params (WorkspaceGetRequest): {
+                'workspace_id': 'str',  # required
+                'domain_id': 'str'      # required
             }
         Returns:
             WorkspaceResponse:
@@ -138,7 +138,7 @@ class WorkspaceService(BaseService):
         return WorkspaceResponse(**workspace_vo.to_dict())
 
     @transaction(append_meta={"authorization.scope": "WORKSPACE_READ"})
-    @append_query_filter(["workspace_id", "name", "domain_id", "user_workspaces"])
+    @append_query_filter(["workspace_id", "name", "domain_id"])
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def list(
@@ -146,12 +146,11 @@ class WorkspaceService(BaseService):
     ) -> Union[WorkspacesResponse, dict]:
         """List workspaces
         Args:
-            params (dict): {
+            params (WorkspaceSearchQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'name': 'str',
                 'workspace_id': 'str',
                 'domain_id': 'str',         # required
-                'user_workspaces': 'list'   # from meta
             }
         Returns:
             WorkspacesResponse:
@@ -164,7 +163,7 @@ class WorkspaceService(BaseService):
         return WorkspacesResponse(results=workspaces_info, total_count=total_count)
 
     @transaction(append_meta={"authorization.scope": "WORKSPACE_READ"})
-    @append_query_filter(["domain_id", "user_workspaces"])
+    @append_query_filter(["domain_id", "workspace_id"])
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def stat(self, params: WorkspaceStatQueryRequest) -> dict:
@@ -173,7 +172,7 @@ class WorkspaceService(BaseService):
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'domain_id': 'str',         # required
-                'user_workspaces': 'list'   # from meta
+                'workspace_id': 'str'
             }
         Returns:
             dict: {

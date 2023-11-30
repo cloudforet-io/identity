@@ -9,7 +9,7 @@ from spaceone.identity.model.domain.request import State
 __all__ = [
     "DomainResponse",
     "DomainsResponse",
-    "DomainMetadataResponse",
+    "DomainAuthInfoResponse",
     "DomainSecretResponse",
 ]
 
@@ -29,7 +29,7 @@ class DomainResponse(BaseModel):
         return data
 
 
-class DomainMetadataResponse(BaseModel):
+class DomainAuthInfoResponse(BaseModel):
     domain_id: Union[str, None] = None
     name: Union[str, None] = None
     external_auth_state: Union[ExternalAuthState, None] = None

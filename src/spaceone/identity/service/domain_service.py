@@ -35,9 +35,9 @@ class DomainService(BaseService):
     def create(self, params: DomainCreateRequest) -> Union[DomainResponse, dict]:
         """Create Domain
         Args:
-            params (dict): {
-                'name': 'str',
-                'admin': 'dict',
+            params (DomainCreateRequest): {
+                'name': 'str',      # required
+                'admin': 'dict',    # required
                 'tags': 'dict'
             }
         Returns:
@@ -77,8 +77,9 @@ class DomainService(BaseService):
     def update(self, params: DomainUpdateRequest) -> Union[DomainResponse, dict]:
         """Update domain
         Args:
-            params (dict): {
-                'domain_id': 'str',
+            params (DomainUpdateRequest): {
+                'domain_id': 'str',     # required
+                'name': 'str',
                 'tags': 'dict'
             }
         Returns:
@@ -96,8 +97,8 @@ class DomainService(BaseService):
     def delete(self, params: DomainDeleteRequest) -> None:
         """Delete Domain
         Args:
-            params (dict): {
-                'domain_id': 'str'
+            params (DomainCreateRequest): {
+                'domain_id': 'str'      # required
             }
         Returns:
             None
@@ -111,8 +112,8 @@ class DomainService(BaseService):
     def enable(self, params: DomainEnableRequest) -> Union[DomainResponse, dict]:
         """Enable Domain
         Args:
-            params (dict): {
-                'domain_id': 'str'
+            params (DomainEnableRequest): {
+                'domain_id': 'str'      # required
             }
         Returns:
             DomainResponse:
@@ -127,8 +128,8 @@ class DomainService(BaseService):
     def disable(self, params: DomainDisableRequest) -> Union[DomainResponse, dict]:
         """Disable Domain
         Args:
-            params (dict): {
-                'domain_id': 'str'
+            params (DomainDisableRequest): {
+                'domain_id': 'str'      # required
             }
         Returns:
             DomainResponse:
@@ -143,8 +144,8 @@ class DomainService(BaseService):
     def get(self, params: DomainGetRequest) -> Union[DomainResponse, dict]:
         """Get Domain
         Args:
-            params (dict): {
-                'domain_id': 'str'
+            params (DomainGetRequest): {
+                'domain_id': 'str'      # required
             }
         Returns:
             DomainResponse:
@@ -155,16 +156,16 @@ class DomainService(BaseService):
 
     @transaction
     @convert_model
-    def get_metadata(
-        self, params: DomainGetMetadataRequest
-    ) -> Union[DomainMetadataResponse, dict]:
+    def get_auth_info(
+        self, params: DomainGetAuthInfoRequest
+    ) -> Union[DomainAuthInfoResponse, dict]:
         """GetMetadata domain
         Args:
-            params (dict): {
-                'name': 'str'
+            params (DomainGetAuthInfoRequest): {
+                'name': 'str'       # required
             }
         Returns:
-            DomainMetadataResponse:
+            DomainAuthInfoResponse:
         """
 
         domain_vo = self.domain_mgr.get_domain_by_name(params.name)
@@ -186,7 +187,7 @@ class DomainService(BaseService):
                 "metadata": external_auth_vos[0].plugin_info.get("metadata", {}),
             }
 
-        return DomainMetadataResponse(**response)
+        return DomainAuthInfoResponse(**response)
 
     @transaction
     @convert_model
@@ -195,15 +196,15 @@ class DomainService(BaseService):
     ) -> Union[DomainSecretResponse, dict]:
         """GetPublicKey domain
         Args:
-            params (dict): {
-                'domain_id': 'str'
+            params (DomainGetPublicKeyRequest): {
+                'domain_id': 'str'      # required
             }
         Returns:
             DomainSecretResponse:
         """
 
         pub_jwk = self.domain_secret_mgr.get_domain_public_key(params.domain_id)
-        return DomainSecretResponse(public_key = str(pub_jwk), domain_id = params.domain_id)
+        return DomainSecretResponse(public_key=str(pub_jwk), domain_id=params.domain_id)
 
     @transaction
     @append_query_filter(["domain_id", "name", "state"])
@@ -212,7 +213,7 @@ class DomainService(BaseService):
     def list(self, params: DomainSearchQueryRequest) -> Union[DomainsResponse, dict]:
         """List domains
         Args:
-            params (dict): {
+            params (DomainSearchQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'domain_id': 'str',
                 'name': 'str',
@@ -234,7 +235,7 @@ class DomainService(BaseService):
     def stat(self, params: DomainStatQueryRequest) -> dict:
         """Stat domains
         Args:
-            params (dict): {
+            params (DomainStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
             }
         Returns:

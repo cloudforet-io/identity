@@ -3,14 +3,14 @@ from typing import Union, List
 from pydantic import BaseModel
 from spaceone.core import utils
 
-from spaceone.identity.model.role_binding.request import Scope
+from spaceone.identity.model.role_binding.request import PermissionGroup
 
 __all__ = ["RoleBindingResponse", "RoleBindingsResponse"]
 
 
 class RoleBindingResponse(BaseModel):
     role_binding_id: Union[str, None] = None
-    scope: Union[Scope, None] = None
+    permission_group: Union[PermissionGroup, None] = None
     user_id: Union[str, None] = None
     role_id: Union[str, None] = None
     role_type: Union[str, None] = None

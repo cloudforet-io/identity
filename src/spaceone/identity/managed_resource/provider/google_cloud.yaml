@@ -1,0 +1,10 @@
+---
+provider: google_cloud
+name: Google Cloud
+alias: Google
+color: '#4285F4'
+icon: 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/google_cloud.svg'
+order: 3
+options:
+  support_trusted_account: true
+  

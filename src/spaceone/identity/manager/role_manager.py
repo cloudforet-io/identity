@@ -23,13 +23,8 @@ class RoleManager(BaseManager):
             _LOGGER.info(f'[create_role._rollback] Delete role: {vo.name} ({vo.role_id})')
             vo.delete()
 
-        params['policies'] = list(set(params['policies']))
-        params['policies_hash'] = utils.dict_to_hash(
-            {'policies': params['policies']}
-        )
-        params['page_permissions_hash'] = utils.dict_to_hash(
-            {'page_permissions': params.get('page_permissions', [])}
-        )
+        if api_permissions := params.get('api_permissions'):
+            params['api_permissions'] = list(set(api_permissions))
 
         role_vo = self.role_model.create(params)
         self.transaction.add_rollback(_rollback, role_vo)
@@ -43,18 +38,10 @@ class RoleManager(BaseManager):
             _LOGGER.info(f'[update_role_by_vo._rollback] Revert Data: {old_data["role_id"]}')
             role_vo.update(old_data)
 
+        if api_permissions := params.get('api_permissions'):
+            params['api_permissions'] = list(set(api_permissions))
+
         self.transaction.add_rollback(_rollback, role_vo.to_dict())
-
-        if 'policies' in params:
-            params['policies'] = list(set(params['policies']))
-            params['policies_hash'] = utils.dict_to_hash(
-                {'policies': params['policies']}
-            )
-
-        if 'page_permissions' in params:
-            params['page_permissions_hash'] = utils.dict_to_hash(
-                {'page_permissions': params['page_permissions']}
-            )
 
         return role_vo.update(params)
 

@@ -4,12 +4,12 @@ from pydantic import BaseModel
 
 from spaceone.core import utils
 
-from spaceone.identity.model.user.request import State, UserType, AuthType
+from spaceone.identity.model.user.request import State, AuthType
 
 __all__ = ["UserResponse", "UsersResponse"]
 
 RoleType = Literal[
-    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "NO_RULE"
+    "ADMIN", "DOMAIN_OWNER", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"
 ]
 
 
@@ -25,7 +25,7 @@ class UserResponse(BaseModel):
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
-    domain_id: str
+    domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
     last_accessed_at: Union[datetime, None] = None
 

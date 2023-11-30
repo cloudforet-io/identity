@@ -8,7 +8,7 @@ __all__ = [
     "DomainEnableRequest",
     "DomainDisableRequest",
     "DomainGetRequest",
-    "DomainGetMetadataRequest",
+    "DomainGetAuthInfoRequest",
     "DomainGetPublicKeyRequest",
     "DomainSearchQueryRequest",
     "DomainStatQueryRequest",
@@ -26,6 +26,7 @@ class DomainCreateRequest(BaseModel):
 
 class DomainUpdateRequest(BaseModel):
     domain_id: str
+    name: Union[str, None] = None
     tags: Union[dict, None] = None
 
 
@@ -45,7 +46,7 @@ class DomainGetRequest(BaseModel):
     domain_id: str
 
 
-class DomainGetMetadataRequest(BaseModel):
+class DomainGetAuthInfoRequest(BaseModel):
     name: str
 
 

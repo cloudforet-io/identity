@@ -8,17 +8,17 @@ __all__ = [
     "RoleBindingGetRequest",
     "RoleBindingSearchQueryRequest",
     "RoleBindingStatQueryRequest",
-    "Scope",
+    "PermissionGroup",
 ]
 
-Scope = Literal["DOMAIN", "WORKSPACE"]
+PermissionGroup = Literal["DOMAIN", "WORKSPACE"]
 
 
 class RoleBindingCreateRequest(BaseModel):
     user_id: str
     role_id: str
     role_type: Union[str, None] = None
-    scope: Scope
+    permission_group: PermissionGroup
     workspace_id: Union[str, None] = None
     domain_id: str
 
@@ -46,7 +46,7 @@ class RoleBindingGetRequest(BaseModel):
 class RoleBindingSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     role_binding_id: Union[str, None] = None
-    scope: Union[Scope, None] = None
+    permission_group: Union[PermissionGroup, None] = None
     user_id: Union[str, None] = None
     role_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
@@ -55,4 +55,5 @@ class RoleBindingSearchQueryRequest(BaseModel):
 
 class RoleBindingStatQueryRequest(BaseModel):
     query: dict
+    workspace_id: Union[str, None] = None
     domain_id: str

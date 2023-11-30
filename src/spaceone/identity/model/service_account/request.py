@@ -5,7 +5,7 @@ from pydantic import BaseModel
 __all__ = [
     "ServiceAccountCreateRequest",
     "ServiceAccountUpdateRequest",
-    "ServiceAccountChangeTrustedServiceAccountRequest",
+    "ServiceAccountChangeTrustedAccountRequest",
     "ServiceAccountDeleteRequest",
     "ServiceAccountGetRequest",
     "ServiceAccountSearchQueryRequest",
@@ -17,7 +17,7 @@ class ServiceAccountCreateRequest(BaseModel):
     name: str
     data: dict
     provider: str
-    trusted_service_account_id: Union[str, None] = None
+    trusted_account_id: Union[str, None] = None
     tags: Union[dict, None] = None
     project_id: str
     workspace_id: str
@@ -34,9 +34,9 @@ class ServiceAccountUpdateRequest(BaseModel):
     user_projects: Union[list, None] = None
 
 
-class ServiceAccountChangeTrustedServiceAccountRequest(BaseModel):
+class ServiceAccountChangeTrustedAccountRequest(BaseModel):
     service_account_id: str
-    trusted_service_account_id: str
+    trusted_account_id: str
     workspace_id: str
     domain_id: str
     user_projects: Union[list, None] = None
@@ -62,11 +62,10 @@ class ServiceAccountSearchQueryRequest(BaseModel):
     name: Union[str, None] = None
     provider: Union[str, None] = None
     has_secret: Union[bool, None] = None
-    trusted_service_account_id: Union[str, None] = None
+    trusted_account_id: Union[str, None] = None
     project_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
-    user_workspaces: Union[list, None] = None
     user_projects: Union[list, None] = None
 
 
@@ -74,5 +73,4 @@ class ServiceAccountStatQueryRequest(BaseModel):
     query: dict
     workspace_id: Union[str, None] = None
     domain_id: str
-    user_workspaces: Union[list, None] = None
     user_projects: Union[list, None] = None
