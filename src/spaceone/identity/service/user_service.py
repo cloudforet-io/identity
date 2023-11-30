@@ -3,7 +3,7 @@ import pytz
 import random
 import re
 import string
-from typing import Union, List
+from typing import Union
 
 from spaceone.core.service import (
     BaseService,
@@ -43,19 +43,20 @@ class UserService(BaseService):
     def create(self, params: UserCreateRequest) -> Union[UserResponse, dict]:
         """Create user
         Args:
-            params (dict): {
-                'user_id': 'str', # required
+            params (UserCreateRequest): {
+                'user_id': 'str',           # required
                 'password': 'str',
                 'name': 'str',
                 'email': 'str',
-                'user_type': 'str', # required
                 'auth_type': 'str',
                 'language': 'str',
                 'timezone': 'str',
                 'tags': 'dict',
                 'reset_password': 'bool',
-                'role_binding': 'dict',
-                'domain_id': 'str' # required
+                'role_id': 'str',
+                'permission_group': 'str',  # required
+                'workspace_id': 'str',
+                'domain_id': 'str'          # required
             }
         Returns:
             UserResponse:

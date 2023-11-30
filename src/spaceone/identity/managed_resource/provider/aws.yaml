@@ -1,0 +1,8 @@
+---
+provider: aws
+name: AWS
+color: '#FF9900'
+icon: 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg'
+order: 1
+options:
+  support_trusted_account: true

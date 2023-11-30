@@ -1,6 +1,5 @@
 from typing import Union, Literal
 from pydantic import BaseModel
-from pydantic.utils import GetterDict
 
 __all__ = [
     "DomainCreateRequest",
@@ -9,7 +8,7 @@ __all__ = [
     "DomainEnableRequest",
     "DomainDisableRequest",
     "DomainGetRequest",
-    "DomainGetMetadataRequest",
+    "DomainGetAuthInfoRequest",
     "DomainGetPublicKeyRequest",
     "DomainSearchQueryRequest",
     "DomainStatQueryRequest",
@@ -22,12 +21,13 @@ State = Literal["ENABLED", "DISABLED"]
 class DomainCreateRequest(BaseModel):
     name: str
     admin: dict
-    tags: Union[dict, None] = {}
+    tags: Union[dict, None] = None
 
 
 class DomainUpdateRequest(BaseModel):
     domain_id: str
-    tags: Union[dict, None] = {}
+    name: Union[str, None] = None
+    tags: Union[dict, None] = None
 
 
 class DomainDeleteRequest(BaseModel):
@@ -46,7 +46,7 @@ class DomainGetRequest(BaseModel):
     domain_id: str
 
 
-class DomainGetMetadataRequest(BaseModel):
+class DomainGetAuthInfoRequest(BaseModel):
     name: str
 
 

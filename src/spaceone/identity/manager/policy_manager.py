@@ -1,7 +1,8 @@
 import logging
-from typing import Tuple, List
+from typing import Tuple
+from mongoengine import QuerySet
 
-from spaceone.core import cache, utils
+from spaceone.core import utils
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.model.policy.database import Policy
@@ -19,8 +20,7 @@ class PolicyManager(BaseManager):
 
     def create_policy(self, params: dict) -> Policy:
         def _rollback(vo: Policy):
-            _LOGGER.info(f'[create_policy._rollback] '
-                         f'Delete policy: {vo.name} ({vo.policy_id})')
+            _LOGGER.info(f'[create_policy._rollback] Delete policy: {vo.name} ({vo.policy_id})')
             vo.delete()
 
         params['permissions'] = list(set(params['permissions']))
@@ -37,7 +37,7 @@ class PolicyManager(BaseManager):
             self, params: dict, policy_vo: Policy
     ) -> Policy:
         def _rollback(old_data):
-            _LOGGER.info(f'[update_policy_by_vo._rollback] Revert Data : {old_data["policy_id"]}')
+            _LOGGER.info(f'[update_policy_by_vo._rollback] Revert Data: {old_data["policy_id"]}')
             policy_vo.update(old_data)
 
         self.transaction.add_rollback(_rollback, policy_vo.to_dict())
@@ -64,10 +64,10 @@ class PolicyManager(BaseManager):
     def get_policy(self, policy_id: str, domain_id: str) -> Policy:
         return self.policy_model.get(policy_id=policy_id, domain_id=domain_id)
 
-    def filter_policies(self, **conditions) -> List[Policy]:
+    def filter_policies(self, **conditions) -> QuerySet:
         return self.policy_model.filter(**conditions)
 
-    def list_policies(self, query: dict) -> Tuple[list, int]:
+    def list_policies(self, query: dict) -> Tuple[QuerySet, int]:
         return self.policy_model.query(**query)
 
     def stat_policies(self, query: dict) -> dict:

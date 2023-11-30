@@ -1,0 +1,9 @@
+---
+provider: azure
+name: Azure
+color: '#00BCF2'
+icon: 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/azure.svg'
+order: 2
+options:
+  support_trusted_account: true
+  

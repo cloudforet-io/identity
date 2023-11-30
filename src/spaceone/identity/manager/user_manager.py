@@ -1,13 +1,13 @@
 import logging
 import re
-
 from typing import Tuple
+from mongoengine import QuerySet
+
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.error.error_user import *
-from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
@@ -135,7 +135,10 @@ class UserManager(BaseManager):
     def get_user(self, user_id: str, domain_id: str) -> User:
         return self.user_model.get(user_id=user_id, domain_id=domain_id)
 
-    def list_users(self, query: dict) -> Tuple[list, int]:
+    def filter_users(self, **conditions) -> QuerySet:
+        return self.user_model.filter(**conditions)
+
+    def list_users(self, query: dict) -> Tuple[QuerySet, int]:
         return self.user_model.query(**query)
 
     @staticmethod

@@ -24,10 +24,11 @@ class ProviderService(BaseService):
             params (ProviderCreateRequest): {
                 'provider': 'str',      # required
                 'name': 'str',          # required
+                'alias': 'str',
+                'color': 'str',
+                'icon': 'str',
                 'order': 'int',
-                'template': 'dict',
-                'metadata': 'dict',
-                'capability': 'dict',
+                'options': 'dict',
                 'tags': 'dict',
                 'domain_id': 'str'      # required
             }
@@ -35,9 +36,6 @@ class ProviderService(BaseService):
         Returns:
             ProviderResponse:
         """
-
-        # TODO: validate a template data
-        # TODO: validate a capability data
 
         provider_vo = self.provider_mgr.create_provider(params.dict())
         return ProviderResponse(**provider_vo.to_dict())
@@ -51,10 +49,11 @@ class ProviderService(BaseService):
             params (ProviderUpdateRequest): {
                 'provider': 'str',      # required
                 'name': 'str',
+                'alias': 'str',
+                'color': 'str',
+                'icon': 'str',
                 'order': 'int',
-                'template': 'dict',
-                'metadata': 'dict',
-                'capability': 'dict',
+                'options': 'dict',
                 'tags': 'dict',
                 'domain_id': 'str'      # required
             }
@@ -64,9 +63,6 @@ class ProviderService(BaseService):
         """
 
         provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
-
-        # TODO: validate a template data
-        # TODO: validate a capability data
 
         provider_vo = self.provider_mgr.update_provider_by_vo(
             params.dict(exclude_unset=True), provider_vo
@@ -131,7 +127,7 @@ class ProviderService(BaseService):
 
         query = params.query or {}
 
-        self._create_default_provider(params.domain_id)
+        # self._create_managed_provider(params.domain_id)
 
         provider_vos, total_count = self.provider_mgr.list_providers(query)
 
@@ -163,9 +159,9 @@ class ProviderService(BaseService):
         return self.provider_mgr.stat_providers(query)
 
     @cache.cacheable(key='identity:provider:{domain_id}:default:init', expire=300)
-    def _create_default_provider(self, domain_id):
+    def _create_managed_provider(self, domain_id):
         provider_vos = self.provider_mgr.filter_providers(domain_id=domain_id)
         installed_providers = [provider_vo.provider for provider_vo in provider_vos]
-        self.provider_mgr.create_default_providers(installed_providers, domain_id)
+        self.provider_mgr.create_managed_providers(installed_providers, domain_id)
 
         return True

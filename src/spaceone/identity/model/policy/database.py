@@ -11,7 +11,7 @@ class Policy(MongoModel):
     is_managed = BooleanField(default=False)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
-    updated_at = DateTimeField(default=None, null=True)
+    updated_at = DateTimeField(auto_now=True)
 
     meta = {
         'updatable_fields': [

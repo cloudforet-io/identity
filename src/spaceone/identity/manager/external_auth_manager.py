@@ -1,4 +1,5 @@
 import logging
+from mongoengine import QuerySet
 
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
@@ -18,13 +19,12 @@ class ExternalAuthManager(BaseManager):
     def set_external_auth(self, params: dict, domain_vo: Domain) -> ExternalAuth:
         def _rollback(old_data):
             _LOGGER.info(
-                f'[set_external_auth._rollback] Revert Data : {old_data["domain_id"]}'
+                f'[set_external_auth._rollback] Revert Data: {old_data["domain_id"]}'
             )
             external_auth_vo.update(old_data)
 
-        if "plugin_info" in params:
+        if plugin_info := params.get("plugin_info"):
             domain_id = domain_vo.domain_id
-            plugin_info = params["plugin_info"]
             options = plugin_info.get("options", {})
             endpoint, updated_version = self.get_auth_plugin_endpoint(
                 domain_id, plugin_info
@@ -54,6 +54,9 @@ class ExternalAuthManager(BaseManager):
 
     def get_external_auth(self, domain_id: str) -> ExternalAuth:
         return self.external_auth_model.get(domain_id=domain_id)
+
+    def filter_external_auth(self, **conditions) -> QuerySet:
+        return self.external_auth_model.filter(**conditions)
 
     def get_auth_plugin_endpoint(self, domain_id, plugin_info):
         plugin_connector: SpaceConnector = self.locator.get_connector(

@@ -27,7 +27,7 @@ class RoleBindingService(BaseService):
             params (RoleBindingCreateRequest): {
                 'user_id': 'str',                   # required
                 'role_id': 'str',                   # required
-                'scope': 'str',                     # required
+                'permission_group': 'str',          # required
                 'workspace_id': 'str',
                 'domain_id': 'str'                  # required
             }
@@ -35,13 +35,6 @@ class RoleBindingService(BaseService):
         Returns:
             RoleBindingResponse:
         """
-
-        # Check Scope
-        if params.scope == 'DOMAIN':
-            params.workspace_id = None
-        else:
-            if not params.workspace_id:
-                raise ERROR_REQUIRED_PARAMETER(key='workspace_id')
 
         # Check user
         user_mgr = UserManager()
@@ -51,10 +44,10 @@ class RoleBindingService(BaseService):
         role_mgr = RoleManager()
         role_vo = role_mgr.get_role(params.role_id, params.domain_id)
 
-        if params.scope == 'DOMAIN':
-            if role_vo.role_type not in ['DOMAIN_ADMIN', 'SYSTEM_ADMIN']:
+        if params.permission_group == 'DOMAIN':
+            if role_vo.role_type not in ['ADMIN', 'DOMAIN_OWNER']:
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=['DOMAIN_ADMIN'])
-        elif params.scope == 'WORKSPACE':
+        else:
             if role_vo.role_type not in ['WORKSPACE_ADMIN', 'WORKSPACE_MEMBER']:
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=['WORKSPACE_ADMIN', 'WORKSPACE_MEMBER'])
 
@@ -86,18 +79,18 @@ class RoleBindingService(BaseService):
 
         # Check role
         role_mgr = RoleManager()
-        role_vo = role_mgr.get_role(params.role_id, params.domain_id)
+        new_role_vo = role_mgr.get_role(params.role_id, params.domain_id)
 
         if rb_vo.role_type in ['WORKSPACE_OWNER', 'WORKSPACE_MEMBER']:
-            if role_vo.role_type not in ['WORKSPACE_OWNER', 'WORKSPACE_MEMBER']:
+            if new_role_vo.role_type not in ['WORKSPACE_OWNER', 'WORKSPACE_MEMBER']:
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER'])
-        elif rb_vo.role_type != role_vo.role_type:
+        elif rb_vo.role_type != new_role_vo.role_type:
             raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=[rb_vo.role_type])
 
         rb_vo = self.role_binding_manager.update_role_binding_by_vo(
             {
                 'role_id': params.role_id,
-                'role_type': role_vo.role_type
+                'role_type': new_role_vo.role_type
             },
             rb_vo
         )
@@ -150,7 +143,7 @@ class RoleBindingService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
     @append_query_filter([
-        'role_binding_id', 'user_id', 'role_id', 'scope', 'workspace_id', 'domain_id', 'user_workspaces'
+        'role_binding_id', 'user_id', 'role_id', 'scope', 'workspace_id', 'domain_id'
     ])
     @append_keyword_filter(['role_binding_id', 'user_id', 'role_id'])
     @convert_model
@@ -166,7 +159,6 @@ class RoleBindingService(BaseService):
                 'role_id': 'str',
                 'workspace_id': 'str',
                 'domain_id': 'str',                     # required
-                'user_workspaces': 'list'               # from meta
             }
 
         Returns:
@@ -180,7 +172,7 @@ class RoleBindingService(BaseService):
         return RoleBindingsResponse(results=rbs_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
-    @append_query_filter(['domain_id', 'workspace_id', 'user_workspaces'])
+    @append_query_filter(['workspace_id', 'domain_id'])
     @append_keyword_filter(['role_binding_id', 'user_id', 'role_id'])
     @convert_model
     def stat(self, params: RoleBindingStatQueryRequest) -> dict:
@@ -191,7 +183,6 @@ class RoleBindingService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'str',
                 'domain_id': 'str',         # required
-                'user_workspaces': 'list'   # from meta
             }
 
         Returns:

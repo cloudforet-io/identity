@@ -17,14 +17,13 @@ __all__ = [
     "UserEnableRequest",
     "UserDisableRequest",
     "UserGetRequest",
-    "UserType",
     "AuthType",
     "State",
 ]
 
 State = Literal["ENABLED", "DISABLED", "PENDING"]
 AuthType = Literal["LOCAL", "EXTERNAL"]
-UserType = Literal["USER", "API_USER"]
+PermissionGroup = Literal["DOMAIN", "WORKSPACE"]
 
 
 class UserCreateRequest(BaseModel):
@@ -37,7 +36,9 @@ class UserCreateRequest(BaseModel):
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
     reset_password: Union[bool, None] = None
-    role_binding: Union[dict, None] = None
+    role_id: Union[str, None] = None
+    permission_group: Union[PermissionGroup, None] = None
+    workspace_id: Union[str, None] = None
     domain_id: str
 
 
@@ -129,5 +130,4 @@ class UserSearchQueryRequest(BaseModel):
 
 class UserStatQueryRequest(BaseModel):
     query: dict
-    workspace_id: Union[str, None] = None
     domain_id: str

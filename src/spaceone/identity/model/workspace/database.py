@@ -26,8 +26,8 @@ class Workspace(MongoModel):
     }
 
     @queryset_manager
-    def objects(doc_cls, queryset):
-        return queryset.filter(state__ne="DELETED")
+    def objects(doc_cls, query_set: QuerySet):
+        return query_set.filter(state__ne="DELETED")
 
     @classmethod
     def create(cls, data):

@@ -6,7 +6,7 @@ from spaceone.identity.model.service_account.request import *
 from spaceone.identity.model.service_account.response import *
 from spaceone.identity.manager.provider_manager import ProviderManager
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
-from spaceone.identity.manager.trusted_service_account_manager import TrustedServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ class ServiceAccountService(BaseService):
                 'name': 'str',                          # required
                 'data': 'dict',                         # required
                 'provider': 'str',                      # required
-                'trusted_service_account_id': 'str',
+                'trusted_account_id': 'str',
                 'tags': 'dict',
                 'project_id': 'str',                    # required
                 'workspace_id': 'str',                  # required
@@ -40,14 +40,12 @@ class ServiceAccountService(BaseService):
         """
 
         # Check data by schema
-        provider_mgr = ProviderManager()
-        provider_mgr.check_data_by_schema(params.provider, params.domain_id, params.data)
 
         # Check trusted service account
-        if params.trusted_service_account_id:
-            trusted_service_account_mgr = TrustedServiceAccountManager()
-            trusted_service_account_mgr.get_trusted_service_account(
-                params.trusted_service_account_id, params.domain_id, params.workspace_id
+        if params.trusted_account_id:
+            trusted_account_mgr = TrustedAccountManager()
+            trusted_account_mgr.get_trusted_account(
+                params.trusted_account_id, params.domain_id, params.workspace_id
             )
 
         service_account_vo = self.service_account_mgr.create_service_account(params.dict())
@@ -80,8 +78,7 @@ class ServiceAccountService(BaseService):
 
         if params.data:
             # Check data by schema
-            provider_mgr = ProviderManager()
-            provider_mgr.check_data_by_schema(service_account_vo.provider, params.domain_id, params.data)
+            pass
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
             params.dict(exclude_unset=True), service_account_vo
@@ -91,15 +88,15 @@ class ServiceAccountService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @convert_model
-    def change_trusted_service_account(
-        self, params: ServiceAccountChangeTrustedServiceAccountRequest
+    def change_trusted_account(
+        self, params: ServiceAccountChangeTrustedAccountRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """ change trusted service account
 
          Args:
-            params (ServiceAccountChangeTrustedServiceAccountRequest): {
+            params (ServiceAccountChangeTrustedAccountRequest): {
                 'service_account_id': 'str',            # required
-                'trusted_service_account_id': 'str',    # required
+                'trusted_account_id': 'str',    # required
                 'workspace_id': 'str',                  # required
                 'domain_id': 'str',                     # required
                 'user_projects': 'list'                 # from meta
@@ -115,13 +112,13 @@ class ServiceAccountService(BaseService):
         )
 
         # Check trusted service account
-        trusted_service_account_mgr = TrustedServiceAccountManager()
-        trusted_service_account_mgr.get_trusted_service_account(
-            params.trusted_service_account_id, params.domain_id, params.workspace_id
+        trusted_account_mgr = TrustedAccountManager()
+        trusted_account_mgr.get_trusted_account(
+            params.trusted_account_id, params.domain_id, params.workspace_id
         )
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
-            {'trusted_service_account_id': params.trusted_service_account_id}, service_account_vo
+            {'trusted_account_id': params.trusted_account_id}, service_account_vo
         )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
@@ -174,8 +171,7 @@ class ServiceAccountService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'PROJECT_READ'})
     @append_query_filter([
-        'service_account_id', 'name', 'provider', 'project_id', 'workspace_id', 'domain_id', 'user_projects',
-        'user_workspaces'
+        'service_account_id', 'name', 'provider', 'project_id', 'workspace_id', 'domain_id', 'user_projects'
     ])
     @append_keyword_filter(['service_account_id', 'name'])
     @set_query_page_limit(1000)
@@ -192,7 +188,6 @@ class ServiceAccountService(BaseService):
                 'project_id': 'str',
                 'workspace_id': 'str',
                 'domain_id': 'str',                     # required
-                'user_workspaces': 'list',              # from meta
                 'user_projects': 'list'                 # from meta
             }
 
@@ -207,7 +202,7 @@ class ServiceAccountService(BaseService):
         return ServiceAccountsResponse(results=service_accounts_info, total_count=total_count)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT_READ'})
-    @append_query_filter(['domain_id', 'workspace_id', 'user_workspaces', 'user_projects'])
+    @append_query_filter(['workspace_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['service_account_id', 'name'])
     @set_query_page_limit(1000)
     @convert_model
@@ -219,7 +214,6 @@ class ServiceAccountService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'str',
                 'domain_id': 'str',         # required
-                'user_workspaces': 'list',  # from meta
                 'user_projects': 'list'     # from meta
             }
 

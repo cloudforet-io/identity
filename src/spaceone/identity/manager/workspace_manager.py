@@ -1,5 +1,6 @@
 import logging
 from typing import Tuple
+from mongoengine import QuerySet
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
@@ -35,9 +36,6 @@ class WorkspaceManager(BaseManager):
             )
             workspace_vo.update(old_data)
 
-        workspace_vo: Workspace = self.get_workspace(
-            params["workspace_id"], params["domain_id"]
-        )
         self.transaction.add_rollback(_rollback, workspace_vo.to_dict())
 
         return workspace_vo.update(params)
@@ -47,45 +45,29 @@ class WorkspaceManager(BaseManager):
         workspace_vo.delete()
 
         cache.delete_pattern(
-            f"workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
+            f"identity:workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
         )
 
     def enable_workspace(self, workspace_vo: Workspace) -> Workspace:
-        def _rollback(old_data):
-            _LOGGER.info(
-                f'[enable_workspace._rollback] Revert Data : {old_data["name"]} ({old_data["workspace_id"]})'
-            )
-            workspace_vo.update(old_data)
-
-        if workspace_vo.state != "ENABLED":
-            self.transaction.add_rollback(_rollback, workspace_vo.to_dict())
-            workspace_vo.update({"state": "ENABLED"})
-
-            cache.delete_pattern(
-                f"workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
-            )
+        self.update_workspace_by_vo({"state": "ENABLED"}, workspace_vo)
+        cache.delete_pattern(f"identity:workspace-state:{workspace_vo.workspace_id}")
 
         return workspace_vo
 
     def disable_workspace(self, workspace_vo: Workspace) -> Workspace:
-        def _rollback(old_data):
-            _LOGGER.info(
-                f'[disable_workspace._rollback] Revert Data : {old_data["name"]} ({old_data["workspace_id"]})'
-            )
-            workspace_vo.update(old_data)
-
-        if workspace_vo.state != "DISABLED":
-            self.transaction.add_rollback(_rollback, workspace_vo.to_dict())
-            workspace_vo.update({"state": "DISABLED"})
-
-            cache.delete_pattern(
-                f"workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
-            )
+        self.update_workspace_by_vo({"state": "DISABLED"}, workspace_vo)
+        cache.delete_pattern(f"identity:workspace-state:{workspace_vo.workspace_id}")
 
         return workspace_vo
 
-    def get_workspace(self, workspace_id, domain_id) -> Workspace:
+    def get_workspace(self, workspace_id: str, domain_id: str) -> Workspace:
         return self.workspace_model.get(workspace_id=workspace_id, domain_id=domain_id)
 
-    def list_workspaces(self, query: dict) -> Tuple[list, int]:
+    def filter_workspaces(self, **conditions) -> QuerySet:
+        return self.workspace_model.filter(**conditions)
+
+    def list_workspaces(self, query: dict) -> Tuple[QuerySet, int]:
         return self.workspace_model.query(**query)
+
+    def stat_workspaces(self, query: dict) -> dict:
+        return self.workspace_model.stat(**query)

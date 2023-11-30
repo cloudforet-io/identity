@@ -2,13 +2,15 @@ from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
 
 
-class Provider(MongoModel):
-    provider = StringField(max_length=40, unique_with='domain_id')
+class Schema(MongoModel):
+    schema_id = StringField(max_length=40, unique_with='domain_id')
     name = StringField(max_length=40)
-    alias = StringField(max_length=40, default=None, null=True)
-    color = StringField(max_length=7, default=None, null=True)
-    icon = StringField(default=None, null=True)
-    order = IntField(min_value=1, default=10)
+    version = StringField(max_length=40, default=None)
+    schema_type = StringField(max_length=20, choices=('SERVICE_ACCOUNT', 'TRUSTED_ACCOUNT',
+                                                      'SECRET', 'TRUSTING_SECRET'))
+    schema = DictField(default=None)
+    provider = StringField(max_length=40)
+    related_schemas = ListField(StringField(max_length=40))
     options = DictField(default=None)
     tags = DictField(default=None)
     is_managed = BooleanField(default=False)
@@ -19,26 +21,26 @@ class Provider(MongoModel):
     meta = {
         'updatable_fields': [
             'name',
-            'alias',
-            'color',
-            'icon',
-            'order',
+            'version',
+            'schema',
             'options',
             'tags',
             'updated_at'
         ],
         'minimal_fields': [
-            'provider',
+            'schema_id',
             'name',
-            'order',
-            'is_managed'
+            'schema_type',
+            'provider'
         ],
         'ordering': [
-            'order',
             'name'
         ],
         'indexes': [
+            'schema_id',
+            'schema_type',
             'provider',
+            'related_schemas',
             'is_managed',
             'domain_id'
         ]

@@ -9,7 +9,7 @@ from spaceone.identity.model.domain.request import State
 __all__ = [
     "DomainResponse",
     "DomainsResponse",
-    "DomainMetadataResponse",
+    "DomainAuthInfoResponse",
     "DomainSecretResponse",
 ]
 
@@ -20,7 +20,7 @@ class DomainResponse(BaseModel):
     domain_id: Union[str, None] = None
     name: Union[str, None] = None
     state: Union[State, None] = None
-    tags: Union[dict, None] = {}
+    tags: Union[dict, None] = None
     created_at: Union[datetime, None] = None
 
     def dict(self, *args, **kwargs):
@@ -29,30 +29,18 @@ class DomainResponse(BaseModel):
         return data
 
 
-class DomainMetadataResponse(BaseModel):
+class DomainAuthInfoResponse(BaseModel):
     domain_id: Union[str, None] = None
     name: Union[str, None] = None
-    external_auth_state: ExternalAuthState
+    external_auth_state: Union[ExternalAuthState, None] = None
     metadata: Union[dict, None] = None
-
-    def dict(self, *args, **kwargs):
-        data = super().dict(*args, **kwargs)
-        return data
 
 
 class DomainSecretResponse(BaseModel):
     domain_id: Union[str, None] = None
     public_key: Union[str, None] = None
 
-    def dict(self, *args, **kwargs):
-        data = super().dict(*args, **kwargs)
-        return data
-
 
 class DomainsResponse(BaseModel):
     results: List[DomainResponse]
     total_count: int
-
-    def dict(self, *args, **kwargs):
-        data = super().dict(*args, **kwargs)
-        return data

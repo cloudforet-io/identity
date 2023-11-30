@@ -53,19 +53,19 @@ class ProviderManager(BaseManager):
     def stat_providers(self, query: dict) -> dict:
         return self.provider_model.stat(**query)
 
-    def create_default_providers(self, installed_providers: List[str], domain_id: str) -> None:
+    def create_managed_providers(self, installed_providers: List[str], domain_id: str) -> None:
         for provider in DEFAULT_PROVIDERS:
             if provider['provider'] not in installed_providers:
                 _LOGGER.debug(f'Create default provider: {provider["name"]}')
                 provider['domain_id'] = domain_id
                 self.create_provider(provider)
 
-    def check_data_by_schema(self, provider: str, domain_id: str, data: dict) -> None:
-        provider_vo = self.get_provider(provider, domain_id)
-        schema = provider_vo.template.get('service_account', {}).get('schema')
-
-        if schema:
-            try:
-                validate(instance=data, schema=schema)
-            except exceptions.ValidationError as e:
-                raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)
+    # def check_data_by_schema(self, provider: str, domain_id: str, data: dict) -> None:
+    #     provider_vo = self.get_provider(provider, domain_id)
+    #     schema = provider_vo.template.get('service_account', {}).get('schema')
+    #
+    #     if schema:
+    #         try:
+    #             validate(instance=data, schema=schema)
+    #         except exceptions.ValidationError as e:
+    #             raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)

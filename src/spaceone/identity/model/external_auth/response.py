@@ -12,7 +12,7 @@ class Plugin(BaseModel):
     version: Union[str, None] = None
     upgrade_mode: Union[str, None] = None
     options: Union[dict, None] = None
-    schema_name: Union[str, None] = Field(None, alias="schema")
+    schema_id: Union[str, None] = Field(None, alias="schema")
     metadata: dict
     secret_id: Union[dict, None] = None
 

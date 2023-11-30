@@ -14,10 +14,11 @@ __all__ = [
 class ProviderCreateRequest(BaseModel):
     provider: str
     name: str
+    alias: Union[str, None] = None
+    color: Union[str, None] = None
+    icon: Union[str, None] = None
     order: Union[int, None] = None
-    template: Union[dict, None] = None
-    metadata: Union[dict, None] = None
-    capability: Union[dict, None] = None
+    options: Union[dict, None] = None
     tags: Union[dict, None] = None
     domain_id: str
 
@@ -25,10 +26,11 @@ class ProviderCreateRequest(BaseModel):
 class ProviderUpdateRequest(BaseModel):
     provider: str
     name: Union[str, None] = None
+    alias: Union[str, None] = None
+    color: Union[str, None] = None
+    icon: Union[str, None] = None
     order: Union[int, None] = None
-    template: Union[dict, None] = None
-    metadata: Union[dict, None] = None
-    capability: Union[dict, None] = None
+    options: Union[dict, None] = None
     tags: Union[dict, None] = None
     domain_id: str
 
@@ -47,6 +49,8 @@ class ProviderSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     provider: Union[str, None] = None
     name: Union[str, None] = None
+    alias: Union[str, None] = None
+    is_managed: Union[bool, None] = None
     domain_id: str
 
 

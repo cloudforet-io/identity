@@ -12,24 +12,21 @@ class Role(MongoModel):
     name = StringField(max_length=255, unique_with='domain_id')
     role_type = StringField(
         max_length=20,
-        choices=('SYSTEM_ADMIN', 'DOMAIN_ADMIN', 'WORKSPACE_OWNER', 'WORKSPACE_MEMBER')
+        choices=('SYSTEM', 'ADMIN', 'DOMAIN_OWNER', 'WORKSPACE_OWNER', 'WORKSPACE_MEMBER')
     )
-    policies = ListField(StringField())
-    policies_hash = StringField()
+    api_permissions = ListField(StringField(max_length=255), default=[])
     page_permissions = ListField(EmbeddedDocumentField(PagePermission), default=[])
-    page_permissions_hash = StringField()
     tags = DictField(default=None)
     is_managed = BooleanField(default=False)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
 
     meta = {
         'updatable_fields': [
             'name',
-            'policies',
-            'policies_hash',
+            'api_permissions',
             'page_permissions',
-            'page_permissions_hash',
             'tags',
             'updated_at'
         ],
@@ -38,14 +35,9 @@ class Role(MongoModel):
             'name',
             'role_type'
         ],
-        'change_query_keys': {
-            'policy_id': 'policies'
-        },
         'ordering': ['name'],
         'indexes': [
             'role_type',
-            'policies_hash',
-            'page_permissions_hash',
             'domain_id'
         ]
     }

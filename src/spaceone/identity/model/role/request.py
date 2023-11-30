@@ -12,7 +12,7 @@ __all__ = [
     'PagePermission',
 ]
 
-RoleType = Literal["SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+RoleType = Literal["SYSTEM", "ADMIN", "DOMAIN_OWNER", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
 PagePermissionType = Literal["VIEW", "MANAGE"]
 
 
@@ -24,7 +24,7 @@ class PagePermission(BaseModel):
 class RoleCreateRequest(BaseModel):
     name: str
     role_type: RoleType
-    policies: List[str]
+    api_permissions: Union[List[str], None] = None
     page_permissions: Union[List[PagePermission], None] = None
     tags: Union[dict, None] = None
     domain_id: str
@@ -33,7 +33,7 @@ class RoleCreateRequest(BaseModel):
 class RoleUpdateRequest(BaseModel):
     role_id: str
     name: Union[str, None] = None
-    policies: Union[List[str], None] = None
+    api_permissions: Union[List[str], None] = None
     page_permissions: Union[List[PagePermission], None] = None
     tags: Union[dict, None]
     domain_id: str
@@ -54,7 +54,6 @@ class RoleSearchQueryRequest(BaseModel):
     role_id: Union[str, None] = None
     name: Union[str, None] = None
     role_type: Union[RoleType, None] = None
-    policy_id: Union[str, None] = None
     domain_id: str
 
 

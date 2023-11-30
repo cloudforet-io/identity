@@ -14,10 +14,12 @@ class PolicyResponse(BaseModel):
     is_managed: Union[bool, None]
     domain_id: Union[str, None]
     created_at: Union[datetime, None]
+    updated_at: Union[datetime, None]
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
         data['created_at'] = utils.datetime_to_iso8601(data['created_at'])
+        data['updated_at'] = utils.datetime_to_iso8601(data['updated_at'])
         return data
 
 
