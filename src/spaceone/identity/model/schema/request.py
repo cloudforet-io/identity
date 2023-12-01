@@ -1,4 +1,4 @@
-from typing import Union, Literal
+from typing import Union, Literal, List
 from pydantic import BaseModel, Field
 
 __all__ = [
@@ -20,7 +20,7 @@ class SchemaCreateRequest(BaseModel):
     schema_type: SchemaType
     data_schema: Union[dict, None] = Field(None, alias="schema")
     provider: str
-    related_schema_id: Union[str, None] = None
+    related_schemas: Union[List[str], None] = None
     options: Union[dict, None] = None
     tags: Union[dict, None] = None
     domain_id: str
@@ -35,7 +35,7 @@ class SchemaUpdateRequest(BaseModel):
     schema_id: str
     name: Union[str, None] = None
     data_schema: Union[dict, None] = Field(None, alias="schema")
-    related_schema_id: Union[str, None] = None
+    related_schemas: Union[List[str], None] = None
     options: Union[dict, None] = None
     tags: Union[dict, None] = None
     domain_id: str
