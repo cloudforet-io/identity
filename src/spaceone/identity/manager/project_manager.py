@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Tuple, List
 from mongoengine import QuerySet
 
 from spaceone.core import cache
@@ -49,7 +49,12 @@ class ProjectManager(BaseManager):
 
         project_vo.delete()
 
-    def get_project(self, project_id, workspace_id, domain_id) -> Project:
+    def get_project(
+            self, project_id: str, workspace_id: str, domain_id: str, user_projects: List[str] = None
+    ) -> Project:
+        if user_projects and project_id not in user_projects:
+            raise ERROR_PERMISSION_DENIED()
+
         conditions = {
             "project_id": project_id,
             "workspace_id": workspace_id,

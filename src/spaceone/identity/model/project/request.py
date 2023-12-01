@@ -35,6 +35,7 @@ class ProjectUpdateRequest(BaseModel):
     tags: Union[dict, None] = None
     workspace_id: str
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ProjectUpdateProjectTypeRequest(BaseModel):
@@ -62,6 +63,7 @@ class ProjectAddUsersRequest(BaseModel):
     users: List[str]
     workspace_id: str
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ProjectRemoveUsersRequest(BaseModel):
@@ -69,6 +71,7 @@ class ProjectRemoveUsersRequest(BaseModel):
     users: List[str]
     workspace_id: str
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ProjectAddUserGroupsRequest(BaseModel):
@@ -76,6 +79,7 @@ class ProjectAddUserGroupsRequest(BaseModel):
     user_groups: List[str]
     workspace_id: str
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ProjectRemoveUserGroupsRequest(BaseModel):
@@ -83,12 +87,14 @@ class ProjectRemoveUserGroupsRequest(BaseModel):
     user_groups: List[str]
     workspace_id: str
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ProjectGetRequest(BaseModel):
     project_id: str
     workspace_id: str
     domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ProjectSearchQueryRequest(BaseModel):

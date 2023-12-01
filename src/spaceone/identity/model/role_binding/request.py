@@ -17,7 +17,6 @@ PermissionGroup = Literal["DOMAIN", "WORKSPACE"]
 class RoleBindingCreateRequest(BaseModel):
     user_id: str
     role_id: str
-    role_type: Union[str, None] = None
     permission_group: PermissionGroup
     workspace_id: Union[str, None] = None
     domain_id: str
@@ -46,6 +45,7 @@ class RoleBindingGetRequest(BaseModel):
 class RoleBindingSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     role_binding_id: Union[str, None] = None
+    role_type: Union[str, None] = None
     permission_group: Union[PermissionGroup, None] = None
     user_id: Union[str, None] = None
     role_id: Union[str, None] = None

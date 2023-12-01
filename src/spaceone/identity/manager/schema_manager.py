@@ -1,8 +1,11 @@
 import logging
 from typing import Tuple, List
+from jsonschema import validate, exceptions
 
+from spaceone.core.error import *
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
+from spaceone.identity.error.error_schema import ERROR_UNDEFINED_SCHEMA, ERROR_INVALID_PARAMETER
 from spaceone.identity.model.schema.database import Schema
 from spaceone.identity.manager.managed_resource_manager import ManagedResourceManager
 
@@ -53,7 +56,7 @@ class SchemaManager(BaseManager):
     def stat_schemas(self, query: dict) -> dict:
         return self.schema_model.stat(**query)
 
-    # @cache.cacheable(key='identity:managed-schema:{domain_id}:sync', expire=300)
+    @cache.cacheable(key='identity:managed-schema:{domain_id}:sync', expire=300)
     def _create_managed_schema(self, domain_id: str) -> bool:
         managed_resource_mgr = ManagedResourceManager()
 
@@ -80,12 +83,15 @@ class SchemaManager(BaseManager):
 
         return True
 
-    # def check_data_by_schema(self, schema: str, domain_id: str, data: dict) -> None:
-    #     schema_vo = self.get_schema(schema, domain_id)
-    #     schema = schema_vo.template.get('service_account', {}).get('schema')
-    #
-    #     if schema:
-    #         try:
-    #             validate(instance=data, schema=schema)
-    #         except exceptions.ValidationError as e:
-    #             raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)
+    def validate_data_by_schema(self, provider: str, domain_id: str, schema_type: str, data: dict) -> None:
+        schema_vos = self.filter_schemas(
+            provider=provider, domain_id=domain_id, schema_type=schema_type
+        )
+
+        if len(schema_vos) == 0:
+            raise ERROR_UNDEFINED_SCHEMA(schema_type=schema_type, provider=provider)
+
+        try:
+            validate(instance=data, schema=schema_vos[0].schema)
+        except exceptions.ValidationError as e:
+            raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)

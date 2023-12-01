@@ -1,9 +1,12 @@
 import logging
 from typing import Union
+from spaceone.core import config
 from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
+from spaceone.core.error import *
 from spaceone.identity.model.role.request import *
 from spaceone.identity.model.role.response import *
 from spaceone.identity.manager.role_manager import RoleManager
+from spaceone.identity.manager.domain_manager import DomainManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,7 +36,13 @@ class RoleService(BaseService):
             RoleResponse:
         """
 
-        # Check API Permissions
+        if params.role_type in ['SYSTEM', 'SYSTEM_ADMIN']:
+            domain_mgr = DomainManager()
+            domain_vo = domain_mgr.get_domain(params.domain_id)
+
+            root_domain_name = config.get_global('ROOT_DOMAIN_NAME', 'root')
+            if domain_vo.name != root_domain_name:
+                raise ERROR_PERMISSION_DENIED()
 
         role_vo = self.role_mgr.create_role(params.dict())
         return RoleResponse(**role_vo.to_dict())

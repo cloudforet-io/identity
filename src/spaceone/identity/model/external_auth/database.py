@@ -13,6 +13,5 @@ class ExternalAuth(MongoModel):
             "state",
             "plugin_info",
             "updated_at",
-        ],
-        "minimal_fields": ["domain_id", "state"]
+        ]
     }

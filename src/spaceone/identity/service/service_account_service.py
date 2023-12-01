@@ -4,7 +4,7 @@ from spaceone.core.service import (BaseService, transaction, convert_model, appe
                                    append_keyword_filter, set_query_page_limit)
 from spaceone.identity.model.service_account.request import *
 from spaceone.identity.model.service_account.response import *
-from spaceone.identity.manager.provider_manager import ProviderManager
+from spaceone.identity.manager.schema_manager import SchemaManager
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 
@@ -40,6 +40,10 @@ class ServiceAccountService(BaseService):
         """
 
         # Check data by schema
+        schema_mgr = SchemaManager()
+        schema_mgr.validate_data_by_schema(
+            params.provider, params.domain_id, 'SERVICE_ACCOUNT', params.data
+        )
 
         # Check trusted service account
         if params.trusted_account_id:
@@ -78,7 +82,10 @@ class ServiceAccountService(BaseService):
 
         if params.data:
             # Check data by schema
-            pass
+            schema_mgr = SchemaManager()
+            schema_mgr.validate_data_by_schema(
+                service_account_vo.provider, params.domain_id, 'SERVICE_ACCOUNT', params.data
+            )
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
             params.dict(exclude_unset=True), service_account_vo

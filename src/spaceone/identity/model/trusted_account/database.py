@@ -22,7 +22,9 @@ class TrustedAccount(MongoModel):
         'minimal_fields': [
             'trusted_account_id',
             'name',
-            'provider'
+            'provider',
+            'permission_group',
+            'workspace_id'
         ],
         'ordering': ['name'],
         'indexes': [

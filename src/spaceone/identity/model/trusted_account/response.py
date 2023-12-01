@@ -5,7 +5,7 @@ from spaceone.core import utils
 
 __all__ = ["TrustedAccountResponse", "TrustedAccountsResponse"]
 
-Scope = Literal["DOMAIN", "WORKSPACE"]
+PermissionGroup = Literal["DOMAIN", "WORKSPACE"]
 
 
 class TrustedAccountResponse(BaseModel):
@@ -14,7 +14,7 @@ class TrustedAccountResponse(BaseModel):
     data: Union[dict, None] = None
     provider: Union[str, None] = None
     tags: Union[dict, None] = None
-    scope: Union[Scope, None] = None
+    permission_group: Union[PermissionGroup, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None

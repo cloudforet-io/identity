@@ -12,7 +12,7 @@ __all__ = [
     'PagePermission',
 ]
 
-RoleType = Literal["SYSTEM", "ADMIN", "DOMAIN_OWNER", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+RoleType = Literal["SYSTEM", "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
 PagePermissionType = Literal["VIEW", "MANAGE"]
 
 

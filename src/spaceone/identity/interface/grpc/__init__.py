@@ -12,6 +12,7 @@ from spaceone.identity.interface.grpc.service_account import ServiceAccount
 from spaceone.identity.interface.grpc.role import Role
 from spaceone.identity.interface.grpc.role_binding import RoleBinding
 from spaceone.identity.interface.grpc.user import User
+from spaceone.identity.interface.grpc.workspace_user import WorkspaceUser
 # from spaceone.identity.interface.grpc.user_group import UserGroup
 # from spaceone.identity.interface.grpc.api_key import APIKey
 from spaceone.identity.interface.grpc.token import Token
@@ -32,6 +33,7 @@ app.add_service(TrustedAccount)
 app.add_service(ServiceAccount)
 app.add_service(Role)
 app.add_service(RoleBinding)
+app.add_service(WorkspaceUser)
 app.add_service(User)
 # app.add_service(UserGroup)
 # app.add_service(APIKey)

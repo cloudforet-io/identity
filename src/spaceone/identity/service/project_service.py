@@ -64,14 +64,15 @@ class ProjectService(BaseService):
                 'name': 'str',
                 'tags': 'dict',
                 'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'domain_id': 'str',         # required
+                'user_projects': 'list'     # from meta
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id
+            params.project_id, params.workspace_id, params.domain_id, params.user_projects
         )
 
         project_vo = self.project_mgr.update_project_by_vo(
@@ -172,14 +173,15 @@ class ProjectService(BaseService):
                 'project_id': 'str',        # required
                 'users': 'list',            # required
                 'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'domain_id': 'str',         # required
+                'user_projects': 'list'     # from meta
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id
+            params.project_id, params.workspace_id, params.domain_id, params.user_projects
         )
 
         if project_vo.project_type == 'PUBLIC':
@@ -208,16 +210,15 @@ class ProjectService(BaseService):
                 'project_id': 'str',        # required
                 'users': 'list',            # required
                 'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'domain_id': 'str',         # required
+                'user_projects': 'list'     # from meta
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            project_id=params.project_id,
-            workspace_id=params.workspace_id,
-            domain_id=params.domain_id,
+            params.project_id, params.workspace_id, params.domain_id, params.user_projects
         )
 
         if len(params.users) > 0:
@@ -253,14 +254,15 @@ class ProjectService(BaseService):
             params (ProjectGetRequest): {
                 'project_id': 'str',    # required
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'domain_id': 'str',     # required
+                'user_projects': 'list' # from meta
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id
+            params.project_id, params.workspace_id, params.domain_id, params.user_projects
         )
 
         return ProjectResponse(**project_vo.to_dict())
