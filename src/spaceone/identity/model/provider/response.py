@@ -9,7 +9,7 @@ __all__ = ["ProviderResponse", "ProvidersResponse"]
 class ProviderResponse(BaseModel):
     provider: Union[str, None] = None
     name: Union[str, None] = None
-    alais: Union[str, None] = None
+    alias: Union[str, None] = None
     color: Union[str, None] = None
     icon: Union[str, None] = None
     order: Union[int, None] = None

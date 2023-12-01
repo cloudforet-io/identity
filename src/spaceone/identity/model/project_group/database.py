@@ -23,12 +23,9 @@ class ProjectGroup(MongoModel):
             "parent_group_id",
             "workspace_id"
         ],
-        'change_query_keys': {
-            'user_workspaces': 'workspace_id'
-        },
         "ordering": ["name"],
         "indexes": [
-            'parent_group_id',
+            "parent_group_id",
             "workspace_id",
             "domain_id",
         ],

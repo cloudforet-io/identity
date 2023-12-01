@@ -5,12 +5,12 @@ from spaceone.core.model.mongo_model import MongoModel
 class Schema(MongoModel):
     schema_id = StringField(max_length=40, unique_with='domain_id')
     name = StringField(max_length=40)
-    version = StringField(max_length=40, default=None)
+    version = StringField(max_length=40, default=None, null=True)
     schema_type = StringField(max_length=20, choices=('SERVICE_ACCOUNT', 'TRUSTED_ACCOUNT',
                                                       'SECRET', 'TRUSTING_SECRET'))
     schema = DictField(default=None)
     provider = StringField(max_length=40)
-    related_schemas = ListField(StringField(max_length=40))
+    related_schema_id = StringField(max_length=40, default=None, null=True)
     options = DictField(default=None)
     tags = DictField(default=None)
     is_managed = BooleanField(default=False)
@@ -23,6 +23,7 @@ class Schema(MongoModel):
             'name',
             'version',
             'schema',
+            'related_schema_id',
             'options',
             'tags',
             'updated_at'
@@ -40,7 +41,7 @@ class Schema(MongoModel):
             'schema_id',
             'schema_type',
             'provider',
-            'related_schemas',
+            'related_schema_id',
             'is_managed',
             'domain_id'
         ]

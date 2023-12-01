@@ -1,5 +1,5 @@
 from typing import Union, Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 __all__ = [
     "SchemaCreateRequest",
@@ -8,6 +8,7 @@ __all__ = [
     "SchemaGetRequest",
     "SchemaSearchQueryRequest",
     "SchemaStatQueryRequest",
+    "SchemaType"
 ]
 
 SchemaType = Literal["SERVICE_ACCOUNT", "TRUSTED_ACCOUNT", "SECRET", "TRUSTING_SECRET"]
@@ -17,21 +18,32 @@ class SchemaCreateRequest(BaseModel):
     schema_id: str
     name: str
     schema_type: SchemaType
-    schema: dict
+    data_schema: Union[dict, None] = Field(None, alias="schema")
     provider: str
-    related_schemas: Union[list, None] = None
+    related_schema_id: Union[str, None] = None
     options: Union[dict, None] = None
     tags: Union[dict, None] = None
     domain_id: str
+
+    class Config:
+        fields = {
+            'data_schema': 'schema'
+        }
 
 
 class SchemaUpdateRequest(BaseModel):
     schema_id: str
     name: Union[str, None] = None
-    schema: Union[dict, None] = None
+    data_schema: Union[dict, None] = Field(None, alias="schema")
+    related_schema_id: Union[str, None] = None
     options: Union[dict, None] = None
     tags: Union[dict, None] = None
     domain_id: str
+
+    class Config:
+        fields = {
+            'data_schema': 'schema'
+        }
 
 
 class SchemaDeleteRequest(BaseModel):

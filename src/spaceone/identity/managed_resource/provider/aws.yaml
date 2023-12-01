@@ -1,6 +1,7 @@
 ---
 provider: aws
 name: AWS
+version: '1.0'
 color: '#FF9900'
 icon: 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/aws.svg'
 order: 1

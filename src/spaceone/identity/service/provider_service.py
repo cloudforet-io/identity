@@ -1,6 +1,5 @@
 import logging
 from typing import Union
-from spaceone.core import cache
 from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
 from spaceone.identity.model.provider.request import *
 from spaceone.identity.model.provider.response import *
@@ -107,7 +106,7 @@ class ProviderService(BaseService):
         return ProviderResponse(**provider_vo.to_dict())
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
-    @append_query_filter(['provider', 'name', 'domain_id'])
+    @append_query_filter(['provider', 'name', 'alias', 'is_managed', 'domain_id'])
     @append_keyword_filter(['provider', 'name'])
     @convert_model
     def list(self, params: ProviderSearchQueryRequest) -> Union[ProvidersResponse, dict]:
@@ -118,7 +117,9 @@ class ProviderService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'provider': 'str',
                 'name': 'str',
-                'domain_id': 'str'    # required
+                'alias': 'str',
+                'is_managed': 'bool',
+                'domain_id': 'str'      # required
             }
 
         Returns:
@@ -126,10 +127,7 @@ class ProviderService(BaseService):
         """
 
         query = params.query or {}
-
-        # self._create_managed_provider(params.domain_id)
-
-        provider_vos, total_count = self.provider_mgr.list_providers(query)
+        provider_vos, total_count = self.provider_mgr.list_providers(query, params.domain_id)
 
         providers_info = [provider_vo.to_dict() for provider_vo in provider_vos]
         return ProvidersResponse(results=providers_info, total_count=total_count)
@@ -157,11 +155,3 @@ class ProviderService(BaseService):
 
         query = params.query or {}
         return self.provider_mgr.stat_providers(query)
-
-    @cache.cacheable(key='identity:provider:{domain_id}:default:init', expire=300)
-    def _create_managed_provider(self, domain_id):
-        provider_vos = self.provider_mgr.filter_providers(domain_id=domain_id)
-        installed_providers = [provider_vo.provider for provider_vo in provider_vos]
-        self.provider_mgr.create_managed_providers(installed_providers, domain_id)
-
-        return True

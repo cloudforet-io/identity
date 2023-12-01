@@ -14,14 +14,26 @@ _ROLE_DIR = os.path.join(CURRENT_DIR, '../managed_resource/role/')
 
 class ManagedResourceManager(BaseManager):
 
-    def list_managed_providers(self):
-        return self._load_managed_resources(_PROVIDER_DIR)
+    def get_managed_providers(self) -> dict:
+        provider_map = {}
+        for provider in self._load_managed_resources(_PROVIDER_DIR):
+            provider_map[provider['provider']] = provider
 
-    def list_managed_schemas(self):
-        return self._load_managed_resources(_SCHEMA_DIR)
+        return provider_map
 
-    def list_managed_roles(self):
-        return self._load_managed_resources(_ROLE_DIR)
+    def get_managed_schemas(self) -> dict:
+        schema_map = {}
+        for schema in self._load_managed_resources(_SCHEMA_DIR):
+            schema_map[schema['schema_id']] = schema
+
+        return schema_map
+
+    def get_managed_roles(self) -> dict:
+        role_map = {}
+        for role in self._load_managed_resources(_ROLE_DIR):
+            role_map[role['role_id']] = role
+
+        return role_map
 
     @staticmethod
     def _load_managed_resources(dir_path: str) -> List[dict]:
