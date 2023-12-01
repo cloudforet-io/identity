@@ -26,7 +26,7 @@ class SchemaService(BaseService):
                 'schema_type': 'str',       # required
                 'schema': 'dict',           # required
                 'provider': 'str',          # required
-                'related_schema_id': 'str',
+                'related_schemas': 'list',
                 'options': 'dict',
                 'tags': 'dict',
                 'domain_id': 'str'          # required
@@ -49,7 +49,7 @@ class SchemaService(BaseService):
                 'schema_id': 'str',       # required
                 'name': 'str',
                 'schema': 'dict',
-                'related_schema_id': 'str',
+                'related_schemas': 'list',
                 'options': 'dict',
                 'tags': 'dict',
                 'domain_id': 'str'        # required

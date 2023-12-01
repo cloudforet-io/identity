@@ -13,7 +13,7 @@ class SchemaResponse(BaseModel):
     schema_type: Union[SchemaType, None] = None
     data_schema: Union[dict, None] = Field(None, alias="schema")
     provider: Union[str, None] = None
-    related_schema_id: Union[str, None] = None
+    related_schemas: Union[List[str], None] = None
     options: Union[dict, None] = None
     tags: Union[dict, None] = None
     is_managed: Union[bool, None] = None
@@ -24,8 +24,8 @@ class SchemaResponse(BaseModel):
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
 
-        if data_schema := data.get('data_schema'):
-            data['schema'] = data_schema
+        if 'data_schema' in data:
+            data['schema'] = data['data_schema']
             del data['data_schema']
 
         data['created_at'] = utils.datetime_to_iso8601(data['created_at'])

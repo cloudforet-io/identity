@@ -10,7 +10,7 @@ class Schema(MongoModel):
                                                       'SECRET', 'TRUSTING_SECRET'))
     schema = DictField(default=None)
     provider = StringField(max_length=40)
-    related_schema_id = StringField(max_length=40, default=None, null=True)
+    related_schemas = ListField(StringField(max_length=40), default=None)
     options = DictField(default=None)
     tags = DictField(default=None)
     is_managed = BooleanField(default=False)
@@ -23,7 +23,7 @@ class Schema(MongoModel):
             'name',
             'version',
             'schema',
-            'related_schema_id',
+            'related_schemas',
             'options',
             'tags',
             'updated_at'
@@ -33,9 +33,11 @@ class Schema(MongoModel):
             'name',
             'schema_type',
             'provider',
-            'related_schema_id',
             'is_managed'
         ],
+        'change_query_keys': {
+            'related_schema_id': 'related_schemas',
+        },
         'ordering': [
             'name'
         ],
@@ -43,7 +45,7 @@ class Schema(MongoModel):
             'schema_id',
             'schema_type',
             'provider',
-            'related_schema_id',
+            'related_schemas',
             'is_managed',
             'domain_id'
         ]
