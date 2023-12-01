@@ -30,7 +30,6 @@ class SchemaResponse(BaseModel):
 
         data['created_at'] = utils.datetime_to_iso8601(data['created_at'])
         data['updated_at'] = utils.datetime_to_iso8601(data['updated_at'])
-        print(data)
         return data
 
 
