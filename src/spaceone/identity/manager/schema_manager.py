@@ -41,7 +41,7 @@ class SchemaManager(BaseManager):
         schema_vo.delete()
 
     def get_schema(self, schema_id: str, domain_id: str) -> Schema:
-        return self.schema_model.get(schema=schema_id, domain_id=domain_id)
+        return self.schema_model.get(schema_id=schema_id, domain_id=domain_id)
 
     def filter_schemas(self, **conditions) -> List[Schema]:
         return self.schema_model.filter(**conditions)
