@@ -15,14 +15,22 @@ class Workspace(MongoModel):
     deleted_at = DateTimeField(default=None, null=True)
 
     meta = {
-        "updatable_fields": ["name", "state", "tags", "deleted_at"],
+        "updatable_fields": [
+            "name",
+            "state",
+            "tags",
+            "deleted_at"
+        ],
         "minimal_fields": [
             "workspace_id",
             "name",
             "state",
         ],
         "ordering": ["name"],
-        "indexes": ["name", "domain_id"],
+        "indexes": [
+            "name",
+            "domain_id"
+        ],
     }
 
     @queryset_manager

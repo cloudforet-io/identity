@@ -175,6 +175,7 @@ class ProjectGroupService(BaseService):
 
         query = params.query or {}
         project_vos, total_count = self.project_group_mgr.list_project_groups(query)
+
         projects_info = [project_vo.to_dict() for project_vo in project_vos]
         return ProjectGroupsResponse(results=projects_info, total_count=total_count)
 
@@ -187,8 +188,8 @@ class ProjectGroupService(BaseService):
         Args:
             params (ProjectGroupStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
+                'workspace_id': 'str',
                 'domain_id': 'str',         # required
-                'workspace_id': 'str'
             }
         Returns:
             dict: {

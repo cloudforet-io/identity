@@ -18,7 +18,7 @@ class ServiceAccountService(BaseService):
         super().__init__(*args, **kwargs)
         self.service_account_mgr = ServiceAccountManager()
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction
     @convert_model
     def create(self, params: ServiceAccountCreateRequest) -> Union[ServiceAccountResponse, dict]:
         """ create service account
