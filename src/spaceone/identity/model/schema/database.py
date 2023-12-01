@@ -32,7 +32,9 @@ class Schema(MongoModel):
             'schema_id',
             'name',
             'schema_type',
-            'provider'
+            'provider',
+            'related_schema_id',
+            'is_managed'
         ],
         'ordering': [
             'name'

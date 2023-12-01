@@ -17,6 +17,8 @@ __all__ = [
     "UserEnableRequest",
     "UserDisableRequest",
     "UserGetRequest",
+    "UserFindRequest",
+    "UserWorkspacesRequest",
     "AuthType",
     "State",
 ]
@@ -29,16 +31,13 @@ PermissionGroup = Literal["DOMAIN", "WORKSPACE"]
 class UserCreateRequest(BaseModel):
     user_id: str
     password: Union[str, None] = None
-    name: Union[str, None] = None
-    email: Union[str, None] = None
+    name: Union[str, None] = ""
+    email: Union[str, None] = ""
     auth_type: AuthType
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
-    reset_password: Union[bool, None] = None
-    role_id: Union[str, None] = None
-    permission_group: Union[PermissionGroup, None] = None
-    workspace_id: Union[str, None] = None
+    reset_password: Union[bool, None] = False
     domain_id: str
 
 
@@ -117,6 +116,19 @@ class UserGetRequest(BaseModel):
     domain_id: str
 
 
+class UserWorkspacesRequest(BaseModel):
+    user_id: str
+    domain_id: str
+
+
+class UserFindRequest(BaseModel):
+    keyword: str
+    state: Union[State, None] = None
+    exclude_workspace_id: Union[str, None] = None
+    page: Union[dict, None] = None
+    domain_id: str
+
+
 class UserSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     user_id: Union[str, None] = None
@@ -124,7 +136,6 @@ class UserSearchQueryRequest(BaseModel):
     state: Union[State, None] = None
     email: Union[str, None] = None
     auth_type: Union[AuthType, None] = None
-    workspace_id: Union[str, None] = None
     domain_id: str
 
 

@@ -12,7 +12,7 @@ class Role(MongoModel):
     name = StringField(max_length=255, unique_with='domain_id')
     role_type = StringField(
         max_length=20,
-        choices=('SYSTEM', 'ADMIN', 'DOMAIN_OWNER', 'WORKSPACE_OWNER', 'WORKSPACE_MEMBER')
+        choices=('SYSTEM', 'SYSTEM_ADMIN', 'DOMAIN_ADMIN', 'WORKSPACE_OWNER', 'WORKSPACE_MEMBER')
     )
     api_permissions = ListField(StringField(max_length=255), default=[])
     page_permissions = ListField(EmbeddedDocumentField(PagePermission), default=[])
@@ -33,7 +33,8 @@ class Role(MongoModel):
         'minimal_fields': [
             'role_id',
             'name',
-            'role_type'
+            'role_type',
+            'is_managed'
         ],
         'ordering': ['name'],
         'indexes': [

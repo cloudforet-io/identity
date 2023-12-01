@@ -1,9 +1,9 @@
 import logging
 import re
+import pytz
 from typing import Tuple
 from mongoengine import QuerySet
 
-from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.lib.cipher import PasswordCipher
@@ -18,47 +18,32 @@ class UserManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.user_model = User
 
-    def create_user(self, params: dict, is_first_login_user=False) -> User:
+    def create_user(self, params: dict) -> User:
         def _rollback(vo: User):
             _LOGGER.info(
-                f"[create_user._rollback] Delete user : {vo.name} ({vo.user_id})"
+                f"[create_user._rollback] Delete user: {vo.user_id} ({vo.name})"
             )
             vo.delete()
 
-        params["state"] = params.get("state", "ENABLED")
+        if timezone := params.get("timezone"):
+            self._check_timezone(timezone)
 
-        # If user create external authentication, call find action.
         if params["auth_type"] == "EXTERNAL":
-            if not is_first_login_user:
-                pass
+            params["password"] = None
 
         else:
-            if params["user_type"] == "API_USER":
-                params["password"] = None
+            self._check_user_id_format(params["user_id"])
+
+            if password := params.get("password"):
+                self._check_password_format(password)
             else:
-                self._check_user_id_format(params["user_id"])
+                raise ERROR_REQUIRED_PARAMETER(key="password")
 
-                password = params.get("password")
-                if password:
-                    self._check_password_format(password)
-                else:
-                    raise ERROR_REQUIRED_PARAMETER(key="password")
+            hashed_pw = PasswordCipher().hashpw(password)
+            params["password"] = hashed_pw
 
-                hashed_pw = PasswordCipher().hashpw(password)
-                params["password"] = hashed_pw
-
-        user_name = params.get("name")
-        user_email = params.get("email")
-
-        if user_name:
-            params["name"] = user_name.strip()
-        else:
-            params["name"] = ""
-
-        if user_email:
-            params["email"] = user_email.strip()
-        else:
-            params["email"] = ""
+        params["name"] = params["name"].strip()
+        params["email"] = params["email"].strip()
 
         user_vo = self.user_model.create(params)
 
@@ -69,9 +54,12 @@ class UserManager(BaseManager):
     def update_user_by_vo(self, params: dict, user_vo: User) -> User:
         def _rollback(old_data):
             _LOGGER.info(
-                f'[update_user._rollback] Revert Data : {old_data["name"], ({old_data["user_id"]})}'
+                f'[update_user_by_vo._rollback] Revert Data: {old_data["user_id"]}'
             )
             user_vo.update(old_data)
+
+        if timezone := params.get("timezone"):
+            self._check_timezone(timezone)
 
         required_actions = list(user_vo.required_actions)
         is_change_required_actions = False
@@ -97,40 +85,7 @@ class UserManager(BaseManager):
 
     @staticmethod
     def delete_user_by_vo(user_vo: User) -> None:
-        domain_id = user_vo.domain_id
-        user_id = user_vo.user_id
         user_vo.delete()
-
-        cache.delete_pattern(f"user-state:{domain_id}:{user_id}")
-        cache.delete_pattern(f"role-bindings:{domain_id}:{user_id}*")
-        cache.delete_pattern(f"user-permissions:{domain_id}:{user_id}*")
-        cache.delete_pattern(f"user-scopes:{domain_id}:{user_id}*")
-
-    def enable_user(self, user_vo: User) -> User:
-        def _rollback(old_data):
-            _LOGGER.info(f"[enable_user._rollback] Revert Data : {old_data}")
-            user_vo.update(old_data)
-
-        if user_vo.state != "ENABLED":
-            self.transaction.add_rollback(_rollback, user_vo.to_dict())
-            user_vo.update({"state": "ENABLED"})
-
-            cache.delete_pattern(f"user-state:{user_vo.domain_id}:{user_vo.user_id}")
-
-        return user_vo
-
-    def disable_user(self, user_vo: User) -> User:
-        def _rollback(old_data):
-            _LOGGER.info(f"[disable_user._rollback] Revert Data : {old_data}")
-            user_vo.update(old_data)
-
-        if user_vo.state != "DISABLED":
-            self.transaction.add_rollback(_rollback, user_vo.to_dict())
-            user_vo.update({"state": "DISABLED"})
-
-            cache.delete_pattern(f"user-state:{user_vo.domain_id}:{user_vo.user_id}")
-
-        return user_vo
 
     def get_user(self, user_id: str, domain_id: str) -> User:
         return self.user_model.get(user_id=user_id, domain_id=domain_id)
@@ -140,6 +95,9 @@ class UserManager(BaseManager):
 
     def list_users(self, query: dict) -> Tuple[QuerySet, int]:
         return self.user_model.query(**query)
+
+    def stat_users(self, query: dict) -> dict:
+        return self.user_model.stat(**query)
 
     @staticmethod
     def _check_user_id_format(user_id: str) -> None:
@@ -161,3 +119,8 @@ class UserManager(BaseManager):
             )
         elif not re.search("[0-9]", password):
             raise ERROR_INCORRECT_PASSWORD_FORMAT(rule="Contains at least one number")
+
+    @staticmethod
+    def _check_timezone(timezone):
+        if timezone not in pytz.all_timezones:
+            raise ERROR_INVALID_PARAMETER(key="timezone", reason="Timezone is invalid.")

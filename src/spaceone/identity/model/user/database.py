@@ -17,19 +17,23 @@ class User(MongoModel):
     user_id = StringField(max_length=40, unique_with="domain_id", required=True)
     password = BinaryField(default=None)
     name = StringField(max_length=128, default="")
-    state = StringField(max_length=20, choices=("ENABLED", "DISABLED", "PENDING"))
+    state = StringField(max_length=20, default="PENDING", choices=("ENABLED", "DISABLED", "PENDING"))
     email = StringField(max_length=255, default="")
     email_verified = BooleanField(default=False)
-    user_type = StringField(max_length=20, choices=("USER", "API_USER"))
     auth_type = StringField(max_length=20, choices=("LOCAL", "EXTERNAL"))
+    role_type = StringField(
+        max_length=20,
+        default="USER",
+        choices=('SYSTEM', 'SYSTEM_ADMIN', 'DOMAIN_ADMIN', 'WORKSPACE_OWNER', 'WORKSPACE_MEMBER', 'USER'),
+    )
     mfa = EmbeddedDocumentField(MFA)
     required_actions = ListField(StringField(choices=("UPDATE_PASSWORD",)), default=[])
     language = StringField(max_length=7, default="en")
     timezone = StringField(max_length=50, default="UTC")
     tags = DictField(Default=None)
     domain_id = StringField(max_length=40)
-    last_accessed_at = DateTimeField(default=None, null=True)
     created_at = DateTimeField(auto_now_add=True)
+    last_accessed_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
@@ -38,20 +42,28 @@ class User(MongoModel):
             "state",
             "email",
             "email_verified",
+            'role_type',
             "mfa",
-            "required_actions",
             "language",
             "timezone",
+            "required_actions",
             "tags",
             "last_accessed_at",
         ],
-        "minimal_fields": ["user_id", "name", "state", "user_type"],
-        "ordering": ["name"],
+        "minimal_fields": [
+            "user_id",
+            "name",
+            "state",
+            'auth_type',
+            "role_type"
+        ],
+        "ordering": [
+            "name",
+            "user_id"
+        ],
         "indexes": [
             "state",
-            "user_type",
             "auth_type",
-            "last_accessed_at",
-            # ('user_id', 'domain_id'),
+            "role_type",
         ],
     }

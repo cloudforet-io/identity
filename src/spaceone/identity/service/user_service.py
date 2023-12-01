@@ -1,5 +1,5 @@
+import copy
 import logging
-import pytz
 import random
 import re
 import string
@@ -17,16 +17,17 @@ from spaceone.core import config
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_user import *
 from spaceone.identity.manager.email_manager import EmailManager
-from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.mfa_manager import MFAManager
-from spaceone.identity.manager.token_manager.local_token_manager import (
-    LocalTokenManager,
-)
+from spaceone.identity.manager.token_manager.local_token_manager import LocalTokenManager
 from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.user.request import *
 from spaceone.identity.model.user.response import *
+from spaceone.identity.model.user.database import User
+from spaceone.identity.model.workspace.response import WorkspacesResponse
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,80 +54,63 @@ class UserService(BaseService):
                 'timezone': 'str',
                 'tags': 'dict',
                 'reset_password': 'bool',
-                'role_id': 'str',
-                'permission_group': 'str',  # required
-                'workspace_id': 'str',
                 'domain_id': 'str'          # required
             }
         Returns:
             UserResponse:
         """
 
-        user_id = params.user_id
-        email = params.email
-        params.user_type = params.user_type or "USER"
-        params.auth_type = params.auth_type or "LOCAL"
-        reset_password = params.reset_password or False
-        domain_id = params.domain_id
+        user_vo = self.create_user(params.dict())
+        return UserResponse(**user_vo.to_dict())
 
-        domain_vo = self.domain_mgr.get_domain(domain_id)
-
-        default_language = self._get_default_config(domain_vo, "LANGUAGE")
-        default_timezone = self._get_default_config(domain_vo, "TIMEZONE")
-
-        self._check_user_type_and_auth_type(params.user_type, params.auth_type)
-
-        if "language" not in params:
-            params.language = default_language
-
-        if "timezone" not in params:
-            params.timezone = default_timezone
-
-        if "timezone" in params:
-            self._check_timezone(params.timezone)
+    def create_user(self, params: dict) -> User:
+        user_id = params["user_id"]
+        auth_type = params["auth_type"]
+        reset_password = params["reset_password"]
+        domain_id = params["domain_id"]
+        email = params.get("email")
+        language = params.get("language", "en")
 
         if reset_password:
-            self._check_reset_password_eligibility(user_id, params.auth_type, email)
+            self._check_reset_password_eligibility(user_id, auth_type, email)
 
             email_manager = EmailManager()
-            language = params.language
-            required_actions = {"required_actions": ["UPDATE_PASSWORD"]}
-            params.password = self._generate_temporary_password()
 
-            reset_password_type = config.get_global("RESET_PASSWORD_TYPE")
+            temp_password = self._generate_temporary_password()
+            params["password"] = copy.deepcopy(temp_password)
+            reset_password_type = config.get_global("RESET_PASSWORD_TYPE", "ACCESS_TOKEN")
+
             if reset_password_type == "ACCESS_TOKEN":
                 token = self._issue_temporary_token(user_id, domain_id)
                 reset_password_link = self._get_console_sso_url(
                     domain_id, token["access_token"]
                 )
 
-                params = params.dict()
-                params.update(required_actions)
+                params["required_actions"] = ["UPDATE_PASSWORD"]
 
-                user_vo = self.user_mgr.create_user(params, domain_vo)
+                user_vo = self.user_mgr.create_user(params)
                 email_manager.send_reset_password_email_when_user_added(
                     user_id, email, reset_password_link, language
                 )
             else:
-                temp_password = params.password
                 console_link = self._get_console_url(domain_id)
 
-                user_vo = self.user_mgr.create_user(params.dict(), domain_vo)
+                user_vo = self.user_mgr.create_user(params)
                 email_manager.send_temporary_password_email_when_user_added(
                     user_id, email, console_link, temp_password, language
                 )
         else:
-            user_vo = self.user_mgr.create_user(params.dict(), domain_vo)
+            user_vo = self.user_mgr.create_user(params)
 
-        return UserResponse(**user_vo.to_dict())
+        return user_vo
 
     @transaction(append_meta={"authorization.scope": "DOMAIN_OR_USER"})
     @convert_model
     def update(self, params: UserUpdateRequest) -> Union[UserResponse, dict]:
         """
         Args:
-            params (dict): {
-                'user_id': 'str',
+            params (UserUpdateRequest): {
+                'user_id': 'str',           # required
                 'password': 'str',
                 'name': 'str',
                 'email': 'str',
@@ -134,15 +118,12 @@ class UserService(BaseService):
                 'timezone': 'str',
                 'tags': 'dict',
                 'reset_password': 'bool',
-                'domain_id': 'str'
+                'domain_id': 'str'          # required
             }
         Returns:
             UserResponse:
 
         """
-
-        if "timezone" in params:
-            self._check_timezone(params.timezone)
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
@@ -200,11 +181,11 @@ class UserService(BaseService):
         """Verify email
 
         Args:
-            params (dict): {
-                'user_id': 'str',
+            params (UserVerifyEmailRequest): {
+                'user_id': 'str',       # required
                 'email': 'str',
                 'force': 'bool',
-                'domain_id': 'str'
+                'domain_id': 'str'      # required
             }
 
 
@@ -236,16 +217,14 @@ class UserService(BaseService):
 
     @transaction(append_meta={"authorization.scope": "DOMAIN_OR_USER"})
     @convert_model
-    def confirm_email(
-        self, params: UserConfirmEmailRequest
-    ) -> Union[UserResponse, dict]:
+    def confirm_email(self, params: UserConfirmEmailRequest) -> Union[UserResponse, dict]:
         """Confirm email
 
         Args:
-            params (dict): {
-                'user_id': 'str',
-                'verify_code': 'str',
-                'domain_id': 'str'
+            params (UserConfirmEmailRequest): {
+                'user_id': 'str',           # required
+                'verify_code': 'str',       # required
+                'domain_id': 'str'          # required
             }
 
 
@@ -274,9 +253,9 @@ class UserService(BaseService):
         """Reset password
 
         Args:
-            params (dict): {
-                'user_id': 'str',
-                'domain_id': 'str'
+            params (UserResetPasswordRequest): {
+                'user_id': 'str',       # required
+                'domain_id': 'str'      # required
             }
 
         Returns:
@@ -332,14 +311,15 @@ class UserService(BaseService):
 
         Args:
             params (UserEnableMFARequest): {
-                'user_id': 'str',
-                'mfa_type': 'str',
-                'options': 'dict',
-                'domain_id': 'str'
+                'user_id': 'str',       # required
+                'mfa_type': 'str',      # required
+                'options': 'dict',      # required
+                'domain_id': 'str'      # required
             }
         Returns:
             UserResponse:
         """
+
         user_id = params.user_id
         mfa_type = params.mfa_type
         options = params.options
@@ -373,12 +353,12 @@ class UserService(BaseService):
         """Disable MFA
 
         Args:
-            params (dict): {
-                'user_id': 'str',
+            params (UserDisableMFARequest): {
+                'user_id': 'str',       # required
                 'force': 'bool',
-                'domain_id': 'str'
+                'domain_id': 'str'      # required
         Returns:
-            Empty:
+            UserResponse:
         """
 
         user_id = params.user_id
@@ -407,12 +387,12 @@ class UserService(BaseService):
     def confirm_mfa(self, params: UserConfirmMFARequest) -> Union[UserResponse, dict]:
         """Confirm MFA
         Args:
-            params (dict): {
-                'user_id': 'str',
-                'verify_code': 'str',
-                'domain_id': 'str'
+            params (UserConfirmMFARequest): {
+                'user_id': 'str',           # required
+                'verify_code': 'str',       # required
+                'domain_id': 'str'          # required
         Returns:
-            Empty:
+            UserResponse:
         """
 
         user_id = params.user_id
@@ -445,16 +425,17 @@ class UserService(BaseService):
         """Delete user
 
         Args:
-            params (dict): {
-                'user_id': 'str',
-                'domain_id': 'str'
+            params (UserDeleteRequest): {
+                'user_id': 'str',       # required
+                'domain_id': 'str'      # required
             }
 
         Returns:
             None
         """
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
-        # todo : check this user is last admin
+
+        # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
         self.user_mgr.delete_user_by_vo(user_vo)
 
     @transaction(append_meta={"authorization.scope": "DOMAIN"})
@@ -463,16 +444,18 @@ class UserService(BaseService):
         """Enable user
 
         Args:
-            params (dict): {
-                'user_id': 'str',
-                'domain_id': 'str'
+            params (UserEnableRequest): {
+                'user_id': 'str',       # required
+                'domain_id': 'str'      # required
             }
 
         Returns:
-            user_vo (object)
+            UserResponse:
         """
+
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
-        user_vo = self.user_mgr.enable_user(user_vo)
+        user_vo = self.user_mgr.update_user_by_vo({"state": "ENABLED"}, user_vo)
+
         return UserResponse(**user_vo.to_dict())
 
     @transaction(append_meta={"authorization.scope": "DOMAIN"})
@@ -481,8 +464,8 @@ class UserService(BaseService):
         """Disable user
         Args:
             params (dict): {
-                'user_id': 'str',
-                'domain_id': 'str'
+                'user_id': 'str',       # required
+                'domain_id': 'str'      # required
             }
 
         Returns:
@@ -490,8 +473,10 @@ class UserService(BaseService):
         """
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
-        user_vo = self.user_mgr.disable_user(user_vo)
-        # todo : check this user is last admin
+        user_vo = self.user_mgr.update_user_by_vo({"state": "DISABLED"}, user_vo)
+
+        # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
+
         return UserResponse(**user_vo.to_dict())
 
     @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
@@ -501,15 +486,101 @@ class UserService(BaseService):
 
         Args:
             params (dict): {
-                'user_id': 'str', # required
-                'domain_id': 'str' # required
+                'user_id': 'str',       # required
+                'domain_id': 'str'      # required
             }
 
         Returns:
-            user_vo (object)
+            UserResponse:
         """
+
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
         return UserResponse(**user_vo.to_dict())
+
+    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @convert_model
+    def get_workspaces(self, params: UserWorkspacesRequest) -> Union[WorkspacesResponse, dict]:
+        """ Find user
+        Args:
+            params (UserWorkspacesRequest): {
+                'user_id': 'str',       # required
+                'domain_id': 'str'      # required
+            }
+        Returns:
+            WorkspacesResponse:
+        """
+
+        rb_mgr = RoleBindingManager()
+        workspace_mgr = WorkspaceManager()
+        allow_all = False
+
+        user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+
+        if user_vo.role_type == ['SYSTEM_ADMIN', 'DOMAIN_ADMIN']:
+            allow_all = True
+        else:
+            rb_vos = rb_mgr.filter_role_bindings(
+                user_id=params.user_id, domain_id=params.domain_id, role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER'],
+                workspace_id='*'
+            )
+
+            if rb_vos.count() > 0:
+                allow_all = True
+
+        if allow_all:
+            workspace_vos = workspace_mgr.filter_workspaces(domain_id=params.domain_id)
+        else:
+            rb_vos = rb_mgr.filter_role_bindings(
+                user_id=params.user_id, domain_id=params.domain_id, role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER']
+            )
+
+            workspace_ids = list(set([rb.workspace_id for rb in rb_vos]))
+            workspace_vos = workspace_mgr.filter_workspaces(workspace_id=workspace_ids, domain_id=params.domain_id)
+
+        workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
+        return WorkspacesResponse(results=workspaces_info, total_count=len(workspaces_info))
+
+    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @convert_model
+    def find(self, params: UserFindRequest) -> Union[UsersSummaryResponse, dict]:
+        """ Find user
+        Args:
+            params (UserFindRequest): {
+                'keyword': 'str',           # required
+                'state': 'str',
+                'exclude_workspace_id': 'str',
+                'page': 'dict (spaceone.api.core.v1.Page)',
+                'domain_id': 'str'          # required
+            }
+        Returns:
+            UsersSummaryResponse:
+        """
+
+        query = {
+            "filter": [
+                {"k": "domain_id", "v": params.domain_id, "o": "eq"}
+            ],
+            "filter_or": [
+                {"k": "user_id", "v": params.keyword, "o": "contain"},
+                {"k": "name", "v": params.keyword, "o": "contain"}
+            ],
+            "page": params.page,
+            "only": ["user_id", "name", "state"]
+        }
+
+        if params.state:
+            query["filter"].append({"k": "state", "v": params.state, "o": "eq"})
+
+        if params.exclude_workspace_id:
+            rb_mgr = RoleBindingManager()
+            rb_vos = rb_mgr.filter_role_bindings(workspace_id=params.exclude_workspace_id, domain_id=params.domain_id)
+            user_ids = list(set([rb.user_id for rb in rb_vos]))
+            query["filter"].append({"k": "user_id", "v": user_ids, "o": "not_in"})
+
+        user_vos, total_count = self.user_mgr.list_users(query)
+
+        users_info = [user_vo.to_dict() for user_vo in user_vos]
+        return UsersSummaryResponse(results=users_info, total_count=total_count)
 
     @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
     @append_query_filter(
@@ -520,7 +591,6 @@ class UserService(BaseService):
             "email",
             "user_type",
             "auth_type",
-            "workspace_id",
             "domain_id",
         ]
     )
@@ -529,30 +599,48 @@ class UserService(BaseService):
     def list(self, params: UserSearchQueryRequest) -> Union[UsersResponse, dict]:
         """List users
         Args:
-            params (dict): {
+            params (UserSearchQueryRequest): {
                 'query': 'dict',
                 'user_id': 'str',
                 'name': 'str',
                 'state': 'str',
                 'email': 'str',
-                'user_type': 'str',
                 'auth_type': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str'      # required
             }
         Returns:
             UsersResponse:
         """
-        query = params.query or {}
 
+        query = params.query or {}
         user_vos, total_count = self.user_mgr.list_users(query)
+
         users_info = [user_vo.to_dict() for user_vo in user_vos]
         return UsersResponse(results=users_info, total_count=total_count)
 
     @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @append_query_filter(["domain_id"])
+    @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
     def stat(self, params: UserStatQueryRequest) -> dict:
-        return {}
+        """ stat users
+
+        Args:
+            params (UserStatQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
+                'domain_id': 'str',         # required
+            }
+
+        Returns:
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
+
+        """
+
+        query = params.query or {}
+        return self.user_mgr.stat_users(query)
 
     def _get_domain_name(self, domain_id: str) -> str:
         domain_vo = self.domain_mgr.get_domain(domain_id)
@@ -582,29 +670,6 @@ class UserService(BaseService):
 
         console_domain = config.get_global("EMAIL_CONSOLE_DOMAIN")
         return console_domain.format(domain_name=domain_name)
-
-    @staticmethod
-    def _get_default_config(vo: Domain, item: str) -> str:
-        # todo : should be developed later
-        DEFAULT = {"TIMEZONE": "UTC", "LANGUAGE": "en"}
-        return DEFAULT.get(item)
-
-    @staticmethod
-    def _check_timezone(timezone):
-        if timezone not in pytz.all_timezones:
-            raise ERROR_INVALID_PARAMETER(key="timezone", reason="Timezone is invalid.")
-
-    @staticmethod
-    def _check_user_type_and_auth_type(user_type, auth_type):
-        # Check User Type and Backend
-        if user_type == "API_USER":
-            if auth_type == "EXTERNAL":
-                raise ERROR_EXTERNAL_USER_NOT_ALLOWED_API_USER()
-
-        # Check External Authentication from Domain
-        if auth_type == "EXTERNAL":
-            # todo : should be developed later
-            raise ERROR_NOT_ALLOWED_EXTERNAL_AUTHENTICATION()
 
     @staticmethod
     def _check_reset_password_eligibility(user_id, auth_type, email):

@@ -4,8 +4,9 @@ from spaceone.core.service import BaseService, transaction, convert_model, appen
 from spaceone.core.error import *
 from spaceone.identity.model.trusted_account.request import *
 from spaceone.identity.model.trusted_account.response import *
-from spaceone.identity.manager.provider_manager import ProviderManager
+from spaceone.identity.manager.schema_manager import SchemaManager
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
+from spaceone.identity.manager.workspace_manager import WorkspaceManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class TrustedAccountService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
     @convert_model
     def create(self, params: TrustedAccountCreateRequest) -> Union[TrustedAccountResponse, dict]:
-        """ create trusted service account
+        """ create trusted account
 
          Args:
             params (TrustedAccountCreateRequest): {
@@ -27,7 +28,7 @@ class TrustedAccountService(BaseService):
                 'data': 'dict',         # required
                 'provider': 'str',      # required
                 'tags': 'dict',
-                'scope': 'str',         # required
+                'permission_group': 'str',         # required
                 'workspace_id': 'str',
                 'domain_id': 'str'      # required
             }
@@ -36,7 +37,16 @@ class TrustedAccountService(BaseService):
             TrustedAccountResponse:
         """
 
+        # Check workspace
+        if params.permission_group == 'WORKSPACE':
+            workspace_mgr = WorkspaceManager()
+            workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
+
         # Check data by schema
+        schema_mgr = SchemaManager()
+        schema_mgr.validate_data_by_schema(
+            params.provider, params.domain_id, 'TRUSTED_ACCOUNT', params.data
+        )
 
         trusted_account_vo = self.trusted_account_mgr.create_trusted_account(params.dict())
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
@@ -44,7 +54,7 @@ class TrustedAccountService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
     @convert_model
     def update(self, params: TrustedAccountUpdateRequest) -> Union[TrustedAccountResponse, dict]:
-        """ update trusted service account
+        """ update trusted account
 
          Args:
             params (TrustedAccountUpdateRequest): {
@@ -66,7 +76,10 @@ class TrustedAccountService(BaseService):
 
         if params.data:
             # Check data by schema
-            pass
+            schema_mgr = SchemaManager()
+            schema_mgr.validate_data_by_schema(
+                trusted_account_vo.provider, params.domain_id, 'TRUSTED_ACCOUNT', params.data
+            )
 
         trusted_account_vo = self.trusted_account_mgr.update_trusted_account_by_vo(
             params.dict(exclude_unset=True), trusted_account_vo
@@ -77,7 +90,7 @@ class TrustedAccountService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
     @convert_model
     def delete(self, params: TrustedAccountDeleteRequest) -> None:
-        """ delete trusted service account
+        """ delete trusted account
 
          Args:
             params (TrustedAccountDeleteRequest): {
@@ -99,7 +112,7 @@ class TrustedAccountService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
     @convert_model
     def get(self, params: TrustedAccountGetRequest) -> Union[TrustedAccountResponse, dict]:
-        """ get trusted service account
+        """ get trusted account
 
          Args:
             params (TrustedAccountGetRequest): {
@@ -125,7 +138,7 @@ class TrustedAccountService(BaseService):
     @append_keyword_filter(['trusted_account_id', 'name'])
     @convert_model
     def list(self, params: TrustedAccountSearchQueryRequest) -> Union[TrustedAccountsResponse, dict]:
-        """ list providers
+        """ list trusted accounts
 
         Args:
             params (TrustedAccountSearchQueryRequest): {
@@ -153,7 +166,7 @@ class TrustedAccountService(BaseService):
     @append_keyword_filter(['trusted_account_id', 'name'])
     @convert_model
     def stat(self, params: TrustedAccountStatQueryRequest) -> dict:
-        """ stat trusted service accounts
+        """ stat trusted accounts
 
         Args:
             params (TrustedAccountStatQueryRequest): {

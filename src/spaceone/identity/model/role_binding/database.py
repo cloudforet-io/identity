@@ -10,8 +10,8 @@ class RoleBinding(MongoModel):
     )
     user_id = StringField(max_length=255)
     role_id = StringField(max_length=40)
-    scope = StringField(max_length=40, choices=('DOMAIN', 'WORKSPACE'), default='WORKSPACE')
-    workspace_id = StringField(max_length=40, default='*')
+    permission_group = StringField(max_length=40, choices=('DOMAIN', 'WORKSPACE'), default='WORKSPACE')
+    workspace_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=255)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -27,14 +27,11 @@ class RoleBinding(MongoModel):
             'role_id',
             'workspace_id'
         ],
-        'change_query_keys': {
-            'user_workspaces': 'workspace_id'
-        },
         'indexes': [
             'role_type',
             'user_id',
             'role_id',
-            'scope',
+            'permission_group',
             'workspace_id',
             'domain_id',
         ]
