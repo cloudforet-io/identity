@@ -1,4 +1,5 @@
 import logging
+from typing import Tuple
 
 from spaceone.core.cache import cacheable
 from spaceone.core.manager import BaseManager
@@ -40,6 +41,10 @@ class APIKeyManager(BaseManager):
         api_key_vo = self.get_api_key(api_key_id, domain_id)
         api_key_vo.delete()
 
+    @staticmethod
+    def delete_api_key_by_vo(api_key_vo: APIKey) -> None:
+        api_key_vo.delete()
+
     def enable_api_key(self, api_key_id, domain_id):
         def _rollback(old_data):
             _LOGGER.info(f"[enable_api_key._rollback] Revert Data: {old_data}")
@@ -64,12 +69,10 @@ class APIKeyManager(BaseManager):
 
         return api_key_vo
 
-    def get_api_key(self, api_key_id, domain_id, only=None):
-        return self.api_key_model.get(
-            api_key_id=api_key_id, domain_id=domain_id, only=only
-        )
+    def get_api_key(self, api_key_id: str, domain_id: str) -> APIKey:
+        return self.api_key_model.get(api_key_id=api_key_id, domain_id=domain_id)
 
-    def list_api_keys(self, query):
+    def list_api_keys(self, query: dict) -> Tuple[list, int]:
         return self.api_key_model.query(**query)
 
     def stat_api_keys(self, query):

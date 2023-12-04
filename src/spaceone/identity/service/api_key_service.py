@@ -2,7 +2,13 @@ import logging
 
 from datetime import datetime, timedelta
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model
+from spaceone.core.service import (
+    BaseService,
+    transaction,
+    convert_model,
+    append_query_filter,
+    append_keyword_filter,
+)
 
 from spaceone.identity.error.error_api_key import *
 from spaceone.identity.manager.api_key_manager import APIKeyManager
@@ -31,7 +37,6 @@ class APIKeyService(BaseService):
             }
         Return:
             APIKeyResponse:
-
         """
         expired_at = self._get_expired_at(params.expired_at)
         self._check_expired_at(expired_at)
@@ -59,17 +64,54 @@ class APIKeyService(BaseService):
     @transaction
     @convert_model
     def delete(self, params: APIKeyDeleteRequest) -> None:
-        pass
+        """Delete API Key
+        Args:
+            params (dict): {
+                'api_key_id': 'str', # required
+                'domain_id': 'str' # required
+            }
+        Returns:
+            None
+        """
+        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+        self.api_key_mgr.delete_api_key_by_vo(api_key_vo)
 
     @transaction
     @convert_model
     def get(self, params: APIKeyGetRequest) -> Union[APIKeyResponse, dict]:
-        return {}
+        """Get API Key
+        Args:
+            params (dict): {
+                'api_key_id': 'str', # required
+                'domain_id': 'str' # required
+            }
+        Returns:
+            APIKeyResponse:
+        """
+        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+        return APIKeyResponse(**api_key_vo.to_dict())
 
     @transaction
+    @append_query_filter(["api_key_id", "user_id", "state", "domain_id"])
+    @append_keyword_filter(["api_key_id", "user_id"])
     @convert_model
     def list(self, params: APIKeySearchQueryRequest) -> Union[APIKeysResponse, dict]:
-        return {}
+        """List API Keys
+        Args:
+            params (dict): {
+                'query': 'dict',
+                'api_key_id': 'str',
+                'user_id': 'str',
+                'state': 'str',
+                'domain_id': 'str'
+            }
+            Returns:
+                APIKeysResponse:
+        """
+        query = params.query or {}
+        api_key_vos, total_count = self.api_key_mgr.list_api_keys(query)
+        api_keys_info = [api_key_vo.to_dict() for api_key_vo in api_key_vos]
+        return APIKeysResponse(results=api_keys_info, total_count=total_count)
 
     @transaction
     @convert_model
