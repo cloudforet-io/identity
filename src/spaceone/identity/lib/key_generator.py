@@ -23,12 +23,9 @@ class KeyGenerator:
         if self.domain_id is None:
             raise ERROR_GENERATE_KEY_FAILURE()
 
-    def generate_api_key(
-        self, api_key_id: str, user_type: str = "USER"
-    ) -> Tuple[str, Any]:
+    def generate_api_key(self, api_key_id: str) -> Tuple[str, Any]:
         payload = {
             "cat": "API_KEY",
-            "user_type": user_type,
             "did": self.domain_id,
             "aud": self.audience,
             "iat": int(time.time()),
@@ -41,7 +38,6 @@ class KeyGenerator:
         _LOGGER.debug(
             f"[KeyGenerator] Generated payload. ( "
             f'cat: {payload.get("cat")}, '
-            f'user_type: {payload.get("user_type")}, '
             f'did: {payload.get("did")}, '
             f'aud: {payload.get("aud")}, '
             f'api_key_id: {payload.get("api_key_id")}, '

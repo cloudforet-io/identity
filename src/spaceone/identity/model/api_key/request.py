@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Union
 from pydantic import BaseModel
 
@@ -16,6 +17,7 @@ __all__ = [
 class APIKeyCreateRequest(BaseModel):
     user_id: str
     name: Union[str, None] = None
+    expired_at: Union[datetime, None] = None
     domain_id: str
 
 
