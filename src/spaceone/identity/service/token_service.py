@@ -71,7 +71,7 @@ class TokenService(BaseService):
                 mfa_manager.send_mfa_authentication_email(
                     user_id, domain_id, mfa_email, user_vo.language
                 )
-                raise ERROR_MFA_REQUIRED(user_id=user_id)
+                raise ERROR_MFA_REQUIRED(user_id=mfa_email)
 
         token_info = token_mgr.issue_token(
             private_jwk=private_jwk,
