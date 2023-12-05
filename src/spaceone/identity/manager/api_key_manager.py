@@ -37,6 +37,17 @@ class APIKeyManager(BaseManager):
         api_key = key_gen.generate_api_key(api_key_vo.api_key_id)
         return api_key_vo, api_key
 
+    def update_api_key_by_vo(self, params: dict, api_key_vo: APIKey) -> APIKey:
+        def _rollback(old_data):
+            _LOGGER.info(
+                f"[update_api_key_by_vo._rollback] Revert Data : {old_data['api_key_id']}"
+            )
+            api_key_vo.update(old_data)
+
+        self.transaction.add_rollback(_rollback, api_key_vo.to_dict())
+
+        return api_key_vo.update(params)
+
     def delete_api_key(self, api_key_id, domain_id):
         api_key_vo = self.get_api_key(api_key_id, domain_id)
         api_key_vo.delete()
@@ -45,24 +56,22 @@ class APIKeyManager(BaseManager):
     def delete_api_key_by_vo(api_key_vo: APIKey) -> None:
         api_key_vo.delete()
 
-    def enable_api_key(self, api_key_id, domain_id):
+    def enable_api_key(self, api_key_vo: APIKey) -> APIKey:
         def _rollback(old_data):
             _LOGGER.info(f"[enable_api_key._rollback] Revert Data: {old_data}")
             api_key_vo.update(old_data)
 
-        api_key_vo: APIKey = self.get_api_key(api_key_id, domain_id)
         if api_key_vo.state != "ENABLED":
             self.transaction.add_rollback(_rollback, api_key_vo.to_dict())
             api_key_vo.update({"state": "ENABLED"})
 
         return api_key_vo
 
-    def disable_api_key(self, api_key_id, domain_id):
+    def disable_api_key(self, api_key_vo: APIKey) -> APIKey:
         def _rollback(old_data):
             _LOGGER.info(f"[disable_api_key._rollback] Revert Data: {old_data}")
             api_key_vo.update(old_data)
 
-        api_key_vo: APIKey = self.get_api_key(api_key_id, domain_id)
         if api_key_vo.state != "DISABLED":
             self.transaction.add_rollback(_rollback, api_key_vo.to_dict())
             api_key_vo.update({"state": "DISABLED"})
