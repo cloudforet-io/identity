@@ -87,8 +87,8 @@ class JWTManager(TokenManager, metaclass=ABCMeta):
             timeout = self.CONST_TOKEN_TIMEOUT
 
         payload = {
-            "cat": "ACCESS_TOKEN",
-            "user_type": user_type,
+            "cat": "ACCESS_TOKEN",  # ACCESS_TOKEN | API_KEY
+            # "token_type": "USER",  # USER | APP
             "did": domain_id,
             "aud": user_id,
             "iat": int(time.time()),

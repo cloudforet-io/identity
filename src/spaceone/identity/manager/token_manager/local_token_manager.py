@@ -91,9 +91,6 @@ class LocalTokenManager(JWTManager):
         return pw_to_check
 
     def _check_user_state(self):
-        if self.user.user_type == "API_USER":
-            raise ERROR_NOT_ALLOWED_ISSUE_TOKEN_API_USER(user_id=self.user.user_id)
-
         if self.user.state != "ENABLED":
             raise ERROR_USER_STATUS_CHECK_FAILURE(user_id=self.user.user_id)
 
