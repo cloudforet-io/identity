@@ -49,17 +49,50 @@ class APIKeyService(BaseService):
     @transaction
     @convert_model
     def update(self, params: APIKeyUpdateRequest) -> Union[APIKeyResponse, dict]:
-        return {}
+        """Update API Key
+        Args:
+            params (dict): {
+                'api_key_id': 'str', # required
+                'name': 'str',
+                'domain_id': 'str' # required
+            }
+        Returns:
+            APIKeyResponse:
+        """
+        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+        api_key_vo = self.api_key_mgr.update_api_key_by_vo(params.dict(), api_key_vo)
+        return APIKeyResponse(**api_key_vo.to_dict())
 
     @transaction
     @convert_model
     def enable(self, params: APIKeyEnableRequest) -> Union[APIKeyResponse, dict]:
-        return {}
+        """Enable API Key
+        Args:
+            params (dict): {
+                'api_key_id': 'str', # required
+                'domain_id': 'str' # required
+            }
+        """
+        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+        api_key_vo = self.api_key_mgr.enable_api_key(api_key_vo)
+        return APIKeyResponse(**api_key_vo.to_dict())
 
     @transaction
     @convert_model
     def disable(self, params: APIKeyDisableRequest) -> Union[APIKeyResponse, dict]:
-        return {}
+        """Disable API Key
+        Args:
+            params (dict): {
+                'api_key_id': 'str', # required
+                'domain_id': 'str' # required
+            }
+        Returns:
+            APIKeyResponse:
+        """
+
+        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+        api_key_vo = self.api_key_mgr.disable_api_key(api_key_vo)
+        return APIKeyResponse(**api_key_vo.to_dict())
 
     @transaction
     @convert_model
@@ -116,7 +149,17 @@ class APIKeyService(BaseService):
     @transaction
     @convert_model
     def stat(self, params: APIKeyStatQueryRequest) -> dict:
-        return {}
+        """Stat API Keys
+        Args:
+            params (dict): {
+                'query': 'dict',
+                'domain_id': 'str'
+            }
+            Returns:
+                dict:
+        """
+        query = params.query or {}
+        return self.api_key_mgr.stat_api_keys(query)
 
     @staticmethod
     def _get_expired_at(expired_at: datetime) -> datetime:
