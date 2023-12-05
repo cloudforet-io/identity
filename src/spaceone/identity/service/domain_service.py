@@ -1,13 +1,8 @@
 import logging
 from typing import Union
 
-from spaceone.core.service import (
-    BaseService,
-    transaction,
-    convert_model,
-    append_query_filter,
-    append_keyword_filter,
-)
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
 
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.domain_manager import DomainManager
@@ -22,7 +17,17 @@ from spaceone.identity.error.error_domain import *
 _LOGGER = logging.getLogger(__name__)
 
 
+# @authentication_handler
+# @authorization_handler
+# @request_mutation_handler
+# @response_mutation_handler
+# @event_handler
 class DomainService(BaseService):
+
+    service = "identity"
+    resource = "Domain"
+    permission_group = "DOMAIN"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain_mgr = DomainManager()

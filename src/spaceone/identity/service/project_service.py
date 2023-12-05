@@ -34,12 +34,12 @@ class ProjectService(BaseService):
         """Create project
         Args:
             params (ProjectCreateRequest): {
-                'name': 'str',              # required
-                'project_type': 'str',      # required
+                'name': 'str',                  # required
+                'project_type': 'str',          # required
                 'tags': 'dict',
                 'project_group_id': 'str',
-                'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'workspace_id': 'str',          # required
+                'domain_id': 'str'              # required
             }
         Returns:
             ProjectResponse:
@@ -150,9 +150,9 @@ class ProjectService(BaseService):
         """Delete project
         Args:
             params (ProjectDeleteRequest): {
-                'project_id': 'str', # required
-                'workspace_id': 'str', # required
-                'domain_id': 'str' # required
+                'project_id': 'str',        # required
+                'workspace_id': 'str',      # required
+                'domain_id': 'str'          # required
             }
         Returns:
             None:

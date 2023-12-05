@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from spaceone.core import utils
 
 from spaceone.identity.model.workspace_user.request import State, AuthType
+from spaceone.identity.model.role_binding.response import RoleBindingResponse
 
 __all__ = [
     "WorkspaceUserResponse",
@@ -25,7 +26,9 @@ class WorkspaceUserResponse(BaseModel):
     role_type: Union[RoleType, None] = None
     language: Union[str, None] = None
     timezone: Union[str, None] = None
+    api_key_count: Union[int, None] = None
     tags: Union[dict, None] = None
+    role_binding_info: Union[RoleBindingResponse, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
     last_accessed_at: Union[datetime, None] = None

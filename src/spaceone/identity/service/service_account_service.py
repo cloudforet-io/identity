@@ -103,7 +103,7 @@ class ServiceAccountService(BaseService):
          Args:
             params (ServiceAccountChangeTrustedAccountRequest): {
                 'service_account_id': 'str',            # required
-                'trusted_account_id': 'str',    # required
+                'trusted_account_id': 'str',            # required
                 'workspace_id': 'str',                  # required
                 'domain_id': 'str',                     # required
                 'user_projects': 'list'                 # from meta
