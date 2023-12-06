@@ -5,6 +5,7 @@ from spaceone.core.cache import cacheable
 from spaceone.core.manager import BaseManager
 from spaceone.identity.lib.key_generator import KeyGenerator
 from spaceone.identity.model.api_key.database import APIKey
+from spaceone.identity.model.app.database import App
 from spaceone.identity.model.domain.database import DomainSecret
 from spaceone.identity.model.user.database import User
 
@@ -17,7 +18,7 @@ class APIKeyManager(BaseManager):
         self.api_key_model = APIKey
         self.domain_secret_model = DomainSecret
 
-    def create_api_key(self, user_vo: User, params: dict) -> (APIKey, str):
+    def create_api_key_by_user_vo(self, user_vo: User, params: dict) -> (APIKey, str):
         def _rollback(api_key_vo):
             _LOGGER.info(
                 f"[create_api_key._rollback] Delete api_key : {api_key_vo.api_key_id}"
@@ -32,6 +33,27 @@ class APIKeyManager(BaseManager):
 
         key_gen = KeyGenerator(
             prv_jwk=prv_jwk, domain_id=params["domain_id"], audience=user_vo.user_id
+        )
+
+        api_key = key_gen.generate_api_key(api_key_vo.api_key_id)
+        return api_key_vo, api_key
+
+    def create_api_key_by_app_vo(self, app_vo: App, params: dict) -> (APIKey, str):
+        def _rollback(api_key_vo, app_vo):
+            _LOGGER.info(
+                f"[create_api_key._rollback] Delete app and api_key : {app_vo.app_id} {api_key_vo.api_key_id}"
+            )
+            app_vo.delete()
+            api_key_vo.delete()
+
+        params["app"] = app_vo
+        api_key_vo: APIKey = self.api_key_model.create(params)
+        self.transaction.add_rollback(_rollback, api_key_vo)
+
+        prv_jwk = self._query_domain_secret(params["domain_id"])
+
+        key_gen = KeyGenerator(
+            prv_jwk=prv_jwk, domain_id=params["domain_id"], audience=app_vo.app_id
         )
 
         api_key = key_gen.generate_api_key(api_key_vo.api_key_id)

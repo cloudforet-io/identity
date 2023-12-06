@@ -38,12 +38,14 @@ class APIKeyService(BaseService):
         Return:
             APIKeyResponse:
         """
-        expired_at = self._get_expired_at(params.expired_at)
-        self._check_expired_at(expired_at)
+        params.expired_at = self._get_expired_at(params.expired_at)
+        self._check_expired_at(params.expired_at)
 
         user_mgr = UserManager()
         user_vo = user_mgr.get_user(params.user_id, params.domain_id)
-        api_key_vo, api_key = self.api_key_mgr.create_api_key(user_vo, params.dict())
+        api_key_vo, api_key = self.api_key_mgr.create_api_key_by_user_vo(
+            user_vo, params.dict()
+        )
         return APIKeyResponse(**api_key_vo.to_dict(), api_key=api_key)
 
     @transaction
@@ -72,6 +74,8 @@ class APIKeyService(BaseService):
                 'api_key_id': 'str', # required
                 'domain_id': 'str' # required
             }
+        Returns:
+            APIKeyResponse:
         """
         api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
         api_key_vo = self.api_key_mgr.enable_api_key(api_key_vo)
@@ -168,13 +172,13 @@ class APIKeyService(BaseService):
         else:
             return datetime.now().replace(
                 hour=23, minute=59, second=59, microsecond=0
-            ) + timedelta(days=365)
+            ) + timedelta(days=364)
 
     @staticmethod
     def _check_expired_at(expired_at):
         one_year_later = datetime.now().replace(
             hour=23, minute=59, second=59, microsecond=0
-        ) + timedelta(days=365)
+        ) + timedelta(days=364)
 
         if one_year_later < expired_at:
             raise ERROR_API_KEY_EXPIRED_LIMIT(
