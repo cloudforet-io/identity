@@ -1,18 +1,24 @@
+from datetime import datetime
 from typing import Union, List
 from pydantic import BaseModel
 
-from datetime import datetime
 from spaceone.core import utils
 
-__all__ = ["APIKeyResponse", "APIKeysResponse"]
+from spaceone.identity.model.app.request import State, PermissionGroup, RoleType
+
+__all__ = ["AppResponse", "AppsResponse"]
 
 
-class APIKeyResponse(BaseModel):
-    api_key_id: Union[str, None] = None
+class AppResponse(BaseModel):
+    app_id: Union[str, None] = None
     api_key: Union[str, None] = None
     name: Union[str, None] = None
-    state: Union[str, None] = None
-    user_id: Union[str, None] = None
+    state: Union[State, None] = None
+    role_type: Union[RoleType, None] = None
+    api_key_id: Union[str, None] = None
+    role_id: Union[str, None] = None
+    permission_group: Union[PermissionGroup, None] = None
+    workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
     last_accessed_at: Union[datetime, None] = None
@@ -26,6 +32,6 @@ class APIKeyResponse(BaseModel):
         return data
 
 
-class APIKeysResponse(BaseModel):
-    results: List[APIKeyResponse]
+class AppsResponse(BaseModel):
+    results: List[AppResponse]
     total_count: int
