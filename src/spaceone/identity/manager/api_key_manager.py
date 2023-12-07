@@ -1,11 +1,13 @@
 import logging
 from typing import Tuple
+from mongoengine import QuerySet
 
 from spaceone.core.cache import cacheable
 from spaceone.core.manager import BaseManager
+
 from spaceone.identity.lib.key_generator import KeyGenerator
-from spaceone.identity.model.api_key.database import APIKey
 from spaceone.identity.model.app.database import App
+from spaceone.identity.model.api_key.database import APIKey
 from spaceone.identity.model.domain.database import DomainSecret
 from spaceone.identity.model.user.database import User
 
@@ -103,10 +105,13 @@ class APIKeyManager(BaseManager):
     def get_api_key(self, api_key_id: str, domain_id: str) -> APIKey:
         return self.api_key_model.get(api_key_id=api_key_id, domain_id=domain_id)
 
+    def filter_api_keys(self, **conditions) -> QuerySet:
+        return self.api_key_model.filter(**conditions)
+
     def list_api_keys(self, query: dict) -> Tuple[list, int]:
         return self.api_key_model.query(**query)
 
-    def stat_api_keys(self, query):
+    def stat_api_keys(self, query: dict) -> dict:
         return self.api_key_model.stat(**query)
 
     @cacheable(key="api-key:{domain_id}", expire=60)

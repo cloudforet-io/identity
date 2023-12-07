@@ -46,6 +46,11 @@ class APIKeyService(BaseService):
         api_key_vo, api_key = self.api_key_mgr.create_api_key_by_user_vo(
             user_vo, params.dict()
         )
+        api_key_counts = self.api_key_mgr.filter_api_keys(
+            user_id=user_vo.user_id, domain_id=params.domain_id
+        )
+        print(api_key_counts)
+        user_mgr.update_user_by_vo({"api_key_count": len(api_key_counts)}, user_vo)
         return APIKeyResponse(**api_key_vo.to_dict(), api_key=api_key)
 
     @transaction
@@ -62,7 +67,9 @@ class APIKeyService(BaseService):
             APIKeyResponse:
         """
         api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
-        api_key_vo = self.api_key_mgr.update_api_key_by_vo(params.dict(), api_key_vo)
+        api_key_vo = self.api_key_mgr.update_api_key_by_vo(
+            params.dict(exclude_unset=True), api_key_vo
+        )
         return APIKeyResponse(**api_key_vo.to_dict())
 
     @transaction
@@ -111,6 +118,14 @@ class APIKeyService(BaseService):
             None
         """
         api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+        if api_key_vo.user_id:
+            user_mgr = UserManager()
+            user_vo = user_mgr.get_user(api_key_vo.user_id, params.domain_id)
+            api_key_counts = self.api_key_mgr.filter_api_keys(
+                user_id=user_vo.user_id, domain_id=params.domain_id
+            )
+            user_mgr.update_user_by_vo({"api_key_count": len(api_key_counts)}, user_vo)
+
         self.api_key_mgr.delete_api_key_by_vo(api_key_vo)
 
     @transaction
