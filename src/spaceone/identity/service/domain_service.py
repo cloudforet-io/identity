@@ -17,11 +17,10 @@ from spaceone.identity.error.error_domain import *
 _LOGGER = logging.getLogger(__name__)
 
 
-# @authentication_handler
-# @authorization_handler
-# @request_mutation_handler
-# @response_mutation_handler
-# @event_handler
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class DomainService(BaseService):
 
     service = "identity"
