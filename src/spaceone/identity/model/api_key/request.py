@@ -25,31 +25,38 @@ class APIKeyUpdateRequest(BaseModel):
     api_key_id: str
     name: Union[str, None] = None
     domain_id: str
+    user_id: Union[str, None] = None
 
 
 class APIKeyEnableRequest(BaseModel):
     api_key_id: str
     domain_id: str
+    user_id: Union[str, None] = None
 
 
 class APIKeyDisableRequest(BaseModel):
     api_key_id: str
     domain_id: str
+    user_id: Union[str, None] = None
 
 
 class APIKeyDeleteRequest(BaseModel):
     api_key_id: str
     domain_id: str
+    user_id: Union[str, None] = None
 
 
 class APIKeyGetRequest(BaseModel):
     api_key_id: str
     domain_id: str
+    user_id: Union[str, None] = None
 
 
 class APIKeySearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     api_key_id: Union[str, None] = None
+    name: Union[str, None] = None
+    owner_type: str = "USER"
     user_id: Union[str, None] = None
     state: Union[str, None] = None
     domain_id: str
@@ -57,4 +64,6 @@ class APIKeySearchQueryRequest(BaseModel):
 
 class APIKeyStatQueryRequest(BaseModel):
     query: dict
+    owner_type: str = "USER"
     domain_id: str
+    user_id: Union[str, None] = None

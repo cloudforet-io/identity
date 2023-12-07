@@ -1,0 +1,7 @@
+---
+role_id: managed-workspace-owner
+name: Workspace Owner
+version: '1.0'
+role_type: WORKSPACE_OWNER
+api_permissions:
+  - *

@@ -5,7 +5,7 @@ from jsonschema import validate, exceptions
 from spaceone.core.error import *
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
-from spaceone.identity.error.error_schema import ERROR_UNDEFINED_SCHEMA, ERROR_INVALID_PARAMETER
+from spaceone.identity.error.error_schema import ERROR_SCHEMA_IN_NOT_DEFINED, ERROR_INVALID_PARAMETER
 from spaceone.identity.model.schema.database import Schema
 from spaceone.identity.manager.managed_resource_manager import ManagedResourceManager
 
@@ -88,10 +88,8 @@ class SchemaManager(BaseManager):
             provider=provider, domain_id=domain_id, schema_type=schema_type
         )
 
-        if len(schema_vos) == 0:
-            raise ERROR_UNDEFINED_SCHEMA(schema_type=schema_type, provider=provider)
-
-        try:
-            validate(instance=data, schema=schema_vos[0].schema)
-        except exceptions.ValidationError as e:
-            raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)
+        if len(schema_vos) > 0:
+            try:
+                validate(instance=data, schema=schema_vos[0].schema)
+            except exceptions.ValidationError as e:
+                raise ERROR_INVALID_PARAMETER(key='data', reason=e.message)

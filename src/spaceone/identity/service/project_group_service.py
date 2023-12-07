@@ -1,12 +1,9 @@
 import logging
 from typing import Union
-from spaceone.core.service import (
-    BaseService,
-    transaction,
-    convert_model,
-    append_query_filter,
-    append_keyword_filter,
-)
+
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
+
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.model.project_group.request import *
 from spaceone.identity.model.project_group.response import *
@@ -15,11 +12,16 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ProjectGroupService(BaseService):
+
+    service = "identity"
+    resource = "ProjectGroup"
+    permission_group = "WORKSPACE"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.project_group_mgr = ProjectGroupManager()
 
-    @transaction
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def create(
         self, params: ProjectGroupCreateRequest
@@ -46,7 +48,7 @@ class ProjectGroupService(BaseService):
         project_group_vo = self.project_group_mgr.create_project_group(params.dict())
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
-    @transaction
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def update(
         self, params: ProjectGroupUpdateRequest
@@ -74,7 +76,7 @@ class ProjectGroupService(BaseService):
 
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
-    @transaction
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def change_parent_group(
         self, params: ProjectChangeParentGroupRequest
@@ -107,7 +109,7 @@ class ProjectGroupService(BaseService):
 
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
-    @transaction
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def delete(self, params: ProjectGroupDeleteRequest) -> None:
         """Delete project group
@@ -128,7 +130,7 @@ class ProjectGroupService(BaseService):
 
         self.project_group_mgr.delete_project_group_by_vo(project_group_vo)
 
-    @transaction
+    @transaction(scope="workspace_member:read")
     @convert_model
     def get(self, params: ProjectGroupGetRequest) -> Union[ProjectGroupResponse, dict]:
         """Get project group
@@ -149,7 +151,7 @@ class ProjectGroupService(BaseService):
 
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
-    @transaction
+    @transaction(scope='workspace_member:read')
     @append_query_filter(
         ["project_group_id", "name", "parent_group_id", "workspace_id", "domain_id"]
     )
@@ -179,7 +181,7 @@ class ProjectGroupService(BaseService):
         projects_info = [project_vo.to_dict() for project_vo in project_vos]
         return ProjectGroupsResponse(results=projects_info, total_count=total_count)
 
-    @transaction
+    @transaction(scope='workspace_member:read')
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["project_group_id", "name"])
     @convert_model

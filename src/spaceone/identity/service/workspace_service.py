@@ -1,13 +1,8 @@
 import logging
 from typing import Union
 
-from spaceone.core.service import (
-    BaseService,
-    transaction,
-    convert_model,
-    append_query_filter,
-    append_keyword_filter,
-)
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
 
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
@@ -18,12 +13,17 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class WorkspaceService(BaseService):
+
+    service = "identity"
+    resource = "Workspace"
+    permission_group = "WORKSPACE"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain_mgr = DomainManager()
         self.workspace_mgr = WorkspaceManager()
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope='domain_admin:write')
     @convert_model
     def create(self, params: WorkspaceCreateRequest) -> Union[WorkspaceResponse, dict]:
         """Create workspace
@@ -41,7 +41,7 @@ class WorkspaceService(BaseService):
 
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope='workspace_owner:write')
     @convert_model
     def update(self, params: WorkspaceUpdateRequest) -> Union[WorkspaceResponse, dict]:
         """Update workspace
@@ -63,7 +63,7 @@ class WorkspaceService(BaseService):
         )
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope='domain_admin:write')
     @convert_model
     def delete(self, params: WorkspaceDeleteRequest) -> None:
         """Delete workspace
@@ -80,7 +80,7 @@ class WorkspaceService(BaseService):
         )
         self.workspace_mgr.delete_workspace_by_vo(workspace_vo)
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope='domain_admin:write')
     @convert_model
     def enable(self, params: WorkspaceEnableRequest) -> Union[WorkspaceResponse, dict]:
         """Enable workspace
@@ -98,7 +98,7 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.enable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope='domain_admin:write')
     @convert_model
     def disable(
         self, params: WorkspaceDisableRequest
@@ -119,7 +119,7 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.disable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE_READ"})
+    @transaction(scope='workspace_member:read')
     @convert_model
     def get(self, params: WorkspaceGetRequest) -> Union[WorkspaceResponse, dict]:
         """Get workspace
@@ -137,7 +137,7 @@ class WorkspaceService(BaseService):
         )
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE_READ"})
+    @transaction(scope='workspace_member:read')
     @append_query_filter(["workspace_id", "name", "domain_id"])
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
@@ -162,7 +162,7 @@ class WorkspaceService(BaseService):
         workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
         return WorkspacesResponse(results=workspaces_info, total_count=total_count)
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE_READ"})
+    @transaction(scope='workspace_member:read')
     @append_query_filter(["domain_id", "workspace_id"])
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model

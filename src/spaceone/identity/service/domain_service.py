@@ -35,7 +35,7 @@ class DomainService(BaseService):
         self.user_mgr = UserManager()
         self.role_manager = RoleManager()
 
-    @transaction
+    @transaction(scope='system_admin:write')
     @convert_model
     def create(self, params: DomainCreateRequest) -> Union[DomainResponse, dict]:
         """Create Domain
@@ -54,18 +54,25 @@ class DomainService(BaseService):
         # create domain secret
         self.domain_secret_mgr.create_domain_secret(domain_vo)
 
-        # create admin user with policy and role
+        # create default role
+        role_mgr = RoleManager()
+        role_mgr.list_roles({}, domain_vo.domain_id)
+
+        # create admin user
         params_admin = params.admin
         params_admin["auth_type"] = "LOCAL"
-        params_admin["user_type"] = "USER"
         params_admin["domain_id"] = domain_vo.domain_id
-
         user_vo = self.user_mgr.create_user(params_admin)
+
+        # create default role
+        role_mgr = RoleManager()
+        role_mgr.list_roles({}, domain_vo.domain_id)
         role_vos = self.role_manager.filter_roles(domain_id=domain_vo.domain_id, role_type="DOMAIN_ADMIN")
 
         if len(role_vos) == 0:
-            raise ERROR_NOT_DEFINED_DOMAIN_ADMIN()
+            raise ERROR_DOMAIN_ADMIN_ROLE_IS_NOT_DEFINED()
 
+        # create role binding
         role_binding_mgr = RoleBindingManager()
         params_rb = {
             "user_id": user_vo.user_id,
@@ -77,7 +84,7 @@ class DomainService(BaseService):
 
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction
+    @transaction(scope='system_admin:write')
     @convert_model
     def update(self, params: DomainUpdateRequest) -> Union[DomainResponse, dict]:
         """Update domain
@@ -97,7 +104,7 @@ class DomainService(BaseService):
         )
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction
+    @transaction(scope='system_admin:write')
     @convert_model
     def delete(self, params: DomainDeleteRequest) -> None:
         """Delete Domain
@@ -112,7 +119,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
         self.domain_mgr.delete_domain_by_vo(domain_vo)
 
-    @transaction
+    @transaction(scope='system_admin:write')
     @convert_model
     def enable(self, params: DomainEnableRequest) -> Union[DomainResponse, dict]:
         """Enable Domain
@@ -128,7 +135,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.enable_domain(domain_vo)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction
+    @transaction(scope='system_admin:write')
     @convert_model
     def disable(self, params: DomainDisableRequest) -> Union[DomainResponse, dict]:
         """Disable Domain
@@ -144,7 +151,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.disable_domain(domain_vo)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction
+    @transaction(scope='system_admin:write')
     @convert_model
     def get(self, params: DomainGetRequest) -> Union[DomainResponse, dict]:
         """Get Domain
@@ -159,7 +166,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction
+    @transaction(scope='public')
     @convert_model
     def get_auth_info(
         self, params: DomainGetAuthInfoRequest
@@ -175,26 +182,11 @@ class DomainService(BaseService):
 
         domain_vo = self.domain_mgr.get_domain_by_name(params.name)
         external_auth_mgr = ExternalAuthManager()
-        external_auth_vos = external_auth_mgr.filter_external_auth(domain_id=domain_vo.domain_id)
+        auth_info = external_auth_mgr.get_auth_info(domain_vo)
 
-        if external_auth_vos.count() == 0:
-            response = {
-                "domain_id": domain_vo.domain_id,
-                "name": domain_vo.name,
-                "external_auth_state": "DISABLED",
-                "metadata": {},
-            }
-        else:
-            response = {
-                "domain_id": domain_vo.domain_id,
-                "name": domain_vo.name,
-                "external_auth_state": "ENABLED",
-                "metadata": external_auth_vos[0].plugin_info.get("metadata", {}),
-            }
+        return DomainAuthInfoResponse(**auth_info)
 
-        return DomainAuthInfoResponse(**response)
-
-    @transaction
+    @transaction(scope='system')
     @convert_model
     def get_public_key(
         self, params: DomainGetPublicKeyRequest
@@ -211,7 +203,7 @@ class DomainService(BaseService):
         pub_jwk = self.domain_secret_mgr.get_domain_public_key(params.domain_id)
         return DomainSecretResponse(public_key=str(pub_jwk), domain_id=params.domain_id)
 
-    @transaction
+    @transaction(scope='system_admin:read')
     @append_query_filter(["domain_id", "name", "state"])
     @append_keyword_filter(["domain_id", "name"])
     @convert_model
@@ -234,7 +226,7 @@ class DomainService(BaseService):
         domains_info = [domain_vo.to_dict() for domain_vo in domain_vos]
         return DomainsResponse(results=domains_info, total_count=total_count)
 
-    @transaction
+    @transaction(scope='system_admin:read')
     @append_keyword_filter(["domain_id", "name"])
     @convert_model
     def stat(self, params: DomainStatQueryRequest) -> dict:

@@ -2,7 +2,9 @@ import logging
 
 from spaceone.core import cache
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
-from spaceone.core.service import BaseService, transaction, convert_model
+
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import ERROR_DOMAIN_STATE
@@ -19,13 +21,18 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class TokenService(BaseService):
+
+    service = "identity"
+    resource = "Token"
+    permission_group = "PUBLIC"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain_mgr = DomainManager()
         self.domain_secret_mgr = DomainSecretManager()
         self.user_mgr = UserManager()
 
-    @transaction
+    @transaction(scope="public")
     @convert_model
     def issue(self, params: TokenIssueRequest) -> Union[TokenResponse, dict]:
         """Issue token
@@ -82,7 +89,7 @@ class TokenService(BaseService):
 
         return token_info
 
-    @transaction
+    @transaction(scope="public")
     @convert_model
     def refresh(self, params: dict) -> Union[TokenResponse, dict]:
         """Refresh token

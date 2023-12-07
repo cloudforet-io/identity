@@ -5,13 +5,8 @@ import re
 import string
 from typing import Union
 
-from spaceone.core.service import (
-    BaseService,
-    transaction,
-    convert_model,
-    append_query_filter,
-    append_keyword_filter,
-)
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
 from spaceone.core import config
 
 from spaceone.identity.error.error_mfa import *
@@ -21,9 +16,7 @@ from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.mfa_manager import MFAManager
-from spaceone.identity.manager.token_manager.local_token_manager import (
-    LocalTokenManager,
-)
+from spaceone.identity.manager.token_manager.local_token_manager import LocalTokenManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.user.request import *
@@ -35,13 +28,18 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class UserService(BaseService):
+
+    service = "identity"
+    resource = "User"
+    permission_group = "USER"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user_mgr = UserManager()
         self.domain_mgr = DomainManager()
         self.domain_secret_mgr = DomainSecretManager()
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_OR_WORKSPACE"})
+    @transaction(scope="domain_admin:write")
     @convert_model
     def create(self, params: UserCreateRequest) -> Union[UserResponse, dict]:
         """Create user
@@ -80,9 +78,7 @@ class UserService(BaseService):
 
             temp_password = self._generate_temporary_password()
             params["password"] = copy.deepcopy(temp_password)
-            reset_password_type = config.get_global(
-                "RESET_PASSWORD_TYPE", "ACCESS_TOKEN"
-            )
+            reset_password_type = config.get_global("RESET_PASSWORD_TYPE", "ACCESS_TOKEN")
 
             if reset_password_type == "ACCESS_TOKEN":
                 token = self._issue_temporary_token(user_id, domain_id)
@@ -108,7 +104,7 @@ class UserService(BaseService):
 
         return user_vo
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_OR_USER"})
+    @transaction(scope="user:write")
     @convert_model
     def update(self, params: UserUpdateRequest) -> Union[UserResponse, dict]:
         """
@@ -179,7 +175,7 @@ class UserService(BaseService):
 
         return UserResponse(**user_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_OR_USER"})
+    @transaction(scope="user:write")
     @convert_model
     def verify_email(self, params: UserVerifyEmailRequest) -> None:
         """Verify email
@@ -219,11 +215,9 @@ class UserService(BaseService):
                 user_id, email, verify_code, user_vo.language
             )
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_OR_USER"})
+    @transaction(scope="user:write")
     @convert_model
-    def confirm_email(
-        self, params: UserConfirmEmailRequest
-    ) -> Union[UserResponse, dict]:
+    def confirm_email(self, params: UserConfirmEmailRequest) -> Union[UserResponse, dict]:
         """Confirm email
 
         Args:
@@ -253,7 +247,7 @@ class UserService(BaseService):
         else:
             raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 
-    @transaction
+    @transaction(scope="public")
     @convert_model
     def reset_password(self, params: UserResetPasswordRequest) -> None:
         """Reset password
@@ -303,14 +297,14 @@ class UserService(BaseService):
                 user_id, email, console_link, temp_password, language
             )
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN"})
+    @transaction(scope="domain_admin:write")
     @convert_model
     def set_required_actions(
         self, params: UserSetRequiredActionsRequest
     ) -> Union[UserResponse, dict]:
         return {}
 
-    @transaction(append_meta={"authorization.scope": "USER"})
+    @transaction(scope="user:write")
     @convert_model
     def enable_mfa(self, params: UserEnableMFARequest) -> Union[UserResponse, dict]:
         """Enable MFA
@@ -353,7 +347,7 @@ class UserService(BaseService):
 
         return UserResponse(**user_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_OR_USER"})
+    @transaction(scope="user:write")
     @convert_model
     def disable_mfa(self, params: UserDisableMFARequest) -> Union[UserResponse, dict]:
         """Disable MFA
@@ -388,7 +382,7 @@ class UserService(BaseService):
 
         return UserResponse(**user_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "USER"})
+    @transaction(scope="user:write")
     @convert_model
     def confirm_mfa(self, params: UserConfirmMFARequest) -> Union[UserResponse, dict]:
         """Confirm MFA
@@ -425,7 +419,7 @@ class UserService(BaseService):
                 raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
         return UserResponse(**user_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN"})
+    @transaction(scope="domain_admin:write")
     @convert_model
     def delete(self, params: UserDeleteRequest) -> None:
         """Delete user
@@ -440,11 +434,11 @@ class UserService(BaseService):
             None
         """
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
-        self._check_last_admin(user_vo)
 
+        # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
         self.user_mgr.delete_user_by_vo(user_vo)
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN"})
+    @transaction(scope="domain_admin:write")
     @convert_model
     def enable(self, params: UserEnableRequest) -> Union[UserResponse, dict]:
         """Enable user
@@ -464,7 +458,7 @@ class UserService(BaseService):
 
         return UserResponse(**user_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN"})
+    @transaction(scope="domain_admin:write")
     @convert_model
     def disable(self, params: UserDisableRequest) -> Union[UserResponse, dict]:
         """Disable user
@@ -481,11 +475,11 @@ class UserService(BaseService):
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
         user_vo = self.user_mgr.update_user_by_vo({"state": "DISABLED"}, user_vo)
 
-        self._check_last_admin(user_vo)
+        # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
 
         return UserResponse(**user_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @transaction(scope="user:read")
     @convert_model
     def get(self, params: UserGetRequest) -> Union[UserResponse, dict]:
         """Get user
@@ -503,12 +497,10 @@ class UserService(BaseService):
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
         return UserResponse(**user_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @transaction(scope="user:read")
     @convert_model
-    def get_workspaces(
-        self, params: UserWorkspacesRequest
-    ) -> Union[WorkspacesResponse, dict]:
-        """Find user
+    def get_workspaces(self, params: UserWorkspacesRequest) -> Union[WorkspacesResponse, dict]:
+        """ Find user
         Args:
             params (UserWorkspacesRequest): {
                 'user_id': 'str',       # required
@@ -524,14 +516,14 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
-        if user_vo.role_type == ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
+        if user_vo.role_type == ['SYSTEM_ADMIN', 'DOMAIN_ADMIN']:
             allow_all = True
         else:
             rb_vos = rb_mgr.filter_role_bindings(
                 user_id=params.user_id,
                 domain_id=params.domain_id,
-                role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
-                workspace_id="*",
+                role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER'],
+                workspace_id='*'
             )
 
             if rb_vos.count() > 0:
@@ -541,25 +533,19 @@ class UserService(BaseService):
             workspace_vos = workspace_mgr.filter_workspaces(domain_id=params.domain_id)
         else:
             rb_vos = rb_mgr.filter_role_bindings(
-                user_id=params.user_id,
-                domain_id=params.domain_id,
-                role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+                user_id=params.user_id, domain_id=params.domain_id, role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER']
             )
 
             workspace_ids = list(set([rb.workspace_id for rb in rb_vos]))
-            workspace_vos = workspace_mgr.filter_workspaces(
-                workspace_id=workspace_ids, domain_id=params.domain_id
-            )
+            workspace_vos = workspace_mgr.filter_workspaces(workspace_id=workspace_ids, domain_id=params.domain_id)
 
         workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
-        return WorkspacesResponse(
-            results=workspaces_info, total_count=len(workspaces_info)
-        )
+        return WorkspacesResponse(results=workspaces_info, total_count=len(workspaces_info))
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def find(self, params: UserFindRequest) -> Union[UsersSummaryResponse, dict]:
-        """Find user
+        """ Find user
         Args:
             params (UserFindRequest): {
                 'keyword': 'str',           # required
@@ -573,13 +559,15 @@ class UserService(BaseService):
         """
 
         query = {
-            "filter": [{"k": "domain_id", "v": params.domain_id, "o": "eq"}],
+            "filter": [
+                {"k": "domain_id", "v": params.domain_id, "o": "eq"}
+            ],
             "filter_or": [
                 {"k": "user_id", "v": params.keyword, "o": "contain"},
-                {"k": "name", "v": params.keyword, "o": "contain"},
+                {"k": "name", "v": params.keyword, "o": "contain"}
             ],
             "page": params.page,
-            "only": ["user_id", "name", "state"],
+            "only": ["user_id", "name", "state"]
         }
 
         if params.state:
@@ -588,7 +576,8 @@ class UserService(BaseService):
         if params.exclude_workspace_id:
             rb_mgr = RoleBindingManager()
             rb_vos = rb_mgr.filter_role_bindings(
-                workspace_id=params.exclude_workspace_id, domain_id=params.domain_id
+                workspace_id=params.exclude_workspace_id,
+                domain_id=params.domain_id
             )
             user_ids = list(set([rb.user_id for rb in rb_vos]))
             query["filter"].append({"k": "user_id", "v": user_ids, "o": "not_in"})
@@ -598,13 +587,14 @@ class UserService(BaseService):
         users_info = [user_vo.to_dict() for user_vo in user_vos]
         return UsersSummaryResponse(results=users_info, total_count=total_count)
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @transaction(scope="domain_admin:read")
     @append_query_filter(
         [
             "user_id",
             "name",
             "state",
             "email",
+            "user_type",
             "auth_type",
             "domain_id",
         ]
@@ -615,7 +605,7 @@ class UserService(BaseService):
         """List users
         Args:
             params (UserSearchQueryRequest): {
-                'query': 'dict',
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'user_id': 'str',
                 'name': 'str',
                 'state': 'str',
@@ -633,12 +623,12 @@ class UserService(BaseService):
         users_info = [user_vo.to_dict() for user_vo in user_vos]
         return UsersResponse(results=users_info, total_count=total_count)
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @transaction(scope="domain_admin:read")
     @append_query_filter(["domain_id"])
     @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
     def stat(self, params: UserStatQueryRequest) -> dict:
-        """stat users
+        """ stat users
 
         Args:
             params (UserStatQueryRequest): {
@@ -685,15 +675,6 @@ class UserService(BaseService):
 
         console_domain = config.get_global("EMAIL_CONSOLE_DOMAIN")
         return console_domain.format(domain_name=domain_name)
-
-    @staticmethod
-    def _check_last_admin(user_vo):
-        rb_mgr = RoleBindingManager()
-        rb_vos = rb_mgr.filter_role_bindings(
-            domain_id=user_vo.domain_id, role_type=user_vo.role_type
-        )
-        if rb_vos.count() == 1:
-            raise ERROR_LAST_ADMIN_CANNOT_DISABLE(user_id=user_vo.user_id)
 
     @staticmethod
     def _check_reset_password_eligibility(user_id, auth_type, email):

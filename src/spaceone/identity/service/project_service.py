@@ -1,18 +1,14 @@
 import logging
 from typing import Union
 
-from spaceone.core.service import (
-    BaseService,
-    transaction,
-    convert_model,
-    append_query_filter,
-    append_keyword_filter,
-)
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
 
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.model.project.request import *
 from spaceone.identity.model.project.response import *
 from spaceone.identity.error.error_project import *
@@ -21,6 +17,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ProjectService(BaseService):
+
+    service = "identity"
+    resource = "Project"
+    permission_group = "PROJECT"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.rb_mgr = RoleBindingManager()
@@ -28,7 +29,7 @@ class ProjectService(BaseService):
         self.project_group_mgr = ProjectGroupManager()
         self.workspace_mgr = WorkspaceManager()
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def create(self, params: ProjectCreateRequest) -> Union[ProjectResponse, dict]:
         """Create project
@@ -54,7 +55,7 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "PROJECT"})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def update(self, params: ProjectUpdateRequest) -> Union[ProjectResponse, dict]:
         """Update project
@@ -81,7 +82,7 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def update_project_type(
         self, params: ProjectUpdateProjectTypeRequest
@@ -113,7 +114,7 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def change_project_group(
         self, params: ProjectChangeProjectGroupRequest
@@ -144,7 +145,7 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "WORKSPACE"})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def delete(self, params: ProjectDeleteRequest) -> None:
         """Delete project
@@ -164,7 +165,7 @@ class ProjectService(BaseService):
 
         self.project_mgr.delete_project_by_vo(project_vo)
 
-    @transaction(append_meta={"authorization.scope": "PROJECT"})
+    @transaction(scope="workspace_member:write")
     @convert_model
     def add_users(self, params: ProjectAddUsersRequest) -> Union[ProjectResponse, dict]:
         """Add users to project
@@ -188,7 +189,11 @@ class ProjectService(BaseService):
             raise ERROR_NOT_ALLOWED_ADD_USER_TO_PUBLIC_PROJECT()
 
         if len(params.users) > 0:
-            self._check_exist_user(params.users, params.workspace_id, params.domain_id)
+            workspace_user_mgr = WorkspaceUserManager()
+            workspace_user_mgr.check_workspace_users(
+                params.users, params.workspace_id, params.domain_id
+            )
+
             users = project_vo.users or []
             users.extend(params.users)
             params.users = list(set(users))
@@ -199,7 +204,7 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "PROJECT"})
+    @transaction(scope="workspace_member:write")
     @convert_model
     def remove_users(
         self, params: ProjectRemoveUsersRequest
@@ -222,7 +227,11 @@ class ProjectService(BaseService):
         )
 
         if len(params.users) > 0:
-            self._check_exist_user(params.users, params.workspace_id, params.domain_id)
+            workspace_user_mgr = WorkspaceUserManager()
+            workspace_user_mgr.check_workspace_users(
+                params.users, params.workspace_id, params.domain_id
+            )
+
             users = project_vo.users or []
             params.users = list(set(users) - set(params.users))
 
@@ -232,21 +241,21 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "PROJECT"})
+    @transaction(scope="workspace_member:write")
     @convert_model
     def add_user_groups(
         self, params: ProjectAddUserGroupsRequest
     ) -> Union[ProjectResponse, dict]:
         return {}
 
-    @transaction(append_meta={"authorization.scope": "PROJECT"})
+    @transaction(scope="workspace_member:write")
     @convert_model
     def remove_user_groups(
         self, params: ProjectRemoveUserGroupsRequest
     ) -> Union[ProjectResponse, dict]:
         return {}
 
-    @transaction(append_meta={"authorization.scope": "PROJECT_READ"})
+    @transaction(scope="workspace_member:read")
     @convert_model
     def get(self, params: ProjectGetRequest) -> Union[ProjectResponse, dict]:
         """Get project
@@ -267,7 +276,7 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "PROJECT_READ"})
+    @transaction(scope="workspace_member:read")
     @append_query_filter(
         [
             "project_id",
@@ -308,7 +317,7 @@ class ProjectService(BaseService):
         projects_info = [project_vo.to_dict() for project_vo in project_vos]
         return ProjectsResponse(results=projects_info, total_count=total_count)
 
-    @transaction(append_meta={"authorization.scope": "PROJECT_READ"})
+    @transaction(scope="workspace_member:read")
     @append_query_filter(['workspace_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(["project_id", "name"])
     @convert_model
@@ -330,15 +339,3 @@ class ProjectService(BaseService):
 
         query = params.query or {}
         return self.project_mgr.stat_projects(query)
-
-    def _check_exist_user(self, users, workspace_id, domain_id):
-        rb_vos = self.rb_mgr.filter_role_bindings(
-            user_id=users,
-            workspace_id=[workspace_id, '*'],
-            role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER'],
-            domain_id=domain_id
-        )
-        existing_users = list(set([rb.user_id for rb in rb_vos]))
-        not_existing_users = list(set(users) - set(existing_users))
-        for user_id in not_existing_users:
-            raise ERROR_USER_NOT_EXIST_IN_WORKSPACE(user_id=user_id, workspace_id=workspace_id)

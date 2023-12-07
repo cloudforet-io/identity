@@ -1,7 +1,9 @@
 import logging
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
-from spaceone.core.error import *
+
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
+
 from spaceone.identity.model.role_binding.request import *
 from spaceone.identity.model.role_binding.response import *
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
@@ -15,12 +17,16 @@ _LOGGER = logging.getLogger(__name__)
 
 class RoleBindingService(BaseService):
 
+    service = "identity"
+    resource = "RoleBinding"
+    permission_group = "COMPOUND"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.role_binding_manager = RoleBindingManager()
         self.user_mgr = UserManager()
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def create(self, params: RoleBindingCreateRequest) -> Union[RoleBindingResponse, dict]:
         """ create role binding
@@ -52,9 +58,12 @@ class RoleBindingService(BaseService):
         user_vo = self.user_mgr.get_user(user_id, domain_id)
 
         # Check workspace
-        if permission_group == 'WORKSPACE' and workspace_id != '*':
-            workspace_mgr = WorkspaceManager()
-            workspace_mgr.get_workspace(workspace_id, domain_id)
+        if permission_group == 'WORKSPACE':
+            if workspace_id != '*':
+                workspace_mgr = WorkspaceManager()
+                workspace_mgr.get_workspace(workspace_id, domain_id)
+        else:
+            params['workspace_id'] = '*'
 
         # Check role
         role_mgr = RoleManager()
@@ -72,13 +81,13 @@ class RoleBindingService(BaseService):
         params['role_type'] = role_vo.role_type
 
         # Update user role type
-        latest_role_type = self.get_latest_role_type(user_vo.role_type, role_vo.role_type)
+        latest_role_type = self._get_latest_role_type(user_vo.role_type, role_vo.role_type)
         self.user_mgr.update_user_by_vo({'role_type': latest_role_type}, user_vo)
 
         # Create role binding
         return self.role_binding_manager.create_role_binding(params)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def update_role(self, params: RoleBindingUpdateRoleRequest) -> Union[RoleBindingResponse, dict]:
         """ update role of role binding
@@ -116,7 +125,7 @@ class RoleBindingService(BaseService):
 
         user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
 
-        latest_role_type = self.get_latest_role_type(rb_vo.role_type, new_role_vo.role_type)
+        latest_role_type = self._get_latest_role_type(rb_vo.role_type, new_role_vo.role_type)
         self.user_mgr.update_user_by_vo({'role_type': latest_role_type}, user_vo)
 
         rb_vo = self.role_binding_manager.update_role_binding_by_vo(
@@ -129,7 +138,29 @@ class RoleBindingService(BaseService):
 
         return RoleBindingResponse(**rb_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @transaction(scope="workspace_owner:write")
+    @convert_model
+    def get(self, params: RoleBindingGetRequest) -> Union[RoleBindingResponse, dict]:
+        """ get role binding
+
+         Args:
+            params (RoleBindingGetRequest): {
+                'role_binding_id': 'str',       # required
+                'workspace_id': 'str',
+                'domain_id': 'str',             # required
+            }
+
+        Returns:
+             RoleBindingResponse:
+        """
+
+        rb_vo = self.role_binding_manager.get_role_binding(
+            params.role_binding_id, params.domain_id, params.workspace_id
+        )
+
+        return RoleBindingResponse(**rb_vo.to_dict())
+
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def delete(self, params: RoleBindingDeleteRequest) -> None:
         """ delete role binding
@@ -165,36 +196,14 @@ class RoleBindingService(BaseService):
             if remain_rb_vo.role_binding_id == params.role_binding_id:
                 continue
 
-            latest_role_type = self.get_latest_role_type(latest_role_type, remain_rb_vo.role_type)
+            latest_role_type = self._get_latest_role_type(latest_role_type, remain_rb_vo.role_type)
 
         user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
         self.user_mgr.update_user_by_vo({'role_type': latest_role_type}, user_vo)
 
         self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
-    @convert_model
-    def get(self, params: RoleBindingGetRequest) -> Union[RoleBindingResponse, dict]:
-        """ get role binding
-
-         Args:
-            params (RoleBindingGetRequest): {
-                'role_binding_id': 'str',       # required
-                'workspace_id': 'str',
-                'domain_id': 'str',             # required
-            }
-
-        Returns:
-             RoleBindingResponse:
-        """
-
-        rb_vo = self.role_binding_manager.get_role_binding(
-            params.role_binding_id, params.domain_id, params.workspace_id
-        )
-
-        return RoleBindingResponse(**rb_vo.to_dict())
-
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @transaction(scope="workspace_owner:read")
     @append_query_filter([
         'role_binding_id', 'user_id', 'role_id', 'scope', 'workspace_id', 'domain_id'
     ])
@@ -225,7 +234,7 @@ class RoleBindingService(BaseService):
         rbs_info = [rb_vo.to_dict() for rb_vo in rb_vos]
         return RoleBindingsResponse(results=rbs_info, total_count=total_count)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @transaction(scope="workspace_owner:read")
     @append_query_filter(['workspace_id', 'domain_id'])
     @append_keyword_filter(['role_binding_id', 'user_id', 'role_id'])
     @convert_model
@@ -250,7 +259,7 @@ class RoleBindingService(BaseService):
         return self.role_binding_manager.stat_role_bindings(query)
 
     @staticmethod
-    def get_latest_role_type(before: str, after: str) -> str:
+    def _get_latest_role_type(before: str, after: str) -> str:
         priority = {
             'SYSTEM': 1,
             'SYSTEM_ADMIN': 2,

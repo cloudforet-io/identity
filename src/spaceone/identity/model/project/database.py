@@ -7,11 +7,11 @@ class Project(MongoModel):
     name = StringField(max_length=40)
     project_type = StringField(max_length=20, default="PRIVATE", choices=("PRIVATE", "PUBLIC"))
     tags = DictField(default=None)
-    users = ListField(StringField(max_length=255), default=None)
+    users = ListField(StringField(max_length=40), default=None)
     user_groups = ListField(StringField(max_length=255), default=None)
     project_group_id = StringField(max_length=40, default=None, null=True)
-    workspace_id = StringField(max_length=255)
-    domain_id = StringField(max_length=255)
+    workspace_id = StringField(max_length=40)
+    domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {

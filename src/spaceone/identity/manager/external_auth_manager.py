@@ -55,6 +55,24 @@ class ExternalAuthManager(BaseManager):
     def get_external_auth(self, domain_id: str) -> ExternalAuth:
         return self.external_auth_model.get(domain_id=domain_id)
 
+    def get_auth_info(self, domain_vo: Domain) -> dict:
+        external_auth_vos = self.filter_external_auth(domain_id=domain_vo.domain_id)
+
+        if external_auth_vos.count() > 0:
+            external_auth_state = "ENABLED"
+            metadata = external_auth_vos[0].plugin_info.get("metadata", {}),
+
+        else:
+            external_auth_state = "DISABLED"
+            metadata = {}
+
+        return {
+            "domain_id": domain_vo.domain_id,
+            "name": domain_vo.name,
+            "external_auth_state": external_auth_state,
+            "metadata": metadata,
+        }
+
     def filter_external_auth(self, **conditions) -> QuerySet:
         return self.external_auth_model.filter(**conditions)
 

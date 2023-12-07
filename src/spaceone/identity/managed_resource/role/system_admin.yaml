@@ -1,0 +1,7 @@
+---
+role_id: managed-system-admin
+name: System Admin
+version: '1.0'
+role_type: SYSTEM_ADMIN
+api_permissions:
+  - *

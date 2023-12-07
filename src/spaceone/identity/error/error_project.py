@@ -5,9 +5,5 @@ class ERROR_RELATED_SERVICE_ACCOUNT_EXIST(ERROR_INVALID_ARGUMENT):
     _message = "Related service account is exist. (service_account_id = {service_account_id})"
 
 
-class ERROR_USER_NOT_EXIST_IN_WORKSPACE(ERROR_INVALID_ARGUMENT):
-    _message = "User does not exist in workspace. (user_id = {user_id}, workspace_id = {workspace_id})"
-
-
 class ERROR_NOT_ALLOWED_ADD_USER_TO_PUBLIC_PROJECT(ERROR_INVALID_ARGUMENT):
     _message = "Not allowed to add user to public project."
