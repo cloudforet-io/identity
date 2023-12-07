@@ -1,7 +1,9 @@
 import logging
 from typing import Union
-from spaceone.core.service import (BaseService, transaction, convert_model, append_query_filter,
-                                   append_keyword_filter, set_query_page_limit)
+
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
+
 from spaceone.identity.model.service_account.request import *
 from spaceone.identity.model.service_account.response import *
 from spaceone.identity.manager.schema_manager import SchemaManager
@@ -14,11 +16,15 @@ _LOGGER = logging.getLogger(__name__)
 
 class ServiceAccountService(BaseService):
 
+    service = "identity"
+    resource = "ServiceAccount"
+    permission_group = "PROJECT"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.service_account_mgr = ServiceAccountManager()
 
-    @transaction
+    @transaction(scope="workspace_member:write")
     @convert_model
     def create(self, params: ServiceAccountCreateRequest) -> Union[ServiceAccountResponse, dict]:
         """ create service account
@@ -55,7 +61,7 @@ class ServiceAccountService(BaseService):
         service_account_vo = self.service_account_mgr.create_service_account(params.dict())
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(scope="workspace_member:write")
     @convert_model
     def update(self, params: ServiceAccountUpdateRequest) -> Union[ServiceAccountResponse, dict]:
         """ update service account
@@ -93,7 +99,7 @@ class ServiceAccountService(BaseService):
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(scope="workspace_member:write")
     @convert_model
     def change_trusted_account(
         self, params: ServiceAccountChangeTrustedAccountRequest
@@ -130,7 +136,7 @@ class ServiceAccountService(BaseService):
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @transaction(scope="workspace_member:write")
     @convert_model
     def delete(self, params: ServiceAccountDeleteRequest) -> None:
         """ delete service account
@@ -153,7 +159,7 @@ class ServiceAccountService(BaseService):
 
         self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT_READ'})
+    @transaction(scope="workspace_member:read")
     @convert_model
     def get(self, params: ServiceAccountGetRequest) -> Union[ServiceAccountResponse, dict]:
         """ get service account
@@ -176,7 +182,7 @@ class ServiceAccountService(BaseService):
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT_READ'})
+    @transaction(scope="workspace_member:read")
     @append_query_filter([
         'service_account_id', 'name', 'provider', 'project_id', 'workspace_id', 'domain_id', 'user_projects'
     ])
@@ -208,7 +214,7 @@ class ServiceAccountService(BaseService):
         service_accounts_info = [service_account_vo.to_dict() for service_account_vo in service_account_vos]
         return ServiceAccountsResponse(results=service_accounts_info, total_count=total_count)
 
-    @transaction(append_meta={'authorization.scope': 'PROJECT_READ'})
+    @transaction(scope="workspace_member:read")
     @append_query_filter(['workspace_id', 'domain_id', 'user_projects'])
     @append_keyword_filter(['service_account_id', 'name'])
     @set_query_page_limit(1000)

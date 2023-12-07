@@ -8,8 +8,9 @@ class PagePermission(EmbeddedDocument):
 
 
 class Role(MongoModel):
-    role_id = StringField(max_length=40, generate_id='role', unique=True)
+    role_id = StringField(max_length=40, required=True, unique_with='domain_id')
     name = StringField(max_length=255, unique_with='domain_id')
+    version = StringField(max_length=40, default=None, null=True)
     role_type = StringField(
         max_length=20,
         choices=('SYSTEM', 'SYSTEM_ADMIN', 'DOMAIN_ADMIN', 'WORKSPACE_OWNER', 'WORKSPACE_MEMBER')

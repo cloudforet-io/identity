@@ -9,8 +9,8 @@ class TrustedAccount(MongoModel):
     provider = StringField(max_length=40)
     tags = DictField(default=None)
     permission_group = StringField(max_length=40, choices=('DOMAIN', 'WORKSPACE'))
-    workspace_id = StringField(max_length=40, default=None, null=True)
-    domain_id = StringField(max_length=255)
+    workspace_id = StringField(max_length=40)
+    domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {

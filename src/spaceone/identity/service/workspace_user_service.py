@@ -1,32 +1,27 @@
 import logging
 from typing import Union
 
-from spaceone.core.service import (
-    BaseService,
-    transaction,
-    convert_model,
-    append_query_filter,
-    append_keyword_filter,
-)
-from spaceone.core.error import *
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
 
-from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.model.workspace_user.request import *
 from spaceone.identity.model.workspace_user.response import *
-from spaceone.identity.service.user_service import UserService
-from spaceone.identity.service.role_binding_service import RoleBindingService
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class WorkspaceUserService(BaseService):
+
+    service = "identity"
+    resource = "WorkspaceUser"
+    permission_group = "WORKSPACE"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user_mgr = UserManager()
-        self.rb_mgr = RoleBindingManager()
+        self.workspace_user_mgr = WorkspaceUserManager()
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_OR_WORKSPACE"})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def create(self, params: WorkspaceUserCreateRequest) -> Union[WorkspaceUserResponse, dict]:
         """Create user with role binding
@@ -49,24 +44,10 @@ class WorkspaceUserService(BaseService):
             WorkspaceUserResponse:
         """
 
-        user_svc = UserService()
-        rb_svc = RoleBindingService()
-
-        user_vo = user_svc.create_user(params.dict())
-
-        rb_svc.create_role_binding(
-            {
-                "user_id": params.user_id,
-                "role_id": params.role_id,
-                "permission_group": "WORKSPACE",
-                "workspace_id": params.workspace_id,
-                "domain_id": params.domain_id,
-            }
-        )
-
+        user_vo = self.workspace_user_mgr.create_workspace_user(params.dict())
         return WorkspaceUserResponse(**user_vo.to_dict())
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @transaction(scope="workspace_member:read")
     @convert_model
     def get(self, params: WorkspaceUserGetRequest) -> Union[WorkspaceUserResponse, dict]:
         """Get user in workspace
@@ -82,19 +63,12 @@ class WorkspaceUserService(BaseService):
             WorkspaceUserResponse (object)
         """
 
-        user_rb_map = self._get_role_bindings_in_workspace(params.workspace_id, params.domain_id)
-        workspace_user_ids = list(user_rb_map.keys())
-
-        if params.user_id not in workspace_user_ids:
-            raise ERROR_NOT_FOUND(key='user_id', value=params.user_id)
-
-        user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
-        user_info = user_vo.to_dict()
-        user_info["role_binding_info"] = user_rb_map[params.user_id].to_dict()
-
+        user_info = self.workspace_user_mgr.get_workspace_user(
+            params.user_id, params.workspace_id, params.domain_id
+        )
         return WorkspaceUserResponse(**user_info)
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @transaction(scope="workspace_member:read")
     @append_query_filter(
         [
             "user_id",
@@ -126,27 +100,13 @@ class WorkspaceUserService(BaseService):
         """
 
         query = params.query or {}
-        user_rb_map = None
-
-        if params.workspace_id:
-            user_rb_map = self._get_role_bindings_in_workspace(params.workspace_id, params.domain_id)
-            workspace_user_ids = list(user_rb_map.keys())
-            query["filter"].append({"k": "user_id", "v": workspace_user_ids, "o": "in"})
-
-        user_vos, total_count = self.user_mgr.list_users(query)
-
-        users_info = []
-        for user_vo in user_vos:
-            user_info = user_vo.to_dict()
-
-            if user_rb_map:
-                user_info["role_binding_info"] = user_rb_map[user_vo.user_id].to_dict()
-
-            users_info.append(user_info)
+        users_info, total_count = self.workspace_user_mgr.list_workspace_users(
+            query, params.domain_id, params.workspace_id
+        )
 
         return WorkspaceUsersResponse(results=users_info, total_count=total_count)
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN_READ"})
+    @transaction(scope="workspace_member:read")
     @append_query_filter(["domain_id"])
     @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
@@ -170,22 +130,6 @@ class WorkspaceUserService(BaseService):
 
         query = params.query or {}
 
-        if params.workspace_id:
-            user_rb_map = self._get_role_bindings_in_workspace(params.workspace_id, params.domain_id)
-            workspace_user_ids = list(user_rb_map.keys())
-            query["filter"].append({"k": "user_id", "v": workspace_user_ids, "o": "in"})
-
-        return self.user_mgr.stat_users(query)
-
-    def _get_role_bindings_in_workspace(self, workspace_id: str, domain_id: str) -> dict:
-        user_rb_map = {}
-        rb_vos = self.rb_mgr.filter_role_bindings(
-            domain_id=domain_id,
-            workspace_id=[workspace_id, '*'],
-            role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+        return self.workspace_user_mgr.stat_workspace_users(
+            query, params.domain_id, params.workspace_id
         )
-
-        for rb_vo in rb_vos:
-            user_rb_map[rb_vo.user_id] = rb_vo
-
-        return user_rb_map

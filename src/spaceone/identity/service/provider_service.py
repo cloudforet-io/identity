@@ -1,6 +1,9 @@
 import logging
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
+
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
+
 from spaceone.identity.model.provider.request import *
 from spaceone.identity.model.provider.response import *
 from spaceone.identity.manager.provider_manager import ProviderManager
@@ -10,11 +13,15 @@ _LOGGER = logging.getLogger(__name__)
 
 class ProviderService(BaseService):
 
+    service = "identity"
+    resource = "Provider"
+    permission_group = "DOMAIN"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.provider_mgr = ProviderManager()
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(scope="domain_admin:write")
     @convert_model
     def create(self, params: ProviderCreateRequest) -> Union[ProviderResponse, dict]:
         """ create provider
@@ -39,7 +46,7 @@ class ProviderService(BaseService):
         provider_vo = self.provider_mgr.create_provider(params.dict())
         return ProviderResponse(**provider_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(scope="domain_admin:write")
     @convert_model
     def update(self, params: ProviderUpdateRequest) -> Union[ProviderResponse, dict]:
         """ update provider
@@ -69,7 +76,7 @@ class ProviderService(BaseService):
 
         return ProviderResponse(**provider_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(scope="domain_admin:write")
     @convert_model
     def delete(self, params: ProviderDeleteRequest) -> None:
         """ delete provider
@@ -87,7 +94,7 @@ class ProviderService(BaseService):
         provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
         self.provider_mgr.delete_provider_by_vo(provider_vo)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @transaction(scope="workspace_member:read")
     @convert_model
     def get(self, params: ProviderGetRequest) -> Union[ProviderResponse, dict]:
         """ delete provider
@@ -105,7 +112,7 @@ class ProviderService(BaseService):
         provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
         return ProviderResponse(**provider_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @transaction(scope="workspace_member:read")
     @append_query_filter(['provider', 'name', 'alias', 'is_managed', 'domain_id'])
     @append_keyword_filter(['provider', 'name'])
     @convert_model
@@ -132,7 +139,7 @@ class ProviderService(BaseService):
         providers_info = [provider_vo.to_dict() for provider_vo in provider_vos]
         return ProvidersResponse(results=providers_info, total_count=total_count)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_READ'})
+    @transaction(scope="workspace_member:read")
     @append_query_filter(['domain_id'])
     @append_keyword_filter(['provider', 'name'])
     @convert_model

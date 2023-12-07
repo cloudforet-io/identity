@@ -1,7 +1,9 @@
 import logging
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model, append_query_filter, append_keyword_filter
-from spaceone.core.error import *
+
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
+
 from spaceone.identity.model.trusted_account.request import *
 from spaceone.identity.model.trusted_account.response import *
 from spaceone.identity.manager.schema_manager import SchemaManager
@@ -13,11 +15,15 @@ _LOGGER = logging.getLogger(__name__)
 
 class TrustedAccountService(BaseService):
 
+    service = "identity"
+    resource = "TrustedAccount"
+    permission_group = "COMPOUND"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.trusted_account_mgr = TrustedAccountManager()
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def create(self, params: TrustedAccountCreateRequest) -> Union[TrustedAccountResponse, dict]:
         """ create trusted account
@@ -41,6 +47,8 @@ class TrustedAccountService(BaseService):
         if params.permission_group == 'WORKSPACE':
             workspace_mgr = WorkspaceManager()
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
+        else:
+            params.workspace_id = '*'
 
         # Check data by schema
         schema_mgr = SchemaManager()
@@ -51,7 +59,7 @@ class TrustedAccountService(BaseService):
         trusted_account_vo = self.trusted_account_mgr.create_trusted_account(params.dict())
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def update(self, params: TrustedAccountUpdateRequest) -> Union[TrustedAccountResponse, dict]:
         """ update trusted account
@@ -87,7 +95,7 @@ class TrustedAccountService(BaseService):
 
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE'})
+    @transaction(scope="workspace_owner:write")
     @convert_model
     def delete(self, params: TrustedAccountDeleteRequest) -> None:
         """ delete trusted account
@@ -109,7 +117,7 @@ class TrustedAccountService(BaseService):
 
         self.trusted_account_mgr.delete_trusted_account_by_vo(trusted_account_vo)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @transaction(scope="workspace_member:read")
     @convert_model
     def get(self, params: TrustedAccountGetRequest) -> Union[TrustedAccountResponse, dict]:
         """ get trusted account
@@ -131,7 +139,7 @@ class TrustedAccountService(BaseService):
 
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @transaction(scope="workspace_member:read")
     @append_query_filter([
         'trusted_account_id', 'name', 'provider', 'permission_group', 'workspace_id', 'domain_id'
     ])
@@ -161,7 +169,7 @@ class TrustedAccountService(BaseService):
         trusted_accounts_info = [trusted_account_vo.to_dict() for trusted_account_vo in trusted_account_vos]
         return TrustedAccountsResponse(results=trusted_accounts_info, total_count=total_count)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN_OR_WORKSPACE_READ'})
+    @transaction(scope="workspace_member:read")
     @append_query_filter(['workspace_id', 'domain_id'])
     @append_keyword_filter(['trusted_account_id', 'name'])
     @convert_model

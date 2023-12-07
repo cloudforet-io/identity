@@ -1,6 +1,9 @@
 import logging
 from typing import Union
-from spaceone.core.service import BaseService, transaction, convert_model
+
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
+
 from spaceone.identity.model.endpoint.request import *
 from spaceone.identity.model.endpoint.response import *
 from spaceone.identity.manager.endpoint_manager import EndpointManager
@@ -9,7 +12,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EndpointService(BaseService):
-    @transaction(append_meta={"authorization.scope": "PUBLIC"})
+
+    service = "identity"
+    resource = "Endpoint"
+    permission_group = "PUBLIC"
+
+    @transaction(scope='public')
     # @append_query_filter(['service'])
     # @append_keyword_filter(['service'])
     @convert_model
