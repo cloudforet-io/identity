@@ -86,7 +86,7 @@ class WorkspaceUserService(BaseService):
         """List users in workspace
         Args:
             params (WorkspaceUserSearchQueryRequest): {
-                'query': 'dict',
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'user_id': 'str',
                 'name': 'str',
                 'state': 'str',

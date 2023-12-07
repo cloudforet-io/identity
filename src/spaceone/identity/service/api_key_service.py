@@ -16,11 +16,17 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class APIKeyService(BaseService):
+
+    service = "identity"
+    resource = "APIKey"
+    permission_group = "USER"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.api_key_mgr = APIKeyManager()
 
     @transaction
+    @change_timestamp_value(["expired_at"], timestamp_format="iso8601")
     @convert_model
     def create(self, params: APIKeyCreateRequest) -> Union[APIKeyResponse, dict]:
         """Create API Key
@@ -28,25 +34,28 @@ class APIKeyService(BaseService):
             params (dict): {
                 'user_id': 'str', # required
                 'name': 'str',
-                'expired_at': 'datetime'
+                'expired_at': 'str'
                 'domain_id': 'str', # required
             }
         Return:
             APIKeyResponse:
         """
+
         params.expired_at = self._get_expired_at(params.expired_at)
         self._check_expired_at(params.expired_at)
 
         user_mgr = UserManager()
         user_vo = user_mgr.get_user(params.user_id, params.domain_id)
+
         api_key_vo, api_key = self.api_key_mgr.create_api_key_by_user_vo(
             user_vo, params.dict()
         )
-        api_key_counts = self.api_key_mgr.filter_api_keys(
+
+        api_key_vos = self.api_key_mgr.filter_api_keys(
             user_id=user_vo.user_id, domain_id=params.domain_id
         )
-        print(api_key_counts)
-        user_mgr.update_user_by_vo({"api_key_count": len(api_key_counts)}, user_vo)
+
+        user_mgr.update_user_by_vo({"api_key_count": api_key_vos.count()}, user_vo)
         return APIKeyResponse(**api_key_vo.to_dict(), api_key=api_key)
 
     @transaction
@@ -55,17 +64,23 @@ class APIKeyService(BaseService):
         """Update API Key
         Args:
             params (dict): {
-                'api_key_id': 'str', # required
+                'api_key_id': 'str',    # required
                 'name': 'str',
-                'domain_id': 'str' # required
+                'domain_id': 'str',     # required
+                'user_id': 'str',       # from meta
             }
         Returns:
             APIKeyResponse:
         """
-        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+
+        api_key_vo = self.api_key_mgr.get_api_key(
+            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+        )
+
         api_key_vo = self.api_key_mgr.update_api_key_by_vo(
             params.dict(exclude_unset=True), api_key_vo
         )
+
         return APIKeyResponse(**api_key_vo.to_dict())
 
     @transaction
@@ -74,13 +89,18 @@ class APIKeyService(BaseService):
         """Enable API Key
         Args:
             params (dict): {
-                'api_key_id': 'str', # required
-                'domain_id': 'str' # required
+                'api_key_id': 'str',    # required
+                'domain_id': 'str',     # required
+                'user_id': 'str',       # from meta
             }
         Returns:
             APIKeyResponse:
         """
-        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+
+        api_key_vo = self.api_key_mgr.get_api_key(
+            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+        )
+
         api_key_vo = self.api_key_mgr.enable_api_key(api_key_vo)
         return APIKeyResponse(**api_key_vo.to_dict())
 
@@ -90,14 +110,18 @@ class APIKeyService(BaseService):
         """Disable API Key
         Args:
             params (dict): {
-                'api_key_id': 'str', # required
-                'domain_id': 'str' # required
+                'api_key_id': 'str',    # required
+                'domain_id': 'str',     # required
+                'user_id': 'str',       # from meta
             }
         Returns:
             APIKeyResponse:
         """
 
-        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+        api_key_vo = self.api_key_mgr.get_api_key(
+            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+        )
+
         api_key_vo = self.api_key_mgr.disable_api_key(api_key_vo)
         return APIKeyResponse(**api_key_vo.to_dict())
 
@@ -107,20 +131,26 @@ class APIKeyService(BaseService):
         """Delete API Key
         Args:
             params (dict): {
-                'api_key_id': 'str', # required
-                'domain_id': 'str' # required
+                'api_key_id': 'str',    # required
+                'domain_id': 'str',     # required
+                'user_id': 'str',       # from meta
             }
         Returns:
             None
         """
-        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+
+        api_key_vo = self.api_key_mgr.get_api_key(
+            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+        )
+
         if api_key_vo.user_id:
             user_mgr = UserManager()
             user_vo = user_mgr.get_user(api_key_vo.user_id, params.domain_id)
-            api_key_counts = self.api_key_mgr.filter_api_keys(
+            api_key_vos = self.api_key_mgr.filter_api_keys(
                 user_id=user_vo.user_id, domain_id=params.domain_id
             )
-            user_mgr.update_user_by_vo({"api_key_count": len(api_key_counts)}, user_vo)
+
+            user_mgr.update_user_by_vo({"api_key_count": api_key_vos.count()}, user_vo)
 
         self.api_key_mgr.delete_api_key_by_vo(api_key_vo)
 
@@ -130,18 +160,23 @@ class APIKeyService(BaseService):
         """Get API Key
         Args:
             params (dict): {
-                'api_key_id': 'str', # required
-                'domain_id': 'str' # required
+                'api_key_id': 'str',    # required
+                'domain_id': 'str',     # required
+                'user_id': 'str',       # from meta
             }
         Returns:
             APIKeyResponse:
         """
-        api_key_vo = self.api_key_mgr.get_api_key(params.api_key_id, params.domain_id)
+
+        api_key_vo = self.api_key_mgr.get_api_key(
+            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+        )
+
         return APIKeyResponse(**api_key_vo.to_dict())
 
     @transaction
-    @append_query_filter(["api_key_id", "user_id", "state", "domain_id"])
-    @append_keyword_filter(["api_key_id", "user_id"])
+    @append_query_filter(["api_key_id", "name", "owner_type", "user_id", "state", "domain_id"])
+    @append_keyword_filter(["api_key_id", "name"])
     @convert_model
     def list(self, params: APIKeySearchQueryRequest) -> Union[APIKeysResponse, dict]:
         """List API Keys
@@ -149,29 +184,39 @@ class APIKeyService(BaseService):
             params (dict): {
                 'query': 'dict',
                 'api_key_id': 'str',
+                'name': 'str',
+                'owner_type': 'str',
                 'user_id': 'str',
                 'state': 'str',
-                'domain_id': 'str'
+                'domain_id': 'str'      # required
             }
-            Returns:
-                APIKeysResponse:
+        Returns:
+            APIKeysResponse:
         """
+
         query = params.query or {}
         api_key_vos, total_count = self.api_key_mgr.list_api_keys(query)
         api_keys_info = [api_key_vo.to_dict() for api_key_vo in api_key_vos]
         return APIKeysResponse(results=api_keys_info, total_count=total_count)
 
     @transaction
+    @append_query_filter(["user_id" "owner_type", "domain_id"])
+    @append_keyword_filter(["api_key_id", "name"])
     @convert_model
     def stat(self, params: APIKeyStatQueryRequest) -> dict:
         """Stat API Keys
         Args:
             params (dict): {
-                'query': 'dict',
-                'domain_id': 'str'
+                'query': 'dict',        # required
+                'owner_type': 'str',
+                'domain_id': 'str',     # required
+                'user_id': 'str',       # from meta
             }
-            Returns:
-                dict:
+        Returns:
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
         """
         query = params.query or {}
         return self.api_key_mgr.stat_api_keys(query)

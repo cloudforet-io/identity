@@ -605,7 +605,7 @@ class UserService(BaseService):
         """List users
         Args:
             params (UserSearchQueryRequest): {
-                'query': 'dict',
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'user_id': 'str',
                 'name': 'str',
                 'state': 'str',

@@ -2,14 +2,13 @@ import logging
 from typing import Tuple
 from mongoengine import QuerySet
 
-from spaceone.core.cache import cacheable
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.lib.key_generator import KeyGenerator
 from spaceone.identity.model.app.database import App
 from spaceone.identity.model.api_key.database import APIKey
-from spaceone.identity.model.domain.database import DomainSecret
 from spaceone.identity.model.user.database import User
+from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,48 +17,42 @@ class APIKeyManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.api_key_model = APIKey
-        self.domain_secret_model = DomainSecret
 
-    def create_api_key_by_user_vo(self, user_vo: User, params: dict) -> (APIKey, str):
-        def _rollback(api_key_vo):
+    def create_api_key(self, params: dict) -> Tuple[APIKey, str]:
+        def _rollback(vo):
             _LOGGER.info(
-                f"[create_api_key._rollback] Delete api_key : {api_key_vo.api_key_id}"
+                f"[create_api_key._rollback] Delete api key: {vo.api_key_id}"
             )
-            api_key_vo.delete()
+            vo.delete()
 
+        if params["owner_type"] == "USER":
+            audience = params["user_id"]
+        else:
+            audience = params["app_id"]
+
+        api_key_vo = self.api_key_model.create(params)
+        self.transaction.add_rollback(_rollback, api_key_vo)
+
+        domain_secret_mgr = DomainSecretManager()
+        prv_jwk = domain_secret_mgr.get_domain_private_key(params["domain_id"])
+
+        key_gen = KeyGenerator(
+            prv_jwk=prv_jwk, domain_id=params["domain_id"], audience=audience
+        )
+
+        api_key = key_gen.generate_api_key(api_key_vo.api_key_id)
+
+        return api_key_vo, api_key
+
+    def create_api_key_by_user_vo(self, user_vo: User, params: dict) -> Tuple[APIKey, str]:
         params["user"] = user_vo
-        api_key_vo: APIKey = self.api_key_model.create(params)
-        self.transaction.add_rollback(_rollback, api_key_vo)
+        params["owner_type"] = "USER"
+        return self.create_api_key(params)
 
-        prv_jwk = self._query_domain_secret(params["domain_id"])
-
-        key_gen = KeyGenerator(
-            prv_jwk=prv_jwk, domain_id=params["domain_id"], audience=user_vo.user_id
-        )
-
-        api_key = key_gen.generate_api_key(api_key_vo.api_key_id)
-        return api_key_vo, api_key
-
-    def create_api_key_by_app_vo(self, app_vo: App, params: dict) -> (APIKey, str):
-        def _rollback(api_key_vo, app_vo):
-            _LOGGER.info(
-                f"[create_api_key._rollback] Delete app and api_key : {app_vo.app_id} {api_key_vo.api_key_id}"
-            )
-            app_vo.delete()
-            api_key_vo.delete()
-
-        params["app"] = app_vo
-        api_key_vo: APIKey = self.api_key_model.create(params)
-        self.transaction.add_rollback(_rollback, api_key_vo)
-
-        prv_jwk = self._query_domain_secret(params["domain_id"])
-
-        key_gen = KeyGenerator(
-            prv_jwk=prv_jwk, domain_id=params["domain_id"], audience=app_vo.app_id
-        )
-
-        api_key = key_gen.generate_api_key(api_key_vo.api_key_id)
-        return api_key_vo, api_key
+    def create_api_key_by_app_vo(self, app_vo: App, params: dict) -> Tuple[APIKey, str]:
+        params["user"] = app_vo
+        params["owner_type"] = "APP"
+        return self.create_api_key(params)
 
     def update_api_key_by_vo(self, params: dict, api_key_vo: APIKey) -> APIKey:
         def _rollback(old_data):
@@ -72,38 +65,32 @@ class APIKeyManager(BaseManager):
 
         return api_key_vo.update(params)
 
-    def delete_api_key(self, api_key_id, domain_id):
-        api_key_vo = self.get_api_key(api_key_id, domain_id)
-        api_key_vo.delete()
-
     @staticmethod
     def delete_api_key_by_vo(api_key_vo: APIKey) -> None:
         api_key_vo.delete()
 
     def enable_api_key(self, api_key_vo: APIKey) -> APIKey:
-        def _rollback(old_data):
-            _LOGGER.info(f"[enable_api_key._rollback] Revert Data: {old_data}")
-            api_key_vo.update(old_data)
-
-        if api_key_vo.state != "ENABLED":
-            self.transaction.add_rollback(_rollback, api_key_vo.to_dict())
-            api_key_vo.update({"state": "ENABLED"})
-
-        return api_key_vo
+        return self.update_api_key_by_vo({"state": "ENABLED"}, api_key_vo)
 
     def disable_api_key(self, api_key_vo: APIKey) -> APIKey:
-        def _rollback(old_data):
-            _LOGGER.info(f"[disable_api_key._rollback] Revert Data: {old_data}")
-            api_key_vo.update(old_data)
+        return self.update_api_key_by_vo({"state": "DISABLED"}, api_key_vo)
 
-        if api_key_vo.state != "DISABLED":
-            self.transaction.add_rollback(_rollback, api_key_vo.to_dict())
-            api_key_vo.update({"state": "DISABLED"})
+    def get_api_key(
+            self, api_key_id: str, domain_id: str, owner_type: str, user_id: str = None, app_id: str = None
+    ) -> APIKey:
+        conditions = {
+            "api_key_id": api_key_id,
+            "domain_id": domain_id,
+            "owner_type": owner_type
+        }
 
-        return api_key_vo
+        if user_id:
+            conditions["user_id"] = user_id
 
-    def get_api_key(self, api_key_id: str, domain_id: str) -> APIKey:
-        return self.api_key_model.get(api_key_id=api_key_id, domain_id=domain_id)
+        if app_id:
+            conditions["app_id"] = app_id
+
+        return self.api_key_model.get(**conditions)
 
     def filter_api_keys(self, **conditions) -> QuerySet:
         return self.api_key_model.filter(**conditions)
@@ -113,8 +100,3 @@ class APIKeyManager(BaseManager):
 
     def stat_api_keys(self, query: dict) -> dict:
         return self.api_key_model.stat(**query)
-
-    @cacheable(key="api-key:{domain_id}", expire=60)
-    def _query_domain_secret(self, domain_id: str) -> DomainSecret:
-        domain_secret = self.domain_secret_model.get(domain_id=domain_id)
-        return domain_secret.prv_jwk
