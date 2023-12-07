@@ -57,3 +57,7 @@ class ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(ERROR_UNABLE_TO_RESET_PASS
 
 class ERROR_UNABLE_TO_RESET_PASSWORD_WITHOUT_EMAIL(ERROR_UNABLE_TO_RESET_PASSWORD):
     _message = "Unable to reset password without email. (user_id = {user_id})"
+
+
+class ERROR_LAST_ADMIN_CANNOT_DISABLE(ERROR_INVALID_ARGUMENT):
+    _message = "The last admin cannot be disabled. (user_id = {user_id})"
