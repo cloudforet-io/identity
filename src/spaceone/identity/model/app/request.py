@@ -28,7 +28,7 @@ class AppCreateRequest(BaseModel):
     name: str
     role_id: str
     tags: Union[dict, None] = None
-    expired_at: Union[datetime, None] = None
+    expired_at: Union[str, None] = None
     permission_group: PermissionGroup
     workspace_id: Union[str, None] = None
     domain_id: str
@@ -45,6 +45,7 @@ class AppUpdateRequest(BaseModel):
 class AppGenerateAPIKeyRequest(BaseModel):
     app_id: str
     workspace_id: Union[str, None] = None
+    expired_at: Union[str, None] = None
     domain_id: str
 
 

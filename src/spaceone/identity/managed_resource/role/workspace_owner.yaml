@@ -4,4 +4,4 @@ name: Workspace Owner
 version: '1.0'
 role_type: WORKSPACE_OWNER
 api_permissions:
-  - *
+  - '*'

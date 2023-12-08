@@ -4,4 +4,4 @@ name: Domain Admin
 version: '1.0'
 role_type: DOMAIN_ADMIN
 api_permissions:
-  - *
+  - '*'

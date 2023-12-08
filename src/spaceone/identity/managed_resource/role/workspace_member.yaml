@@ -4,4 +4,4 @@ name: Workspace Member
 version: '1.0'
 role_type: WORKSPACE_MEMBER
 api_permissions:
-  - *
+  - '*'
