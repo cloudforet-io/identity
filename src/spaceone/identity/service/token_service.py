@@ -114,7 +114,7 @@ class TokenService(BaseService):
         )
 
         token_info = self._verify_refresh_token(refresh_token, refresh_public_jwk)
-        user_auth_type = self._get_user_auth_type(token_info["user_id"], domain_id)
+        user_auth_type = self._get_user_auth_type(token_info["aud"], domain_id)
 
         token_mgr = JWTManager.get_token_manager_by_auth_type(user_auth_type)
         token_mgr.check_refreshable(token_info["jti"], token_info["ttl"])
