@@ -12,7 +12,7 @@ from spaceone.identity.error.error_mfa import *
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.mfa_manager import MFAManager
-from spaceone.identity.manager.token_manager import JWTManager
+from spaceone.identity.manager.token_manager.base import JWTManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.model.token.request import *
 from spaceone.identity.model.token.response import *
@@ -21,7 +21,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class TokenService(BaseService):
-
     service = "identity"
     resource = "Token"
     permission_group = "PUBLIC"
@@ -85,9 +84,10 @@ class TokenService(BaseService):
             refresh_private_jwk=refresh_private_jwk,
             timeout=timeout,
             ttl=refresh_count,
+            domain_id=domain_id,
         )
 
-        return token_info
+        return TokenResponse(**token_info)
 
     @transaction(scope="public")
     @convert_model
@@ -117,7 +117,7 @@ class TokenService(BaseService):
         user_auth_type = self._get_user_auth_type(token_info["user_id"], domain_id)
 
         token_mgr = JWTManager.get_token_manager_by_auth_type(user_auth_type)
-        token_mgr.check_refreshable(token_info["key"], token_info["ttl"])
+        token_mgr.check_refreshable(token_info["jti"], token_info["ttl"])
 
         token_response = token_mgr.refresh_token(
             token_info["user_id"],
@@ -129,7 +129,7 @@ class TokenService(BaseService):
 
         return TokenResponse(**token_response)
 
-    @cache.cacheable(key="user-auth-type:{domain_id}:{user_id}", expire=600)
+    @cache.cacheable(key="identity:user-auth-type:{domain_id}:{user_id}", expire=600)
     def _get_user_auth_type(self, user_id, domain_id):
         try:
             user_vo = self.user_mgr.get_user(user_id, domain_id)
@@ -141,7 +141,7 @@ class TokenService(BaseService):
 
         return user_vo.auth_type
 
-    @cache.cacheable(key="domain-state:{domain_id}", expire=3600)
+    @cache.cacheable(key="identity:domain-state:{domain_id}", expire=3600)
     def _check_domain_state(self, domain_id):
         domain_vo = self.domain_mgr.get_domain(domain_id)
 
@@ -172,13 +172,16 @@ class TokenService(BaseService):
             _LOGGER.error(f"[_verify_refresh_token] {e}")
             raise ERROR_AUTHENTICATE_FAILURE(message="Token validation failed.")
 
-        if decoded.get("cat") != "REFRESH_TOKEN":
+        if decoded.get("typ") != "REFRESH_TOKEN":
             raise ERROR_INVALID_REFRESH_TOKEN()
 
         return {
-            "user_id": decoded["aud"],
-            "user_type": decoded["user_type"],
-            "key": decoded["key"],
+            "iss": decoded["iss"],
+            "typ": decoded["typ"],
+            "own": decoded["own"],
+            "did": decoded["did"],
+            "aud": decoded["aud"],
+            "jti": decoded["jti"],
             "ttl": decoded["ttl"],
             "iat": decoded["iat"],
             "exp": decoded["exp"],

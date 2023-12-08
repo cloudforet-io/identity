@@ -1,8 +1,9 @@
 import logging
 from typing import Tuple
-from mongoengine import QuerySet
 
+from mongoengine import QuerySet
 from spaceone.core.manager import BaseManager
+from spaceone.core import utils
 
 from spaceone.identity.lib.key_generator import KeyGenerator
 from spaceone.identity.model.app.database import App
@@ -20,9 +21,7 @@ class APIKeyManager(BaseManager):
 
     def create_api_key(self, params: dict) -> Tuple[APIKey, str]:
         def _rollback(vo):
-            _LOGGER.info(
-                f"[create_api_key._rollback] Delete api key: {vo.api_key_id}"
-            )
+            _LOGGER.info(f"[create_api_key._rollback] Delete api key: {vo.api_key_id}")
             vo.delete()
 
         if params["owner_type"] == "USER":
@@ -35,22 +34,28 @@ class APIKeyManager(BaseManager):
 
         domain_secret_mgr = DomainSecretManager()
         prv_jwk = domain_secret_mgr.get_domain_private_key(params["domain_id"])
+        params["expired_at"] = utils.iso8601_to_datetime(
+            params["expired_at"]
+        ).timestamp()
 
         key_gen = KeyGenerator(
             prv_jwk=prv_jwk, domain_id=params["domain_id"], audience=audience
         )
 
-        api_key = key_gen.generate_api_key(api_key_vo.api_key_id)
+        api_key = key_gen.generate_api_key(api_key_vo.api_key_id, params["expired_at"])
 
         return api_key_vo, api_key
 
-    def create_api_key_by_user_vo(self, user_vo: User, params: dict) -> Tuple[APIKey, str]:
+    def create_api_key_by_user_vo(
+        self, user_vo: User, params: dict
+    ) -> Tuple[APIKey, str]:
         params["user"] = user_vo
         params["owner_type"] = "USER"
         return self.create_api_key(params)
 
     def create_api_key_by_app_vo(self, app_vo: App, params: dict) -> Tuple[APIKey, str]:
-        params["user"] = app_vo
+        params["app"] = app_vo
+        params["app_id"] = app_vo.app_id
         params["owner_type"] = "APP"
         return self.create_api_key(params)
 
@@ -76,12 +81,17 @@ class APIKeyManager(BaseManager):
         return self.update_api_key_by_vo({"state": "DISABLED"}, api_key_vo)
 
     def get_api_key(
-            self, api_key_id: str, domain_id: str, owner_type: str, user_id: str = None, app_id: str = None
+        self,
+        api_key_id: str,
+        domain_id: str,
+        owner_type: str,
+        user_id: str = None,
+        app_id: str = None,
     ) -> APIKey:
         conditions = {
             "api_key_id": api_key_id,
             "domain_id": domain_id,
-            "owner_type": owner_type
+            "owner_type": owner_type,
         }
 
         if user_id:

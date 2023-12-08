@@ -17,7 +17,7 @@ __all__ = [
 class APIKeyCreateRequest(BaseModel):
     user_id: str
     name: Union[str, None] = None
-    expired_at: Union[datetime, None] = None
+    expired_at: Union[str, None] = None
     domain_id: str
 
 
