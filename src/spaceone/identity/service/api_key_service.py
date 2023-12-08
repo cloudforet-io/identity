@@ -39,9 +39,7 @@ class APIKeyService(BaseService):
             APIKeyResponse:
         """
 
-        params.expired_at = params.expired_at or datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        params.expired_at = self._get_expired_at(params.expired_at)
         self._check_expired_at(params.expired_at)
 
         user_mgr = UserManager()
@@ -175,9 +173,7 @@ class APIKeyService(BaseService):
         return APIKeyResponse(**api_key_vo.to_dict())
 
     @transaction(scope="user:read")
-    @append_query_filter(
-        ["api_key_id", "name", "owner_type", "user_id", "state", "domain_id"]
-    )
+    @append_query_filter(["api_key_id", "name", "user_id", "state", "domain_id"])
     @append_keyword_filter(["api_key_id", "name"])
     @convert_model
     def list(self, params: APIKeySearchQueryRequest) -> Union[APIKeysResponse, dict]:
@@ -196,7 +192,9 @@ class APIKeyService(BaseService):
             APIKeysResponse:
         """
 
-        query = params.query or {}
+        query = params.query
+        query = self._append_owner_type_filter(query)
+
         api_key_vos, total_count = self.api_key_mgr.list_api_keys(query)
         api_keys_info = [api_key_vo.to_dict() for api_key_vo in api_key_vos]
         return APIKeysResponse(results=api_keys_info, total_count=total_count)
@@ -222,6 +220,18 @@ class APIKeyService(BaseService):
         """
         query = params.query or {}
         return self.api_key_mgr.stat_api_keys(query)
+
+    @staticmethod
+    def _append_owner_type_filter(query: dict):
+        query.get("filter", []).append({"k": "owner_type", "v": "USER", "o": "eq"})
+        return query
+
+    @staticmethod
+    def _get_expired_at(expired_at: str) -> str:
+        if expired_at:
+            return expired_at
+        else:
+            return (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S")
 
     @staticmethod
     def _check_expired_at(expired_at: str) -> None:
