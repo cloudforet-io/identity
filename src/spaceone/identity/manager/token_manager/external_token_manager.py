@@ -1,10 +1,10 @@
 import logging
 from datetime import datetime
-from spaceone.identity.connector import AuthPluginConnector
+from spaceone.identity.connector.auth_plugin_connector import AuthPluginConnector
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_user import ERROR_USER_STATUS_CHECK_FAILURE
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.token_manager import JWTManager
+from spaceone.identity.manager.token_manager.base import JWTManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.model.user.database import User

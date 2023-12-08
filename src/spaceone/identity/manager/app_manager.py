@@ -1,8 +1,9 @@
 import logging
 from typing import Tuple, Union
 
-from spaceone.core.cache import cacheable
+from mongoengine import QuerySet
 from spaceone.core.manager import BaseManager
+
 from spaceone.identity.model.app.database import App
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,24 +36,12 @@ class AppManager(BaseManager):
         return app_vo.update(params)
 
     def enable_app(self, app_vo: App) -> App:
-        def _rollback(old_data):
-            _LOGGER.info(f"[enable_app._rollback] Revert Data: {old_data}")
-            app_vo.update(old_data)
-
-        if app_vo.state != "ENABLED":
-            self.transaction.add_rollback(_rollback, app_vo.to_dict())
-            app_vo.update({"state": "ENABLED"})
+        self.update_app_by_vo({"state": "ENABLED"}, app_vo)
 
         return app_vo
 
     def disable_app(self, app_vo: App) -> App:
-        def _rollback(old_data):
-            _LOGGER.info(f"[disable_app._rollback] Revert Data: {old_data}")
-            app_vo.update(old_data)
-
-        if app_vo.state != "DISABLED":
-            self.transaction.add_rollback(_rollback, app_vo.to_dict())
-            app_vo.update({"state": "DISABLED"})
+        self.update_app_by_vo({"state": "DISABLED"}, app_vo)
 
         return app_vo
 
@@ -71,6 +60,9 @@ class AppManager(BaseManager):
             conditions["workspace_id"] = workspace_id
 
         return self.app_model.get(**conditions)
+
+    def filter_apps(self, **conditions) -> QuerySet:
+        return self.app_model.filter(**conditions)
 
     def list_apps(self, query: dict) -> Tuple[list, int]:
         return self.app_model.query(**query)

@@ -4,8 +4,9 @@ from datetime import datetime
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_user import ERROR_USER_STATUS_CHECK_FAILURE
 from spaceone.identity.lib.cipher import PasswordCipher
+from spaceone.identity.lib.key_generator import KeyGenerator
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.token_manager import JWTManager
+from spaceone.identity.manager.token_manager.base import JWTManager
 from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
@@ -38,10 +39,16 @@ class LocalTokenManager(JWTManager):
 
     def issue_temporary_token(self, user_id, domain_id, **kwargs):
         permissions = ["identity.User.get", "identity.User.update"]
+        private_jwk = self._get_private_jwk(kwargs)
+        expired = kwargs["timeout"]
+
+        key_gen = KeyGenerator(
+            prv_jwk=private_jwk, domain_id=domain_id, audience=self.user.user_id
+        )
 
         # Issue token
-        access_token = self.issue_access_token(
-            "USER", user_id, domain_id, permissions=permissions, **kwargs
+        access_token = key_gen.generate_access_token(
+            expired=expired, permissions=permissions
         )
 
         return {"access_token": access_token}
@@ -50,21 +57,26 @@ class LocalTokenManager(JWTManager):
         if self.is_authenticated is False:
             raise ERROR_NOT_AUTHENTICATED()
 
-        permissions = self._get_permissions_from_required_actions()
+        api_permissions = self._get_permissions_from_required_actions()
+        private_jwk = self._get_private_jwk(kwargs)
+        refresh_private_jwk = self._get_refresh_private_jwk(kwargs)
+        domain_id = kwargs.get("domain_id")
 
-        # Issue token
-        access_token = self.issue_access_token(
-            "USER",
-            self.user.user_id,
-            self.user.domain_id,
-            permissions=permissions,
-            **kwargs,
-        )
-        refresh_token = self.issue_refresh_token(
-            "USER", self.user.user_id, self.user.domain_id, **kwargs
+        key_gen = KeyGenerator(
+            prv_jwk=private_jwk,
+            domain_id=domain_id,
+            audience=self.user.user_id,
+            refresh_prv_jwk=refresh_private_jwk,
         )
 
-        # Update user's last_accessed_at field
+        ttl = kwargs.get("ttl") or self.CONST_REFRESH_TTL
+        timeout = kwargs.get("timeout") or self.CONST_TOKEN_TIMEOUT
+
+        access_token = key_gen.generate_access_token(
+            expired=timeout, api_permissions=api_permissions
+        )
+
+        refresh_token = key_gen.generate_refresh_token(expired=timeout, ttl=ttl)
         user = self.user.update({"last_accessed_at": datetime.utcnow()})
 
         return {"access_token": access_token, "refresh_token": refresh_token}
@@ -73,11 +85,11 @@ class LocalTokenManager(JWTManager):
         self.user: User = self.user_mgr.get_user(user_id, domain_id)
         self._check_user_state()
 
-        return self.issue_token(**kwargs)
+        return self.issue_token(domain_id=domain_id, **kwargs)
 
     def _get_permissions_from_required_actions(self):
         if "UPDATE_PASSWORD" in self.user.required_actions:
-            return ["identity.User.get", "identity.User.update"]
+            return ["identity.User.get:user:read", "identity.User.update:user:write"]
 
         return None
 

@@ -16,7 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class APIKeyService(BaseService):
-
     service = "identity"
     resource = "APIKey"
     permission_group = "USER"
@@ -25,8 +24,7 @@ class APIKeyService(BaseService):
         super().__init__(*args, **kwargs)
         self.api_key_mgr = APIKeyManager()
 
-    @transaction
-    @change_timestamp_value(["expired_at"], timestamp_format="iso8601")
+    @transaction(scope="user:write")
     @convert_model
     def create(self, params: APIKeyCreateRequest) -> Union[APIKeyResponse, dict]:
         """Create API Key
@@ -41,7 +39,9 @@ class APIKeyService(BaseService):
             APIKeyResponse:
         """
 
-        params.expired_at = self._get_expired_at(params.expired_at)
+        params.expired_at = params.expired_at or datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         self._check_expired_at(params.expired_at)
 
         user_mgr = UserManager()
@@ -58,7 +58,7 @@ class APIKeyService(BaseService):
         user_mgr.update_user_by_vo({"api_key_count": api_key_vos.count()}, user_vo)
         return APIKeyResponse(**api_key_vo.to_dict(), api_key=api_key)
 
-    @transaction
+    @transaction(scope="user:write")
     @convert_model
     def update(self, params: APIKeyUpdateRequest) -> Union[APIKeyResponse, dict]:
         """Update API Key
@@ -74,7 +74,7 @@ class APIKeyService(BaseService):
         """
 
         api_key_vo = self.api_key_mgr.get_api_key(
-            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+            params.api_key_id, params.domain_id, "USER", user_id=params.user_id
         )
 
         api_key_vo = self.api_key_mgr.update_api_key_by_vo(
@@ -83,7 +83,7 @@ class APIKeyService(BaseService):
 
         return APIKeyResponse(**api_key_vo.to_dict())
 
-    @transaction
+    @transaction(scope="user:write")
     @convert_model
     def enable(self, params: APIKeyEnableRequest) -> Union[APIKeyResponse, dict]:
         """Enable API Key
@@ -98,13 +98,13 @@ class APIKeyService(BaseService):
         """
 
         api_key_vo = self.api_key_mgr.get_api_key(
-            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+            params.api_key_id, params.domain_id, "USER", user_id=params.user_id
         )
 
         api_key_vo = self.api_key_mgr.enable_api_key(api_key_vo)
         return APIKeyResponse(**api_key_vo.to_dict())
 
-    @transaction
+    @transaction(scope="user:write")
     @convert_model
     def disable(self, params: APIKeyDisableRequest) -> Union[APIKeyResponse, dict]:
         """Disable API Key
@@ -119,13 +119,13 @@ class APIKeyService(BaseService):
         """
 
         api_key_vo = self.api_key_mgr.get_api_key(
-            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+            params.api_key_id, params.domain_id, "USER", user_id=params.user_id
         )
 
         api_key_vo = self.api_key_mgr.disable_api_key(api_key_vo)
         return APIKeyResponse(**api_key_vo.to_dict())
 
-    @transaction
+    @transaction(scope="user:write")
     @convert_model
     def delete(self, params: APIKeyDeleteRequest) -> None:
         """Delete API Key
@@ -140,7 +140,7 @@ class APIKeyService(BaseService):
         """
 
         api_key_vo = self.api_key_mgr.get_api_key(
-            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+            params.api_key_id, params.domain_id, "USER", user_id=params.user_id
         )
 
         if api_key_vo.user_id:
@@ -154,7 +154,7 @@ class APIKeyService(BaseService):
 
         self.api_key_mgr.delete_api_key_by_vo(api_key_vo)
 
-    @transaction
+    @transaction(scope="user:read")
     @convert_model
     def get(self, params: APIKeyGetRequest) -> Union[APIKeyResponse, dict]:
         """Get API Key
@@ -169,13 +169,15 @@ class APIKeyService(BaseService):
         """
 
         api_key_vo = self.api_key_mgr.get_api_key(
-            params.api_key_id, params.domain_id, 'USER', user_id=params.user_id
+            params.api_key_id, params.domain_id, "USER", user_id=params.user_id
         )
 
         return APIKeyResponse(**api_key_vo.to_dict())
 
-    @transaction
-    @append_query_filter(["api_key_id", "name", "owner_type", "user_id", "state", "domain_id"])
+    @transaction(scope="user:read")
+    @append_query_filter(
+        ["api_key_id", "name", "owner_type", "user_id", "state", "domain_id"]
+    )
     @append_keyword_filter(["api_key_id", "name"])
     @convert_model
     def list(self, params: APIKeySearchQueryRequest) -> Union[APIKeysResponse, dict]:
@@ -199,7 +201,7 @@ class APIKeyService(BaseService):
         api_keys_info = [api_key_vo.to_dict() for api_key_vo in api_key_vos]
         return APIKeysResponse(results=api_keys_info, total_count=total_count)
 
-    @transaction
+    @transaction(scope="user:read")
     @append_query_filter(["user_id" "owner_type", "domain_id"])
     @append_keyword_filter(["api_key_id", "name"])
     @convert_model
@@ -222,21 +224,9 @@ class APIKeyService(BaseService):
         return self.api_key_mgr.stat_api_keys(query)
 
     @staticmethod
-    def _get_expired_at(expired_at: datetime) -> datetime:
-        if expired_at:
-            return expired_at.replace(hour=23, minute=59, second=59, microsecond=0)
-        else:
-            return datetime.now().replace(
-                hour=23, minute=59, second=59, microsecond=0
-            ) + timedelta(days=364)
+    def _check_expired_at(expired_at: str) -> None:
+        one_year_later = datetime.now() + timedelta(days=365)
+        print(one_year_later)
 
-    @staticmethod
-    def _check_expired_at(expired_at):
-        one_year_later = datetime.now().replace(
-            hour=23, minute=59, second=59, microsecond=0
-        ) + timedelta(days=364)
-
-        if one_year_later < expired_at:
-            raise ERROR_API_KEY_EXPIRED_LIMIT(
-                expired_at=expired_at.strftime("%Y-%m-%dT%H:%M:%S")
-            )
+        if one_year_later.strftime("%Y-%m-%d %H:%M:%S") < expired_at:
+            raise ERROR_API_KEY_EXPIRED_LIMIT(expired_at=expired_at)
