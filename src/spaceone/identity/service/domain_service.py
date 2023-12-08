@@ -3,6 +3,7 @@ from typing import Union
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
+from spaceone.core import utils
 
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.domain_manager import DomainManager
@@ -17,11 +18,10 @@ from spaceone.identity.error.error_domain import *
 _LOGGER = logging.getLogger(__name__)
 
 
-# @authentication_handler
-# @authorization_handler
-# @request_mutation_handler
-# @response_mutation_handler
-# @event_handler
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class DomainService(BaseService):
 
     service = "identity"
@@ -201,7 +201,7 @@ class DomainService(BaseService):
         """
 
         pub_jwk = self.domain_secret_mgr.get_domain_public_key(params.domain_id)
-        return DomainSecretResponse(public_key=str(pub_jwk), domain_id=params.domain_id)
+        return DomainSecretResponse(public_key=utils.dump_json(pub_jwk), domain_id=params.domain_id)
 
     @transaction(scope='system_admin:read')
     @append_query_filter(["domain_id", "name", "state"])

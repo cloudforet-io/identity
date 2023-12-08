@@ -56,7 +56,6 @@ class APIKeySearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     api_key_id: Union[str, None] = None
     name: Union[str, None] = None
-    owner_type: str = "USER"
     user_id: Union[str, None] = None
     state: Union[str, None] = None
     domain_id: str
@@ -64,6 +63,5 @@ class APIKeySearchQueryRequest(BaseModel):
 
 class APIKeyStatQueryRequest(BaseModel):
     query: dict
-    owner_type: str = "USER"
     domain_id: str
     user_id: Union[str, None] = None

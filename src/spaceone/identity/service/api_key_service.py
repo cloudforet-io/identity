@@ -183,7 +183,6 @@ class APIKeyService(BaseService):
                 'query': 'dict',
                 'api_key_id': 'str',
                 'name': 'str',
-                'owner_type': 'str',
                 'user_id': 'str',
                 'state': 'str',
                 'domain_id': 'str'      # required
@@ -208,7 +207,6 @@ class APIKeyService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict',        # required
-                'owner_type': 'str',
                 'domain_id': 'str',     # required
                 'user_id': 'str',       # from meta
             }
@@ -219,6 +217,8 @@ class APIKeyService(BaseService):
             }
         """
         query = params.query or {}
+        query = self._append_owner_type_filter(query)
+
         return self.api_key_mgr.stat_api_keys(query)
 
     @staticmethod
@@ -236,7 +236,6 @@ class APIKeyService(BaseService):
     @staticmethod
     def _check_expired_at(expired_at: str) -> None:
         one_year_later = datetime.now() + timedelta(days=365)
-        print(one_year_later)
 
         if one_year_later.strftime("%Y-%m-%d %H:%M:%S") < expired_at:
             raise ERROR_API_KEY_EXPIRED_LIMIT(expired_at=expired_at)
