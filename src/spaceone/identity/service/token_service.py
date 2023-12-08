@@ -120,7 +120,7 @@ class TokenService(BaseService):
         token_mgr.check_refreshable(token_info["jti"], token_info["ttl"])
 
         token_response = token_mgr.refresh_token(
-            token_info["user_id"],
+            token_info["aud"],
             domain_id,
             ttl=token_info["ttl"] - 1,
             private_jwk=private_jwk,
