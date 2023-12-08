@@ -39,7 +39,10 @@ class APIKeyManager(BaseManager):
         ).timestamp()
 
         key_gen = KeyGenerator(
-            prv_jwk=prv_jwk, domain_id=params["domain_id"], audience=audience
+            api_key_id=api_key_vo.api_key_id,
+            prv_jwk=prv_jwk,
+            domain_id=params["domain_id"],
+            audience=audience,
         )
 
         api_key = key_gen.generate_api_key(api_key_vo.api_key_id, params["expired_at"])
