@@ -19,11 +19,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @authentication_handler
-@authorization_handler
+# @authorization_handler
 @mutation_handler
 @event_handler
 class DomainService(BaseService):
-
     service = "identity"
     resource = "Domain"
     permission_group = "DOMAIN"
@@ -35,7 +34,7 @@ class DomainService(BaseService):
         self.user_mgr = UserManager()
         self.role_manager = RoleManager()
 
-    @transaction(scope='system_admin:write')
+    @transaction(scope="system_admin:write")
     @convert_model
     def create(self, params: DomainCreateRequest) -> Union[DomainResponse, dict]:
         """Create Domain
@@ -67,7 +66,9 @@ class DomainService(BaseService):
         # create default role
         role_mgr = RoleManager()
         role_mgr.list_roles({}, domain_vo.domain_id)
-        role_vos = self.role_manager.filter_roles(domain_id=domain_vo.domain_id, role_type="DOMAIN_ADMIN")
+        role_vos = self.role_manager.filter_roles(
+            domain_id=domain_vo.domain_id, role_type="DOMAIN_ADMIN"
+        )
 
         if len(role_vos) == 0:
             raise ERROR_DOMAIN_ADMIN_ROLE_IS_NOT_DEFINED()
@@ -84,7 +85,7 @@ class DomainService(BaseService):
 
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope='system_admin:write')
+    @transaction(scope="system_admin:write")
     @convert_model
     def update(self, params: DomainUpdateRequest) -> Union[DomainResponse, dict]:
         """Update domain
@@ -104,7 +105,7 @@ class DomainService(BaseService):
         )
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope='system_admin:write')
+    @transaction(scope="system_admin:write")
     @convert_model
     def delete(self, params: DomainDeleteRequest) -> None:
         """Delete Domain
@@ -119,7 +120,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
         self.domain_mgr.delete_domain_by_vo(domain_vo)
 
-    @transaction(scope='system_admin:write')
+    @transaction(scope="system_admin:write")
     @convert_model
     def enable(self, params: DomainEnableRequest) -> Union[DomainResponse, dict]:
         """Enable Domain
@@ -135,7 +136,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.enable_domain(domain_vo)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope='system_admin:write')
+    @transaction(scope="system_admin:write")
     @convert_model
     def disable(self, params: DomainDisableRequest) -> Union[DomainResponse, dict]:
         """Disable Domain
@@ -151,7 +152,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.disable_domain(domain_vo)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope='system_admin:write')
+    @transaction(scope="system_admin:write")
     @convert_model
     def get(self, params: DomainGetRequest) -> Union[DomainResponse, dict]:
         """Get Domain
@@ -166,7 +167,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope='public')
+    @transaction(scope="public")
     @convert_model
     def get_auth_info(
         self, params: DomainGetAuthInfoRequest
@@ -186,7 +187,7 @@ class DomainService(BaseService):
 
         return DomainAuthInfoResponse(**auth_info)
 
-    @transaction(scope='system')
+    @transaction(scope="system")
     @convert_model
     def get_public_key(
         self, params: DomainGetPublicKeyRequest
@@ -201,9 +202,11 @@ class DomainService(BaseService):
         """
 
         pub_jwk = self.domain_secret_mgr.get_domain_public_key(params.domain_id)
-        return DomainSecretResponse(public_key=utils.dump_json(pub_jwk), domain_id=params.domain_id)
+        return DomainSecretResponse(
+            public_key=utils.dump_json(pub_jwk), domain_id=params.domain_id
+        )
 
-    @transaction(scope='system_admin:read')
+    @transaction(scope="system_admin:read")
     @append_query_filter(["domain_id", "name", "state"])
     @append_keyword_filter(["domain_id", "name"])
     @convert_model
@@ -226,7 +229,7 @@ class DomainService(BaseService):
         domains_info = [domain_vo.to_dict() for domain_vo in domain_vos]
         return DomainsResponse(results=domains_info, total_count=total_count)
 
-    @transaction(scope='system_admin:read')
+    @transaction(scope="system_admin:read")
     @append_keyword_filter(["domain_id", "name"])
     @convert_model
     def stat(self, params: DomainStatQueryRequest) -> dict:
