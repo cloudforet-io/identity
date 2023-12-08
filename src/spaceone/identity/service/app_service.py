@@ -8,7 +8,7 @@ from spaceone.core.service.utils import *
 from spaceone.identity.error.error_api_key import *
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.api_key_manager import APIKeyManager
-from spaceone.identity.manager.role_manager import RoleManager
+from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.app.request import *
 from spaceone.identity.model.app.response import *
 
@@ -37,12 +37,9 @@ class AppService(BaseService):
         Return:
             AppResponse:
         """
-        params.expired_at = params.expired_at or datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        params.expired_at = self._get_expired_at(params.expired_at)
         self._check_expired_at(params.expired_at)
 
-        # 퍼미션 그룹에 따라 롤 타입 체크
         # Check workspace
         if params.permission_group == "WORKSPACE":
             workspace_mgr = WorkspaceManager()
@@ -255,6 +252,13 @@ class AppService(BaseService):
         """
         query = params.query or {}
         return self.app_mgr.stat_apps(query)
+
+    @staticmethod
+    def _get_expired_at(expired_at: str) -> str:
+        if expired_at:
+            return expired_at
+        else:
+            return (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S")
 
     @staticmethod
     def _check_expired_at(expired_at: str) -> None:
