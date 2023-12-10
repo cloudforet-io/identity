@@ -16,7 +16,9 @@ from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.mfa_manager import MFAManager
-from spaceone.identity.manager.token_manager.local_token_manager import LocalTokenManager
+from spaceone.identity.manager.token_manager.local_token_manager import (
+    LocalTokenManager,
+)
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.user.request import *
@@ -27,8 +29,9 @@ from spaceone.identity.model.workspace.response import WorkspacesResponse
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+# @authorization_handler
 class UserService(BaseService):
-
     service = "identity"
     resource = "User"
     permission_group = "USER"
@@ -78,7 +81,9 @@ class UserService(BaseService):
 
             temp_password = self._generate_temporary_password()
             params["password"] = copy.deepcopy(temp_password)
-            reset_password_type = config.get_global("RESET_PASSWORD_TYPE", "ACCESS_TOKEN")
+            reset_password_type = config.get_global(
+                "RESET_PASSWORD_TYPE", "ACCESS_TOKEN"
+            )
 
             if reset_password_type == "ACCESS_TOKEN":
                 token = self._issue_temporary_token(user_id, domain_id)
@@ -217,7 +222,9 @@ class UserService(BaseService):
 
     @transaction(scope="user:write")
     @convert_model
-    def confirm_email(self, params: UserConfirmEmailRequest) -> Union[UserResponse, dict]:
+    def confirm_email(
+        self, params: UserConfirmEmailRequest
+    ) -> Union[UserResponse, dict]:
         """Confirm email
 
         Args:
@@ -499,8 +506,10 @@ class UserService(BaseService):
 
     @transaction(scope="user:read")
     @convert_model
-    def get_workspaces(self, params: UserWorkspacesRequest) -> Union[WorkspacesResponse, dict]:
-        """ Find user
+    def get_workspaces(
+        self, params: UserWorkspacesRequest
+    ) -> Union[WorkspacesResponse, dict]:
+        """Find user
         Args:
             params (UserWorkspacesRequest): {
                 'user_id': 'str',       # required
@@ -516,14 +525,14 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
-        if user_vo.role_type == ['SYSTEM_ADMIN', 'DOMAIN_ADMIN']:
+        if user_vo.role_type == ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
             allow_all = True
         else:
             rb_vos = rb_mgr.filter_role_bindings(
                 user_id=params.user_id,
                 domain_id=params.domain_id,
-                role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER'],
-                workspace_id='*'
+                role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+                workspace_id="*",
             )
 
             if rb_vos.count() > 0:
@@ -533,19 +542,25 @@ class UserService(BaseService):
             workspace_vos = workspace_mgr.filter_workspaces(domain_id=params.domain_id)
         else:
             rb_vos = rb_mgr.filter_role_bindings(
-                user_id=params.user_id, domain_id=params.domain_id, role_type=['WORKSPACE_OWNER', 'WORKSPACE_MEMBER']
+                user_id=params.user_id,
+                domain_id=params.domain_id,
+                role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
             )
 
             workspace_ids = list(set([rb.workspace_id for rb in rb_vos]))
-            workspace_vos = workspace_mgr.filter_workspaces(workspace_id=workspace_ids, domain_id=params.domain_id)
+            workspace_vos = workspace_mgr.filter_workspaces(
+                workspace_id=workspace_ids, domain_id=params.domain_id
+            )
 
         workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
-        return WorkspacesResponse(results=workspaces_info, total_count=len(workspaces_info))
+        return WorkspacesResponse(
+            results=workspaces_info, total_count=len(workspaces_info)
+        )
 
     @transaction(scope="workspace_owner:write")
     @convert_model
     def find(self, params: UserFindRequest) -> Union[UsersSummaryResponse, dict]:
-        """ Find user
+        """Find user
         Args:
             params (UserFindRequest): {
                 'keyword': 'str',           # required
@@ -559,15 +574,13 @@ class UserService(BaseService):
         """
 
         query = {
-            "filter": [
-                {"k": "domain_id", "v": params.domain_id, "o": "eq"}
-            ],
+            "filter": [{"k": "domain_id", "v": params.domain_id, "o": "eq"}],
             "filter_or": [
                 {"k": "user_id", "v": params.keyword, "o": "contain"},
-                {"k": "name", "v": params.keyword, "o": "contain"}
+                {"k": "name", "v": params.keyword, "o": "contain"},
             ],
             "page": params.page,
-            "only": ["user_id", "name", "state"]
+            "only": ["user_id", "name", "state"],
         }
 
         if params.state:
@@ -576,8 +589,7 @@ class UserService(BaseService):
         if params.exclude_workspace_id:
             rb_mgr = RoleBindingManager()
             rb_vos = rb_mgr.filter_role_bindings(
-                workspace_id=params.exclude_workspace_id,
-                domain_id=params.domain_id
+                workspace_id=params.exclude_workspace_id, domain_id=params.domain_id
             )
             user_ids = list(set([rb.user_id for rb in rb_vos]))
             query["filter"].append({"k": "user_id", "v": user_ids, "o": "not_in"})
@@ -628,7 +640,7 @@ class UserService(BaseService):
     @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
     def stat(self, params: UserStatQueryRequest) -> dict:
-        """ stat users
+        """stat users
 
         Args:
             params (UserStatQueryRequest): {

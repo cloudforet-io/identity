@@ -1,23 +1,22 @@
 from spaceone.core.pygrpc.server import GRPCServer
+from spaceone.identity.interface.grpc.app import App
+from spaceone.identity.interface.grpc.api_key import APIKey
 from spaceone.identity.interface.grpc.domain import Domain
-from spaceone.identity.interface.grpc.external_auth import ExternalAuth
 from spaceone.identity.interface.grpc.endpoint import Endpoint
-from spaceone.identity.interface.grpc.workspace import Workspace
+from spaceone.identity.interface.grpc.external_auth import ExternalAuth
 from spaceone.identity.interface.grpc.project_group import ProjectGroup
 from spaceone.identity.interface.grpc.project import Project
 from spaceone.identity.interface.grpc.provider import Provider
-from spaceone.identity.interface.grpc.schema import Schema
-from spaceone.identity.interface.grpc.trusted_account import TrustedAccount
-from spaceone.identity.interface.grpc.service_account import ServiceAccount
 from spaceone.identity.interface.grpc.role import Role
 from spaceone.identity.interface.grpc.role_binding import RoleBinding
-from spaceone.identity.interface.grpc.user import User
-from spaceone.identity.interface.grpc.workspace_user import WorkspaceUser
-
-# from spaceone.identity.interface.grpc.user_group import UserGroup
-from spaceone.identity.interface.grpc.app import App
-from spaceone.identity.interface.grpc.api_key import APIKey
+from spaceone.identity.interface.grpc.schema import Schema
+from spaceone.identity.interface.grpc.service_account import ServiceAccount
 from spaceone.identity.interface.grpc.token import Token
+from spaceone.identity.interface.grpc.trusted_account import TrustedAccount
+from spaceone.identity.interface.grpc.user import User
+from spaceone.identity.interface.grpc.user_group import UserGroup
+from spaceone.identity.interface.grpc.workspace import Workspace
+from spaceone.identity.interface.grpc.workspace_user import WorkspaceUser
 
 # from spaceone.identity.interface.grpc.authorization import Authorization
 
@@ -38,7 +37,7 @@ app.add_service(Role)
 app.add_service(RoleBinding)
 app.add_service(User)
 app.add_service(WorkspaceUser)
-# app.add_service(UserGroup)
+app.add_service(UserGroup)
 app.add_service(App)
 app.add_service(APIKey)
 app.add_service(Token)

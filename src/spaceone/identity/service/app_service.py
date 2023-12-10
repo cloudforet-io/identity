@@ -16,6 +16,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class AppService(BaseService):
+    service = "identity"
+    resource = "App"
+    permission_group = "COMPOUND"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app_mgr = AppManager()
