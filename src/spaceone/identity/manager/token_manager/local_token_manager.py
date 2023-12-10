@@ -38,7 +38,10 @@ class LocalTokenManager(JWTManager):
             raise ERROR_AUTHENTICATION_FAILURE(user_id=self.user.user_id)
 
     def issue_temporary_token(self, user_id, domain_id, **kwargs):
-        permissions = ["identity.User.get", "identity.User.update"]
+        api_permissions = [
+            "identity.User.get:user:read",
+            "identity.User.update:user:write",
+        ]
         private_jwk = self._get_private_jwk(kwargs)
         expired = kwargs["timeout"]
 
@@ -48,7 +51,7 @@ class LocalTokenManager(JWTManager):
 
         # Issue token
         access_token = key_gen.generate_access_token(
-            expired=expired, permissions=permissions
+            expired=expired, api_permissions=api_permissions
         )
 
         return {"access_token": access_token}

@@ -33,22 +33,30 @@ class DomainSecretManager(BaseManager):
 
     @cacheable(key="identity:public-jwk:{domain_id}", expire=600)
     def get_domain_public_key(self, domain_id: str) -> dict:
-        domain_secret_vo: DomainSecret = self.domain_secret_model.get(domain_id=domain_id)
+        domain_secret_vo: DomainSecret = self.domain_secret_model.get(
+            domain_id=domain_id
+        )
         return domain_secret_vo.pub_jwk
 
     @cacheable(key="identity:private-jwk:{domain_id}", expire=600)
-    def get_domain_private_key(self, domain_id) -> dict:
-        domain_secret_vo: DomainSecret = self.domain_secret_model.get(domain_id=domain_id)
+    def get_domain_private_key(self, domain_id: str) -> dict:
+        domain_secret_vo: DomainSecret = self.domain_secret_model.get(
+            domain_id=domain_id
+        )
         return domain_secret_vo.prv_jwk
 
     @cacheable(key="identity:refresh-public-jwk:{domain_id}", expire=600)
-    def get_domain_refresh_public_key(self, domain_id) -> dict:
-        domain_secret_vo: DomainSecret = self.domain_secret_model.get(domain_id=domain_id)
+    def get_domain_refresh_public_key(self, domain_id: str) -> dict:
+        domain_secret_vo: DomainSecret = self.domain_secret_model.get(
+            domain_id=domain_id
+        )
         return domain_secret_vo.refresh_pub_jwk
 
     @cacheable(key="identity:refresh-private-jwk:{domain_id}", expire=600)
-    def get_domain_refresh_private_key(self, domain_id) -> dict:
-        domain_secret_vo: DomainSecret = self.domain_secret_model.get(domain_id=domain_id)
+    def get_domain_refresh_private_key(self, domain_id: str) -> dict:
+        domain_secret_vo: DomainSecret = self.domain_secret_model.get(
+            domain_id=domain_id
+        )
         return domain_secret_vo.refresh_prv_jwk
 
     @staticmethod
