@@ -223,7 +223,7 @@ class UserService(BaseService):
     @transaction(scope="user:write")
     @convert_model
     def confirm_email(
-        self, params: UserConfirmEmailRequest
+            self, params: UserConfirmEmailRequest
     ) -> Union[UserResponse, dict]:
         """Confirm email
 
@@ -307,7 +307,7 @@ class UserService(BaseService):
     @transaction(scope="domain_admin:write")
     @convert_model
     def set_required_actions(
-        self, params: UserSetRequiredActionsRequest
+            self, params: UserSetRequiredActionsRequest
     ) -> Union[UserResponse, dict]:
         """Set required actions
 
@@ -466,14 +466,8 @@ class UserService(BaseService):
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
         # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
-        user_vos = self.user_mgr.filter_users(
-            domain_id=params.domain_id,
-            state="ENABLED",
-            role_type=["DOMAIN_ADMIN", "SYSTEM_ADMIN"],
-        )
-
-        if user_vos.count() == 1:
-            raise ERROR_LAST_ADMIN_CANNOT_DELETED(user_id=params.user_id)
+        if user_vo.role_type == ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
+            self._check_last_admin(params.domain_id, user_vo)
 
         self.user_mgr.delete_user_by_vo(user_vo)
 
@@ -514,14 +508,8 @@ class UserService(BaseService):
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
         # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
-        user_vos = self.user_mgr.filter_users(
-            domain_id=params.domain_id,
-            state="ENABLED",
-            role_type=["DOMAIN_ADMIN", "SYSTEM_ADMIN"],
-        )
-
-        if user_vos.count() == 1:
-            raise ERROR_LAST_ADMIN_CANNOT_DISABLE(user_id=params.user_id)
+        if user_vo.role_type in ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
+            self._check_last_admin(params.domain_id, user_vo)
 
         user_vo = self.user_mgr.update_user_by_vo({"state": "DISABLED"}, user_vo)
         return UserResponse(**user_vo.to_dict())
@@ -547,7 +535,7 @@ class UserService(BaseService):
     @transaction(scope="user:read")
     @convert_model
     def get_workspaces(
-        self, params: UserWorkspacesRequest
+            self, params: UserWorkspacesRequest
     ) -> Union[WorkspacesResponse, dict]:
         """Find user
         Args:
@@ -722,6 +710,15 @@ class UserService(BaseService):
 
         return f"{console_domain}?sso_access_token={token}"
 
+    def _check_last_admin(self, domain_id: str, user_vo: User) -> None:
+        user_vos = self.user_mgr.filter_users(
+            domain_id=domain_id, state="ENABLED", role_type=user_vo.role_type
+        )
+
+        if user_vos.count() == 1:
+            if user_vos.first().user_id == user_vo.user_id:
+                raise ERROR_LAST_ADMIN_CANNOT_DISABLED_DELETED(user_id=user_vo.user_id)
+
     def _get_console_url(self, domain_id):
         domain_name = self._get_domain_name(domain_id)
 
@@ -745,8 +742,8 @@ class UserService(BaseService):
                 for _ in range(12)
             )
             if (
-                re.search("[a-z]", random_password)
-                and re.search("[A-Z]", random_password)
-                and re.search("[0-9]", random_password)
+                    re.search("[a-z]", random_password)
+                    and re.search("[A-Z]", random_password)
+                    and re.search("[0-9]", random_password)
             ):
                 return random_password
