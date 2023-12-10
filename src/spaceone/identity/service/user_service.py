@@ -309,7 +309,30 @@ class UserService(BaseService):
     def set_required_actions(
         self, params: UserSetRequiredActionsRequest
     ) -> Union[UserResponse, dict]:
-        return {}
+        """Set required actions
+
+        Args:
+            params (UserSetRequiredActionsRequest): {
+                'user_id': 'str',       # required
+                'actions': 'list',      # required
+                'domain_id': 'str'      # required
+            }
+        Returns:
+            UserResponse:
+        """
+        new_actions = params.actions or []
+        user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+
+        if "UPDATE_PASSWORD" in new_actions:
+            if user_vo.auth_type == "EXTERNAL":
+                raise ERROR_NOT_ALLOWED_ACTIONS(user_id=user_vo.user_id)
+
+        required_actions = list(set(user_vo.required_actions + new_actions))
+        user_vo = self.user_mgr.update_user_by_vo(
+            {"required_actions": required_actions}, user_vo
+        )
+
+        return UserResponse(**user_vo.to_dict())
 
     @transaction(scope="user:write")
     @convert_model
