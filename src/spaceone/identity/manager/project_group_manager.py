@@ -27,7 +27,9 @@ class ProjectGroupManager(BaseManager):
 
         return project_group_vo
 
-    def update_project_group_by_vo(self, params: dict, project_group_vo: ProjectGroup) -> ProjectGroup:
+    def update_project_group_by_vo(
+        self, params: dict, project_group_vo: ProjectGroup
+    ) -> ProjectGroup:
         def _rollback(old_data):
             _LOGGER.info(
                 f'[update_project_group._rollback] Revert Data: {old_data["name"]} ({old_data["project_group_id"]})'
@@ -40,13 +42,19 @@ class ProjectGroupManager(BaseManager):
 
     def delete_project_group_by_vo(self, project_group_vo: ProjectGroup) -> None:
         project_mgr = ProjectManager()
-        project_vos = project_mgr.filter_projects(project_group_id=project_group_vo.project_group_id)
+        project_vos = project_mgr.filter_projects(
+            project_group_id=project_group_vo.project_group_id
+        )
         for project_vo in project_vos:
             raise ERROR_RELATED_PROJECT_EXIST(project_id=project_vo.project_id)
 
-        child_vos = self.filter_project_groups(parent_group_id=project_group_vo.project_group_id)
+        child_vos = self.filter_project_groups(
+            parent_group_id=project_group_vo.project_group_id
+        )
         for child_vo in child_vos:
-            raise ERROR_RELATED_PROJECT_GROUP_EXIST(project_group_id=child_vo.project_group_id)
+            raise ERROR_RELATED_PROJECT_GROUP_EXIST(
+                project_group_id=child_vo.project_group_id
+            )
 
         project_group_vo.delete()
 
