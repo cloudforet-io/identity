@@ -466,6 +466,15 @@ class UserService(BaseService):
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
         # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
+        user_vos = self.user_mgr.filter_users(
+            domain_id=params.domain_id,
+            state="ENABLED",
+            role_type=["DOMAIN_ADMIN", "SYSTEM_ADMIN"],
+        )
+
+        if user_vos.count() == 1:
+            raise ERROR_LAST_ADMIN_CANNOT_DELETED(user_id=params.user_id)
+
         self.user_mgr.delete_user_by_vo(user_vo)
 
     @transaction(scope="domain_admin:write")
@@ -503,10 +512,18 @@ class UserService(BaseService):
         """
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
-        user_vo = self.user_mgr.update_user_by_vo({"state": "DISABLED"}, user_vo)
 
         # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
+        user_vos = self.user_mgr.filter_users(
+            domain_id=params.domain_id,
+            state="ENABLED",
+            role_type=["DOMAIN_ADMIN", "SYSTEM_ADMIN"],
+        )
 
+        if user_vos.count() == 1:
+            raise ERROR_LAST_ADMIN_CANNOT_DISABLE(user_id=params.user_id)
+
+        user_vo = self.user_mgr.update_user_by_vo({"state": "DISABLED"}, user_vo)
         return UserResponse(**user_vo.to_dict())
 
     @transaction(scope="user:read")

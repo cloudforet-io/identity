@@ -60,4 +60,10 @@ class ERROR_UNABLE_TO_RESET_PASSWORD_WITHOUT_EMAIL(ERROR_UNABLE_TO_RESET_PASSWOR
 
 
 class ERROR_LAST_ADMIN_CANNOT_DISABLE(ERROR_INVALID_ARGUMENT):
-    _message = "The last admin cannot be disabled. (user_id = {user_id})"
+    _message = "The last Domain Admin or System Admin cannot be disabled. (user_id = {user_id})"
+
+
+class ERROR_LAST_ADMIN_CANNOT_DELETED(ERROR_INVALID_ARGUMENT):
+    _message = (
+        "The last Domain Admin or System Admin cannot be deleted. (user_id = {user_id})"
+    )
