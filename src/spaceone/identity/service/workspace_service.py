@@ -74,6 +74,7 @@ class WorkspaceService(BaseService):
         Returns:
             None
         """
+
         workspace_vo = self.workspace_mgr.get_workspace(
             params.workspace_id, params.domain_id
         )
