@@ -1,6 +1,7 @@
 import logging
-from mongoengine import QuerySet
+from typing import Tuple
 
+from mongoengine import QuerySet
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
@@ -60,7 +61,7 @@ class ExternalAuthManager(BaseManager):
 
         if external_auth_vos.count() > 0:
             external_auth_state = "ENABLED"
-            metadata = external_auth_vos[0].plugin_info.get("metadata", {}),
+            metadata = (external_auth_vos[0].plugin_info.get("metadata", {}),)
 
         else:
             external_auth_state = "DISABLED"
@@ -76,10 +77,9 @@ class ExternalAuthManager(BaseManager):
     def filter_external_auth(self, **conditions) -> QuerySet:
         return self.external_auth_model.filter(**conditions)
 
-    def get_auth_plugin_endpoint(self, domain_id, plugin_info):
-        plugin_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", service="plugin"
-        )
+    @staticmethod
+    def get_auth_plugin_endpoint(domain_id: str, plugin_info: dict) -> Tuple[str, str]:
+        plugin_connector = SpaceConnector(service="plugin")
         response = plugin_connector.dispatch(
             "Plugin.get_plugin_endpoint",
             {
@@ -93,16 +93,16 @@ class ExternalAuthManager(BaseManager):
         return response["endpoint"], response.get("updated_version")
 
     @staticmethod
-    def init_auth_plugin(endpoint, options):
+    def init_auth_plugin(endpoint: str, options: dict) -> dict:
         auth_conn = AuthPluginConnector()
         auth_conn.initialize(endpoint)
 
         return auth_conn.init(options)
 
-    def _create_secret(self, domain_id, secret_data, schema):
-        secret_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", service="secret"
-        )
+    @staticmethod
+    def _create_secret(domain_id: str, secret_data: dict, schema: dict) -> str:
+        secret_connector = SpaceConnector(service="secret")
+
         params = {
             "name": f"{domain_id}-auth-plugin-credentials",
             "data": secret_data,

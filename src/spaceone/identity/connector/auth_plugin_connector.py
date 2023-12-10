@@ -49,7 +49,7 @@ class AuthPluginConnector(BaseConnector):
 
         return MessageToDict(response, preserving_proto_field_name=True)
 
-    def init(self, options):
+    def init(self, options: dict):
         params = {"options": options}
 
         try:
