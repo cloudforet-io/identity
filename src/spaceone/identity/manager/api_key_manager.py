@@ -45,7 +45,7 @@ class APIKeyManager(BaseManager):
             audience=audience,
         )
 
-        api_key = key_gen.generate_api_key(api_key_vo.api_key_id, params["expired_at"])
+        api_key = key_gen.generate_api_key(params["expired_at"])
 
         return api_key_vo, api_key
 
