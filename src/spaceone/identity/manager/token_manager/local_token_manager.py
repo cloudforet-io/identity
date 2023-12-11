@@ -46,7 +46,7 @@ class LocalTokenManager(JWTManager):
         expired = kwargs["timeout"]
 
         key_gen = KeyGenerator(
-            prv_jwk=private_jwk, domain_id=domain_id, audience=self.user.user_id
+            prv_jwk=private_jwk, domain_id=domain_id, audience=user_id
         )
 
         # Issue token

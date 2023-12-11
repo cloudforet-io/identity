@@ -12,6 +12,7 @@ from spaceone.identity.model.workspace.response import *
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
 class WorkspaceService(BaseService):
     service = "identity"
     resource = "Workspace"

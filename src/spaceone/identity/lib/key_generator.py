@@ -33,7 +33,7 @@ class KeyGenerator:
         if self.domain_id is None:
             raise ERROR_GENERATE_KEY_FAILURE()
 
-    def generate_api_key(self, api_key_id: str, expired: int) -> str:
+    def generate_api_key(self, expired: int) -> str:
         payload = {
             "iss": "spaceone.identity",
             "typ": "API_KEY",  # API_KEY | ACCESS_TOKEN | REFRESH_TOKEN
