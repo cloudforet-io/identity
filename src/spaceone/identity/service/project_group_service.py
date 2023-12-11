@@ -95,25 +95,26 @@ class ProjectGroupService(BaseService):
                 ProjectGroupResponse:
         """
 
-        # Check parent project group is
-        self.project_group_mgr.get_project_group(
-            params.parent_group_id, params.workspace_id, params.domain_id
-        )
-
         project_group_vo = self.project_group_mgr.get_project_group(
             params.project_group_id, params.workspace_id, params.domain_id
         )
 
-        # Check parent project group is not sub project group
-        project_group_vos = self.project_group_mgr.filter_project_groups(
-            workspace_id=params.workspace_id, domain_id=params.domain_id
-        )
+        # Check parent project group is
+        if params.parent_group_id:
+            self.project_group_mgr.get_project_group(
+                params.parent_group_id, params.workspace_id, params.domain_id
+            )
 
-        self._check_is_sub_project_group(
-            params.parent_group_id,
-            project_group_vo.project_group_id,
-            project_group_vos,
-        )
+            # Check parent project group is not sub project group
+            project_group_vos = self.project_group_mgr.filter_project_groups(
+                workspace_id=params.workspace_id, domain_id=params.domain_id
+            )
+
+            self._check_is_sub_project_group(
+                params.parent_group_id,
+                project_group_vo.project_group_id,
+                project_group_vos,
+            )
 
         project_group_vo = self.project_group_mgr.update_project_group_by_vo(
             params.dict(), project_group_vo
