@@ -122,7 +122,7 @@ class UserWorkspacesRequest(BaseModel):
 
 
 class UserFindRequest(BaseModel):
-    keyword: str
+    keyword: Union[str, None] = None
     state: Union[State, None] = None
     exclude_workspace_id: Union[str, None] = None
     page: Union[dict, None] = None
