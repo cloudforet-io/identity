@@ -603,13 +603,16 @@ class UserService(BaseService):
 
         query = {
             "filter": [{"k": "domain_id", "v": params.domain_id, "o": "eq"}],
-            "filter_or": [
-                {"k": "user_id", "v": params.keyword, "o": "contain"},
-                {"k": "name", "v": params.keyword, "o": "contain"},
-            ],
+            "sort": {"key": "user_id"},
             "page": params.page,
             "only": ["user_id", "name", "state"],
         }
+
+        if params.keyword:
+            query["filter_or"] = [
+                {"k": "user_id", "v": params.keyword, "o": "contain"},
+                {"k": "name", "v": params.keyword, "o": "contain"},
+            ]
 
         if params.state:
             query["filter"].append({"k": "state", "v": params.state, "o": "eq"})
@@ -634,7 +637,6 @@ class UserService(BaseService):
             "name",
             "state",
             "email",
-            "user_type",
             "auth_type",
             "domain_id",
         ]
