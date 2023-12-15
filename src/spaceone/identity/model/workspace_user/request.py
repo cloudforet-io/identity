@@ -4,6 +4,7 @@ from pydantic import BaseModel
 __all__ = [
     "WorkspaceUserCreateRequest",
     "WorkspaceUserGetRequest",
+    "WorkspaceUserFindRequest",
     "WorkspaceUserSearchQueryRequest",
     "WorkspaceUserStatQueryRequest",
     "AuthType",
@@ -36,6 +37,14 @@ class WorkspaceUserGetRequest(BaseModel):
     workspace_id: str
 
 
+class WorkspaceUserFindRequest(BaseModel):
+    keyword: Union[str, None] = None
+    state: Union[State, None] = None
+    page: Union[dict, None] = None
+    workspace_id: str
+    domain_id: str
+
+
 class WorkspaceUserSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     user_id: Union[str, None] = None
@@ -44,10 +53,10 @@ class WorkspaceUserSearchQueryRequest(BaseModel):
     email: Union[str, None] = None
     auth_type: Union[AuthType, None] = None
     domain_id: str
-    workspace_id: Union[str, None] = None
+    workspace_id: str
 
 
 class WorkspaceUserStatQueryRequest(BaseModel):
     query: dict
     domain_id: str
-    workspace_id: Union[str, None] = None
+    workspace_id: str

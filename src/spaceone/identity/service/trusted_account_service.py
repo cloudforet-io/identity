@@ -13,56 +13,76 @@ from spaceone.identity.manager.workspace_manager import WorkspaceManager
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class TrustedAccountService(BaseService):
-
-    service = "identity"
     resource = "TrustedAccount"
-    permission_group = "COMPOUND"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.trusted_account_mgr = TrustedAccountManager()
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:TrustedAccount.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
-    def create(self, params: TrustedAccountCreateRequest) -> Union[TrustedAccountResponse, dict]:
-        """ create trusted account
+    def create(
+        self, params: TrustedAccountCreateRequest
+    ) -> Union[TrustedAccountResponse, dict]:
+        """create trusted account
 
          Args:
             params (TrustedAccountCreateRequest): {
                 'name': 'str',          # required
                 'data': 'dict',         # required
                 'provider': 'str',      # required
+                'secret_schema_id': 'str',
+                'secret_data': 'dict',
                 'tags': 'dict',
-                'permission_group': 'str',         # required
-                'workspace_id': 'str',
-                'domain_id': 'str'      # required
+                'resource_group': 'str',         # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
 
         Returns:
             TrustedAccountResponse:
         """
 
+        # TODO: Check permission by resource_group
+
         # Check workspace
-        if params.permission_group == 'WORKSPACE':
+        if params.resource_group == "WORKSPACE":
             workspace_mgr = WorkspaceManager()
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
         else:
-            params.workspace_id = '*'
+            params.workspace_id = "*"
 
         # Check data by schema
         schema_mgr = SchemaManager()
         schema_mgr.validate_data_by_schema(
-            params.provider, params.domain_id, 'TRUSTED_ACCOUNT', params.data
+            params.provider, params.domain_id, "TRUSTED_ACCOUNT", params.data
         )
 
-        trusted_account_vo = self.trusted_account_mgr.create_trusted_account(params.dict())
+        trusted_account_vo = self.trusted_account_mgr.create_trusted_account(
+            params.dict()
+        )
+
+        # TODO: Create a trusted secret
+
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:TrustedAccount.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
-    def update(self, params: TrustedAccountUpdateRequest) -> Union[TrustedAccountResponse, dict]:
-        """ update trusted account
+    def update(
+        self, params: TrustedAccountUpdateRequest
+    ) -> Union[TrustedAccountResponse, dict]:
+        """update trusted account
 
          Args:
             params (TrustedAccountUpdateRequest): {
@@ -70,8 +90,8 @@ class TrustedAccountService(BaseService):
                 'name': 'str',
                 'data': 'dict',
                 'tags': 'dict',
-                'workspace_id': 'str',
-                'domain_id': 'str'                      # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
@@ -86,7 +106,10 @@ class TrustedAccountService(BaseService):
             # Check data by schema
             schema_mgr = SchemaManager()
             schema_mgr.validate_data_by_schema(
-                trusted_account_vo.provider, params.domain_id, 'TRUSTED_ACCOUNT', params.data
+                trusted_account_vo.provider,
+                params.domain_id,
+                "TRUSTED_ACCOUNT",
+                params.data,
             )
 
         trusted_account_vo = self.trusted_account_mgr.update_trusted_account_by_vo(
@@ -95,16 +118,49 @@ class TrustedAccountService(BaseService):
 
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:TrustedAccount.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
+    @convert_model
+    def update_secret_data(
+        self, params: TrustedAccountUpdateSecretRequest
+    ) -> Union[TrustedAccountResponse, dict]:
+        """update trusted account secret data
+
+         Args:
+            params (TrustedAccountUpdateSecretRequest): {
+                'trusted_account_id': 'str',    # required
+                'secret_data': 'dict',
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
+            }
+
+        Returns:
+            TrustedAccountResponse:
+        """
+
+        trusted_account_vo = self.trusted_account_mgr.get_trusted_account(
+            params.trusted_account_id, params.domain_id, params.workspace_id
+        )
+
+        # TODO: Update a trusted secret and update trusted_secret_id in trusted_account_vo
+
+        return TrustedAccountResponse(**trusted_account_vo.to_dict())
+
+    @transaction(
+        permission="identity:TrustedAccount.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
     def delete(self, params: TrustedAccountDeleteRequest) -> None:
-        """ delete trusted account
+        """delete trusted account
 
          Args:
             params (TrustedAccountDeleteRequest): {
                 'trusted_account_id': 'str',    # required
-                'workspace_id': 'str',
-                'domain_id': 'str'                      # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
@@ -117,16 +173,21 @@ class TrustedAccountService(BaseService):
 
         self.trusted_account_mgr.delete_trusted_account_by_vo(trusted_account_vo)
 
-    @transaction(scope="workspace_member:read")
+    @transaction(
+        permission="identity:TrustedAccount.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
-    def get(self, params: TrustedAccountGetRequest) -> Union[TrustedAccountResponse, dict]:
-        """ get trusted account
+    def get(
+        self, params: TrustedAccountGetRequest
+    ) -> Union[TrustedAccountResponse, dict]:
+        """get trusted account
 
          Args:
             params (TrustedAccountGetRequest): {
                 'trusted_account_id': 'str',    # required
-                'workspace_id': 'str',
-                'domain_id': 'str'                      # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
@@ -139,14 +200,28 @@ class TrustedAccountService(BaseService):
 
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter([
-        'trusted_account_id', 'name', 'provider', 'permission_group', 'workspace_id', 'domain_id'
-    ])
-    @append_keyword_filter(['trusted_account_id', 'name'])
+    @transaction(
+        permission="identity:TrustedAccount.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @append_query_filter(
+        [
+            "trusted_account_id",
+            "name",
+            "provider",
+            "secret_schema_id",
+            "trusted_secret_id",
+            "resource_group",
+            "workspace_id",
+            "domain_id",
+        ]
+    )
+    @append_keyword_filter(["trusted_account_id", "name"])
     @convert_model
-    def list(self, params: TrustedAccountSearchQueryRequest) -> Union[TrustedAccountsResponse, dict]:
-        """ list trusted accounts
+    def list(
+        self, params: TrustedAccountSearchQueryRequest
+    ) -> Union[TrustedAccountsResponse, dict]:
+        """list trusted accounts
 
         Args:
             params (TrustedAccountSearchQueryRequest): {
@@ -154,9 +229,11 @@ class TrustedAccountService(BaseService):
                 'trusted_account_id': 'str',
                 'name': 'str',
                 'provider': 'str',
-                'permission_group': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str',         # required
+                'secret_schema_id': 'str',
+                'trusted_secret_id': 'str',
+                'resource_group': 'str',
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
             }
 
         Returns:
@@ -164,24 +241,33 @@ class TrustedAccountService(BaseService):
         """
 
         query = params.query or {}
-        trusted_account_vos, total_count = self.trusted_account_mgr.list_trusted_accounts(query)
+        (
+            trusted_account_vos,
+            total_count,
+        ) = self.trusted_account_mgr.list_trusted_accounts(query)
 
-        trusted_accounts_info = [trusted_account_vo.to_dict() for trusted_account_vo in trusted_account_vos]
-        return TrustedAccountsResponse(results=trusted_accounts_info, total_count=total_count)
+        trusted_accounts_info = [
+            trusted_account_vo.to_dict() for trusted_account_vo in trusted_account_vos
+        ]
+        return TrustedAccountsResponse(
+            results=trusted_accounts_info, total_count=total_count
+        )
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter(['workspace_id', 'domain_id'])
-    @append_keyword_filter(['trusted_account_id', 'name'])
+    @transaction(
+        permission="identity:TrustedAccount.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @append_query_filter(["workspace_id", "domain_id"])
+    @append_keyword_filter(["trusted_account_id", "name"])
     @convert_model
     def stat(self, params: TrustedAccountStatQueryRequest) -> dict:
-        """ stat trusted accounts
+        """stat trusted accounts
 
         Args:
             params (TrustedAccountStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'workspace_id': 'str',
-                'domain_id': 'str',         # required
-                'user_workspaces': 'list'   # from meta
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
             }
 
         Returns:

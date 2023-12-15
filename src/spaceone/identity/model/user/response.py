@@ -9,13 +9,9 @@ from spaceone.identity.model.user.request import State, AuthType
 __all__ = [
     "UserResponse",
     "UsersResponse",
-    "UserSummaryResponse",
-    "UsersSummaryResponse",
 ]
 
-RoleType = Literal[
-    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"
-]
+RoleType = Literal["SYSTEM_ADMIN", "DOMAIN_ADMIN", "USER"]
 
 
 class UserResponse(BaseModel):
@@ -45,15 +41,4 @@ class UserResponse(BaseModel):
 
 class UsersResponse(BaseModel):
     results: List[UserResponse]
-    total_count: int
-
-
-class UserSummaryResponse(BaseModel):
-    user_id: str
-    name: str
-    state: State
-
-
-class UsersSummaryResponse(BaseModel):
-    results: List[UserSummaryResponse]
     total_count: int

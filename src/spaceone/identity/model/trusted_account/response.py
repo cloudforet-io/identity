@@ -2,10 +2,9 @@ from datetime import datetime
 from typing import Union, Literal, List
 from pydantic import BaseModel
 from spaceone.core import utils
+from spaceone.identity.model.trusted_account.request import ResourceGroup
 
 __all__ = ["TrustedAccountResponse", "TrustedAccountsResponse"]
-
-PermissionGroup = Literal["DOMAIN", "WORKSPACE"]
 
 
 class TrustedAccountResponse(BaseModel):
@@ -14,14 +13,16 @@ class TrustedAccountResponse(BaseModel):
     data: Union[dict, None] = None
     provider: Union[str, None] = None
     tags: Union[dict, None] = None
-    permission_group: Union[PermissionGroup, None] = None
+    secret_schema_id: Union[str, None] = None
+    trusted_secret_id: Union[str, None] = None
+    resource_group: Union[ResourceGroup, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
-        data['created_at'] = utils.datetime_to_iso8601(data['created_at'])
+        data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
         return data
 
 

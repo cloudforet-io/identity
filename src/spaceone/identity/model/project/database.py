@@ -5,10 +5,13 @@ from spaceone.core.model.mongo_model import MongoModel
 class Project(MongoModel):
     project_id = StringField(max_length=40, generate_id="project", unique=True)
     name = StringField(max_length=40)
-    project_type = StringField(max_length=20, default="PRIVATE", choices=("PRIVATE", "PUBLIC"))
+    project_type = StringField(
+        max_length=20, default="PRIVATE", choices=("PRIVATE", "PUBLIC")
+    )
     tags = DictField(default=None)
     users = ListField(StringField(max_length=40), default=None)
     user_groups = ListField(StringField(max_length=255), default=None)
+    created_by = StringField(max_length=255)
     project_group_id = StringField(max_length=40, default=None, null=True)
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)

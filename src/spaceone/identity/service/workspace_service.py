@@ -13,17 +13,18 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class WorkspaceService(BaseService):
-    service = "identity"
     resource = "Workspace"
-    permission_group = "WORKSPACE"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain_mgr = DomainManager()
         self.workspace_mgr = WorkspaceManager()
 
-    @transaction(scope="domain_admin:write")
+    @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def create(self, params: WorkspaceCreateRequest) -> Union[WorkspaceResponse, dict]:
         """Create workspace
@@ -31,17 +32,20 @@ class WorkspaceService(BaseService):
             params (WorkspaceCreateRequest): {
                 'name': 'str',          # required
                 'tags': 'dict',
-                'domain_id': 'str'      # required
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             WorkspaceResponse:
         """
 
-        workspace_vo = self.workspace_mgr.create_workspace(params.dict())
+        params_data = params.dict()
+        params_data["created_by"] = self.transaction.get_meta("authorization.user_id")
+
+        workspace_vo = self.workspace_mgr.create_workspace(params_data)
 
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def update(self, params: WorkspaceUpdateRequest) -> Union[WorkspaceResponse, dict]:
         """Update workspace
@@ -50,7 +54,7 @@ class WorkspaceService(BaseService):
                 'workspace_id': 'str',  # required
                 'name': 'str',
                 'tags': 'dict'
-                'domain_id': 'str'      # required
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             WorkspaceResponse:
@@ -63,14 +67,14 @@ class WorkspaceService(BaseService):
         )
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(scope="domain_admin:write")
+    @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def delete(self, params: WorkspaceDeleteRequest) -> None:
         """Delete workspace
         Args:
             params (WorkspaceDeleteRequest): {
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             None
@@ -81,14 +85,14 @@ class WorkspaceService(BaseService):
         )
         self.workspace_mgr.delete_workspace_by_vo(workspace_vo)
 
-    @transaction(scope="domain_admin:write")
+    @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def enable(self, params: WorkspaceEnableRequest) -> Union[WorkspaceResponse, dict]:
         """Enable workspace
         Args:
             params (WorkspaceEnableRequest): {
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             WorkspaceResponse:
@@ -99,7 +103,7 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.enable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(scope="domain_admin:write")
+    @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def disable(
         self, params: WorkspaceDisableRequest
@@ -108,7 +112,7 @@ class WorkspaceService(BaseService):
         Args:
             params (WorkspaceDisableRequest): {
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             WorkspaceResponse:
@@ -120,14 +124,14 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.disable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(scope="workspace_member:read")
+    @transaction(permission="identity:Workspace.read", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def get(self, params: WorkspaceGetRequest) -> Union[WorkspaceResponse, dict]:
         """Get workspace
         Args:
             params (WorkspaceGetRequest): {
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             WorkspaceResponse:
@@ -138,8 +142,8 @@ class WorkspaceService(BaseService):
         )
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter(["workspace_id", "name", "domain_id"])
+    @transaction(permission="identity:Workspace.read", role_types=["DOMAIN_ADMIN"])
+    @append_query_filter(["workspace_id", "name", "created_by", "domain_id"])
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def list(
@@ -151,7 +155,8 @@ class WorkspaceService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'name': 'str',
                 'workspace_id': 'str',
-                'domain_id': 'str',         # required
+                'created_by': 'str',
+                'domain_id': 'str',         # injected from auth
             }
         Returns:
             WorkspacesResponse:
@@ -163,8 +168,8 @@ class WorkspaceService(BaseService):
         workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
         return WorkspacesResponse(results=workspaces_info, total_count=total_count)
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter(["domain_id", "workspace_id"])
+    @transaction(permission="identity:Workspace.read", role_types=["DOMAIN_ADMIN"])
+    @append_query_filter(["domain_id"])
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def stat(self, params: WorkspaceStatQueryRequest) -> dict:
@@ -172,8 +177,7 @@ class WorkspaceService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'domain_id': 'str',         # required
-                'workspace_id': 'str'
+                'domain_id': 'str',         # injected from auth
             }
         Returns:
             dict: {

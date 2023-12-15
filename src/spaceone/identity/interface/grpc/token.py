@@ -13,8 +13,8 @@ class Token(BaseAPI, token_pb2_grpc.TokenServicer):
         response: dict = token_svc.issue(params)
         return self.dict_to_message(response)
 
-    def refresh(self, request, context):
+    def grant(self, request, context):
         params, metadata = self.parse_request(request, context)
         token_svc = TokenService(metadata)
-        response: dict = token_svc.refresh(params)
+        response: dict = token_svc.grant(params)
         return self.dict_to_message(response)

@@ -11,13 +11,11 @@ from spaceone.identity.manager.endpoint_manager import EndpointManager
 _LOGGER = logging.getLogger(__name__)
 
 
+@event_handler
 class EndpointService(BaseService):
-
-    service = "identity"
     resource = "Endpoint"
-    permission_group = "PUBLIC"
 
-    @transaction(scope='public')
+    @transaction()
     # @append_query_filter(['service'])
     # @append_keyword_filter(['service'])
     @convert_model

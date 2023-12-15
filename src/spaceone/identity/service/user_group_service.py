@@ -14,16 +14,17 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class UserGroupService(BaseService):
-    service = "identity"
     resource = "UserGroup"
-    permission_group = "Workspace"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user_group_mgr = UserGroupManager()
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:UserGroup.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def create(self, params: UserGroupCreateRequest) -> Union[UserGroupResponse, dict]:
         """Create user group
@@ -31,14 +32,14 @@ class UserGroupService(BaseService):
             params (dict): {
                 'name': 'str',          # required
                 'tags': 'dict',         # required
-                'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         """
         user_group_vo = self.user_group_mgr.create_user_group(params.dict())
         return UserGroupResponse(**user_group_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:UserGroup.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def update(self, params: UserGroupUpdateRequest) -> Union[UserGroupResponse, dict]:
         """Update user group
@@ -47,14 +48,14 @@ class UserGroupService(BaseService):
                 'user_group_id': 'str', # required
                 'name': 'str',
                 'tags': 'dict',
-                'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         """
         user_group_vo = self.user_group_mgr.get_user_group(
             params.user_group_id,
-            params.workspace_id,
             params.domain_id,
+            params.workspace_id,
         )
 
         user_group_vo = self.user_group_mgr.update_user_group_by_vo(
@@ -63,26 +64,28 @@ class UserGroupService(BaseService):
 
         return UserGroupResponse(**user_group_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:UserGroup.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def delete(self, params: UserGroupDeleteRequest) -> None:
         """Delete user group
         Args:
             params (dict): {
                 'user_group_id': 'str', # required
-                'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             None
         """
 
         user_group_vo = self.user_group_mgr.get_user_group(
-            params.user_group_id, params.workspace_id, params.domain_id
+            params.user_group_id,
+            params.domain_id,
+            params.workspace_id,
         )
         self.user_group_mgr.delete_user_group_by_vo(user_group_vo)
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:UserGroup.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def add_users(
         self, params: UserGroupAddUsersRequest
@@ -92,19 +95,23 @@ class UserGroupService(BaseService):
             params (dict): {
                 'user_group_id': 'str',     # required
                 'users': 'list(str)',       # required
-                'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth
             }
         Returns:
             UserGroupResponse:
         """
         user_group_vo = self.user_group_mgr.get_user_group(
-            params.user_group_id, params.workspace_id, params.domain_id
+            params.user_group_id,
+            params.domain_id,
+            params.workspace_id,
         )
 
         user_mgr = UserManager()
         users_vo = user_mgr.filter_users(
-            user_id=params.users, domain_id=params.domain_id
+            user_id=params.users,
+            domain_id=params.domain_id,
+            workspace_id=params.workspace_id,
         )
 
         if users_vo.count() != len(params.users):
@@ -120,7 +127,7 @@ class UserGroupService(BaseService):
 
         return UserGroupResponse(**user_group_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:UserGroup.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def remove_users(
         self, params: UserGroupRemoveUsersRequest
@@ -130,14 +137,16 @@ class UserGroupService(BaseService):
             params (dict): {
                 'user_group_id': 'str',     # required
                 'users': 'list(str)',       # required
-                'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth
             }
         Returns:
             UserGroupResponse:
         """
         user_group_vo = self.user_group_mgr.get_user_group(
-            params.user_group_id, params.workspace_id, params.domain_id
+            params.user_group_id,
+            params.domain_id,
+            params.workspace_id,
         )
 
         user_mgr = UserManager()
@@ -147,26 +156,34 @@ class UserGroupService(BaseService):
         )
         return UserGroupResponse(**users_vo.to_dict())
 
-    @transaction(scope="workspace_owner:read")
+    @transaction(
+        permission="identity:UserGroup.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def get(self, params: UserGroupGetRequest) -> Union[UserGroupResponse, dict]:
         """Get user group
         Args:
             params (dict): {
                 'user_group_id': 'str', # required
-                'workspace_id': 'str',  # required
-                'domain_id': 'str'      # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             UserGroupResponse:
         """
 
         user_group_vo = self.user_group_mgr.get_user_group(
-            params.user_group_id, params.workspace_id, params.domain_id
+            params.user_group_id,
+            params.domain_id,
+            params.workspace_id,
         )
         return UserGroupResponse(**user_group_vo.to_dict())
 
-    @transaction(scope="workspace_owner:read")
+    @transaction(
+        permission="identity:UserGroup.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @append_query_filter(
         [
             "user_group_id",
@@ -188,8 +205,8 @@ class UserGroupService(BaseService):
                 'user_group_id': 'str',
                 'name': 'str',
                 'user_id': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str'      # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             UserGroupsResponse:
@@ -200,7 +217,10 @@ class UserGroupService(BaseService):
         user_groups_info = [user_group_vo.to_dict() for user_group_vo in user_group_vos]
         return UserGroupsResponse(results=user_groups_info, total_count=total_count)
 
-    @transaction(scope="workspace_owner:read")
+    @transaction(
+        permission="identity:UserGroup.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["user_group_id", "name"])
     @convert_model
@@ -209,8 +229,8 @@ class UserGroupService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
-                'workspace_id': 'str',
-                'domain_id': 'str'      # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             dict: {

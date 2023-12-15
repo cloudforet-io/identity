@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Union
 from pydantic import BaseModel
 
@@ -56,9 +55,9 @@ class APIKeySearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     api_key_id: Union[str, None] = None
     name: Union[str, None] = None
-    user_id: Union[str, None] = None
     state: Union[str, None] = None
     domain_id: str
+    user_id: Union[str, None] = None
 
 
 class APIKeyStatQueryRequest(BaseModel):

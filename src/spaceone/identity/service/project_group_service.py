@@ -13,16 +13,20 @@ from spaceone.identity.model.project_group.response import *
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class ProjectGroupService(BaseService):
-    service = "identity"
     resource = "ProjectGroup"
-    permission_group = "WORKSPACE"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.project_group_mgr = ProjectGroupManager()
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:ProjectGroup.write", role_types=["WORKSPACE_OWNER"]
+    )
     @convert_model
     def create(
         self, params: ProjectGroupCreateRequest
@@ -34,8 +38,8 @@ class ProjectGroupService(BaseService):
                 'name': 'str',              # required
                 'tags': 'dict',
                 'parent_group_id': 'str',
-                'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth
             }
         Returns:
             ProjectGroupResponse:
@@ -43,13 +47,17 @@ class ProjectGroupService(BaseService):
 
         if params.parent_group_id:
             self.project_group_mgr.get_project_group(
-                params.parent_group_id, params.workspace_id, params.domain_id
+                params.parent_group_id,
+                params.domain_id,
+                params.workspace_id,
             )
 
         project_group_vo = self.project_group_mgr.create_project_group(params.dict())
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:ProjectGroup.write", role_types=["WORKSPACE_OWNER"]
+    )
     @convert_model
     def update(
         self, params: ProjectGroupUpdateRequest
@@ -61,15 +69,17 @@ class ProjectGroupService(BaseService):
                 'project_group_id': 'str',      # required
                 'name': 'str',
                 'tags': 'dict',
-                'domain_id': 'str',             # required
-                'workspace_id': 'str',          # required
+                'domain_id': 'str',             # injected from auth
+                'workspace_id': 'str',          # injected from auth
             }
             Returns:
                 ProjectGroupResponse:
         """
 
         project_group_vo = self.project_group_mgr.get_project_group(
-            params.project_group_id, params.workspace_id, params.domain_id
+            params.project_group_id,
+            params.domain_id,
+            params.workspace_id,
         )
         project_group_vo = self.project_group_mgr.update_project_group_by_vo(
             params.dict(exclude_unset=True), project_group_vo
@@ -77,7 +87,9 @@ class ProjectGroupService(BaseService):
 
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:ProjectGroup.write", role_types=["WORKSPACE_OWNER"]
+    )
     @convert_model
     def change_parent_group(
         self, params: ProjectChangeParentGroupRequest
@@ -88,21 +100,23 @@ class ProjectGroupService(BaseService):
             params (ProjectChangeParentGroupRequest): {
                 'project_group_id': 'str',      # required
                 'parent_group_id': 'str',       # required
-                'workspace_id': 'str',          # required
-                'domain_id': 'str'              # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
             Returns:
                 ProjectGroupResponse:
         """
 
         project_group_vo = self.project_group_mgr.get_project_group(
-            params.project_group_id, params.workspace_id, params.domain_id
+            params.project_group_id,
+            params.domain_id,
+            params.workspace_id,
         )
 
         # Check parent project group is
         if params.parent_group_id:
             self.project_group_mgr.get_project_group(
-                params.parent_group_id, params.workspace_id, params.domain_id
+                params.parent_group_id, params.domain_id, params.workspace_id
             )
 
             # Check parent project group is not sub project group
@@ -122,7 +136,9 @@ class ProjectGroupService(BaseService):
 
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:ProjectGroup.write", role_types=["WORKSPACE_OWNER"]
+    )
     @convert_model
     def delete(self, params: ProjectGroupDeleteRequest) -> None:
         """Delete project group
@@ -130,8 +146,8 @@ class ProjectGroupService(BaseService):
         Args:
             params (ProjectGroupDeleteRequest): {
                 'project_group_id': 'str',      # required
-                'workspace_id': 'str',          # required
-                'domain_id': 'str'              # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
         Returns:
             None
@@ -139,13 +155,16 @@ class ProjectGroupService(BaseService):
 
         project_group_vo = self.project_group_mgr.get_project_group(
             params.project_group_id,
-            params.workspace_id,
             params.domain_id,
+            params.workspace_id,
         )
 
         self.project_group_mgr.delete_project_group_by_vo(project_group_vo)
 
-    @transaction(scope="workspace_member:read")
+    @transaction(
+        permission="identity:ProjectGroup.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def get(self, params: ProjectGroupGetRequest) -> Union[ProjectGroupResponse, dict]:
         """Get project group
@@ -153,20 +172,25 @@ class ProjectGroupService(BaseService):
         Args:
             params (ProjectGroupGetRequest): {
                 'project_group_id': 'str',      # required
-                'workspace_id': 'str',          # required
-                'domain_id': 'str'              # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
         Returns:
             ProjectGroupResponse:
         """
 
         project_group_vo = self.project_group_mgr.get_project_group(
-            params.project_group_id, params.workspace_id, params.domain_id
+            params.project_group_id,
+            params.domain_id,
+            params.workspace_id,
         )
 
         return ProjectGroupResponse(**project_group_vo.to_dict())
 
-    @transaction(scope="workspace_member:read")
+    @transaction(
+        permission="identity:ProjectGroup.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @append_query_filter(
         ["project_group_id", "name", "parent_group_id", "workspace_id", "domain_id"]
     )
@@ -183,8 +207,8 @@ class ProjectGroupService(BaseService):
                 'project_group_id': 'str',
                 'name': 'str',
                 'parent_group_id': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str',         # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
             }
         Returns:
             ProjectGroupsResponse:
@@ -196,7 +220,10 @@ class ProjectGroupService(BaseService):
         projects_info = [project_vo.to_dict() for project_vo in project_vos]
         return ProjectGroupsResponse(results=projects_info, total_count=total_count)
 
-    @transaction(scope="workspace_member:read")
+    @transaction(
+        permission="identity:ProjectGroup.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["project_group_id", "name"])
     @convert_model
@@ -205,8 +232,8 @@ class ProjectGroupService(BaseService):
         Args:
             params (ProjectGroupStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'workspace_id': 'str',
-                'domain_id': 'str',         # required
+                'workspace_id': 'str',    # injected from auth
+                'domain_id': 'str',       # injected from auth
             }
         Returns:
             dict: {

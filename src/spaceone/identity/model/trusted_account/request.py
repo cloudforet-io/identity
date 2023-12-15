@@ -4,21 +4,25 @@ from pydantic import BaseModel
 __all__ = [
     "TrustedAccountCreateRequest",
     "TrustedAccountUpdateRequest",
+    "TrustedAccountUpdateSecretRequest",
     "TrustedAccountDeleteRequest",
     "TrustedAccountGetRequest",
     "TrustedAccountSearchQueryRequest",
     "TrustedAccountStatQueryRequest",
+    "ResourceGroup",
 ]
 
-PermissionGroup = Literal["DOMAIN", "WORKSPACE"]
+ResourceGroup = Literal["DOMAIN", "WORKSPACE"]
 
 
 class TrustedAccountCreateRequest(BaseModel):
     name: str
     data: dict
     provider: str
+    secret_schema_id: str
+    secret_data: dict
     tags: Union[dict, None] = None
-    permission_group: PermissionGroup
+    resource_group: ResourceGroup
     workspace_id: Union[str, None] = None
     domain_id: str
 
@@ -28,6 +32,13 @@ class TrustedAccountUpdateRequest(BaseModel):
     name: Union[str, None] = None
     data: Union[dict, None] = None
     tags: Union[dict, None] = None
+    workspace_id: str
+    domain_id: str
+
+
+class TrustedAccountUpdateSecretRequest(BaseModel):
+    trusted_account_id: str
+    secret_data: dict
     workspace_id: Union[str, None] = None
     domain_id: str
 
@@ -49,7 +60,9 @@ class TrustedAccountSearchQueryRequest(BaseModel):
     trusted_account_id: Union[str, None] = None
     name: Union[str, None] = None
     provider: Union[str, None] = None
-    permission_group: Union[PermissionGroup, None] = None
+    secret_schema_id: Union[str, None] = None
+    trusted_secret_id: Union[str, None] = None
+    resource_group: Union[ResourceGroup, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 

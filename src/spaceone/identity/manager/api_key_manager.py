@@ -34,18 +34,23 @@ class APIKeyManager(BaseManager):
 
         domain_secret_mgr = DomainSecretManager()
         prv_jwk = domain_secret_mgr.get_domain_private_key(params["domain_id"])
+        refresh_prv_jwk = domain_secret_mgr.get_domain_refresh_private_key(
+            params["domain_id"]
+        )
         params["expired_at"] = utils.iso8601_to_datetime(
             params["expired_at"]
         ).timestamp()
 
         key_gen = KeyGenerator(
+            prv_jwk,
+            params["domain_id"],
+            params["owner_type"],
+            audience,
             api_key_id=api_key_vo.api_key_id,
-            prv_jwk=prv_jwk,
-            domain_id=params["domain_id"],
-            audience=audience,
+            refresh_prv_jwk=refresh_prv_jwk,
         )
 
-        api_key = key_gen.generate_api_key(params["expired_at"])
+        api_key = key_gen.generate_token("API_KEY", params["expired_at"])
 
         return api_key_vo, api_key
 

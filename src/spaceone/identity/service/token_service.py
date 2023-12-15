@@ -1,5 +1,6 @@
 import logging
 
+from typing import Tuple
 from spaceone.core import cache
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
 
@@ -12,26 +13,35 @@ from spaceone.identity.error.error_mfa import *
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.mfa_manager import MFAManager
-from spaceone.identity.manager.token_manager.base import JWTManager
+from spaceone.identity.manager.token_manager.base import TokenManager
 from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.app_manager import AppManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.role_manager import RoleManager
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.model.token.request import *
 from spaceone.identity.model.token.response import *
+from spaceone.identity.model.user.database import User
+from spaceone.identity.model.app.database import App
 
 _LOGGER = logging.getLogger(__name__)
 
 
+@event_handler
 class TokenService(BaseService):
-    service = "identity"
     resource = "Token"
-    permission_group = "PUBLIC"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain_mgr = DomainManager()
         self.domain_secret_mgr = DomainSecretManager()
         self.user_mgr = UserManager()
+        self.app_mgr = AppManager()
+        self.rb_mgr = RoleBindingManager()
+        self.role_mgr = RoleManager()
+        self.project_mgr = ProjectManager()
 
-    @transaction(scope="public")
+    @transaction()
     @convert_model
     def issue(self, params: TokenIssueRequest) -> Union[TokenResponse, dict]:
         """Issue token
@@ -40,7 +50,6 @@ class TokenService(BaseService):
                 'credentials': 'dict', # required
                 'auth_type': 'str', # required
                 'timeout': 'int',
-                'refresh_count': 'int',
                 'verify_code': 'str',
                 'domain_id': 'str', # required
             }
@@ -48,10 +57,8 @@ class TokenService(BaseService):
             TokenResponse:
         """
 
-        user_id = params.credentials.get("user_id")
         domain_id = params.domain_id
         timeout = params.timeout
-        refresh_count = params.refresh_count
         verify_code = params.verify_code
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
@@ -62,84 +69,156 @@ class TokenService(BaseService):
         # Check Domain state is ENABLED
         self._check_domain_state(domain_id)
 
-        token_mgr = JWTManager.get_token_manager_by_auth_type(params.auth_type)
-        token_mgr.authenticate(user_id, domain_id, params.credentials)
+        token_mgr = TokenManager.get_token_manager_by_auth_type(params.auth_type)
+        token_mgr.authenticate(domain_id, **params.credentials)
 
         user_vo = token_mgr.user
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        permissions = self._get_permissions_from_required_actions(user_vo)
 
         if user_mfa.get("state", "DISABLED") == "ENABLED":
             mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get("mfa_type"))
             if verify_code:
-                mfa_manager.check_mfa_verify_code(user_id, domain_id, verify_code)
+                mfa_manager.check_mfa_verify_code(
+                    user_vo.user_id, domain_id, verify_code
+                )
             else:
                 mfa_email = user_mfa["options"].get("email")
                 mfa_manager.send_mfa_authentication_email(
-                    user_id, domain_id, mfa_email, user_vo.language
+                    user_vo.user_id, domain_id, mfa_email, user_vo.language
                 )
                 raise ERROR_MFA_REQUIRED(user_id=mfa_email)
 
         token_info = token_mgr.issue_token(
-            private_jwk=private_jwk,
-            refresh_private_jwk=refresh_private_jwk,
+            private_jwk,
+            refresh_private_jwk,
+            domain_id,
             timeout=timeout,
-            ttl=refresh_count,
-            domain_id=domain_id,
+            permissions=permissions,
         )
 
         return TokenResponse(**token_info)
 
-    @transaction(scope="public")
+    @transaction()
     @convert_model
-    def refresh(self, params: dict) -> Union[TokenResponse, dict]:
-        """Refresh token
+    def grant(self, params: TokenGrantRequest) -> Union[GrantTokenResponse, dict]:
+        """Grant token
         Args:
-            params (dict): {}
+            params (dict): {
+                'grant_type': 'str', # required
+                'token': 'str', # required
+                'scope': 'str', # required
+                'workspace_id': 'str',
+            }
         Returns:
-            TokenResponse:
+            GrantTokenResponse:
         """
-        refresh_token = self.transaction.get_meta("token")
 
-        if refresh_token is None:
-            raise ERROR_INVALID_REFRESH_TOKEN()
+        domain_id = self._extract_domain_id(params.token)
 
-        domain_id = self._extract_domain_id(refresh_token)
-
-        private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_public_jwk = self.domain_secret_mgr.get_domain_refresh_public_key(
             domain_id=domain_id
         )
+
+        if params.scope == "WORKSPACE":
+            if params.workspace_id is None:
+                raise ERROR_REQUIRED_PARAMETER(key="workspace_id")
+        else:
+            params.workspace_id = None
+
+        # Check Domain state is ENABLED
+        self._check_domain_state(domain_id)
+
+        decoded_token_info = self._verify_token(
+            params.grant_type, params.token, refresh_public_jwk
+        )
+
+        if decoded_token_info["owner_type"] == "USER":
+            user_vo = self.user_mgr.get_user(
+                user_id=decoded_token_info["user_id"], domain_id=domain_id
+            )
+            app_vo = None
+            role_type, role_id = self._get_user_role_info(
+                user_vo, workspace_id=params.workspace_id
+            )
+
+        else:
+            user_vo = None
+            app_vo = self.app_mgr.get_app(
+                app_id=decoded_token_info["app_id"], domain_id=domain_id
+            )
+
+            if app_vo.api_key_id != decoded_token_info["token_id"]:
+                raise ERROR_INVALID_CREDENTIALS()
+
+            role_type, role_id = self._get_app_role_info(app_vo)
+
+        decoded_token_info["scope"] = params.scope
+        decoded_token_info["workspace_id"] = params.workspace_id
+
+        private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(
             domain_id=domain_id
         )
 
-        token_info = self._verify_refresh_token(refresh_token, refresh_public_jwk)
-        user_auth_type = self._get_user_auth_type(token_info["aud"], domain_id)
-
-        token_mgr = JWTManager.get_token_manager_by_auth_type(user_auth_type)
-        token_mgr.check_refreshable(token_info["jti"], token_info["ttl"])
-
-        token_response = token_mgr.refresh_token(
-            token_info["aud"],
+        token_mgr = TokenManager.get_token_manager_by_auth_type("GRANT")
+        token_mgr.authenticate(
             domain_id,
-            ttl=token_info["ttl"] - 1,
-            private_jwk=private_jwk,
-            refresh_private_jwk=refresh_private_jwk,
+            scope=params.scope,
+            owner_type=decoded_token_info["owner_type"],
+            role_type=role_type,
+            user_vo=user_vo,
+            app_vo=app_vo,
         )
 
-        return TokenResponse(**token_response)
+        if role_id:
+            role_vo = self.role_mgr.get_role(role_id=role_id, domain_id=domain_id)
+            permissions = role_vo.permissions
+        else:
+            permissions = None
 
-    @cache.cacheable(key="identity:user-auth-type:{domain_id}:{user_id}", expire=600)
-    def _get_user_auth_type(self, user_id, domain_id):
-        try:
-            user_vo = self.user_mgr.get_user(user_id, domain_id)
-        except Exception as e:
-            _LOGGER.error(
-                f'[_get_user_backend] Authentication failure: {getattr(e, "message", e)}'
+        if role_type == "WORKSPACE_MEMBER":
+            user_projects = []
+
+            public_project_vos = self.project_mgr.filter_projects(
+                project_type="PUBLIC",
+                domain_id=domain_id,
+                workspace_id=params.workspace_id,
             )
-            raise ERROR_AUTHENTICATION_FAILURE(user_id=user_id)
+            user_projects.extend(
+                [project_vo.project_id for project_vo in public_project_vos]
+            )
 
-        return user_vo.auth_type
+            user_project_vos = self.project_mgr.filter_projects(
+                project_type="PRIVATE",
+                domain_id=domain_id,
+                users=user_vo.user_id,
+                workspace_id=params.workspace_id,
+            )
+            user_projects.extend(
+                [project_vo.project_id for project_vo in user_project_vos]
+            )
+        else:
+            user_projects = None
+
+        token_info = token_mgr.issue_token(
+            private_jwk,
+            refresh_private_jwk,
+            domain_id,
+            workspace_id=params.workspace_id,
+            permissions=permissions,
+            projects=user_projects,
+        )
+
+        response = {
+            "access_token": token_info["access_token"],
+            "role_type": role_type,
+            "role_id": role_id,
+            "domain_id": domain_id,
+            "workspace_id": params.workspace_id,
+        }
+
+        return GrantTokenResponse(**response)
 
     @cache.cacheable(key="identity:domain-state:{domain_id}", expire=3600)
     def _check_domain_state(self, domain_id):
@@ -149,11 +228,20 @@ class TokenService(BaseService):
             raise ERROR_DOMAIN_STATE(domain_id=domain_vo.domain_id)
 
     @staticmethod
-    def _extract_domain_id(token):
+    def _get_permissions_from_required_actions(user_vo):
+        if "UPDATE_PASSWORD" in user_vo.required_actions:
+            return [
+                "identity.UserProfile",
+            ]
+
+        return None
+
+    @staticmethod
+    def _extract_domain_id(token: str) -> str:
         try:
             decoded = JWTUtil.unverified_decode(token)
         except Exception as e:
-            _LOGGER.error(f"[_extract_domain_id] {e}")
+            _LOGGER.error(f"[_extract_token] {e}")
             _LOGGER.error(token)
             raise ERROR_AUTHENTICATE_FAILURE(message="Cannot decode token.")
 
@@ -165,24 +253,54 @@ class TokenService(BaseService):
         return domain_id
 
     @staticmethod
-    def _verify_refresh_token(token, public_jwk):
+    def _verify_token(grant_type: str, token: str, public_jwk: dict) -> dict:
         try:
             decoded = JWTAuthenticator(public_jwk).validate(token)
         except Exception as e:
             _LOGGER.error(f"[_verify_refresh_token] {e}")
             raise ERROR_AUTHENTICATE_FAILURE(message="Token validation failed.")
 
-        if decoded.get("typ") != "REFRESH_TOKEN":
-            raise ERROR_INVALID_REFRESH_TOKEN()
+        if decoded.get("typ") != grant_type:
+            raise ERROR_INVALID_GRANT_TYPE(grant_type=grant_type)
 
-        return {
-            "iss": decoded["iss"],
-            "typ": decoded["typ"],
-            "own": decoded["own"],
-            "did": decoded["did"],
-            "aud": decoded["aud"],
-            "jti": decoded["jti"],
-            "ttl": decoded["ttl"],
-            "iat": decoded["iat"],
-            "exp": decoded["exp"],
+        token_info = {
+            "owner_type": decoded["own"],
+            "token_id": decoded["jti"],
         }
+
+        if token_info["owner_type"] == "USER":
+            token_info["user_id"] = decoded["aud"]
+        else:
+            token_info["app_id"] = decoded["aud"]
+
+        return token_info
+
+    def _get_user_role_info(
+        self, user_vo: User, workspace_id: str = None
+    ) -> Tuple[str, Union[str, None]]:
+        if user_vo.role_type in ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
+            rb_vos = self.rb_mgr.filter_role_bindings(
+                user_id=user_vo.user_id,
+                domain_id=user_vo.domain_id,
+                role_type=user_vo.role_type,
+            )
+
+            if rb_vos.count() > 0:
+                return rb_vos[0].role_type, rb_vos[0].role_id
+
+        elif user_vo.role_type in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
+            rb_vos = self.rb_mgr.filter_role_bindings(
+                user_id=user_vo.user_id,
+                domain_id=user_vo.domain_id,
+                role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+                workspace_id=workspace_id,
+            )
+
+            if rb_vos.count() > 0:
+                return rb_vos[0].role_type, rb_vos[0].role_id
+
+        return "USER", None
+
+    @staticmethod
+    def _get_app_role_info(app_vo: App) -> Tuple[str, str]:
+        return app_vo.role_type, app_vo.role_id

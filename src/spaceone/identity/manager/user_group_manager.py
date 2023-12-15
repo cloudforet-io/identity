@@ -43,12 +43,15 @@ class UserGroupManager(BaseManager):
     def delete_user_group_by_vo(user_group_vo: UserGroup) -> None:
         user_group_vo.delete()
 
-    def get_user_group(self, user_group_id: str, workspace_id: str, domain_id):
-        return self.user_group_model.get(
-            user_group_id=user_group_id,
-            workspace_id=workspace_id,
-            domain_id=domain_id,
-        )
+    def get_user_group(
+        self, user_group_id: str, domain_id: str, workspace_id: str = None
+    ):
+        conditions = {"user_group_id": user_group_id, "domain_id": domain_id}
+
+        if workspace_id:
+            conditions["workspace_id"] = workspace_id
+
+        return self.user_group_model.get(**conditions)
 
     def list_user_groups(self, query: dict) -> Tuple[QuerySet, int]:
         return self.user_group_model.query(**query)

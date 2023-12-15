@@ -17,14 +17,23 @@ class User(MongoModel):
     user_id = StringField(max_length=40, unique_with="domain_id", required=True)
     password = BinaryField(default=None)
     name = StringField(max_length=128, default="")
-    state = StringField(max_length=20, default="PENDING", choices=("ENABLED", "DISABLED", "PENDING"))
+    state = StringField(
+        max_length=20, default="PENDING", choices=("ENABLED", "DISABLED", "PENDING")
+    )
     email = StringField(max_length=255, default="")
     email_verified = BooleanField(default=False)
     auth_type = StringField(max_length=20, choices=("LOCAL", "EXTERNAL"))
     role_type = StringField(
         max_length=20,
         default="USER",
-        choices=('SYSTEM', 'SYSTEM_ADMIN', 'DOMAIN_ADMIN', 'WORKSPACE_OWNER', 'WORKSPACE_MEMBER', 'USER'),
+        choices=(
+            "SYSTEM",
+            "SYSTEM_ADMIN",
+            "DOMAIN_ADMIN",
+            "WORKSPACE_OWNER",
+            "WORKSPACE_MEMBER",
+            "USER",
+        ),
     )
     mfa = EmbeddedDocumentField(MFA)
     required_actions = ListField(StringField(choices=("UPDATE_PASSWORD",)), default=[])
@@ -43,7 +52,7 @@ class User(MongoModel):
             "state",
             "email",
             "email_verified",
-            'role_type',
+            "role_type",
             "mfa",
             "language",
             "timezone",
@@ -52,20 +61,7 @@ class User(MongoModel):
             "api_key_count",
             "last_accessed_at",
         ],
-        "minimal_fields": [
-            "user_id",
-            "name",
-            "state",
-            'auth_type',
-            "role_type"
-        ],
-        "ordering": [
-            "name",
-            "user_id"
-        ],
-        "indexes": [
-            "state",
-            "auth_type",
-            "role_type",
-        ],
+        "minimal_fields": ["user_id", "name", "state", "auth_type", "role_type"],
+        "ordering": ["name", "user_id"],
+        "indexes": ["user_id", "state", "auth_type", "role_type", "domain_id"],
     }

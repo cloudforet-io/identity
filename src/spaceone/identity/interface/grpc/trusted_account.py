@@ -3,9 +3,7 @@ from spaceone.api.identity.v2 import trusted_account_pb2, trusted_account_pb2_gr
 from spaceone.identity.service.trusted_account_service import TrustedAccountService
 
 
-class TrustedAccount(
-    BaseAPI, trusted_account_pb2_grpc.TrustedAccountServicer
-):
+class TrustedAccount(BaseAPI, trusted_account_pb2_grpc.TrustedAccountServicer):
     pb2 = trusted_account_pb2
     pb2_grpc = trusted_account_pb2_grpc
 
@@ -19,6 +17,12 @@ class TrustedAccount(
         params, metadata = self.parse_request(request, context)
         trusted_account_svc = TrustedAccountService(metadata)
         response: dict = trusted_account_svc.update(params)
+        return self.dict_to_message(response)
+
+    def update_secret_data(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        trusted_account_svc = TrustedAccountService(metadata)
+        response: dict = trusted_account_svc.update_secret_data(params)
         return self.dict_to_message(response)
 
     def delete(self, request, context):
