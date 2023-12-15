@@ -10,6 +10,8 @@ from spaceone.identity.model.role_binding.response import RoleBindingResponse
 __all__ = [
     "WorkspaceUserResponse",
     "WorkspaceUsersResponse",
+    "UserSummaryResponse",
+    "UsersSummaryResponse",
 ]
 
 RoleType = Literal[
@@ -42,4 +44,15 @@ class WorkspaceUserResponse(BaseModel):
 
 class WorkspaceUsersResponse(BaseModel):
     results: List[WorkspaceUserResponse]
+    total_count: int
+
+
+class UserSummaryResponse(BaseModel):
+    user_id: str
+    name: str
+    state: State
+
+
+class UsersSummaryResponse(BaseModel):
+    results: List[UserSummaryResponse]
     total_count: int

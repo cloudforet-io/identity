@@ -7,30 +7,23 @@ from spaceone.core.model.mongo_model import MongoModel
 
 class Workspace(MongoModel):
     workspace_id = StringField(max_length=40, generate_id="workspace", unique=True)
-    name = StringField(max_length=255, unique_with="domain_id")
+    name = StringField(max_length=255)
     state = StringField(max_length=20, default="ENABLED")
     tags = DictField(default=None)
+    created_by = StringField(max_length=255)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
 
     meta = {
-        "updatable_fields": [
-            "name",
-            "state",
-            "tags",
-            "deleted_at"
-        ],
+        "updatable_fields": ["name", "state", "tags", "deleted_at"],
         "minimal_fields": [
             "workspace_id",
             "name",
             "state",
         ],
         "ordering": ["name"],
-        "indexes": [
-            "name",
-            "domain_id"
-        ],
+        "indexes": ["name", "domain_id"],
     }
 
     @queryset_manager

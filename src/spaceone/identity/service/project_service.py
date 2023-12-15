@@ -16,11 +16,12 @@ from spaceone.identity.error.error_project import *
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class ProjectService(BaseService):
-
-    service = "identity"
     resource = "Project"
-    permission_group = "PROJECT"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,7 +30,7 @@ class ProjectService(BaseService):
         self.project_group_mgr = ProjectGroupManager()
         self.workspace_mgr = WorkspaceManager()
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:Project.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def create(self, params: ProjectCreateRequest) -> Union[ProjectResponse, dict]:
         """Create project
@@ -39,8 +40,8 @@ class ProjectService(BaseService):
                 'project_type': 'str',          # required
                 'tags': 'dict',
                 'project_group_id': 'str',
-                'workspace_id': 'str',          # required
-                'domain_id': 'str'              # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
         Returns:
             ProjectResponse:
@@ -48,14 +49,19 @@ class ProjectService(BaseService):
 
         if params.project_group_id:
             self.project_group_mgr.get_project_group(
-                params.project_group_id, params.workspace_id, params.domain_id
+                params.project_group_id,
+                params.domain_id,
+                params.workspace_id,
             )
 
         project_vo = self.project_mgr.create_project(params.dict())
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:Project.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def update(self, params: ProjectUpdateRequest) -> Union[ProjectResponse, dict]:
         """Update project
@@ -64,16 +70,19 @@ class ProjectService(BaseService):
                 'project_id': 'str',        # required
                 'name': 'str',
                 'tags': 'dict',
-                'workspace_id': 'str',      # required
-                'domain_id': 'str',         # required
-                'user_projects': 'list'     # from meta
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
+                'user_projects': 'list'     # injected from auth
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id, params.user_projects
+            params.project_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
         )
 
         project_vo = self.project_mgr.update_project_by_vo(
@@ -82,7 +91,7 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:Project.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def update_project_type(
         self, params: ProjectUpdateProjectTypeRequest
@@ -92,29 +101,27 @@ class ProjectService(BaseService):
             params (ProjectUpdateProjectTypeRequest): {
                 'project_id': 'str',        # required
                 'project_type': 'str',      # required
-                'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id
+            params.project_id, params.domain_id, params.workspace_id
         )
 
         params_dict = params.dict(exclude_unset=True)
-        if params.project_type == 'PUBLIC':
-            params_dict['users'] = []
-            params_dict['user_groups'] = []
+        if params.project_type == "PUBLIC":
+            params_dict["users"] = []
+            params_dict["user_groups"] = []
 
-        project_vo = self.project_mgr.update_project_by_vo(
-            params_dict, project_vo
-        )
+        project_vo = self.project_mgr.update_project_by_vo(params_dict, project_vo)
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:Project.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def change_project_group(
         self, params: ProjectChangeProjectGroupRequest
@@ -124,8 +131,8 @@ class ProjectService(BaseService):
             params (ProjectChangeProjectGroupRequest): {
                 'project_id': 'str',            # required
                 'project_group_id': 'str',      # required
-                'workspace_id': 'str',          # required
-                'domain_id': 'str'              # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
         Returns:
             ProjectResponse:
@@ -133,39 +140,46 @@ class ProjectService(BaseService):
 
         if params.project_group_id:
             self.project_group_mgr.get_project_group(
-                params.project_group_id, params.workspace_id, params.domain_id
+                params.project_group_id,
+                params.domain_id,
+                params.workspace_id,
             )
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id
+            params.project_id,
+            params.domain_id,
+            params.workspace_id,
         )
-        project_vo = self.project_mgr.update_project_by_vo(
-            params.dict(), project_vo
-        )
+        project_vo = self.project_mgr.update_project_by_vo(params.dict(), project_vo)
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(permission="identity:Project.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def delete(self, params: ProjectDeleteRequest) -> None:
         """Delete project
         Args:
             params (ProjectDeleteRequest): {
                 'project_id': 'str',        # required
-                'workspace_id': 'str',      # required
-                'domain_id': 'str'          # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth
             }
         Returns:
             None:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id
+            params.project_id,
+            params.domain_id,
+            params.workspace_id,
         )
 
         self.project_mgr.delete_project_by_vo(project_vo)
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="identity:Project.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def add_users(self, params: ProjectAddUsersRequest) -> Union[ProjectResponse, dict]:
         """Add users to project
@@ -173,19 +187,22 @@ class ProjectService(BaseService):
             params (ProjectAddUsersRequest): {
                 'project_id': 'str',        # required
                 'users': 'list',            # required
-                'workspace_id': 'str',      # required
-                'domain_id': 'str',         # required
-                'user_projects': 'list'     # from meta
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
+                'user_projects': 'list'     # injected from auth
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id, params.user_projects
+            params.project_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
         )
 
-        if project_vo.project_type == 'PUBLIC':
+        if project_vo.project_type == "PUBLIC":
             raise ERROR_NOT_ALLOWED_ADD_USER_TO_PUBLIC_PROJECT()
 
         if len(params.users) > 0:
@@ -204,7 +221,10 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="identity:Project.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def remove_users(
         self, params: ProjectRemoveUsersRequest
@@ -214,16 +234,19 @@ class ProjectService(BaseService):
             params (ProjectRemoveUsersRequest): {
                 'project_id': 'str',        # required
                 'users': 'list',            # required
-                'workspace_id': 'str',      # required
-                'domain_id': 'str',         # required
-                'user_projects': 'list'     # from meta
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
+                'user_projects': 'list'     # injected from auth
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id, params.user_projects
+            params.project_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
         )
 
         if len(params.users) > 0:
@@ -241,47 +264,63 @@ class ProjectService(BaseService):
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="identity:Project.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def add_user_groups(
         self, params: ProjectAddUserGroupsRequest
     ) -> Union[ProjectResponse, dict]:
         return {}
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="identity:Project.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def remove_user_groups(
         self, params: ProjectRemoveUserGroupsRequest
     ) -> Union[ProjectResponse, dict]:
         return {}
 
-    @transaction(scope="workspace_member:read")
+    @transaction(
+        permission="identity:Project.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def get(self, params: ProjectGetRequest) -> Union[ProjectResponse, dict]:
         """Get project
         Args:
             params (ProjectGetRequest): {
                 'project_id': 'str',    # required
-                'workspace_id': 'str',  # required
-                'domain_id': 'str',     # required
-                'user_projects': 'list' # from meta
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str',     # injected from auth
+                'user_projects': 'list' # injected from auth
             }
         Returns:
             ProjectResponse:
         """
 
         project_vo = self.project_mgr.get_project(
-            params.project_id, params.workspace_id, params.domain_id, params.user_projects
+            params.project_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
         )
 
         return ProjectResponse(**project_vo.to_dict())
 
-    @transaction(scope="workspace_member:read")
+    @transaction(
+        permission="identity:Project.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @append_query_filter(
         [
             "project_id",
             "name",
-            'project_type',
+            "project_type",
+            "created_by",
             "user_id",
             "user_group_id",
             "project_group_id",
@@ -300,12 +339,13 @@ class ProjectService(BaseService):
                 'project_id': 'str',
                 'name': 'str',
                 'project_type': 'str',
+                'created_by': 'str',
                 'user_id': 'str',
                 'user_group_id': 'str',
                 'project_group_id': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str',         # required
-                'user_projects': 'list'     # from meta
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
+                'user_projects': 'list'     # injected from auth
             }
         Returns:
             ProjectsResponse:
@@ -317,8 +357,11 @@ class ProjectService(BaseService):
         projects_info = [project_vo.to_dict() for project_vo in project_vos]
         return ProjectsResponse(results=projects_info, total_count=total_count)
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter(['workspace_id', 'domain_id', 'user_projects'])
+    @transaction(
+        permission="identity:Project.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @append_query_filter(["workspace_id", "domain_id", "user_projects"])
     @append_keyword_filter(["project_id", "name"])
     @convert_model
     def stat(self, params: ProjectStatQueryRequest) -> dict:
@@ -326,9 +369,9 @@ class ProjectService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'workspace_id': 'str',
-                'domain_id': 'str',         # required
-                'user_projects': 'list'     # from meta
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
+                'user_projects': 'list'     # injected from auth
             }
         Returns:
             dict: {

@@ -16,6 +16,7 @@ class ProjectResponse(BaseModel):
     tags: Union[dict, None] = None
     users: Union[List[str], None] = None
     user_groups: Union[List[str], None] = None
+    created_by: Union[str, None] = None
     project_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None

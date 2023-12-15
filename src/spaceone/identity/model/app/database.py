@@ -8,11 +8,10 @@ class App(MongoModel):
     state = StringField(
         max_length=20, default="ENABLED", choices=("ENABLED", "DISABLED", "EXPIRED")
     )
+    tags = DictField(default=None)
     role_type = StringField(
         max_length=20,
-        default="WORKSPACE_MEMBER",
         choices=(
-            "SYSTEM",
             "SYSTEM_ADMIN",
             "DOMAIN_ADMIN",
             "WORKSPACE_OWNER",
@@ -21,7 +20,8 @@ class App(MongoModel):
     )
     api_key_id = StringField(max_length=40, default=None, null=True)
     role_id = StringField(max_length=40, required=True)
-
+    resource_group = StringField(max_length=40, choices=("DOMAIN", "WORKSPACE"))
+    workspace_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=40, required=True)
     created_at = DateTimeField(auto_now_add=True)
     last_accessed_at = DateTimeField(default=None, null=True)
@@ -29,7 +29,22 @@ class App(MongoModel):
 
     meta = {
         "updatable_fields": ["name", "state", "api_key_id", "tags", "last_accessed_at"],
-        "minimal_fields": ["app_id", "state", "expired_at", "api_key_id"],
+        "minimal_fields": [
+            "app_id",
+            "name",
+            "state",
+            "role_type",
+            "role_id",
+            "expired_at",
+        ],
         "ordering": ["app_id"],
-        "indexes": ["state", "domain_id", "last_accessed_at", "expired_at"],
+        "indexes": [
+            "state",
+            "role_type",
+            "api_key_id",
+            "role_id",
+            "resource_group",
+            "workspace_id",
+            "domain_id",
+        ],
     }

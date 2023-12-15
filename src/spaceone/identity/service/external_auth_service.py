@@ -12,23 +12,24 @@ from spaceone.identity.model.external_auth.response import *
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class ExternalAuthService(BaseService):
-
-    service = "identity"
     resource = "ExternalAuth"
-    permission_group = "DOMAIN"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.external_auth_mgr = ExternalAuthManager()
 
-    @transaction(scope='domain_admin:write')
+    @transaction(permission="identity:ExternalAuth.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def set(self, params: ExternalAuthSetRequest) -> Union[ExternalAuthResponse, dict]:
         """Set external auth info
         Args:
             params (dict): {
-                'domain_id': 'str',
+                'domain_id': 'str',    # injected from auth
                 'plugin_info': 'dict'
             }
         Returns:
@@ -44,7 +45,7 @@ class ExternalAuthService(BaseService):
 
         return ExternalAuthResponse(**external_auth_vo.to_dict())
 
-    @transaction(scope='domain_admin:write')
+    @transaction(permission="identity:ExternalAuth.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def unset(
         self, params: ExternalAuthUnsetRequest
@@ -52,7 +53,7 @@ class ExternalAuthService(BaseService):
         """Unset external auth info
         Args:
             params (dict): {
-                'domain_id': 'str'
+                'domain_id': 'str'  # injected from auth
             }
         Returns:
             ExternalAuthResponse:
@@ -60,13 +61,13 @@ class ExternalAuthService(BaseService):
 
         return {}
 
-    @transaction(scope='domain_admin:read')
+    @transaction(permission="identity:ExternalAuth.read", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def get(self, params: ExternalAuthGetRequest) -> Union[ExternalAuthResponse, dict]:
         """Get external auth info
         Args:
             params (dict): {
-                'domain_id': 'str'
+                'domain_id': 'str' # injected from auth
             }
         Returns:
             ExternalAuthResponse:

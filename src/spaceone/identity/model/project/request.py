@@ -115,4 +115,3 @@ class ProjectStatQueryRequest(BaseModel):
     workspace_id: Union[str, None] = None
     domain_id: str
     user_projects: Union[list, None] = None
-

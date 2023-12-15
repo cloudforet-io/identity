@@ -3,6 +3,7 @@ from typing import Union
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
+from spaceone.core.error import *
 
 from spaceone.identity.model.schema.request import *
 from spaceone.identity.model.schema.response import *
@@ -11,20 +12,21 @@ from spaceone.identity.manager.schema_manager import SchemaManager
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class SchemaService(BaseService):
-
-    service = "identity"
     resource = "Schema"
-    permission_group = "DOMAIN"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.schema_mgr = SchemaManager()
 
-    @transaction(scope="domain_admin:write")
+    @transaction(permission="identity:Schema.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def create(self, params: SchemaCreateRequest) -> Union[SchemaResponse, dict]:
-        """ create schema
+        """create schema
 
         Args:
             params (SchemaCreateRequest): {
@@ -36,7 +38,7 @@ class SchemaService(BaseService):
                 'related_schemas': 'list',
                 'options': 'dict',
                 'tags': 'dict',
-                'domain_id': 'str'          # required
+                'domain_id': 'str'          # injected from auth
             }
 
         Returns:
@@ -46,10 +48,10 @@ class SchemaService(BaseService):
         schema_vo = self.schema_mgr.create_schema(params.dict())
         return SchemaResponse(**schema_vo.to_dict())
 
-    @transaction(scope="domain_admin:write")
+    @transaction(permission="identity:Schema.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def update(self, params: SchemaUpdateRequest) -> Union[SchemaResponse, dict]:
-        """ update schema
+        """update schema
 
         Args:
             params (SchemaUpdateRequest): {
@@ -59,7 +61,7 @@ class SchemaService(BaseService):
                 'related_schemas': 'list',
                 'options': 'dict',
                 'tags': 'dict',
-                'domain_id': 'str'        # required
+                'domain_id': 'str'        # injected from auth
             }
 
         Returns:
@@ -67,6 +69,8 @@ class SchemaService(BaseService):
         """
 
         schema_vo = self.schema_mgr.get_schema(params.schema_id, params.domain_id)
+        if schema_vo.is_managed:
+            raise ERROR_PERMISSION_DENIED()
 
         schema_vo = self.schema_mgr.update_schema_by_vo(
             params.dict(exclude_unset=True), schema_vo
@@ -74,15 +78,15 @@ class SchemaService(BaseService):
 
         return SchemaResponse(**schema_vo.to_dict())
 
-    @transaction(scope="domain_admin:write")
+    @transaction(permission="identity:Schema.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def delete(self, params: SchemaDeleteRequest) -> None:
-        """ delete schema
+        """delete schema
 
         Args:
             params (SchemaDeleteRequest): {
                 'schema_id': 'str',     # required
-                'domain_id': 'str'      # required
+                'domain_id': 'str'      # injected from auth
             }
 
         Returns:
@@ -90,17 +94,23 @@ class SchemaService(BaseService):
         """
 
         schema_vo = self.schema_mgr.get_schema(params.schema_id, params.domain_id)
+        if schema_vo.is_managed:
+            raise ERROR_PERMISSION_DENIED()
+
         self.schema_mgr.delete_schema_by_vo(schema_vo)
 
-    @transaction(scope="workspace_member:read")
+    @transaction(
+        permission="identity:Schema.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def get(self, params: SchemaGetRequest) -> Union[SchemaResponse, dict]:
-        """ delete schema
+        """delete schema
 
         Args:
             params (SchemaGetRequest): {
                 'schema_id': 'str',     # required
-                'domain_id': 'str'      # required
+                'domain_id': 'str'      # injected from auth
             }
 
         Returns:
@@ -110,14 +120,25 @@ class SchemaService(BaseService):
         schema_vo = self.schema_mgr.get_schema(params.schema_id, params.domain_id)
         return SchemaResponse(**schema_vo.to_dict())
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter(
-        ['schema_id', 'name', 'schema_type', 'provider', 'related_schema_id', 'is_managed', 'domain_id']
+    @transaction(
+        permission="identity:Schema.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @append_keyword_filter(['schema_id', 'name'])
+    @append_query_filter(
+        [
+            "schema_id",
+            "name",
+            "schema_type",
+            "provider",
+            "related_schema_id",
+            "is_managed",
+            "domain_id",
+        ]
+    )
+    @append_keyword_filter(["schema_id", "name"])
     @convert_model
     def list(self, params: SchemaSearchQueryRequest) -> Union[SchemasResponse, dict]:
-        """ list schemas
+        """list schemas
 
         Args:
             params (SchemaSearchQueryRequest): {
@@ -128,7 +149,7 @@ class SchemaService(BaseService):
                 'provider': 'str',
                 'related_schema_id': 'str',
                 'is_managed': 'bool',
-                'domain_id': 'str'              # required
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
@@ -141,17 +162,20 @@ class SchemaService(BaseService):
         schemas_info = [schema_vo.to_dict() for schema_vo in schema_vos]
         return SchemasResponse(results=schemas_info, total_count=total_count)
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter(['domain_id'])
-    @append_keyword_filter(['schema_id', 'name'])
+    @transaction(
+        permission="identity:Schema.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @append_query_filter(["domain_id"])
+    @append_keyword_filter(["schema_id", "name"])
     @convert_model
     def stat(self, params: SchemaStatQueryRequest) -> dict:
-        """ stat schemas
+        """stat schemas
 
         Args:
             params (SchemaStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'domain_id': 'str'    # required
+                'domain_id': 'str'    # injected from auth
             }
 
         Returns:

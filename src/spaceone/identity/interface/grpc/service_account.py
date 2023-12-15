@@ -21,10 +21,16 @@ class ServiceAccount(BaseAPI, service_account_pb2_grpc.ServiceAccountServicer):
         response: dict = service_account_svc.update(params)
         return self.dict_to_message(response)
 
-    def change_trusted_account(self, request, context):
+    def update_secret_data(self, request, context):
         params, metadata = self.parse_request(request, context)
         service_account_svc = ServiceAccountService(metadata)
-        response: dict = service_account_svc.change_trusted_account(params)
+        response: dict = service_account_svc.update_secret_data(params)
+        return self.dict_to_message(response)
+
+    def delete_secret_data(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        service_account_svc = ServiceAccountService(metadata)
+        response: dict = service_account_svc.delete_secret_data(params)
         return self.dict_to_message(response)
 
     def delete(self, request, context):

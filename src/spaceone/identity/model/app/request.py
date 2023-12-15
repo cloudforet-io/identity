@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Union, Literal
 from pydantic import BaseModel
 
@@ -13,14 +12,14 @@ __all__ = [
     "AppSearchQueryRequest",
     "AppStatQueryRequest",
     "State",
-    "PermissionGroup",
+    "ResourceGroup",
     "RoleType",
 ]
 
 State = Literal["ENABLED", "DISABLED", "EXPIRED"]
-PermissionGroup = Literal["DOMAIN", "WORKSPACE"]
+ResourceGroup = Literal["DOMAIN", "WORKSPACE"]
 RoleType = Literal[
-    "SYSTEM", "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"
+    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"
 ]
 
 
@@ -29,7 +28,7 @@ class AppCreateRequest(BaseModel):
     role_id: str
     tags: Union[dict, None] = None
     expired_at: Union[str, None] = None
-    permission_group: PermissionGroup
+    resource_group: ResourceGroup
     workspace_id: Union[str, None] = None
     domain_id: str
 
@@ -81,7 +80,7 @@ class AppSearchQueryRequest(BaseModel):
     role_type: Union[str, None] = None
     role_id: Union[str, None] = None
     api_key_id: Union[str, None] = None
-    permission_group: Union[PermissionGroup, None] = None
+    resource_group: Union[ResourceGroup, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 

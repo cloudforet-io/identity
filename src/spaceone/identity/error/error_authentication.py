@@ -21,8 +21,8 @@ class ERROR_AUTHENTICATION_FAILURE_PLUGIN(ERROR_INTERNAL_API):
     _message = "External plugin authentication exception. (reason = {message})"
 
 
-class ERROR_INVALID_REFRESH_TOKEN(ERROR_AUTHENTICATE_FAILURE):
-    _message = "Refresh token is invalid or expired."
+class ERROR_INVALID_GRANT_TYPE(ERROR_INVALID_ARGUMENT):
+    _message = "Invalid grant type. (grant_type = {grant_type})"
 
 
 class ERROR_REFRESH_COUNT(ERROR_AUTHENTICATE_FAILURE):

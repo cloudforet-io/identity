@@ -13,6 +13,12 @@ class WorkspaceUser(BaseAPI, workspace_user_pb2_grpc.WorkspaceUserServicer):
         response: dict = workspace_user_svc.create(params)
         return self.dict_to_message(response)
 
+    def find(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        workspace_user_svc = WorkspaceUserService(metadata)
+        response: dict = workspace_user_svc.find(params)
+        return self.dict_to_message(response)
+
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
         workspace_user_svc = WorkspaceUserService(metadata)

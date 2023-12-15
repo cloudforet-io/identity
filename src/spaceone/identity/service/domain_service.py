@@ -19,13 +19,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @authentication_handler
-# @authorization_handler
-# @mutation_handler
-# @event_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class DomainService(BaseService):
-    service = "identity"
     resource = "Domain"
-    permission_group = "DOMAIN"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -34,7 +32,7 @@ class DomainService(BaseService):
         self.user_mgr = UserManager()
         self.role_manager = RoleManager()
 
-    @transaction(scope="system_admin:write")
+    @transaction(permission="identity:Domain.write", role_types=["SYSTEM_ADMIN"])
     @convert_model
     def create(self, params: DomainCreateRequest) -> Union[DomainResponse, dict]:
         """Create Domain
@@ -85,7 +83,7 @@ class DomainService(BaseService):
 
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope="system_admin:write")
+    @transaction(permission="identity:Domain.write", role_types=["SYSTEM_ADMIN"])
     @convert_model
     def update(self, params: DomainUpdateRequest) -> Union[DomainResponse, dict]:
         """Update domain
@@ -105,7 +103,7 @@ class DomainService(BaseService):
         )
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope="system_admin:write")
+    @transaction(permission="identity:Domain.write", role_types=["SYSTEM_ADMIN"])
     @convert_model
     def delete(self, params: DomainDeleteRequest) -> None:
         """Delete Domain
@@ -120,7 +118,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
         self.domain_mgr.delete_domain_by_vo(domain_vo)
 
-    @transaction(scope="system_admin:write")
+    @transaction(permission="identity:Domain.write", role_types=["SYSTEM_ADMIN"])
     @convert_model
     def enable(self, params: DomainEnableRequest) -> Union[DomainResponse, dict]:
         """Enable Domain
@@ -136,7 +134,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.enable_domain(domain_vo)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope="system_admin:write")
+    @transaction(permission="identity:Domain.write", role_types=["SYSTEM_ADMIN"])
     @convert_model
     def disable(self, params: DomainDisableRequest) -> Union[DomainResponse, dict]:
         """Disable Domain
@@ -152,7 +150,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.disable_domain(domain_vo)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope="system_admin:write")
+    @transaction(permission="identity:Domain.read", role_types=["SYSTEM_ADMIN"])
     @convert_model
     def get(self, params: DomainGetRequest) -> Union[DomainResponse, dict]:
         """Get Domain
@@ -167,7 +165,7 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
         return DomainResponse(**domain_vo.to_dict())
 
-    @transaction(scope="public")
+    @transaction(exclude=["authentication", "authorization", "mutation"])
     @convert_model
     def get_auth_info(
         self, params: DomainGetAuthInfoRequest
@@ -187,7 +185,7 @@ class DomainService(BaseService):
 
         return DomainAuthInfoResponse(**auth_info)
 
-    @transaction(scope="system")
+    @transaction(exclude=["authentication", "authorization", "mutation"])
     @convert_model
     def get_public_key(
         self, params: DomainGetPublicKeyRequest
@@ -206,7 +204,7 @@ class DomainService(BaseService):
             public_key=utils.dump_json(pub_jwk), domain_id=params.domain_id
         )
 
-    @transaction(scope="system_admin:read")
+    @transaction(permission="identity:Domain.read", role_types=["SYSTEM_ADMIN"])
     @append_query_filter(["domain_id", "name", "state"])
     @append_keyword_filter(["domain_id", "name"])
     @convert_model
@@ -229,7 +227,7 @@ class DomainService(BaseService):
         domains_info = [domain_vo.to_dict() for domain_vo in domain_vos]
         return DomainsResponse(results=domains_info, total_count=total_count)
 
-    @transaction(scope="system_admin:read")
+    @transaction(permission="identity:Domain.read", role_types=["SYSTEM_ADMIN"])
     @append_keyword_filter(["domain_id", "name"])
     @convert_model
     def stat(self, params: DomainStatQueryRequest) -> dict:

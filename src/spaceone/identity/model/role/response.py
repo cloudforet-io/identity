@@ -3,7 +3,7 @@ from typing import Union, List
 from pydantic import BaseModel
 from spaceone.core import utils
 
-from spaceone.identity.model.role.request import RoleType, PagePermission
+from spaceone.identity.model.role.request import RoleType
 
 __all__ = ["RoleResponse", "RolesResponse"]
 
@@ -12,8 +12,8 @@ class RoleResponse(BaseModel):
     role_id: Union[str, None] = None
     name: Union[str, None] = None
     role_type: Union[RoleType, None] = None
-    api_permissions: Union[List[str], None] = None
-    page_permissions: Union[List[PagePermission], None] = None
+    permissions: Union[List[str], None] = None
+    page_access: Union[List[str], None] = None
     tags: Union[dict, None] = None
     is_managed: Union[bool, None] = None
     domain_id: Union[str, None] = None
@@ -22,8 +22,8 @@ class RoleResponse(BaseModel):
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
-        data['created_at'] = utils.datetime_to_iso8601(data['created_at'])
-        data['updated_at'] = utils.datetime_to_iso8601(data['updated_at'])
+        data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
+        data["updated_at"] = utils.datetime_to_iso8601(data["updated_at"])
         return data
 
 

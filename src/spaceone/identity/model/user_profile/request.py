@@ -1,0 +1,70 @@
+from typing import Union
+from pydantic import BaseModel
+
+__all__ = [
+    "UserProfileUpdateRequest",
+    "UserProfileVerifyEmailRequest",
+    "UserProfileConfirmEmailRequest",
+    "UserProfileResetPasswordRequest",
+    "UserProfileEnableMFARequest",
+    "UserProfileDisableMFARequest",
+    "UserProfileConfirmMFARequest",
+    "UserProfileGetRequest",
+    "UserProfileGetWorkspacesRequest",
+]
+
+
+class UserProfileUpdateRequest(BaseModel):
+    user_id: str
+    password: Union[str, None] = None
+    name: Union[str, None] = None
+    email: Union[str, None] = None
+    language: Union[str, None] = None
+    timezone: Union[str, None] = None
+    tags: Union[dict, None] = None
+    domain_id: str
+
+
+class UserProfileVerifyEmailRequest(BaseModel):
+    user_id: str
+    email: Union[str, None] = None
+    domain_id: str
+
+
+class UserProfileConfirmEmailRequest(BaseModel):
+    user_id: str
+    verify_code: str
+    domain_id: str
+
+
+class UserProfileResetPasswordRequest(BaseModel):
+    user_id: str
+    domain_id: str
+
+
+class UserProfileEnableMFARequest(BaseModel):
+    user_id: str
+    mfa_type: str
+    options: dict
+    domain_id: str
+
+
+class UserProfileDisableMFARequest(BaseModel):
+    user_id: str
+    domain_id: str
+
+
+class UserProfileConfirmMFARequest(BaseModel):
+    user_id: str
+    verify_code: str
+    domain_id: str
+
+
+class UserProfileGetRequest(BaseModel):
+    user_id: str
+    domain_id: str
+
+
+class UserProfileGetWorkspacesRequest(BaseModel):
+    user_id: str
+    domain_id: str

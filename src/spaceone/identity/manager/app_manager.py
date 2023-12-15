@@ -50,7 +50,10 @@ class AppManager(BaseManager):
         app_vo.delete()
 
     def get_app(
-        self, app_id: str, workspace_id: Union[str, None], domain_id: str
+        self,
+        app_id: str,
+        domain_id: str,
+        workspace_id: Union[str, None] = None,
     ) -> App:
         conditions = {
             "app_id": app_id,

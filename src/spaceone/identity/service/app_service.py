@@ -15,16 +15,21 @@ from spaceone.identity.model.app.response import *
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class AppService(BaseService):
-    service = "identity"
     resource = "App"
-    permission_group = "COMPOUND"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app_mgr = AppManager()
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:App.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
     def create(self, params: AppCreateRequest) -> Union[AppResponse, dict]:
         """Create API Key
@@ -34,18 +39,22 @@ class AppService(BaseService):
                 'role_id': 'str',           # required
                 'tags': 'dict',
                 'expired_at': 'str',
-                'permission_group': 'str',  # required
-                'workspace_id': 'str',
-                'domain_id': 'str',         # required
+                'resource_group': 'str',    # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
             }
         Return:
             AppResponse:
         """
+
+        # TODO: Check permission by resource_group
+        # only DOMAIN_ADMIN can create DOMAIN_ADMIN and SYSTEM_ADMIN role
+
         params.expired_at = self._get_expired_at(params.expired_at)
         self._check_expired_at(params.expired_at)
 
         # Check workspace
-        if params.permission_group == "WORKSPACE":
+        if params.resource_group == "WORKSPACE":
             workspace_mgr = WorkspaceManager()
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
         else:
@@ -64,28 +73,36 @@ class AppService(BaseService):
 
         return AppResponse(**app_vo.to_dict(), api_key=api_key)
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:App.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
     def update(self, params: AppUpdateRequest) -> Union[AppResponse, dict]:
         """Update App
         Args:
             params (dict): {
-                'app_id': 'str', # required
+                'app_id': 'str',        # required
                 'name': 'str',
                 'tags': 'dict',
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         Return:
             AppResponse:
         """
         app_vo = self.app_mgr.get_app(
-            params.app_id, params.workspace_id, params.domain_id
+            params.app_id,
+            params.domain_id,
+            params.workspace_id,
         )
         app_vo = self.app_mgr.update_app_by_vo(params.dict(exclude_unset=True), app_vo)
         return AppResponse(**app_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:App.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
     def generate_api_key(
         self, params: AppGenerateAPIKeyRequest
@@ -93,10 +110,10 @@ class AppService(BaseService):
         """Generate API Key
         Args:
             params (dict): {
-                'app_id': 'str', # required
+                'app_id': 'str',        # required
                 'expired_at': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         Return:
             AppResponse:
@@ -108,7 +125,9 @@ class AppService(BaseService):
         self._check_expired_at(params.expired_at)
 
         app_vo = self.app_mgr.get_app(
-            params.app_id, params.workspace_id, params.domain_id
+            params.app_id,
+            params.domain_id,
+            params.workspace_id,
         )
 
         # Create new api_key
@@ -130,77 +149,100 @@ class AppService(BaseService):
 
         return AppResponse(**app_vo.to_dict(), api_key=api_key)
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:App.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
     def enable(self, params: AppEnableRequest) -> Union[AppResponse, dict]:
         """Enable App Key
         Args:
             params (dict): {
-                'app_id': 'str', # required
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'app_id': 'str',        # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         """
         app_vo = self.app_mgr.get_app(
-            params.app_id, params.workspace_id, params.domain_id
+            params.app_id,
+            params.domain_id,
+            params.workspace_id,
         )
         app_vo = self.app_mgr.enable_app(app_vo)
         return AppResponse(**app_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:App.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
     def disable(self, params: AppDisableRequest) -> Union[AppResponse, dict]:
         """Disable App Key
         Args:
             params (dict): {
-                'app_id': 'str', # required
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'app_id': 'str',        # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         """
         app_vo = self.app_mgr.get_app(
-            params.app_id, params.workspace_id, params.domain_id
+            params.app_id,
+            params.domain_id,
+            params.workspace_id,
         )
         app_vo = self.app_mgr.disable_app(app_vo)
         return AppResponse(**app_vo.to_dict())
 
-    @transaction(scope="workspace_owner:write")
+    @transaction(
+        permission="identity:App.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
     @convert_model
     def delete(self, params: AppDeleteRequest) -> None:
         """Delete app
         Args:
             params (dict): {
-                'api_key_id': 'str', # required
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'api_key_id': 'str',    # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             None
         """
         app_vo = self.app_mgr.get_app(
-            params.app_id, params.workspace_id, params.domain_id
+            params.app_id,
+            params.domain_id,
+            params.workspace_id,
         )
         self.app_mgr.delete_app_by_vo(app_vo)
 
-    @transaction(scope="workspace_owner:read")
+    @transaction(
+        permission="identity:App.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def get(self, params: AppGetRequest) -> Union[AppResponse, dict]:
         """Get API Key
         Args:
             params (dict): {
-                'app_id': 'str', # required
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'app_id': 'str',            # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth
             }
         Returns:
             AppResponse:
         """
         app_vo = self.app_mgr.get_app(
-            params.app_id, params.workspace_id, params.domain_id
+            params.app_id,
+            params.domain_id,
+            params.workspace_id,
         )
         return AppResponse(**app_vo.to_dict())
 
-    @transaction(scope="workspace_owner:read")
+    @transaction(
+        permission="identity:App.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @append_query_filter(
         [
             "app_id",
@@ -209,7 +251,7 @@ class AppService(BaseService):
             "role_type",
             "role_id",
             "api_key_id",
-            "permission_group",
+            "resource_group",
             "workspace_id",
             "domain_id",
         ]
@@ -227,9 +269,9 @@ class AppService(BaseService):
                 'role_type': 'str',
                 'role_id': 'str',
                 'api_key_id': 'str',
-                'permission_group': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'resource_group': 'str',
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth
             }
         Returns:
             AppsResponse:
@@ -239,7 +281,10 @@ class AppService(BaseService):
         apps_info = [app_vo.to_dict() for app_vo in app_vos]
         return AppsResponse(results=apps_info, total_count=total_count)
 
-    @transaction(scope="workspace_owner:read")
+    @transaction(
+        permission="identity:App.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["app_id", "name"])
     @convert_model
@@ -247,9 +292,9 @@ class AppService(BaseService):
         """Stat API Keys
         Args:
             params (dict): {
-                'query': 'dict', # required
-                'workspace_id': 'str',
-                'domain_id': 'str' # required
+                'query': 'dict',        # required
+                'workspace_id': 'str',  # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
             Returns:
                 dict:

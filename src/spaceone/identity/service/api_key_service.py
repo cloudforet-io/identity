@@ -15,6 +15,10 @@ from spaceone.identity.model.api_key.response import *
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class APIKeyService(BaseService):
     service = "identity"
     resource = "APIKey"
@@ -24,20 +28,25 @@ class APIKeyService(BaseService):
         super().__init__(*args, **kwargs)
         self.api_key_mgr = APIKeyManager()
 
-    @transaction(scope="user:write")
+    @transaction(
+        permission="identity:APIKey.write",
+        role_types=["USER"],
+    )
     @convert_model
     def create(self, params: APIKeyCreateRequest) -> Union[APIKeyResponse, dict]:
         """Create API Key
         Args:
             params (dict): {
-                'user_id': 'str', # required
                 'name': 'str',
-                'expired_at': 'str'
-                'domain_id': 'str', # required
+                'expired_at': 'str',
+                'user_id': 'str',   # injected from auth
+                'domain_id': 'str', # injected from auth
             }
         Return:
             APIKeyResponse:
         """
+
+        # TODO: check api key count limit (max 2)
 
         params.expired_at = self._get_expired_at(params.expired_at)
         self._check_expired_at(params.expired_at)
@@ -56,7 +65,10 @@ class APIKeyService(BaseService):
         user_mgr.update_user_by_vo({"api_key_count": api_key_vos.count()}, user_vo)
         return APIKeyResponse(**api_key_vo.to_dict(), api_key=api_key)
 
-    @transaction(scope="user:write")
+    @transaction(
+        permission="identity:APIKey.write",
+        role_types=["USER"],
+    )
     @convert_model
     def update(self, params: APIKeyUpdateRequest) -> Union[APIKeyResponse, dict]:
         """Update API Key
@@ -64,8 +76,8 @@ class APIKeyService(BaseService):
             params (dict): {
                 'api_key_id': 'str',    # required
                 'name': 'str',
-                'domain_id': 'str',     # required
-                'user_id': 'str',       # from meta
+                'user_id': 'str',       # injected from auth
+                'domain_id': 'str',     # injected from auth
             }
         Returns:
             APIKeyResponse:
@@ -81,15 +93,18 @@ class APIKeyService(BaseService):
 
         return APIKeyResponse(**api_key_vo.to_dict())
 
-    @transaction(scope="user:write")
+    @transaction(
+        permission="identity:APIKey.write",
+        role_types=["USER"],
+    )
     @convert_model
     def enable(self, params: APIKeyEnableRequest) -> Union[APIKeyResponse, dict]:
         """Enable API Key
         Args:
             params (dict): {
                 'api_key_id': 'str',    # required
-                'domain_id': 'str',     # required
-                'user_id': 'str',       # from meta
+                'user_id': 'str',       # injected from auth
+                'domain_id': 'str',     # injected from auth
             }
         Returns:
             APIKeyResponse:
@@ -102,15 +117,18 @@ class APIKeyService(BaseService):
         api_key_vo = self.api_key_mgr.enable_api_key(api_key_vo)
         return APIKeyResponse(**api_key_vo.to_dict())
 
-    @transaction(scope="user:write")
+    @transaction(
+        permission="identity:APIKey.write",
+        role_types=["USER"],
+    )
     @convert_model
     def disable(self, params: APIKeyDisableRequest) -> Union[APIKeyResponse, dict]:
         """Disable API Key
         Args:
             params (dict): {
                 'api_key_id': 'str',    # required
-                'domain_id': 'str',     # required
-                'user_id': 'str',       # from meta
+                'user_id': 'str',       # injected from auth
+                'domain_id': 'str',     # injected from auth
             }
         Returns:
             APIKeyResponse:
@@ -123,15 +141,18 @@ class APIKeyService(BaseService):
         api_key_vo = self.api_key_mgr.disable_api_key(api_key_vo)
         return APIKeyResponse(**api_key_vo.to_dict())
 
-    @transaction(scope="user:write")
+    @transaction(
+        permission="identity:APIKey.write",
+        role_types=["USER"],
+    )
     @convert_model
     def delete(self, params: APIKeyDeleteRequest) -> None:
         """Delete API Key
         Args:
             params (dict): {
                 'api_key_id': 'str',    # required
-                'domain_id': 'str',     # required
-                'user_id': 'str',       # from meta
+                'user_id': 'str',       # injected from auth
+                'domain_id': 'str',     # injected from auth
             }
         Returns:
             None
@@ -152,15 +173,18 @@ class APIKeyService(BaseService):
 
         self.api_key_mgr.delete_api_key_by_vo(api_key_vo)
 
-    @transaction(scope="user:read")
+    @transaction(
+        permission="identity:APIKey.read",
+        role_types=["USER"],
+    )
     @convert_model
     def get(self, params: APIKeyGetRequest) -> Union[APIKeyResponse, dict]:
         """Get API Key
         Args:
             params (dict): {
                 'api_key_id': 'str',    # required
-                'domain_id': 'str',     # required
-                'user_id': 'str',       # from meta
+                'user_id': 'str',       # injected from auth
+                'domain_id': 'str',     # injected from auth
             }
         Returns:
             APIKeyResponse:
@@ -172,7 +196,10 @@ class APIKeyService(BaseService):
 
         return APIKeyResponse(**api_key_vo.to_dict())
 
-    @transaction(scope="user:read")
+    @transaction(
+        permission="identity:APIKey.read",
+        role_types=["USER"],
+    )
     @append_query_filter(["api_key_id", "name", "user_id", "state", "domain_id"])
     @append_keyword_filter(["api_key_id", "name"])
     @convert_model
@@ -183,9 +210,9 @@ class APIKeyService(BaseService):
                 'query': 'dict',
                 'api_key_id': 'str',
                 'name': 'str',
-                'user_id': 'str',
                 'state': 'str',
-                'domain_id': 'str'      # required
+                'user_id': 'str',       # injected from auth
+                'domain_id': 'str'      # injected from auth
             }
         Returns:
             APIKeysResponse:
@@ -198,7 +225,10 @@ class APIKeyService(BaseService):
         api_keys_info = [api_key_vo.to_dict() for api_key_vo in api_key_vos]
         return APIKeysResponse(results=api_keys_info, total_count=total_count)
 
-    @transaction(scope="user:read")
+    @transaction(
+        permission="identity:APIKey.read",
+        role_types=["USER"],
+    )
     @append_query_filter(["user_id" "owner_type", "domain_id"])
     @append_keyword_filter(["api_key_id", "name"])
     @convert_model
@@ -207,8 +237,8 @@ class APIKeyService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict',        # required
-                'domain_id': 'str',     # required
-                'user_id': 'str',       # from meta
+                'user_id': 'str',       # injected from auth
+                'domain_id': 'str',     # injected from auth
             }
         Returns:
             dict: {

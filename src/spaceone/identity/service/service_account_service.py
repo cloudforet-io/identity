@@ -9,25 +9,31 @@ from spaceone.identity.model.service_account.response import *
 from spaceone.identity.manager.schema_manager import SchemaManager
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
-
+from spaceone.identity.manager.project_manager import ProjectManager
 
 _LOGGER = logging.getLogger(__name__)
 
 
+@authentication_handler
+@authorization_handler
+@mutation_handler
+@event_handler
 class ServiceAccountService(BaseService):
-
-    service = "identity"
     resource = "ServiceAccount"
-    permission_group = "PROJECT"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.service_account_mgr = ServiceAccountManager()
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
-    def create(self, params: ServiceAccountCreateRequest) -> Union[ServiceAccountResponse, dict]:
-        """ create service account
+    def create(
+        self, params: ServiceAccountCreateRequest
+    ) -> Union[ServiceAccountResponse, dict]:
+        """create service account
 
          Args:
             params (ServiceAccountCreateRequest): {
@@ -37,8 +43,8 @@ class ServiceAccountService(BaseService):
                 'trusted_account_id': 'str',
                 'tags': 'dict',
                 'project_id': 'str',                    # required
-                'workspace_id': 'str',                  # required
-                'domain_id': 'str'                      # required
+                'workspace_id': 'str',                  # injected from auth
+                'domain_id': 'str'                      # injected from auth
             }
 
         Returns:
@@ -48,7 +54,13 @@ class ServiceAccountService(BaseService):
         # Check data by schema
         schema_mgr = SchemaManager()
         schema_mgr.validate_data_by_schema(
-            params.provider, params.domain_id, 'SERVICE_ACCOUNT', params.data
+            params.provider, params.domain_id, "SERVICE_ACCOUNT", params.data
+        )
+
+        # Check project
+        project_mgr = ProjectManager()
+        project_mgr.get_project(
+            params.project_id, params.domain_id, params.workspace_id
         )
 
         # Check trusted service account
@@ -58,13 +70,20 @@ class ServiceAccountService(BaseService):
                 params.trusted_account_id, params.domain_id, params.workspace_id
             )
 
-        service_account_vo = self.service_account_mgr.create_service_account(params.dict())
+        service_account_vo = self.service_account_mgr.create_service_account(
+            params.dict()
+        )
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
-    def update(self, params: ServiceAccountUpdateRequest) -> Union[ServiceAccountResponse, dict]:
-        """ update service account
+    def update(
+        self, params: ServiceAccountUpdateRequest
+    ) -> Union[ServiceAccountResponse, dict]:
+        """update service account
 
          Args:
             params (ServiceAccountUpdateRequest): {
@@ -73,9 +92,9 @@ class ServiceAccountService(BaseService):
                 'data': 'dict',
                 'tags': 'dict',
                 'project_id': 'str',
-                'workspace_id': 'str',              # required
-                'domain_id': 'str',                 # required
-                'user_projects': 'list'             # from meta
+                'workspace_id': 'str',              # injected from auth
+                'domain_id': 'str',                 # injected from auth
+                'user_projects': 'list'             # injected from auth
             }
 
         Returns:
@@ -83,14 +102,20 @@ class ServiceAccountService(BaseService):
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
-            params.service_account_id, params.domain_id, params.workspace_id, params.user_projects
+            params.service_account_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
         )
 
         if params.data:
             # Check data by schema
             schema_mgr = SchemaManager()
             schema_mgr.validate_data_by_schema(
-                service_account_vo.provider, params.domain_id, 'SERVICE_ACCOUNT', params.data
+                service_account_vo.provider,
+                params.domain_id,
+                "SERVICE_ACCOUNT",
+                params.data,
             )
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
@@ -99,54 +124,96 @@ class ServiceAccountService(BaseService):
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
-    def change_trusted_account(
-        self, params: ServiceAccountChangeTrustedAccountRequest
+    def update_secret_data(
+        self, params: ServiceAccountUpdateSecretRequest
     ) -> Union[ServiceAccountResponse, dict]:
-        """ change trusted service account
+        """update service account secret data
 
          Args:
-            params (ServiceAccountChangeTrustedAccountRequest): {
-                'service_account_id': 'str',            # required
-                'trusted_account_id': 'str',            # required
-                'workspace_id': 'str',                  # required
-                'domain_id': 'str',                     # required
-                'user_projects': 'list'                 # from meta
+            params (ServiceAccountUpdateSecretRequest): {
+                'service_account_id': 'str',        # required
+                'secret_data': 'dict',              # required
+                'trusted_account_id': 'str',
+                'workspace_id': 'str',              # injected from auth
+                'domain_id': 'str',                 # injected from auth
+                'user_projects': 'list'             # injected from auth
             }
 
         Returns:
-
             ServiceAccountResponse:
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
-            params.service_account_id, params.domain_id, params.workspace_id, params.user_projects
+            params.service_account_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
         )
 
-        # Check trusted service account
-        trusted_account_mgr = TrustedAccountManager()
-        trusted_account_mgr.get_trusted_account(
-            params.trusted_account_id, params.domain_id, params.workspace_id
-        )
+        # TODO: Update a trusted secret and update trusted_secret_id in service_account_vo
+
+        if params.trusted_account_id:
+            trusted_account_mgr = TrustedAccountManager()
+            trusted_account_mgr.get_trusted_account(
+                params.trusted_account_id, params.domain_id, params.workspace_id
+            )
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
-            {'trusted_account_id': params.trusted_account_id}, service_account_vo
+            params.dict(exclude_unset=True), service_account_vo
         )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
-    @transaction(scope="workspace_member:write")
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @convert_model
+    def delete_secret_data(
+        self, params: ServiceAccountDeleteSecretRequest
+    ) -> ServiceAccountResponse:
+        """delete service account secret data
+
+         Args:
+            params (ServiceAccountDeleteSecretRequest): {
+                'service_account_id': 'str',            # required
+                'workspace_id': 'str',                  # injected from auth
+                'domain_id': 'str',                     # injected from auth
+                'user_projects': 'list'                 # injected from auth
+            }
+
+        Returns:
+            ServiceAccountResponse:
+        """
+
+        service_account_vo = self.service_account_mgr.get_service_account(
+            params.service_account_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
+        )
+
+        return ServiceAccountResponse(**service_account_vo.to_dict())
+
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
     def delete(self, params: ServiceAccountDeleteRequest) -> None:
-        """ delete service account
+        """delete service account
 
          Args:
             params (ServiceAccountDeleteRequest): {
                 'service_account_id': 'str',            # required
-                'workspace_id': 'str',                  # required
-                'domain_id': 'str',                     # required
-                'user_projects': 'list'                 # from meta
+                'workspace_id': 'str',                  # injected from auth
+                'domain_id': 'str',                     # injected from auth
+                'user_projects': 'list'                 # injected from auth
             }
 
         Returns:
@@ -154,22 +221,30 @@ class ServiceAccountService(BaseService):
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
-            params.service_account_id, params.domain_id, params.workspace_id, params.user_projects
+            params.service_account_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
         )
 
         self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
 
-    @transaction(scope="workspace_member:read")
+    @transaction(
+        permission="identity:ServiceAccount.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @convert_model
-    def get(self, params: ServiceAccountGetRequest) -> Union[ServiceAccountResponse, dict]:
-        """ get service account
+    def get(
+        self, params: ServiceAccountGetRequest
+    ) -> Union[ServiceAccountResponse, dict]:
+        """get service account
 
          Args:
             params (ServiceAccountDeleteRequest): {
                 'service_account_id': 'str',            # required
-                'workspace_id': 'str',                  # required
-                'domain_id': 'str',                     # required
-                'user_projects': 'list'                 # from meta
+                'workspace_id': 'str',                  # injected from auth
+                'domain_id': 'str',                     # injected from auth
+                'user_projects': 'list'                 # injected from auth
             }
 
         Returns:
@@ -177,20 +252,38 @@ class ServiceAccountService(BaseService):
         """
 
         service_account_vo = self.service_account_mgr.get_service_account(
-            params.service_account_id, params.domain_id, params.workspace_id, params.user_projects
+            params.service_account_id,
+            params.domain_id,
+            params.workspace_id,
+            params.user_projects,
         )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter([
-        'service_account_id', 'name', 'provider', 'project_id', 'workspace_id', 'domain_id', 'user_projects'
-    ])
-    @append_keyword_filter(['service_account_id', 'name'])
+    @transaction(
+        permission="identity:ServiceAccount.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @append_query_filter(
+        [
+            "service_account_id",
+            "name",
+            "provider",
+            "secret_schema_id",
+            "secret_id",
+            "project_id",
+            "workspace_id",
+            "domain_id",
+            "user_projects",
+        ]
+    )
+    @append_keyword_filter(["service_account_id", "name"])
     @set_query_page_limit(1000)
     @convert_model
-    def list(self, params: ServiceAccountSearchQueryRequest) -> Union[ServiceAccountsResponse, dict]:
-        """ list service accounts
+    def list(
+        self, params: ServiceAccountSearchQueryRequest
+    ) -> Union[ServiceAccountsResponse, dict]:
+        """list service accounts
 
         Args:
             params (ServiceAccountSearchQueryRequest): {
@@ -198,10 +291,12 @@ class ServiceAccountService(BaseService):
                 'service_account_id': 'str',
                 'name': 'str',
                 'provider': 'str',
+                'secret_schema_id': 'str',
+                'secret_id': 'str',
                 'project_id': 'str',
-                'workspace_id': 'str',
-                'domain_id': 'str',                     # required
-                'user_projects': 'list'                 # from meta
+                'workspace_id': 'str',                  # injected from auth
+                'domain_id': 'str',                     # injected from auth
+                'user_projects': 'list'                 # injected from auth
             }
 
         Returns:
@@ -209,25 +304,35 @@ class ServiceAccountService(BaseService):
         """
 
         query = params.query or {}
-        service_account_vos, total_count = self.service_account_mgr.list_service_accounts(query)
+        (
+            service_account_vos,
+            total_count,
+        ) = self.service_account_mgr.list_service_accounts(query)
 
-        service_accounts_info = [service_account_vo.to_dict() for service_account_vo in service_account_vos]
-        return ServiceAccountsResponse(results=service_accounts_info, total_count=total_count)
+        service_accounts_info = [
+            service_account_vo.to_dict() for service_account_vo in service_account_vos
+        ]
+        return ServiceAccountsResponse(
+            results=service_accounts_info, total_count=total_count
+        )
 
-    @transaction(scope="workspace_member:read")
-    @append_query_filter(['workspace_id', 'domain_id', 'user_projects'])
-    @append_keyword_filter(['service_account_id', 'name'])
+    @transaction(
+        permission="identity:ServiceAccount.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @append_query_filter(["workspace_id", "domain_id", "user_projects"])
+    @append_keyword_filter(["service_account_id", "name"])
     @set_query_page_limit(1000)
     @convert_model
     def stat(self, params: ServiceAccountStatQueryRequest) -> dict:
-        """ stat service accounts
+        """stat service accounts
 
         Args:
             params (ServiceAccountStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'workspace_id': 'str',
-                'domain_id': 'str',         # required
-                'user_projects': 'list'     # from meta
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth
+                'user_projects': 'list'     # injected from auth
             }
 
         Returns:

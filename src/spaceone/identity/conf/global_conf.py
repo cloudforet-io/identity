@@ -37,12 +37,10 @@ IDENTITY = {
     "token": {
         "verify_code_timeout": 3600,
         "temporary_token_timeout": 86400,  # 24 hours
-        "token_timeout": 1200,
-        "refresh_timeout": 1800,
-        "refresh_ttl": 18,
-        "refresh_once": False,
+        "token_timeout": 10800,
+        "refresh_timeout": 21600,
     },
-    "mfa": {"mfa_verify_code_timeout": 300},
+    "mfa": {"verify_code_timeout": 300},
 }
 
 # Handler Settings

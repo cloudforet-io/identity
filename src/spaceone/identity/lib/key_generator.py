@@ -1,6 +1,5 @@
 import logging
 import time
-from typing import Tuple
 
 from spaceone.core.auth.jwt.jwt_util import JWTUtil
 from spaceone.core import utils
@@ -15,12 +14,14 @@ class KeyGenerator:
         self,
         prv_jwk: dict,
         domain_id: str,
+        owner_type: str,
         audience: str,
         api_key_id: str = None,
         refresh_prv_jwk: dict = None,
     ):
         self.prv_jwk = prv_jwk
         self.domain_id = domain_id
+        self.owner_type = owner_type
         self.audience = audience
         self.token_id = api_key_id or utils.random_string(16)
         self.refresh_prv_jwk = refresh_prv_jwk
@@ -28,73 +29,63 @@ class KeyGenerator:
         self._check_parameter()
 
     def _check_parameter(self):
-        if self.prv_jwk is None:
-            raise ERROR_GENERATE_KEY_FAILURE()
-        if self.domain_id is None:
+        if not (self.prv_jwk and self.domain_id and self.audience):
             raise ERROR_GENERATE_KEY_FAILURE()
 
-    def generate_api_key(self, expired: int) -> str:
+    def generate_token(
+        self,
+        token_type: str,
+        timeout: int,
+        role_type: str = None,
+        workspace_id: str = None,
+        permissions: list = None,
+        projects: list = None,
+    ) -> str:
         payload = {
             "iss": "spaceone.identity",
-            "typ": "API_KEY",  # API_KEY | ACCESS_TOKEN | REFRESH_TOKEN
-            "own": "USER",  # USER | APP
+            "typ": token_type,
+            "own": self.owner_type,
             "did": self.domain_id,
             "aud": self.audience,
-            "exp": expired,
+            "exp": int(time.time() + timeout),
             "jti": self.token_id,
             "iat": int(time.time()),
             "ver": "2.0",
         }
 
-        self._print_key(payload)
-        return JWTUtil.encode(payload, self.prv_jwk)
+        if role_type:
+            payload["rol"] = role_type
 
-    def generate_access_token(self, expired: int, api_permissions: list = None) -> str:
-        payload = {
-            "iss": "spaceone.identity",
-            "typ": "ACCESS_TOKEN",
-            "own": "USER",  # USER | APP
-            "did": self.domain_id,
-            "aud": self.audience,
-            "exp": int(time.time() + expired),
-            "jti": self.token_id,
-            "iat": int(time.time()),
-            "ver": "2.0",
-        }
+        if workspace_id:
+            payload["wid"] = workspace_id
 
-        if api_permissions:
-            payload["api_permissions"] = api_permissions
+        if permissions and len(permissions) > 0:
+            payload["permissions"] = permissions
 
-        return JWTUtil.encode(payload, self.prv_jwk)
+        if projects and len(projects) > 0:
+            payload["projects"] = projects
 
-    def generate_refresh_token(self, expired: int, ttl: int) -> str:
-        payload = {
-            "iss": "spaceone.identity",
-            "typ": "REFRESH_TOKEN",
-            "own": "USER",  # USER | APP
-            "did": self.domain_id,
-            "aud": self.audience,
-            "exp": int(time.time() + expired),
-            "jti": self.token_id,
-            "iat": int(time.time()),
-            "ttl": ttl,
-            "ver": "2.0",
-        }
-
-        return JWTUtil.encode(payload, self.refresh_prv_jwk)
+        # self._print_key(payload)
+        if token_type == "ACCESS_TOKEN":
+            return JWTUtil.encode(payload, self.prv_jwk)
+        else:
+            return JWTUtil.encode(payload, self.refresh_prv_jwk)
 
     @staticmethod
     def _print_key(payload: dict):
         _LOGGER.debug(
             f"[KeyGenerator._print_key] generated payload. ( "
             f'iss: {payload.get("iss")}, '
+            f'rol: {payload.get("rol")}, '
             f'typ: {payload.get("typ")}, '
             f'own: {payload.get("own")}, '
             f'did: {payload.get("did")}, '
+            f'wid: {payload.get("wid")}, '
             f'aud: {payload.get("aud")}, '
             f'exp: {payload.get("exp")}, '
             f'iat: {payload.get("iat")}, '
-            f'ttl: {payload.get("ttl")}, '
             f'jti: {payload.get("jti")}, '
+            f'projects: {payload.get("projects")},'
+            f'permissions: {payload.get("permissions")},'
             f'ver: {payload.get("ver")} )'
         )
