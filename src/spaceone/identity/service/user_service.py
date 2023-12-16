@@ -277,7 +277,7 @@ class UserService(BaseService):
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
         # TODO: check this user is last admin (DOMAIN_ADMIN, SYSTEM_ADMIN)
-        if user_vo.role_type == ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
+        if user_vo.role_type in ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
             self._check_last_admin(params.domain_id, user_vo)
 
         self.user_mgr.delete_user_by_vo(user_vo)

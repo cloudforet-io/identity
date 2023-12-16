@@ -51,8 +51,6 @@ class TrustedAccountService(BaseService):
             TrustedAccountResponse:
         """
 
-        # TODO: Check permission by resource_group
-
         # Check workspace
         if params.resource_group == "WORKSPACE":
             workspace_mgr = WorkspaceManager()
@@ -177,6 +175,7 @@ class TrustedAccountService(BaseService):
         permission="identity:TrustedAccount.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def get(
         self, params: TrustedAccountGetRequest
@@ -204,6 +203,7 @@ class TrustedAccountService(BaseService):
         permission="identity:TrustedAccount.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(
         [
             "trusted_account_id",
@@ -211,7 +211,6 @@ class TrustedAccountService(BaseService):
             "provider",
             "secret_schema_id",
             "trusted_secret_id",
-            "resource_group",
             "workspace_id",
             "domain_id",
         ]
@@ -231,7 +230,6 @@ class TrustedAccountService(BaseService):
                 'provider': 'str',
                 'secret_schema_id': 'str',
                 'trusted_secret_id': 'str',
-                'resource_group': 'str',
                 'workspace_id': 'str',      # injected from auth
                 'domain_id': 'str',         # injected from auth
             }
@@ -257,6 +255,7 @@ class TrustedAccountService(BaseService):
         permission="identity:TrustedAccount.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["trusted_account_id", "name"])
     @convert_model

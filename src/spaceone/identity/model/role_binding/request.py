@@ -37,7 +37,7 @@ class RoleBindingDeleteRequest(BaseModel):
 
 class RoleBindingGetRequest(BaseModel):
     role_binding_id: str
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str
 
 
@@ -45,14 +45,13 @@ class RoleBindingSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     role_binding_id: Union[str, None] = None
     role_type: Union[str, None] = None
-    resource_group: Union[ResourceGroup, None] = None
     user_id: Union[str, None] = None
     role_id: Union[str, None] = None
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str
 
 
 class RoleBindingStatQueryRequest(BaseModel):
     query: dict
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str

@@ -9,8 +9,10 @@ from spaceone.identity.error.error_api_key import *
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.api_key_manager import APIKeyManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.model.app.request import *
 from spaceone.identity.model.app.response import *
+from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_ROLE_TYPE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,8 +49,21 @@ class AppService(BaseService):
             AppResponse:
         """
 
-        # TODO: Check permission by resource_group
-        # only DOMAIN_ADMIN can create DOMAIN_ADMIN and SYSTEM_ADMIN role
+        # Check role
+        role_mgr = RoleManager()
+        role_vo = role_mgr.get_role(params.role_id, params.domain_id)
+
+        # Check role type by resource_group
+        if params.resource_group == "DOMAIN":
+            if role_vo.role_type not in ["DOMAIN_ADMIN", "SYSTEM_ADMIN"]:
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
+                    supported_role_type=["DOMAIN_ADMIN", "SYSTEM_ADMIN"]
+                )
+        elif params.resource_group == "WORKSPACE":
+            if role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
+                    supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+                )
 
         params.expired_at = self._get_expired_at(params.expired_at)
         self._check_expired_at(params.expired_at)
@@ -220,6 +235,7 @@ class AppService(BaseService):
         permission="identity:App.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def get(self, params: AppGetRequest) -> Union[AppResponse, dict]:
         """Get API Key
@@ -243,6 +259,7 @@ class AppService(BaseService):
         permission="identity:App.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(
         [
             "app_id",
@@ -251,7 +268,6 @@ class AppService(BaseService):
             "role_type",
             "role_id",
             "api_key_id",
-            "resource_group",
             "workspace_id",
             "domain_id",
         ]
@@ -269,7 +285,6 @@ class AppService(BaseService):
                 'role_type': 'str',
                 'role_id': 'str',
                 'api_key_id': 'str',
-                'resource_group': 'str',
                 'workspace_id': 'str',      # injected from auth
                 'domain_id': 'str'          # injected from auth
             }
@@ -285,6 +300,7 @@ class AppService(BaseService):
         permission="identity:App.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["app_id", "name"])
     @convert_model
