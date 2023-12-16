@@ -68,7 +68,7 @@ class AppDeleteRequest(BaseModel):
 
 class AppGetRequest(BaseModel):
     app_id: str
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str
 
 
@@ -80,12 +80,11 @@ class AppSearchQueryRequest(BaseModel):
     role_type: Union[str, None] = None
     role_id: Union[str, None] = None
     api_key_id: Union[str, None] = None
-    resource_group: Union[ResourceGroup, None] = None
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str
 
 
 class AppStatQueryRequest(BaseModel):
     query: dict
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str

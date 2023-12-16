@@ -51,7 +51,7 @@ class TrustedAccountDeleteRequest(BaseModel):
 
 class TrustedAccountGetRequest(BaseModel):
     trusted_account_id: str
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str
 
 
@@ -62,12 +62,11 @@ class TrustedAccountSearchQueryRequest(BaseModel):
     provider: Union[str, None] = None
     secret_schema_id: Union[str, None] = None
     trusted_secret_id: Union[str, None] = None
-    resource_group: Union[ResourceGroup, None] = None
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str
 
 
 class TrustedAccountStatQueryRequest(BaseModel):
     query: dict
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[str, list, None] = None
     domain_id: str

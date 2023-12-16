@@ -50,9 +50,6 @@ class RoleBindingService(BaseService):
             RoleBindingResponse:
         """
 
-        # TODO: Check permission by resource_group
-        # only DOMAIN_ADMIN can create DOMAIN_ADMIN and SYSTEM_ADMIN role
-
         rb_vo = self.create_role_binding(params.dict())
         return RoleBindingResponse(**rb_vo.to_dict())
 
@@ -79,7 +76,9 @@ class RoleBindingService(BaseService):
 
         if resource_group == "DOMAIN":
             if role_vo.role_type not in ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
-                raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=["DOMAIN_ADMIN"])
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
+                    supported_role_type=["SYSTEM_ADMIN", "DOMAIN_ADMIN"]
+                )
         else:
             if role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(
@@ -206,6 +205,7 @@ class RoleBindingService(BaseService):
         permission="identity:RoleBinding.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def get(self, params: RoleBindingGetRequest) -> Union[RoleBindingResponse, dict]:
         """get role binding
@@ -231,12 +231,12 @@ class RoleBindingService(BaseService):
         permission="identity:RoleBinding.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(
         [
             "role_binding_id",
             "user_id",
             "role_id",
-            "resource_group",
             "workspace_id",
             "domain_id",
         ]
@@ -255,7 +255,6 @@ class RoleBindingService(BaseService):
                 'role_type': 'str',
                 'user_id': 'str',
                 'role_id': 'str',
-                'resource_group': 'str',
                 'workspace_id': 'str',          # injected from auth
                 'domain_id': 'str',             # injected from auth
             }
@@ -274,6 +273,7 @@ class RoleBindingService(BaseService):
         permission="identity:RoleBinding.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["role_binding_id", "user_id", "role_id"])
     @convert_model
