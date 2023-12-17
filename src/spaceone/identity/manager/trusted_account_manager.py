@@ -69,7 +69,10 @@ class TrustedAccountManager(BaseManager):
     def delete_trusted_secrets(
         self, trusted_account_id: str, workspace_id: str, domain_id: str
     ) -> None:
-        secret_connector = SpaceConnector(service="secret")
+        secret_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", service="secret"
+        )
+
         response = self._list_trusted_secrets(
             secret_connector, trusted_account_id, workspace_id, domain_id
         )
