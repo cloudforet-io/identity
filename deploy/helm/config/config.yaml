@@ -1,7 +1,7 @@
 REMOTE_URL:
-- file:///opt/spaceone/identity/config/database.yaml
-- file:///opt/spaceone/identity/config/shared.yaml
-- file:///opt/spaceone/identity/config/application.yaml
+  - file:///opt/spaceone/identity/config/database.yaml
+  - file:///opt/spaceone/identity/config/shared.yaml
+  - file:///opt/spaceone/identity/config/application.yaml
 GLOBAL:
   MAX_WORKERS: 1000
   DATABASES:
@@ -17,7 +17,6 @@ GLOBAL:
       backend: spaceone.core.cache.redis_cache.RedisCache
       host: redis
       port: 6379
-      db: 1
       encoding: utf-8
       socket_timeout: 10
       socket_connect_timeout: 10
@@ -31,24 +30,3 @@ GLOBAL:
       file:
         type: file
         filename: /var/log/spaceone/identity.log
-    filters:
-      masking:
-        rules:
-          DomainOwner.create:
-            - password
-            - email
-            - mobile
-          DomainOwner.update:
-            - password
-            - email
-            - mobile
-          User.create:
-            - password
-            - email
-            - mobile
-          User.update:
-            - password
-            - email
-            - mobile
-          Token.issue:
-            - credentials
