@@ -288,7 +288,7 @@ class TokenService(BaseService):
             if rb_vos.count() > 0:
                 return rb_vos[0].role_type, rb_vos[0].role_id
 
-        elif user_vo.role_type in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
+        else:
             rb_vos = self.rb_mgr.filter_role_bindings(
                 user_id=user_vo.user_id,
                 domain_id=user_vo.domain_id,

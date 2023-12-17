@@ -38,6 +38,7 @@ class TrustedAccountUpdateRequest(BaseModel):
 
 class TrustedAccountUpdateSecretRequest(BaseModel):
     trusted_account_id: str
+    secret_schema_id: str
     secret_data: dict
     workspace_id: Union[str, None] = None
     domain_id: str

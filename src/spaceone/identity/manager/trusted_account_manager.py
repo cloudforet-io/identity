@@ -2,7 +2,6 @@ import logging
 from typing import Tuple, List
 
 from spaceone.core.manager import BaseManager
-from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.identity.model.trusted_account.database import TrustedAccount
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,40 +64,3 @@ class TrustedAccountManager(BaseManager):
 
     def stat_trusted_accounts(self, query: dict) -> dict:
         return self.trusted_account_model.stat(**query)
-
-    def delete_trusted_secrets(
-        self, trusted_account_id: str, workspace_id: str, domain_id: str
-    ) -> None:
-        secret_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", service="secret"
-        )
-
-        response = self._list_trusted_secrets(
-            secret_connector, trusted_account_id, workspace_id, domain_id
-        )
-
-        for secret_info in response.get("results", []):
-            secret_connector.dispatch(
-                "TrustedSecret.delete",
-                {
-                    "trusted_secret_id": secret_info["trusted_secret_id"],
-                    "domain_id": domain_id,
-                    "workspace_id": workspace_id,
-                },
-            )
-
-    @staticmethod
-    def _list_trusted_secrets(
-        secret_connector: SpaceConnector,
-        trusted_account_id: str,
-        domain_id: str,
-        workspace_id: str,
-    ) -> dict:
-        return secret_connector.dispatch(
-            "TrustedSecret.list",
-            {
-                "trusted_account_id": trusted_account_id,
-                "domain_id": domain_id,
-                "workspace_id": workspace_id,
-            },
-        )

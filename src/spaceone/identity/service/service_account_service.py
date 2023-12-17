@@ -3,6 +3,7 @@ from typing import Union
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
+from spaceone.core.error import *
 
 from spaceone.identity.model.service_account.request import *
 from spaceone.identity.model.service_account.response import *
@@ -10,6 +11,7 @@ from spaceone.identity.manager.schema_manager import SchemaManager
 from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 from spaceone.identity.manager.project_manager import ProjectManager
+from spaceone.identity.manager.secret_manager import SecretManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,6 +42,8 @@ class ServiceAccountService(BaseService):
                 'name': 'str',                          # required
                 'data': 'dict',                         # required
                 'provider': 'str',                      # required
+                'secret_schema_id': 'str',
+                'secret_data': 'dict',
                 'trusted_account_id': 'str',
                 'tags': 'dict',
                 'project_id': 'str',                    # required
@@ -66,13 +70,47 @@ class ServiceAccountService(BaseService):
         # Check trusted service account
         if params.trusted_account_id:
             trusted_account_mgr = TrustedAccountManager()
-            trusted_account_mgr.get_trusted_account(
+            trusted_account_vo = trusted_account_mgr.get_trusted_account(
                 params.trusted_account_id, params.domain_id, params.workspace_id
             )
+        else:
+            trusted_account_vo = None
 
         service_account_vo = self.service_account_mgr.create_service_account(
             params.dict()
         )
+
+        if params.secret_data:
+            if params.secret_schema_id is None:
+                raise ERROR_REQUIRED_PARAMETER(key="secret_schema_id")
+
+            # Check secret_data by schema
+            schema_mgr.validate_secret_data_by_schema_id(
+                params.secret_schema_id, params.domain_id, params.secret_data
+            )
+
+            # Create a secret
+            secret_mgr = SecretManager()
+            create_secret_params = {
+                "name": f"{service_account_vo.service_account_id}-secret",
+                "data": params.secret_data,
+                "schema_id": params.secret_schema_id,
+                "service_account_id": service_account_vo.service_account_id,
+                "resource_group": "PROJECT",
+            }
+
+            if trusted_account_vo:
+                create_secret_params[
+                    "trusted_secret_id"
+                ] = trusted_account_vo.trusted_secret_id
+
+            secret_info = secret_mgr.create_secret(create_secret_params)
+
+            # Update secret_id in service_account_vo
+            service_account_vo = self.service_account_mgr.update_service_account_by_vo(
+                {"secret_id": secret_info["secret_id"]}, service_account_vo
+            )
+
         return ServiceAccountResponse(**service_account_vo.to_dict())
 
     @transaction(
@@ -137,6 +175,7 @@ class ServiceAccountService(BaseService):
          Args:
             params (ServiceAccountUpdateSecretRequest): {
                 'service_account_id': 'str',        # required
+                'secret_schema_id': 'str',          # required
                 'secret_data': 'dict',              # required
                 'trusted_account_id': 'str',
                 'workspace_id': 'str',              # injected from auth
@@ -155,16 +194,48 @@ class ServiceAccountService(BaseService):
             params.user_projects,
         )
 
-        # TODO: Update a trusted secret and update trusted_secret_id in service_account_vo
-
         if params.trusted_account_id:
             trusted_account_mgr = TrustedAccountManager()
-            trusted_account_mgr.get_trusted_account(
+            trusted_account_vo = trusted_account_mgr.get_trusted_account(
                 params.trusted_account_id, params.domain_id, params.workspace_id
             )
+        else:
+            trusted_account_vo = None
+
+        # Check secret_data by schema
+        schema_mgr = SchemaManager()
+        schema_mgr.validate_secret_data_by_schema_id(
+            params.secret_schema_id,
+            params.domain_id,
+            params.secret_data,
+        )
+
+        # Delete old secret
+        secret_mgr = SecretManager()
+        secret_mgr.delete_secret(service_account_vo.secret_id)
+
+        # Create New Secret
+        create_secret_params = {
+            "name": f"{service_account_vo.service_account_id}-secret",
+            "data": params.secret_data,
+            "schema_id": params.secret_schema_id,
+            "service_account_id": service_account_vo.service_account_id,
+            "resource_group": "PROJECT",
+        }
+
+        if trusted_account_vo:
+            create_secret_params[
+                "trusted_secret_id"
+            ] = trusted_account_vo.trusted_secret_id
+
+        secret_info = secret_mgr.create_secret(create_secret_params)
+
+        params_data = params.dict(exclude_unset=True)
+        params_data["secret_id"] = secret_info["secret_id"]
+        params_data["secret_schema_id"] = params.secret_schema_id
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
-            params.dict(exclude_unset=True), service_account_vo
+            params_data, service_account_vo
         )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
@@ -196,6 +267,13 @@ class ServiceAccountService(BaseService):
             params.domain_id,
             params.workspace_id,
             params.user_projects,
+        )
+
+        secret_mgr = SecretManager()
+        secret_mgr.delete_secret(service_account_vo.secret_id)
+
+        service_account_vo = self.service_account_mgr.update_service_account_by_vo(
+            {"secret_id": None, "secret_schema_id": None}, service_account_vo
         )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
