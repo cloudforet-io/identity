@@ -40,6 +40,7 @@ class ServiceAccountUpdateRequest(BaseModel):
 
 class ServiceAccountUpdateSecretRequest(BaseModel):
     service_account_id: str
+    secret_schema_id: str
     secret_data: dict
     trusted_account_id: Union[str, None] = None
     workspace_id: str

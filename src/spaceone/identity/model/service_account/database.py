@@ -21,6 +21,7 @@ class ServiceAccount(MongoModel):
             "name",
             "data",
             "tags",
+            "secret_schema_id",
             "secret_id",
             "trusted_account_id",
             "project_id",

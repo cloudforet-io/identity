@@ -9,6 +9,7 @@ from spaceone.identity.model.trusted_account.response import *
 from spaceone.identity.manager.schema_manager import SchemaManager
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.manager.secret_manager import SecretManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +69,28 @@ class TrustedAccountService(BaseService):
             params.dict()
         )
 
-        # TODO: Create a trusted secret
+        # Check secret_data by schema
+        schema_mgr.validate_secret_data_by_schema_id(
+            params.secret_schema_id, params.domain_id, params.secret_data
+        )
+
+        # Create a trusted secret
+        secret_mgr = SecretManager()
+        trusted_secret_info = secret_mgr.create_trusted_secret(
+            {
+                "name": f"{trusted_account_vo.trusted_secret_id}-trusted-secret",
+                "data": params.secret_data,
+                "schema_id": params.secret_schema_id,
+                "trusted_account_id": trusted_account_vo.trusted_account_id,
+                "resource_group": params.resource_group,
+            }
+        )
+
+        # Update trusted_secret_id in trusted_account_vo
+        trusted_account_vo = self.trusted_account_mgr.update_trusted_account_by_vo(
+            {"trusted_secret_id": trusted_secret_info["trusted_secret_id"]},
+            trusted_account_vo,
+        )
 
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
 
@@ -129,7 +151,8 @@ class TrustedAccountService(BaseService):
          Args:
             params (TrustedAccountUpdateSecretRequest): {
                 'trusted_account_id': 'str',    # required
-                'secret_data': 'dict',
+                'secret_schema_id': 'str',      # required
+                'secret_data': 'dict',          # required
                 'workspace_id': 'str',          # injected from auth
                 'domain_id': 'str'              # injected from auth
             }
@@ -142,7 +165,26 @@ class TrustedAccountService(BaseService):
             params.trusted_account_id, params.domain_id, params.workspace_id
         )
 
-        # TODO: Update a trusted secret and update trusted_secret_id in trusted_account_vo
+        # Check secret_data by schema
+        schema_mgr = SchemaManager()
+        schema_mgr.validate_secret_data_by_schema_id(
+            params.secret_schema_id,
+            params.domain_id,
+            params.secret_data,
+        )
+
+        # Update secret data
+        secret_mgr = SecretManager()
+        secret_mgr.update_trusted_secret_data(
+            trusted_account_vo.trusted_secret_id,
+            params.secret_schema_id,
+            params.secret_data,
+        )
+
+        if trusted_account_vo.secret_schema_id != params.secret_schema_id:
+            trusted_account_vo = self.trusted_account_mgr.update_trusted_account_by_vo(
+                {"secret_schema_id": params.secret_schema_id}, trusted_account_vo
+            )
 
         return TrustedAccountResponse(**trusted_account_vo.to_dict())
 
@@ -168,6 +210,10 @@ class TrustedAccountService(BaseService):
         trusted_account_vo = self.trusted_account_mgr.get_trusted_account(
             params.trusted_account_id, params.domain_id, params.workspace_id
         )
+
+        # Delete trusted secret
+        secret_mgr = SecretManager()
+        secret_mgr.delete_trusted_secret(trusted_account_vo.trusted_secret_id)
 
         self.trusted_account_mgr.delete_trusted_account_by_vo(trusted_account_vo)
 
