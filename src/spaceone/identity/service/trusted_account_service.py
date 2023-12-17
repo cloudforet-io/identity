@@ -185,7 +185,7 @@ class TrustedAccountService(BaseService):
          Args:
             params (TrustedAccountGetRequest): {
                 'trusted_account_id': 'str',    # required
-                'workspace_id': 'str',          # injected from auth
+                'workspace_id': 'list',         # injected from auth
                 'domain_id': 'str'              # injected from auth
             }
 
@@ -230,7 +230,7 @@ class TrustedAccountService(BaseService):
                 'provider': 'str',
                 'secret_schema_id': 'str',
                 'trusted_secret_id': 'str',
-                'workspace_id': 'str',      # injected from auth
+                'workspace_id': 'list',     # injected from auth
                 'domain_id': 'str',         # injected from auth
             }
 
@@ -265,7 +265,7 @@ class TrustedAccountService(BaseService):
         Args:
             params (TrustedAccountStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'workspace_id': 'str',      # injected from auth
+                'workspace_id': 'list',     # injected from auth
                 'domain_id': 'str',         # injected from auth
             }
 

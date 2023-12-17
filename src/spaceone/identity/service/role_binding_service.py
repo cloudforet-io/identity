@@ -213,7 +213,7 @@ class RoleBindingService(BaseService):
          Args:
             params (RoleBindingGetRequest): {
                 'role_binding_id': 'str',       # required
-                'workspace_id': 'str',          # injected from auth
+                'workspace_id': 'list',         # injected from auth
                 'domain_id': 'str',             # injected from auth
             }
 
@@ -255,7 +255,7 @@ class RoleBindingService(BaseService):
                 'role_type': 'str',
                 'user_id': 'str',
                 'role_id': 'str',
-                'workspace_id': 'str',          # injected from auth
+                'workspace_id': 'list',         # injected from auth
                 'domain_id': 'str',             # injected from auth
             }
 
@@ -283,7 +283,7 @@ class RoleBindingService(BaseService):
         Args:
             params (RoleBindingStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'workspace_id': 'str',      # injected from auth
+                'workspace_id': 'list',     # injected from auth
                 'domain_id': 'str',         # injected from auth
             }
 

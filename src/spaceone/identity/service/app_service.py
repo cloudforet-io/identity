@@ -242,7 +242,7 @@ class AppService(BaseService):
         Args:
             params (dict): {
                 'app_id': 'str',            # required
-                'workspace_id': 'str',      # injected from auth
+                'workspace_id': 'list',     # injected from auth
                 'domain_id': 'str'          # injected from auth
             }
         Returns:
@@ -285,7 +285,7 @@ class AppService(BaseService):
                 'role_type': 'str',
                 'role_id': 'str',
                 'api_key_id': 'str',
-                'workspace_id': 'str',      # injected from auth
+                'workspace_id': 'list'      # injected from auth
                 'domain_id': 'str'          # injected from auth
             }
         Returns:
@@ -309,7 +309,7 @@ class AppService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict',        # required
-                'workspace_id': 'str',  # injected from auth
+                'workspace_id': 'list', # injected from auth
                 'domain_id': 'str'      # injected from auth
             }
             Returns:
