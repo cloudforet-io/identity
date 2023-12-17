@@ -77,9 +77,12 @@ class ExternalAuthManager(BaseManager):
     def filter_external_auth(self, **conditions) -> QuerySet:
         return self.external_auth_model.filter(**conditions)
 
-    @staticmethod
-    def get_auth_plugin_endpoint(domain_id: str, plugin_info: dict) -> Tuple[str, str]:
-        plugin_connector = SpaceConnector(service="plugin")
+    def get_auth_plugin_endpoint(
+        self, domain_id: str, plugin_info: dict
+    ) -> Tuple[str, str]:
+        plugin_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", service="plugin"
+        )
         response = plugin_connector.dispatch(
             "Plugin.get_plugin_endpoint",
             {
@@ -99,9 +102,10 @@ class ExternalAuthManager(BaseManager):
 
         return auth_conn.init(options)
 
-    @staticmethod
-    def _create_secret(domain_id: str, secret_data: dict, schema: dict) -> str:
-        secret_connector = SpaceConnector(service="secret")
+    def _create_secret(self, domain_id: str, secret_data: dict, schema: dict) -> str:
+        secret_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", service="secret"
+        )
 
         params = {
             "name": f"{domain_id}-auth-plugin-credentials",

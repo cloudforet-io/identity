@@ -76,7 +76,7 @@ LOG = {
 # Connector Settings
 CONNECTORS = {
     "SpaceConnector": {
-        "backend": "spaceone.core.connector.space_connector.SpaceConnector",
+        "backend": "spaceone.core.connector.space_connector:SpaceConnector",
         "endpoints": {
             "identity": "grpc://localhost:50051",
             "plugin": "grpc://plugin:50051",
