@@ -54,7 +54,7 @@ class UserService(BaseService):
                 'timezone': 'str',
                 'tags': 'dict',
                 'reset_password': 'bool',
-                'domain_id': 'str'          # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             UserResponse:
@@ -120,7 +120,7 @@ class UserService(BaseService):
                 'timezone': 'str',
                 'tags': 'dict',
                 'reset_password': 'bool',
-                'domain_id': 'str'          # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             UserResponse:
@@ -186,7 +186,7 @@ class UserService(BaseService):
             params (UserVerifyEmailRequest): {
                 'user_id': 'str',       # required
                 'email': 'str',
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
 
@@ -210,7 +210,7 @@ class UserService(BaseService):
         Args:
             params (UserDisableMFARequest): {
                 'user_id': 'str',       # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
         Returns:
             UserResponse:
         """
@@ -241,7 +241,7 @@ class UserService(BaseService):
             params (UserSetRequiredActionsRequest): {
                 'user_id': 'str',       # required
                 'actions': 'list',      # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             UserResponse:
@@ -268,7 +268,7 @@ class UserService(BaseService):
         Args:
             params (UserDeleteRequest): {
                 'user_id': 'str',       # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -290,7 +290,7 @@ class UserService(BaseService):
         Args:
             params (UserEnableRequest): {
                 'user_id': 'str',       # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -309,7 +309,7 @@ class UserService(BaseService):
         Args:
             params (dict): {
                 'user_id': 'str',       # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -333,7 +333,7 @@ class UserService(BaseService):
         Args:
             params (dict): {
                 'user_id': 'str',       # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -366,7 +366,7 @@ class UserService(BaseService):
                 'state': 'str',
                 'email': 'str',
                 'auth_type': 'str',
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             UsersResponse:
@@ -388,7 +388,7 @@ class UserService(BaseService):
         Args:
             params (UserStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
 
         Returns:

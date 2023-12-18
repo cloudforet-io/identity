@@ -44,8 +44,8 @@ class WorkspaceUserService(BaseService):
                 'tags': 'dict',
                 'reset_password': 'bool',
                 'role_id': 'str',           # required
-                'domain_id': 'str',         # injected from auth
-                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
+                'workspace_id': 'str',      # injected from auth (required)
             }
         Returns:
             WorkspaceUserResponse:
@@ -68,8 +68,8 @@ class WorkspaceUserService(BaseService):
                 'keyword': 'str',           # required
                 'state': 'str',
                 'page': 'dict (spaceone.api.core.v1.Page)',
-                'domain_id': 'str',         # injected from auth
-                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
+                'workspace_id': 'str',      # injected from auth (required)
             }
         Returns:
             UsersSummaryResponse:
@@ -119,8 +119,8 @@ class WorkspaceUserService(BaseService):
         Args:
             params (WorkspaceUserGetRequest): {
                 'user_id': 'str',       # required
-                'domain_id': 'str',     # injected from auth
-                'workspace_id': 'str'   # injected from auth
+                'domain_id': 'str',     # injected from auth (required)
+                'workspace_id': 'str'   # injected from auth (required)
             }
 
         Returns:
@@ -160,8 +160,8 @@ class WorkspaceUserService(BaseService):
                 'state': 'str',
                 'email': 'str',
                 'auth_type': 'str',
-                'domain_id': 'str',     # injected from auth
-                'workspace_id': 'str'   # injected from auth
+                'domain_id': 'str',     # injected from auth (required)
+                'workspace_id': 'str'   # injected from auth (required)
             }
         Returns:
             UsersResponse:
@@ -186,8 +186,8 @@ class WorkspaceUserService(BaseService):
         Args:
             params (WorkspaceUserStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'domain_id': 'str',         # injected from auth
-                'workspace_id': 'str'       # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
+                'workspace_id': 'str'       # injected from auth (required)
             }
 
         Returns:

@@ -29,7 +29,7 @@ class ExternalAuthService(BaseService):
         """Set external auth info
         Args:
             params (dict): {
-                'domain_id': 'str',    # injected from auth
+                'domain_id': 'str',    # injected from auth (required)
                 'plugin_info': 'dict'
             }
         Returns:
@@ -53,7 +53,7 @@ class ExternalAuthService(BaseService):
         """Unset external auth info
         Args:
             params (dict): {
-                'domain_id': 'str'  # injected from auth
+                'domain_id': 'str'  # injected from auth (required)
             }
         Returns:
             ExternalAuthResponse:
@@ -67,7 +67,7 @@ class ExternalAuthService(BaseService):
         """Get external auth info
         Args:
             params (dict): {
-                'domain_id': 'str' # injected from auth
+                'domain_id': 'str' # injected from auth (required)
             }
         Returns:
             ExternalAuthResponse:

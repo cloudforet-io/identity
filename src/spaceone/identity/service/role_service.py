@@ -37,7 +37,7 @@ class RoleService(BaseService):
                 'permissions': 'list',                  # required
                 'page_access': 'list',
                 'tags': 'dict',
-                'domain_id': 'str'                      # injected from auth
+                'domain_id': 'str'                      # injected from auth (required)
             }
 
         Returns:
@@ -62,12 +62,12 @@ class RoleService(BaseService):
 
          Args:
             params (RoleUpdateRequest): {
-                'role_id': 'str',                       # required
+                'role_id': 'str',           # required
                 'name': 'str',
                 'permissions': 'list',
                 'page_access': 'list',
                 'tags': 'dict',
-                'domain_id': 'str'                      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
 
         Returns:
@@ -91,8 +91,8 @@ class RoleService(BaseService):
 
          Args:
             params (RoleDeleteRequest): {
-                'role_id': 'str',               # required
-                'domain_id': 'str',             # injected from auth
+                'role_id': 'str',       # required
+                'domain_id': 'str',     # injected from auth (required)
             }
 
         Returns:
@@ -102,7 +102,7 @@ class RoleService(BaseService):
         role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
         if role_vo.is_managed:
             raise ERROR_PERMISSION_DENIED()
-        
+
         self.role_mgr.delete_role_by_vo(role_vo)
 
     @transaction(
@@ -115,8 +115,8 @@ class RoleService(BaseService):
 
          Args:
             params (RoleGetRequest): {
-                'role_id': 'str',               # required
-                'domain_id': 'str',             # injected from auth
+                'role_id': 'str',           # required
+                'domain_id': 'str',         # injected from auth (required)
             }
 
         Returns:
@@ -142,7 +142,7 @@ class RoleService(BaseService):
                 'role_id': 'str',
                 'name': 'str',
                 'role_type': 'str',
-                'domain_id': 'str',                     # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
             }
 
         Returns:
@@ -168,7 +168,7 @@ class RoleService(BaseService):
         Args:
             params (PolicyStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
 
         Returns:

@@ -92,7 +92,7 @@ class ProjectRemoveUserGroupsRequest(BaseModel):
 
 class ProjectGetRequest(BaseModel):
     project_id: str
-    workspace_id: str
+    workspace_id: Union[str, None] = None
     domain_id: str
     user_projects: Union[list, None] = None
 

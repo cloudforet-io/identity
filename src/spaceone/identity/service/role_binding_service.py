@@ -43,7 +43,7 @@ class RoleBindingService(BaseService):
                 'role_id': 'str',                   # required
                 'resource_group': 'str',            # required
                 'workspace_id': 'str',              # injected from auth
-                'domain_id': 'str'                  # injected from auth
+                'domain_id': 'str'                  # injected from auth (required)
             }
 
         Returns:
@@ -113,7 +113,7 @@ class RoleBindingService(BaseService):
                 'role_binding_id': 'str',           # required
                 'role_id': 'str',                   # required
                 'workspace_id': 'str',              # injected from auth
-                'domain_id': 'str',                 # injected from auth
+                'domain_id': 'str',                 # injected from auth (required)
             }
 
         Returns:
@@ -166,7 +166,7 @@ class RoleBindingService(BaseService):
             params (RoleBindingDeleteRequest): {
                 'role_binding_id': 'str',       # required
                 'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str',             # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
             }
 
         Returns:
@@ -205,7 +205,6 @@ class RoleBindingService(BaseService):
         permission="identity:RoleBinding.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def get(self, params: RoleBindingGetRequest) -> Union[RoleBindingResponse, dict]:
         """get role binding
@@ -214,7 +213,7 @@ class RoleBindingService(BaseService):
             params (RoleBindingGetRequest): {
                 'role_binding_id': 'str',       # required
                 'workspace_id': 'list',         # injected from auth
-                'domain_id': 'str',             # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
             }
 
         Returns:
@@ -231,7 +230,6 @@ class RoleBindingService(BaseService):
         permission="identity:RoleBinding.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(
         [
             "role_binding_id",
@@ -256,7 +254,7 @@ class RoleBindingService(BaseService):
                 'user_id': 'str',
                 'role_id': 'str',
                 'workspace_id': 'list',         # injected from auth
-                'domain_id': 'str',             # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
             }
 
         Returns:
@@ -273,7 +271,6 @@ class RoleBindingService(BaseService):
         permission="identity:RoleBinding.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["role_binding_id", "user_id", "role_id"])
     @convert_model
@@ -284,7 +281,7 @@ class RoleBindingService(BaseService):
             params (RoleBindingStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'list',     # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
 
         Returns:

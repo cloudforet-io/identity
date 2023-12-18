@@ -47,11 +47,11 @@ class TokenService(BaseService):
         """Issue token
         Args:
             params (dict): {
-                'credentials': 'dict', # required
-                'auth_type': 'str', # required
+                'credentials': 'dict',  # required
+                'auth_type': 'str',     # required
                 'timeout': 'int',
                 'verify_code': 'str',
-                'domain_id': 'str', # required
+                'domain_id': 'str',     # required
             }
         Returns:
             TokenResponse:
@@ -105,9 +105,9 @@ class TokenService(BaseService):
         """Grant token
         Args:
             params (dict): {
-                'grant_type': 'str', # required
-                'token': 'str', # required
-                'scope': 'str', # required
+                'grant_type': 'str',    # required
+                'token': 'str',         # required
+                'scope': 'str',         # required
                 'workspace_id': 'str',
             }
         Returns:

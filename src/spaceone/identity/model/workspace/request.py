@@ -8,6 +8,7 @@ __all__ = [
     "WorkspaceEnableRequest",
     "WorkspaceDisableRequest",
     "WorkspaceGetRequest",
+    "WorkspaceCheckRequest",
     "WorkspaceSearchQueryRequest",
     "WorkspaceStatQueryRequest",
 ]
@@ -42,6 +43,11 @@ class WorkspaceDisableRequest(BaseModel):
 
 
 class WorkspaceGetRequest(BaseModel):
+    workspace_id: str
+    domain_id: str
+
+
+class WorkspaceCheckRequest(BaseModel):
     workspace_id: str
     domain_id: str
 

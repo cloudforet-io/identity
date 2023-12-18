@@ -38,8 +38,8 @@ class ProjectGroupService(BaseService):
                 'name': 'str',              # required
                 'tags': 'dict',
                 'parent_group_id': 'str',
-                'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'workspace_id': 'str',      # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             ProjectGroupResponse:
@@ -69,8 +69,8 @@ class ProjectGroupService(BaseService):
                 'project_group_id': 'str',      # required
                 'name': 'str',
                 'tags': 'dict',
-                'domain_id': 'str',             # injected from auth
-                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
+                'workspace_id': 'str',          # injected from auth (required)
             }
             Returns:
                 ProjectGroupResponse:
@@ -100,8 +100,8 @@ class ProjectGroupService(BaseService):
             params (ProjectChangeParentGroupRequest): {
                 'project_group_id': 'str',      # required
                 'parent_group_id': 'str',       # required
-                'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'workspace_id': 'str',          # injected from auth (required)
+                'domain_id': 'str'              # injected from auth (required)
             }
             Returns:
                 ProjectGroupResponse:
@@ -146,8 +146,8 @@ class ProjectGroupService(BaseService):
         Args:
             params (ProjectGroupDeleteRequest): {
                 'project_group_id': 'str',      # required
-                'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'workspace_id': 'str',          # injected from auth (required)
+                'domain_id': 'str'              # injected from auth (required)
             }
         Returns:
             None
@@ -173,7 +173,7 @@ class ProjectGroupService(BaseService):
             params (ProjectGroupGetRequest): {
                 'project_group_id': 'str',      # required
                 'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'domain_id': 'str'              # injected from auth (required)
             }
         Returns:
             ProjectGroupResponse:
@@ -208,7 +208,7 @@ class ProjectGroupService(BaseService):
                 'name': 'str',
                 'parent_group_id': 'str',
                 'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
         Returns:
             ProjectGroupsResponse:
@@ -233,7 +233,7 @@ class ProjectGroupService(BaseService):
             params (ProjectGroupStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'str',    # injected from auth
-                'domain_id': 'str',       # injected from auth
+                'domain_id': 'str',       # injected from auth (required)
             }
         Returns:
             dict: {

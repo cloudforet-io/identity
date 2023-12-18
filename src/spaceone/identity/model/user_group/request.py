@@ -50,7 +50,7 @@ class UserGroupRemoveUsersRequest(BaseModel):
 
 class UserGroupGetRequest(BaseModel):
     user_group_id: str
-    workspace_id: str
+    workspace_id: Union[str, None] = None
     domain_id: str
 
 

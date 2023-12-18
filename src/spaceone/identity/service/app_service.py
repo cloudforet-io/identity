@@ -43,7 +43,7 @@ class AppService(BaseService):
                 'expired_at': 'str',
                 'resource_group': 'str',    # required
                 'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
         Return:
             AppResponse:
@@ -101,7 +101,7 @@ class AppService(BaseService):
                 'name': 'str',
                 'tags': 'dict',
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Return:
             AppResponse:
@@ -128,7 +128,7 @@ class AppService(BaseService):
                 'app_id': 'str',        # required
                 'expired_at': 'str',
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Return:
             AppResponse:
@@ -175,7 +175,7 @@ class AppService(BaseService):
             params (dict): {
                 'app_id': 'str',        # required
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         """
         app_vo = self.app_mgr.get_app(
@@ -197,7 +197,7 @@ class AppService(BaseService):
             params (dict): {
                 'app_id': 'str',        # required
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         """
         app_vo = self.app_mgr.get_app(
@@ -219,7 +219,7 @@ class AppService(BaseService):
             params (dict): {
                 'api_key_id': 'str',    # required
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             None
@@ -235,7 +235,6 @@ class AppService(BaseService):
         permission="identity:App.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def get(self, params: AppGetRequest) -> Union[AppResponse, dict]:
         """Get API Key
@@ -243,7 +242,7 @@ class AppService(BaseService):
             params (dict): {
                 'app_id': 'str',            # required
                 'workspace_id': 'list',     # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             AppResponse:
@@ -259,7 +258,6 @@ class AppService(BaseService):
         permission="identity:App.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(
         [
             "app_id",
@@ -286,7 +284,7 @@ class AppService(BaseService):
                 'role_id': 'str',
                 'api_key_id': 'str',
                 'workspace_id': 'list'      # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             AppsResponse:
@@ -300,7 +298,6 @@ class AppService(BaseService):
         permission="identity:App.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["app_id", "name"])
     @convert_model
@@ -310,7 +307,7 @@ class AppService(BaseService):
             params (dict): {
                 'query': 'dict',        # required
                 'workspace_id': 'list', # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
             Returns:
                 dict:

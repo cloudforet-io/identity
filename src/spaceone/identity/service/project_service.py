@@ -40,8 +40,8 @@ class ProjectService(BaseService):
                 'project_type': 'str',          # required
                 'tags': 'dict',
                 'project_group_id': 'str',
-                'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'workspace_id': 'str',          # injected from auth (required)
+                'domain_id': 'str'              # injected from auth (required)
             }
         Returns:
             ProjectResponse:
@@ -73,8 +73,8 @@ class ProjectService(BaseService):
                 'project_id': 'str',        # required
                 'name': 'str',
                 'tags': 'dict',
-                'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'workspace_id': 'str',      # injected from auth (required)
+                'domain_id': 'str',         # injected from auth (required)
                 'user_projects': 'list'     # injected from auth
             }
         Returns:
@@ -104,8 +104,8 @@ class ProjectService(BaseService):
             params (ProjectUpdateProjectTypeRequest): {
                 'project_id': 'str',        # required
                 'project_type': 'str',      # required
-                'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'workspace_id': 'str',      # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             ProjectResponse:
@@ -134,8 +134,8 @@ class ProjectService(BaseService):
             params (ProjectChangeProjectGroupRequest): {
                 'project_id': 'str',            # required
                 'project_group_id': 'str',      # required
-                'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'workspace_id': 'str',          # injected from auth (required)
+                'domain_id': 'str'              # injected from auth (required)
             }
         Returns:
             ProjectResponse:
@@ -164,8 +164,8 @@ class ProjectService(BaseService):
         Args:
             params (ProjectDeleteRequest): {
                 'project_id': 'str',        # required
-                'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'workspace_id': 'str',      # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             None:
@@ -190,8 +190,8 @@ class ProjectService(BaseService):
             params (ProjectAddUsersRequest): {
                 'project_id': 'str',        # required
                 'users': 'list',            # required
-                'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'workspace_id': 'str',      # injected from auth (required)
+                'domain_id': 'str',         # injected from auth (required)
                 'user_projects': 'list'     # injected from auth
             }
         Returns:
@@ -237,8 +237,8 @@ class ProjectService(BaseService):
             params (ProjectRemoveUsersRequest): {
                 'project_id': 'str',        # required
                 'users': 'list',            # required
-                'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'workspace_id': 'str',      # injected from auth (required)
+                'domain_id': 'str',         # injected from auth (required)
                 'user_projects': 'list'     # injected from auth
             }
         Returns:
@@ -298,7 +298,7 @@ class ProjectService(BaseService):
             params (ProjectGetRequest): {
                 'project_id': 'str',    # required
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str',     # injected from auth
+                'domain_id': 'str',     # injected from auth (required)
                 'user_projects': 'list' # injected from auth
             }
         Returns:
@@ -347,7 +347,7 @@ class ProjectService(BaseService):
                 'user_group_id': 'str',
                 'project_group_id': 'str',
                 'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
                 'user_projects': 'list'     # injected from auth
             }
         Returns:
@@ -373,7 +373,7 @@ class ProjectService(BaseService):
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
                 'user_projects': 'list'     # injected from auth
             }
         Returns:

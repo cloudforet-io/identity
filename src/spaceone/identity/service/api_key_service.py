@@ -39,8 +39,8 @@ class APIKeyService(BaseService):
             params (dict): {
                 'name': 'str',
                 'expired_at': 'str',
-                'user_id': 'str',   # injected from auth
-                'domain_id': 'str', # injected from auth
+                'user_id': 'str',   # injected from auth (required)
+                'domain_id': 'str', # injected from auth (required)
             }
         Return:
             APIKeyResponse:
@@ -76,8 +76,8 @@ class APIKeyService(BaseService):
             params (dict): {
                 'api_key_id': 'str',    # required
                 'name': 'str',
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str',     # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str',     # injected from auth (required)
             }
         Returns:
             APIKeyResponse:
@@ -103,8 +103,8 @@ class APIKeyService(BaseService):
         Args:
             params (dict): {
                 'api_key_id': 'str',    # required
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str',     # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str',     # injected from auth (required)
             }
         Returns:
             APIKeyResponse:
@@ -127,8 +127,8 @@ class APIKeyService(BaseService):
         Args:
             params (dict): {
                 'api_key_id': 'str',    # required
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str',     # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str',     # injected from auth (required)
             }
         Returns:
             APIKeyResponse:
@@ -151,8 +151,8 @@ class APIKeyService(BaseService):
         Args:
             params (dict): {
                 'api_key_id': 'str',    # required
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str',     # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str',     # injected from auth (required)
             }
         Returns:
             None
@@ -183,8 +183,8 @@ class APIKeyService(BaseService):
         Args:
             params (dict): {
                 'api_key_id': 'str',    # required
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str',     # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str',     # injected from auth (required)
             }
         Returns:
             APIKeyResponse:
@@ -211,8 +211,8 @@ class APIKeyService(BaseService):
                 'api_key_id': 'str',
                 'name': 'str',
                 'state': 'str',
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             APIKeysResponse:
@@ -237,8 +237,8 @@ class APIKeyService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict',        # required
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str',     # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str',     # injected from auth (required)
             }
         Returns:
             dict: {

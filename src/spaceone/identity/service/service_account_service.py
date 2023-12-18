@@ -47,8 +47,8 @@ class ServiceAccountService(BaseService):
                 'trusted_account_id': 'str',
                 'tags': 'dict',
                 'project_id': 'str',                    # required
-                'workspace_id': 'str',                  # injected from auth
-                'domain_id': 'str'                      # injected from auth
+                'workspace_id': 'str',                  # injected from auth (required)
+                'domain_id': 'str'                      # injected from auth (required)
             }
 
         Returns:
@@ -68,13 +68,22 @@ class ServiceAccountService(BaseService):
         )
 
         # Check trusted service account
-        if params.trusted_account_id:
+        if params.trusted_account_id and params.secret_data:
             trusted_account_mgr = TrustedAccountManager()
+
+            # Append wildcard to workspace_id for DOMAIN trusted account
+            workspace_id = [params.workspace_id, "*"]
+
             trusted_account_vo = trusted_account_mgr.get_trusted_account(
-                params.trusted_account_id, params.domain_id, params.workspace_id
+                params.trusted_account_id,
+                params.domain_id,
+                workspace_id,
             )
+            secret_type = "TRUSTING_SECRET"
         else:
             trusted_account_vo = None
+            params.trusted_account_id = None
+            secret_type = "SECRET"
 
         service_account_vo = self.service_account_mgr.create_service_account(
             params.dict()
@@ -86,7 +95,10 @@ class ServiceAccountService(BaseService):
 
             # Check secret_data by schema
             schema_mgr.validate_secret_data_by_schema_id(
-                params.secret_schema_id, params.domain_id, params.secret_data
+                params.secret_schema_id,
+                params.domain_id,
+                params.secret_data,
+                secret_type,
             )
 
             # Create a secret
@@ -130,8 +142,8 @@ class ServiceAccountService(BaseService):
                 'data': 'dict',
                 'tags': 'dict',
                 'project_id': 'str',
-                'workspace_id': 'str',              # injected from auth
-                'domain_id': 'str',                 # injected from auth
+                'workspace_id': 'str',              # injected from auth (required)
+                'domain_id': 'str',                 # injected from auth (required)
                 'user_projects': 'list'             # injected from auth
             }
 
@@ -178,8 +190,8 @@ class ServiceAccountService(BaseService):
                 'secret_schema_id': 'str',          # required
                 'secret_data': 'dict',              # required
                 'trusted_account_id': 'str',
-                'workspace_id': 'str',              # injected from auth
-                'domain_id': 'str',                 # injected from auth
+                'workspace_id': 'str',              # injected from auth (required)
+                'domain_id': 'str',                 # injected from auth (required)
                 'user_projects': 'list'             # injected from auth
             }
 
@@ -196,11 +208,18 @@ class ServiceAccountService(BaseService):
 
         if params.trusted_account_id:
             trusted_account_mgr = TrustedAccountManager()
+
+            # Append wildcard to workspace_id for DOMAIN trusted account
+            workspace_id = [params.workspace_id, "*"]
+
             trusted_account_vo = trusted_account_mgr.get_trusted_account(
-                params.trusted_account_id, params.domain_id, params.workspace_id
+                params.trusted_account_id, params.domain_id, workspace_id
             )
+            schema_type = "TRUSTING_SECRET"
         else:
             trusted_account_vo = None
+            params.trusted_account_id = None
+            schema_type = "SECRET"
 
         # Check secret_data by schema
         schema_mgr = SchemaManager()
@@ -208,11 +227,14 @@ class ServiceAccountService(BaseService):
             params.secret_schema_id,
             params.domain_id,
             params.secret_data,
+            schema_type,
         )
 
-        # Delete old secret
         secret_mgr = SecretManager()
-        secret_mgr.delete_secret(service_account_vo.secret_id)
+
+        # Delete old secret
+        if service_account_vo.secret_id:
+            secret_mgr.delete_secret(service_account_vo.secret_id)
 
         # Create New Secret
         create_secret_params = {
@@ -253,8 +275,8 @@ class ServiceAccountService(BaseService):
          Args:
             params (ServiceAccountDeleteSecretRequest): {
                 'service_account_id': 'str',            # required
-                'workspace_id': 'str',                  # injected from auth
-                'domain_id': 'str',                     # injected from auth
+                'workspace_id': 'str',                  # injected from auth (required)
+                'domain_id': 'str',                     # injected from auth (required)
                 'user_projects': 'list'                 # injected from auth
             }
 
@@ -270,7 +292,7 @@ class ServiceAccountService(BaseService):
         )
 
         secret_mgr = SecretManager()
-        secret_mgr.delete_secret(service_account_vo.secret_id)
+        secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
             {"secret_id": None, "secret_schema_id": None}, service_account_vo
@@ -289,8 +311,8 @@ class ServiceAccountService(BaseService):
          Args:
             params (ServiceAccountDeleteRequest): {
                 'service_account_id': 'str',            # required
-                'workspace_id': 'str',                  # injected from auth
-                'domain_id': 'str',                     # injected from auth
+                'workspace_id': 'str',                  # injected from auth (required)
+                'domain_id': 'str',                     # injected from auth (required)
                 'user_projects': 'list'                 # injected from auth
             }
 
@@ -304,6 +326,9 @@ class ServiceAccountService(BaseService):
             params.workspace_id,
             params.user_projects,
         )
+
+        secret_mgr = SecretManager()
+        secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
 
         self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
 
@@ -321,7 +346,7 @@ class ServiceAccountService(BaseService):
             params (ServiceAccountDeleteRequest): {
                 'service_account_id': 'str',            # required
                 'workspace_id': 'str',                  # injected from auth
-                'domain_id': 'str',                     # injected from auth
+                'domain_id': 'str',                     # injected from auth (required)
                 'user_projects': 'list'                 # injected from auth
             }
 
@@ -373,7 +398,7 @@ class ServiceAccountService(BaseService):
                 'secret_id': 'str',
                 'project_id': 'str',
                 'workspace_id': 'str',                  # injected from auth
-                'domain_id': 'str',                     # injected from auth
+                'domain_id': 'str',                     # injected from auth (required)
                 'user_projects': 'list'                 # injected from auth
             }
 
@@ -409,7 +434,7 @@ class ServiceAccountService(BaseService):
             params (ServiceAccountStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
                 'user_projects': 'list'     # injected from auth
             }
 
