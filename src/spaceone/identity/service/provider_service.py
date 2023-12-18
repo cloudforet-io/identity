@@ -38,7 +38,7 @@ class ProviderService(BaseService):
                 'order': 'int',
                 'options': 'dict',
                 'tags': 'dict',
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -63,7 +63,7 @@ class ProviderService(BaseService):
                 'order': 'int',
                 'options': 'dict',
                 'tags': 'dict',
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -88,7 +88,7 @@ class ProviderService(BaseService):
         Args:
             params (ProviderDeleteRequest): {
                 'provider': 'str',      # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -112,7 +112,7 @@ class ProviderService(BaseService):
         Args:
             params (ProviderGetRequest): {
                 'provider': 'str',      # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -141,7 +141,7 @@ class ProviderService(BaseService):
                 'name': 'str',
                 'alias': 'str',
                 'is_managed': 'bool',
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -169,7 +169,7 @@ class ProviderService(BaseService):
         Args:
             params (ProviderStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'domain_id': 'str'    # injected from auth
+                'domain_id': 'str'    # injected from auth (required)
             }
 
         Returns:

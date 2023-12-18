@@ -2,11 +2,11 @@ import logging
 from typing import Tuple, List
 from jsonschema import validate, exceptions
 
-from spaceone.core.error import *
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.identity.error.error_schema import (
-    ERROR_SCHEMA_IN_NOT_DEFINED,
+    ERROR_SCHEMA_IS_NOT_DEFINED,
+    ERROR_SCHEMA_ID_IS_NOT_DEFINED,
     ERROR_INVALID_PARAMETER,
 )
 from spaceone.identity.model.schema.database import Schema
@@ -101,14 +101,18 @@ class SchemaManager(BaseManager):
                 validate(instance=data, schema=schema_vos[0].schema)
             except exceptions.ValidationError as e:
                 raise ERROR_INVALID_PARAMETER(key="data", reason=e.message)
+        else:
+            raise ERROR_SCHEMA_IS_NOT_DEFINED(
+                provider=provider, schema_type=schema_type
+            )
 
     def validate_secret_data_by_schema_id(
-        self, schema_id: str, domain_id: str, data: dict
+        self, schema_id: str, domain_id: str, data: dict, schema_type: str
     ) -> None:
         schema_vos = self.filter_schemas(
             schema_id=schema_id,
             domain_id=domain_id,
-            schme_type=["SECRET", "TRUSTING_SECRET"],
+            schema_type=schema_type,
         )
 
         if len(schema_vos) > 0:
@@ -116,3 +120,7 @@ class SchemaManager(BaseManager):
                 validate(instance=data, schema=schema_vos[0].schema)
             except exceptions.ValidationError as e:
                 raise ERROR_INVALID_PARAMETER(key="secret_data", reason=e.message)
+        else:
+            raise ERROR_SCHEMA_ID_IS_NOT_DEFINED(
+                schema_id=schema_id, schema_type=schema_type
+            )

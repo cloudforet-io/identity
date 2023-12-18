@@ -43,7 +43,7 @@ class ProjectGroupDeleteRequest(BaseModel):
 
 class ProjectGroupGetRequest(BaseModel):
     project_group_id: str
-    workspace_id: str
+    workspace_id: Union[str, None] = None
     domain_id: str
 
 

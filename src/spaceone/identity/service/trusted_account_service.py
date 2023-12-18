@@ -37,15 +37,15 @@ class TrustedAccountService(BaseService):
 
          Args:
             params (TrustedAccountCreateRequest): {
-                'name': 'str',          # required
-                'data': 'dict',         # required
-                'provider': 'str',      # required
+                'name': 'str',                  # required
+                'data': 'dict',                 # required
+                'provider': 'str',              # required
                 'secret_schema_id': 'str',
                 'secret_data': 'dict',
                 'tags': 'dict',
-                'resource_group': 'str',         # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'resource_group': 'str',        # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth (required)
             }
 
         Returns:
@@ -71,14 +71,14 @@ class TrustedAccountService(BaseService):
 
         # Check secret_data by schema
         schema_mgr.validate_secret_data_by_schema_id(
-            params.secret_schema_id, params.domain_id, params.secret_data
+            params.secret_schema_id, params.domain_id, params.secret_data, "SECRET"
         )
 
         # Create a trusted secret
         secret_mgr = SecretManager()
         trusted_secret_info = secret_mgr.create_trusted_secret(
             {
-                "name": f"{trusted_account_vo.trusted_secret_id}-trusted-secret",
+                "name": f"{trusted_account_vo.trusted_account_id}-trusted-secret",
                 "data": params.secret_data,
                 "schema_id": params.secret_schema_id,
                 "trusted_account_id": trusted_account_vo.trusted_account_id,
@@ -111,7 +111,7 @@ class TrustedAccountService(BaseService):
                 'data': 'dict',
                 'tags': 'dict',
                 'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'domain_id': 'str'              # injected from auth (required)
             }
 
         Returns:
@@ -154,7 +154,7 @@ class TrustedAccountService(BaseService):
                 'secret_schema_id': 'str',      # required
                 'secret_data': 'dict',          # required
                 'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'domain_id': 'str'              # injected from auth (required)
             }
 
         Returns:
@@ -168,9 +168,7 @@ class TrustedAccountService(BaseService):
         # Check secret_data by schema
         schema_mgr = SchemaManager()
         schema_mgr.validate_secret_data_by_schema_id(
-            params.secret_schema_id,
-            params.domain_id,
-            params.secret_data,
+            params.secret_schema_id, params.domain_id, params.secret_data, "SECRET"
         )
 
         # Update secret data
@@ -200,7 +198,7 @@ class TrustedAccountService(BaseService):
             params (TrustedAccountDeleteRequest): {
                 'trusted_account_id': 'str',    # required
                 'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'domain_id': 'str'              # injected from auth (required)
             }
 
         Returns:
@@ -213,7 +211,7 @@ class TrustedAccountService(BaseService):
 
         # Delete trusted secret
         secret_mgr = SecretManager()
-        secret_mgr.delete_trusted_secret(trusted_account_vo.trusted_secret_id)
+        secret_mgr.delete_related_trusted_secrets(trusted_account_vo.trusted_account_id)
 
         self.trusted_account_mgr.delete_trusted_account_by_vo(trusted_account_vo)
 
@@ -232,7 +230,7 @@ class TrustedAccountService(BaseService):
             params (TrustedAccountGetRequest): {
                 'trusted_account_id': 'str',    # required
                 'workspace_id': 'list',         # injected from auth
-                'domain_id': 'str'              # injected from auth
+                'domain_id': 'str'              # injected from auth (required)
             }
 
         Returns:
@@ -277,7 +275,7 @@ class TrustedAccountService(BaseService):
                 'secret_schema_id': 'str',
                 'trusted_secret_id': 'str',
                 'workspace_id': 'list',     # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
 
         Returns:
@@ -312,7 +310,7 @@ class TrustedAccountService(BaseService):
             params (TrustedAccountStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
                 'workspace_id': 'list',     # injected from auth
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
 
         Returns:

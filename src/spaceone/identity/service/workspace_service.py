@@ -32,7 +32,7 @@ class WorkspaceService(BaseService):
             params (WorkspaceCreateRequest): {
                 'name': 'str',          # required
                 'tags': 'dict',
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             WorkspaceResponse:
@@ -54,7 +54,7 @@ class WorkspaceService(BaseService):
                 'workspace_id': 'str',  # required
                 'name': 'str',
                 'tags': 'dict'
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             WorkspaceResponse:
@@ -74,7 +74,7 @@ class WorkspaceService(BaseService):
         Args:
             params (WorkspaceDeleteRequest): {
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             None
@@ -92,7 +92,7 @@ class WorkspaceService(BaseService):
         Args:
             params (WorkspaceEnableRequest): {
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             WorkspaceResponse:
@@ -112,7 +112,7 @@ class WorkspaceService(BaseService):
         Args:
             params (WorkspaceDisableRequest): {
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             WorkspaceResponse:
@@ -131,7 +131,7 @@ class WorkspaceService(BaseService):
         Args:
             params (WorkspaceGetRequest): {
                 'workspace_id': 'str',  # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             WorkspaceResponse:
@@ -141,6 +141,23 @@ class WorkspaceService(BaseService):
             params.workspace_id, params.domain_id
         )
         return WorkspaceResponse(**workspace_vo.to_dict())
+
+    @transaction(
+        exclude=["authentication", "authorization", "mutation"],
+    )
+    @convert_model
+    def check(self, params: WorkspaceCheckRequest) -> None:
+        """Check workspace
+        Args:
+            params (WorkspaceCheckRequest): {
+                'workspace_id': 'str',  # required
+                'domain_id': 'str'      # required
+            }
+        Returns:
+            None:
+        """
+
+        self.workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
 
     @transaction(permission="identity:Workspace.read", role_types=["DOMAIN_ADMIN"])
     @append_query_filter(["workspace_id", "name", "created_by", "domain_id"])
@@ -156,7 +173,7 @@ class WorkspaceService(BaseService):
                 'name': 'str',
                 'workspace_id': 'str',
                 'created_by': 'str',
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
         Returns:
             WorkspacesResponse:
@@ -177,7 +194,7 @@ class WorkspaceService(BaseService):
         Args:
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'domain_id': 'str',         # injected from auth
+                'domain_id': 'str',         # injected from auth (required)
             }
         Returns:
             dict: {

@@ -43,6 +43,12 @@ class Workspace(BaseAPI, workspace_pb2_grpc.WorkspaceServicer):
         response: dict = workspace_svc.get(params)
         return self.dict_to_message(response)
 
+    def check(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        workspace_svc = WorkspaceService(metadata)
+        workspace_svc.check(params)
+        return self.empty()
+
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)
         workspace_svc = WorkspaceService(metadata)

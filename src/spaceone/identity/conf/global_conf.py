@@ -68,6 +68,7 @@ LOG = {
                 "User.update": ["password"],
                 "WorkspaceUser.create": ["password"],
                 "Token.issue": ["credentials"],
+                "Token.grant": ["token"],
             }
         }
     }

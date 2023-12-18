@@ -16,7 +16,13 @@ class TrustedAccount(MongoModel):
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
-        "updatable_fields": ["name", "data", "tags", "secret_schema_id"],
+        "updatable_fields": [
+            "name",
+            "data",
+            "tags",
+            "secret_schema_id",
+            "trusted_secret_id",
+        ],
         "minimal_fields": [
             "trusted_account_id",
             "name",

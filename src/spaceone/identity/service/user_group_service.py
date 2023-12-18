@@ -32,8 +32,8 @@ class UserGroupService(BaseService):
             params (dict): {
                 'name': 'str',          # required
                 'tags': 'dict',         # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'workspace_id': 'str',  # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
             }
         """
         user_group_vo = self.user_group_mgr.create_user_group(params.dict())
@@ -48,8 +48,8 @@ class UserGroupService(BaseService):
                 'user_group_id': 'str', # required
                 'name': 'str',
                 'tags': 'dict',
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'workspace_id': 'str',  # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
             }
         """
         user_group_vo = self.user_group_mgr.get_user_group(
@@ -71,8 +71,8 @@ class UserGroupService(BaseService):
         Args:
             params (dict): {
                 'user_group_id': 'str', # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'workspace_id': 'str',  # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             None
@@ -95,8 +95,8 @@ class UserGroupService(BaseService):
             params (dict): {
                 'user_group_id': 'str',     # required
                 'users': 'list(str)',       # required
-                'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'workspace_id': 'str',      # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             UserGroupResponse:
@@ -137,8 +137,8 @@ class UserGroupService(BaseService):
             params (dict): {
                 'user_group_id': 'str',     # required
                 'users': 'list(str)',       # required
-                'workspace_id': 'str',      # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'workspace_id': 'str',      # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             UserGroupResponse:
@@ -167,7 +167,7 @@ class UserGroupService(BaseService):
             params (dict): {
                 'user_group_id': 'str', # required
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             UserGroupResponse:
@@ -206,7 +206,7 @@ class UserGroupService(BaseService):
                 'name': 'str',
                 'user_id': 'str',
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             UserGroupsResponse:
@@ -230,7 +230,7 @@ class UserGroupService(BaseService):
             params (dict): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
                 'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             dict: {

@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 from spaceone.core.manager import BaseManager
 from spaceone.identity.model.trusted_account.database import TrustedAccount
@@ -44,7 +44,10 @@ class TrustedAccountManager(BaseManager):
         trusted_account_vo.delete()
 
     def get_trusted_account(
-        self, trusted_account_id: str, domain_id: str, workspace_id: str = None
+        self,
+        trusted_account_id: str,
+        domain_id: str,
+        workspace_id: Union[str, list] = None,
     ) -> TrustedAccount:
         conditions = {
             "trusted_account_id": trusted_account_id,

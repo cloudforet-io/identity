@@ -53,8 +53,8 @@ class UserProfileService(BaseService):
                 'language': 'str',
                 'timezone': 'str',
                 'tags': 'dict',
-                'user_id': 'str',           # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'user_id': 'str',           # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             UserResponse:
@@ -77,8 +77,8 @@ class UserProfileService(BaseService):
         Args:
             params (UserProfileVerifyEmailRequest): {
                 'email': 'str',
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
             }
 
 
@@ -113,8 +113,8 @@ class UserProfileService(BaseService):
         Args:
             params (UserProfileConfirmEmailRequest): {
                 'verify_code': 'str',       # required
-                'user_id': 'str',           # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'user_id': 'str',           # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
             }
 
 
@@ -198,8 +198,8 @@ class UserProfileService(BaseService):
             params (UserEnableMFARequest):
                 'mfa_type': 'str',      # required
                 'options': 'dict',      # required
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             UserResponse:
@@ -241,8 +241,8 @@ class UserProfileService(BaseService):
 
         Args:
             params (UserDisableMFARequest): {
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
         Returns:
             UserResponse:
         """
@@ -271,8 +271,8 @@ class UserProfileService(BaseService):
         Args:
             params (UserConfirmMFARequest): {
                 'verify_code': 'str',       # required
-                'user_id': 'str',           # injected from auth
-                'domain_id': 'str'          # injected from auth
+                'user_id': 'str',           # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
         Returns:
             UserResponse:
         """
@@ -308,8 +308,8 @@ class UserProfileService(BaseService):
 
         Args:
             params (dict): {
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -327,8 +327,8 @@ class UserProfileService(BaseService):
         """Find user
         Args:
             params (UserWorkspacesRequest): {
-                'user_id': 'str',       # injected from auth
-                'domain_id': 'str'      # injected from auth
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
             }
         Returns:
             WorkspacesResponse:

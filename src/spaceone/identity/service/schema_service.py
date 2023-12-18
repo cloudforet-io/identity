@@ -38,7 +38,7 @@ class SchemaService(BaseService):
                 'related_schemas': 'list',
                 'options': 'dict',
                 'tags': 'dict',
-                'domain_id': 'str'          # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
 
         Returns:
@@ -61,7 +61,7 @@ class SchemaService(BaseService):
                 'related_schemas': 'list',
                 'options': 'dict',
                 'tags': 'dict',
-                'domain_id': 'str'        # injected from auth
+                'domain_id': 'str'        # injected from auth (required)
             }
 
         Returns:
@@ -86,7 +86,7 @@ class SchemaService(BaseService):
         Args:
             params (SchemaDeleteRequest): {
                 'schema_id': 'str',     # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -110,7 +110,7 @@ class SchemaService(BaseService):
         Args:
             params (SchemaGetRequest): {
                 'schema_id': 'str',     # required
-                'domain_id': 'str'      # injected from auth
+                'domain_id': 'str'      # injected from auth (required)
             }
 
         Returns:
@@ -149,7 +149,7 @@ class SchemaService(BaseService):
                 'provider': 'str',
                 'related_schema_id': 'str',
                 'is_managed': 'bool',
-                'domain_id': 'str'              # injected from auth
+                'domain_id': 'str'              # injected from auth (required)
             }
 
         Returns:
@@ -175,7 +175,7 @@ class SchemaService(BaseService):
         Args:
             params (SchemaStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'domain_id': 'str'    # injected from auth
+                'domain_id': 'str'    # injected from auth (required)
             }
 
         Returns:
