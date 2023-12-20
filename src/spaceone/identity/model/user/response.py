@@ -11,7 +11,7 @@ __all__ = [
     "UsersResponse",
 ]
 
-RoleType = Literal["SYSTEM_ADMIN", "DOMAIN_ADMIN", "USER"]
+RoleType = Literal["DOMAIN_ADMIN", "USER"]
 
 
 class UserResponse(BaseModel):

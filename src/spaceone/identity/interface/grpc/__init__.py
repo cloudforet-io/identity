@@ -1,6 +1,5 @@
 from spaceone.core.pygrpc.server import GRPCServer
 from spaceone.identity.interface.grpc.app import App
-from spaceone.identity.interface.grpc.api_key import APIKey
 from spaceone.identity.interface.grpc.domain import Domain
 from spaceone.identity.interface.grpc.endpoint import Endpoint
 from spaceone.identity.interface.grpc.external_auth import ExternalAuth
@@ -39,5 +38,4 @@ app.add_service(User)
 app.add_service(WorkspaceUser)
 app.add_service(UserGroup)
 app.add_service(App)
-app.add_service(APIKey)
 app.add_service(Token)

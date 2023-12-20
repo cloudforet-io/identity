@@ -49,6 +49,12 @@ class App(BaseAPI, app_pb2_grpc.AppServicer):
         response: dict = app_svc.get(params)
         return self.dict_to_message(response)
 
+    def check(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        app_svc = AppService(metadata)
+        response: dict = app_svc.check(params)
+        return self.dict_to_message(response)
+
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)
         app_svc = AppService(metadata)

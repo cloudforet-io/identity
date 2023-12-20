@@ -32,14 +32,15 @@ class WorkspaceService(BaseService):
             params (WorkspaceCreateRequest): {
                 'name': 'str',          # required
                 'tags': 'dict',
-                'domain_id': 'str'      # injected from auth (required)
+                'domain_id': 'str',     # injected from auth (required)
+                'user_id': 'str'        # injected from auth (required)
             }
         Returns:
             WorkspaceResponse:
         """
 
         params_data = params.dict()
-        params_data["created_by"] = self.transaction.get_meta("authorization.user_id")
+        params_data["created_by"] = params.user_id
 
         workspace_vo = self.workspace_mgr.create_workspace(params_data)
 

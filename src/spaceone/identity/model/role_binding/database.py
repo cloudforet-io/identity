@@ -6,7 +6,7 @@ class RoleBinding(MongoModel):
     role_binding_id = StringField(max_length=40, generate_id="rb", unique=True)
     role_type = StringField(
         max_length=20,
-        choices=("SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"),
+        choices=("DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"),
     )
     user_id = StringField(max_length=255)
     role_id = StringField(max_length=40)

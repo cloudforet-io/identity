@@ -41,10 +41,10 @@ class ProjectService(BaseService):
                 'tags': 'dict',
                 'project_group_id': 'str',
                 'workspace_id': 'str',          # injected from auth (required)
-                'domain_id': 'str'              # injected from auth (required)
+                'domain_id': 'str',             # injected from auth (required)
+                'user_id': 'str',               # injected from auth (required)
             }
         Returns:
-            ProjectResponse:
         """
 
         if params.project_group_id:
@@ -55,7 +55,7 @@ class ProjectService(BaseService):
             )
 
         params_data = params.dict()
-        params_data["created_by"] = self.transaction.get_meta("authorization.user_id")
+        params_data["created_by"] = params.user_id
 
         project_vo = self.project_mgr.create_project(params_data)
 

@@ -44,14 +44,6 @@ class RoleService(BaseService):
             RoleResponse:
         """
 
-        if params.role_type in ["SYSTEM", "SYSTEM_ADMIN"]:
-            domain_mgr = DomainManager()
-            domain_vo = domain_mgr.get_domain(params.domain_id)
-
-            root_domain_name = config.get_global("ROOT_DOMAIN_NAME", "root")
-            if domain_vo.name != root_domain_name:
-                raise ERROR_PERMISSION_DENIED()
-
         role_vo = self.role_mgr.create_role(params.dict())
         return RoleResponse(**role_vo.to_dict())
 

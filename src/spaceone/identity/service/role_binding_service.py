@@ -75,14 +75,18 @@ class RoleBindingService(BaseService):
         role_vo = role_mgr.get_role(role_id, domain_id)
 
         if resource_group == "DOMAIN":
-            if role_vo.role_type not in ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
+            if role_vo.role_type != "DOMAIN_ADMIN":
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(
-                    supported_role_type=["SYSTEM_ADMIN", "DOMAIN_ADMIN"]
+                    request_role_id=role_vo.role_id,
+                    request_role_type=role_vo.role_type,
+                    supported_role_type="DOMAIN_ADMIN",
                 )
         else:
             if role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(
-                    supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+                    request_role_id=role_vo.role_id,
+                    request_role_type=role_vo.role_type,
+                    supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
                 )
 
         # TODO: check duplication of role_binding
@@ -136,10 +140,16 @@ class RoleBindingService(BaseService):
         if rb_vo.role_type in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             if new_role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(
-                    supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+                    request_role_id=new_role_vo.role_id,
+                    request_role_type=new_role_vo.role_type,
+                    supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
                 )
         elif rb_vo.role_type != new_role_vo.role_type:
-            raise ERROR_NOT_ALLOWED_ROLE_TYPE(supported_role_type=[rb_vo.role_type])
+            raise ERROR_NOT_ALLOWED_ROLE_TYPE(
+                request_role_id=new_role_vo.role_id,
+                request_role_type=new_role_vo.role_type,
+                supported_role_type=[rb_vo.role_type],
+            )
 
         user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
 
@@ -297,16 +307,14 @@ class RoleBindingService(BaseService):
     @staticmethod
     def _get_latest_role_type(before: str, after: str) -> str:
         priority = {
-            "SYSTEM": 1,
-            "SYSTEM_ADMIN": 2,
-            "DOMAIN_ADMIN": 3,
-            "WORKSPACE_OWNER": 4,
-            "WORKSPACE_MEMBER": 5,
+            "DOMAIN_ADMIN": 1,
+            "WORKSPACE_OWNER": 2,
+            "WORKSPACE_MEMBER": 3,
             "USER": 4,
         }
 
-        before_priority = priority.get(before, 6)
-        after_priority = priority.get(after, 6)
+        before_priority = priority.get(before, 4)
+        after_priority = priority.get(after, 4)
 
         if before_priority < after_priority:
             return before

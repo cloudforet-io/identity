@@ -67,7 +67,7 @@ class TokenManager(BaseManager, ABC):
 
         access_token = key_gen.generate_token(
             "ACCESS_TOKEN",
-            timeout,
+            timeout=timeout,
             role_type=self.role_type,
             workspace_id=workspace_id,
             permissions=permissions,
@@ -75,7 +75,7 @@ class TokenManager(BaseManager, ABC):
         )
 
         refresh_token = key_gen.generate_token(
-            "REFRESH_TOKEN", self.CONST_REFRESH_TIMEOUT
+            "REFRESH_TOKEN", timeout=self.CONST_REFRESH_TIMEOUT
         )
         self.user.update({"last_accessed_at": datetime.utcnow()})
 
@@ -95,7 +95,7 @@ class TokenManager(BaseManager, ABC):
 
         # Issue token
         access_token = key_gen.generate_token(
-            "ACCESS_TOKEN", timeout, role_type="USER", permissions=permissions
+            "ACCESS_TOKEN", timeout=timeout, role_type="USER", permissions=permissions
         )
 
         return {"access_token": access_token}

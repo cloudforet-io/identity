@@ -12,10 +12,8 @@ class App(MongoModel):
     role_type = StringField(
         max_length=20,
         choices=(
-            "SYSTEM_ADMIN",
             "DOMAIN_ADMIN",
             "WORKSPACE_OWNER",
-            "WORKSPACE_MEMBER",
         ),
     )
     api_key_id = StringField(max_length=40, default=None, null=True)
@@ -24,11 +22,16 @@ class App(MongoModel):
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
-    last_accessed_at = DateTimeField(default=None, null=True)
     expired_at = DateTimeField(required=True)
 
     meta = {
-        "updatable_fields": ["name", "state", "api_key_id", "tags", "last_accessed_at"],
+        "updatable_fields": [
+            "name",
+            "state",
+            "api_key_id",
+            "tags",
+            "expired_at",
+        ],
         "minimal_fields": [
             "app_id",
             "name",

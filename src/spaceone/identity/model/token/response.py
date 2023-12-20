@@ -3,9 +3,7 @@ from pydantic import BaseModel
 
 __all__ = ["TokenResponse", "GrantTokenResponse"]
 
-RoleType = Literal[
-    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"
-]
+RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"]
 
 
 class TokenResponse(BaseModel):

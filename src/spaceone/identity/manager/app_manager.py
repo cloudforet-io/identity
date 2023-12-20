@@ -59,6 +59,7 @@ class AppManager(BaseManager):
             "app_id": app_id,
             "domain_id": domain_id,
         }
+
         if workspace_id:
             conditions["workspace_id"] = workspace_id
 

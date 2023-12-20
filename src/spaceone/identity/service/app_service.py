@@ -7,9 +7,10 @@ from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_api_key import *
 from spaceone.identity.manager.app_manager import AppManager
-from spaceone.identity.manager.api_key_manager import APIKeyManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.manager.role_manager import RoleManager
+from spaceone.identity.manager.api_key_manager import APIKeyManager
+from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.model.app.request import *
 from spaceone.identity.model.app.response import *
 from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_ROLE_TYPE
@@ -53,38 +54,50 @@ class AppService(BaseService):
         role_mgr = RoleManager()
         role_vo = role_mgr.get_role(params.role_id, params.domain_id)
 
-        # Check role type by resource_group
-        if params.resource_group == "DOMAIN":
-            if role_vo.role_type not in ["DOMAIN_ADMIN", "SYSTEM_ADMIN"]:
-                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
-                    supported_role_type=["DOMAIN_ADMIN", "SYSTEM_ADMIN"]
-                )
-        elif params.resource_group == "WORKSPACE":
-            if role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
-                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
-                    supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
-                )
-
-        params.expired_at = self._get_expired_at(params.expired_at)
-        self._check_expired_at(params.expired_at)
-
         # Check workspace
         if params.resource_group == "WORKSPACE":
+            if params.workspace_id is None:
+                raise ERROR_REQUIRED_PARAMETER(key="workspace_id")
+
             workspace_mgr = WorkspaceManager()
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
         else:
             params.workspace_id = "*"
 
-        app_vo = self.app_mgr.create_app(params.dict())
+        # Check role type by resource_group
+        if params.resource_group == "DOMAIN":
+            if role_vo.role_type != "DOMAIN_ADMIN":
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
+                    request_role_id=role_vo.role_id,
+                    request_role_type=role_vo.role_type,
+                    supported_role_type="DOMAIN_ADMIN",
+                )
+        else:
+            if role_vo.role_type != "WORKSPACE_OWNER":
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
+                    request_role_id=role_vo.role_id,
+                    request_role_type=role_vo.role_type,
+                    supported_role_type="WORKSPACE_OWNER",
+                )
+
+        params.expired_at = self._get_expired_at(params.expired_at)
+        self._check_expired_at(params.expired_at)
+
+        params_data = params.dict()
+        params_data["role_type"] = role_vo.role_type
+
+        app_vo = self.app_mgr.create_app(params_data)
 
         api_key_mgr = APIKeyManager()
-        api_key_vo, api_key = api_key_mgr.create_api_key_by_app_vo(
-            app_vo, params.dict()
+        api_key_id, api_key = api_key_mgr.generate_api_key(
+            app_vo.app_id,
+            app_vo.domain_id,
+            params.expired_at,
+            app_vo.role_type,
+            app_vo.workspace_id,
         )
 
-        app_vo = self.app_mgr.update_app_by_vo(
-            {"api_key_id": api_key_vo.api_key_id}, app_vo
-        )
+        app_vo = self.app_mgr.update_app_by_vo({"api_key_id": api_key_id}, app_vo)
 
         return AppResponse(**app_vo.to_dict(), api_key=api_key)
 
@@ -106,6 +119,7 @@ class AppService(BaseService):
         Return:
             AppResponse:
         """
+
         app_vo = self.app_mgr.get_app(
             params.app_id,
             params.domain_id,
@@ -134,9 +148,7 @@ class AppService(BaseService):
             AppResponse:
         """
 
-        params.expired_at = params.expired_at or datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        params.expired_at = self._get_expired_at(params.expired_at)
         self._check_expired_at(params.expired_at)
 
         app_vo = self.app_mgr.get_app(
@@ -147,20 +159,16 @@ class AppService(BaseService):
 
         # Create new api_key
         api_key_mgr = APIKeyManager()
-        api_key_vo, api_key = api_key_mgr.create_api_key_by_app_vo(
-            app_vo, params.dict()
+        api_key_id, api_key = api_key_mgr.generate_api_key(
+            app_vo.app_id,
+            app_vo.domain_id,
+            params.expired_at,
+            app_vo.role_type,
+            app_vo.workspace_id,
         )
-
-        # Delete previous api_key
-        api_key_vo = api_key_mgr.get_api_key(
-            app_vo.api_key_id, params.domain_id, owner_type="APP"
-        )
-        api_key_mgr.delete_api_key_by_vo(api_key_vo)
 
         # Update app info
-        app_vo = self.app_mgr.update_app_by_vo(
-            {"api_key_id": api_key_vo.api_key_id}, app_vo
-        )
+        app_vo = self.app_mgr.update_app_by_vo({"api_key_id": api_key_id}, app_vo)
 
         return AppResponse(**app_vo.to_dict(), api_key=api_key)
 
@@ -233,7 +241,7 @@ class AppService(BaseService):
 
     @transaction(
         permission="identity:App.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
     )
     @convert_model
     def get(self, params: AppGetRequest) -> Union[AppResponse, dict]:
@@ -254,9 +262,51 @@ class AppService(BaseService):
         )
         return AppResponse(**app_vo.to_dict())
 
+    @transaction(exclude=["authentication", "authorization", "mutation"])
+    @convert_model
+    def check(self, params: AppCheckRequest) -> Union[CheckAppResponse, dict]:
+        """Get API Key
+        Args:
+            params (dict): {
+                'api_key_id': 'str',        # required
+                'domain_id': 'str'          # required
+            }
+        Returns:
+            None:
+        """
+
+        app_vos = self.app_mgr.filter_apps(
+            api_key_id=params.api_key_id,
+            domain_id=params.domain_id,
+        )
+
+        if app_vos.count() == 0:
+            raise ERROR_PERMISSION_DENIED()
+
+        app_vo = app_vos[0]
+        if app_vo.state != "ENABLED":
+            raise ERROR_PERMISSION_DENIED()
+
+        domain_mgr = DomainManager()
+        domain_vo = domain_mgr.get_domain(app_vo.domain_id)
+        if domain_vo.state != "ENABLED":
+            raise ERROR_PERMISSION_DENIED()
+
+        if app_vo.role_type == "WORKSPACE_OWNER":
+            workspace_mgr = WorkspaceManager()
+            workspace_vo = workspace_mgr.get_workspace(
+                app_vo.workspace_id, app_vo.domain_id
+            )
+            if workspace_vo.state != "ENABLED":
+                raise ERROR_PERMISSION_DENIED()
+
+        role_mgr = RoleManager()
+        role_vo = role_mgr.get_role(app_vo.role_id, app_vo.domain_id)
+        return CheckAppResponse(permissions=role_vo.permissions)
+
     @transaction(
         permission="identity:App.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
     )
     @append_query_filter(
         [
@@ -296,7 +346,7 @@ class AppService(BaseService):
 
     @transaction(
         permission="identity:App.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
     )
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["app_id", "name"])
@@ -320,11 +370,13 @@ class AppService(BaseService):
         if expired_at:
             return expired_at
         else:
-            return (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S")
+            return (datetime.utcnow() + timedelta(days=365)).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
 
     @staticmethod
     def _check_expired_at(expired_at: str) -> None:
-        one_year_later = datetime.now() + timedelta(days=365)
+        one_year_later = datetime.utcnow() + timedelta(days=365)
 
         if one_year_later.strftime("%Y-%m-%d %H:%M:%S") < expired_at:
             raise ERROR_API_KEY_EXPIRED_LIMIT(expired_at=expired_at)

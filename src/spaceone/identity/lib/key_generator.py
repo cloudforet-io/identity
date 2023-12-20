@@ -35,7 +35,8 @@ class KeyGenerator:
     def generate_token(
         self,
         token_type: str,
-        timeout: int,
+        expired_at: str = None,
+        timeout: int = None,
         role_type: str = None,
         workspace_id: str = None,
         permissions: list = None,
@@ -47,11 +48,15 @@ class KeyGenerator:
             "own": self.owner_type,
             "did": self.domain_id,
             "aud": self.audience,
-            "exp": int(time.time() + timeout),
             "jti": self.token_id,
             "iat": int(time.time()),
             "ver": "2.0",
         }
+
+        if expired_at:
+            payload["exp"] = int(utils.iso8601_to_datetime(expired_at).timestamp())
+        elif timeout:
+            payload["exp"] = int(time.time() + timeout)
 
         if role_type:
             payload["rol"] = role_type
@@ -66,7 +71,7 @@ class KeyGenerator:
             payload["projects"] = projects
 
         # self._print_key(payload)
-        if token_type == "ACCESS_TOKEN":
+        if token_type in ["ACCESS_TOKEN", "API_KEY"]:
             return JWTUtil.encode(payload, self.prv_jwk)
         else:
             return JWTUtil.encode(payload, self.refresh_prv_jwk)
