@@ -1,6 +1,6 @@
 import logging
 
-from typing import Tuple
+from typing import Tuple, List
 from spaceone.core import cache
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
 
@@ -19,6 +19,7 @@ from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.project_manager import ProjectManager
+from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.token.request import *
 from spaceone.identity.model.token.response import *
 from spaceone.identity.model.user.database import User
@@ -40,6 +41,7 @@ class TokenService(BaseService):
         self.rb_mgr = RoleBindingManager()
         self.role_mgr = RoleManager()
         self.project_mgr = ProjectManager()
+        self.workspace_mgr = WorkspaceManager()
 
     @transaction()
     @convert_model
@@ -125,6 +127,8 @@ class TokenService(BaseService):
         if params.scope == "WORKSPACE":
             if params.workspace_id is None:
                 raise ERROR_REQUIRED_PARAMETER(key="workspace_id")
+
+            self.workspace_mgr.get_workspace(params.workspace_id, domain_id)
         else:
             params.workspace_id = None
 
@@ -162,31 +166,13 @@ class TokenService(BaseService):
         )
 
         if role_id:
-            role_vo = self.role_mgr.get_role(role_id=role_id, domain_id=domain_id)
-            permissions = role_vo.permissions
+            permissions = self._get_role_permissions(role_id, domain_id)
         else:
             permissions = None
 
         if role_type == "WORKSPACE_MEMBER":
-            user_projects = []
-
-            public_project_vos = self.project_mgr.filter_projects(
-                project_type="PUBLIC",
-                domain_id=domain_id,
-                workspace_id=params.workspace_id,
-            )
-            user_projects.extend(
-                [project_vo.project_id for project_vo in public_project_vos]
-            )
-
-            user_project_vos = self.project_mgr.filter_projects(
-                project_type="PRIVATE",
-                domain_id=domain_id,
-                users=user_vo.user_id,
-                workspace_id=params.workspace_id,
-            )
-            user_projects.extend(
-                [project_vo.project_id for project_vo in user_project_vos]
+            user_projects = self._get_user_projects(
+                user_vo.user_id, params.workspace_id, domain_id
             )
         else:
             user_projects = None
@@ -295,3 +281,32 @@ class TokenService(BaseService):
     @staticmethod
     def _get_app_role_info(app_vo: App) -> Tuple[str, str]:
         return app_vo.role_type, app_vo.role_id
+
+    @cache.cacheable(key="identity:role-permissions:{domain_id}:{role_id}", expire=300)
+    def _get_role_permissions(self, role_id: str, domain_id: str) -> List[str]:
+        role_vo = self.role_mgr.get_role(role_id=role_id, domain_id=domain_id)
+        return role_vo.permissions
+
+    def _get_user_projects(
+        self, user_id: str, workspace_id: str, domain_id: str
+    ) -> List[str]:
+        user_projects = []
+
+        public_project_vos = self.project_mgr.filter_projects(
+            project_type="PUBLIC",
+            domain_id=domain_id,
+            workspace_id=workspace_id,
+        )
+        user_projects.extend(
+            [project_vo.project_id for project_vo in public_project_vos]
+        )
+
+        user_project_vos = self.project_mgr.filter_projects(
+            project_type="PRIVATE",
+            domain_id=domain_id,
+            users=user_id,
+            workspace_id=workspace_id,
+        )
+        user_projects.extend([project_vo.project_id for project_vo in user_project_vos])
+
+        return user_projects
