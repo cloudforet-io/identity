@@ -11,9 +11,7 @@ __all__ = [
     "RoleType",
 ]
 
-RoleType = Literal[
-    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"
-]
+RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
 
 
 class RoleCreateRequest(BaseModel):

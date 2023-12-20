@@ -20,4 +20,5 @@ class TokenGrantRequest(BaseModel):
     grant_type: str
     token: str
     scope: Scope
+    timeout: Union[int, None] = None
     workspace_id: Union[str, None] = None

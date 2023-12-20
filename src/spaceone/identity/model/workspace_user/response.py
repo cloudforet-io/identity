@@ -14,9 +14,7 @@ __all__ = [
     "UsersSummaryResponse",
 ]
 
-RoleType = Literal[
-    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"
-]
+RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"]
 
 
 class WorkspaceUserResponse(BaseModel):

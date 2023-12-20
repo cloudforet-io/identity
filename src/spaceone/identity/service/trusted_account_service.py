@@ -3,6 +3,7 @@ from typing import Union
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
+from spaceone.core.error import *
 
 from spaceone.identity.model.trusted_account.request import *
 from spaceone.identity.model.trusted_account.response import *
@@ -54,6 +55,9 @@ class TrustedAccountService(BaseService):
 
         # Check workspace
         if params.resource_group == "WORKSPACE":
+            if params.workspace_id is None:
+                raise ERROR_REQUIRED_PARAMETER(key="workspace_id")
+
             workspace_mgr = WorkspaceManager()
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
         else:
@@ -83,6 +87,7 @@ class TrustedAccountService(BaseService):
                 "schema_id": params.secret_schema_id,
                 "trusted_account_id": trusted_account_vo.trusted_account_id,
                 "resource_group": params.resource_group,
+                "workspace_id": params.workspace_id,
             }
         )
 

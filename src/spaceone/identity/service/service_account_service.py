@@ -295,7 +295,8 @@ class ServiceAccountService(BaseService):
         secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
 
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
-            {"secret_id": None, "secret_schema_id": None}, service_account_vo
+            {"secret_id": None, "secret_schema_id": None, "trusted_account_id": None},
+            service_account_vo,
         )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())

@@ -6,7 +6,11 @@ from spaceone.core import utils
 
 from spaceone.identity.model.app.request import State, ResourceGroup, RoleType
 
-__all__ = ["AppResponse", "AppsResponse"]
+__all__ = ["CheckAppResponse", "AppResponse", "AppsResponse"]
+
+
+class CheckAppResponse(BaseModel):
+    permissions: List[str]
 
 
 class AppResponse(BaseModel):
@@ -22,13 +26,11 @@ class AppResponse(BaseModel):
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
-    last_accessed_at: Union[datetime, None] = None
     expired_at: Union[datetime, None] = None
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
         data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
-        data["last_accessed_at"] = utils.datetime_to_iso8601(data["last_accessed_at"])
         data["expired_at"] = utils.datetime_to_iso8601(data["expired_at"])
         return data
 

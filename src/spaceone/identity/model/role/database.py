@@ -9,7 +9,6 @@ class Role(MongoModel):
     role_type = StringField(
         max_length=20,
         choices=(
-            "SYSTEM_ADMIN",
             "DOMAIN_ADMIN",
             "WORKSPACE_OWNER",
             "WORKSPACE_MEMBER",

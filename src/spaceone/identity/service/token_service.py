@@ -108,6 +108,7 @@ class TokenService(BaseService):
                 'grant_type': 'str',    # required
                 'token': 'str',         # required
                 'scope': 'str',         # required
+                'timeout': 'int',
                 'workspace_id': 'str',
             }
         Returns:
@@ -115,6 +116,7 @@ class TokenService(BaseService):
         """
 
         domain_id = self._extract_domain_id(params.token)
+        timeout = params.timeout
 
         refresh_public_jwk = self.domain_secret_mgr.get_domain_refresh_public_key(
             domain_id=domain_id
@@ -133,25 +135,15 @@ class TokenService(BaseService):
             params.grant_type, params.token, refresh_public_jwk
         )
 
-        if decoded_token_info["owner_type"] == "USER":
-            user_vo = self.user_mgr.get_user(
-                user_id=decoded_token_info["user_id"], domain_id=domain_id
-            )
-            app_vo = None
-            role_type, role_id = self._get_user_role_info(
-                user_vo, workspace_id=params.workspace_id
-            )
+        if decoded_token_info["owner_type"] != "USER":
+            raise ERROR_PERMISSION_DENIED()
 
-        else:
-            user_vo = None
-            app_vo = self.app_mgr.get_app(
-                app_id=decoded_token_info["app_id"], domain_id=domain_id
-            )
-
-            if app_vo.api_key_id != decoded_token_info["token_id"]:
-                raise ERROR_INVALID_CREDENTIALS()
-
-            role_type, role_id = self._get_app_role_info(app_vo)
+        user_vo = self.user_mgr.get_user(
+            user_id=decoded_token_info["user_id"], domain_id=domain_id
+        )
+        role_type, role_id = self._get_user_role_info(
+            user_vo, workspace_id=params.workspace_id
+        )
 
         decoded_token_info["scope"] = params.scope
         decoded_token_info["workspace_id"] = params.workspace_id
@@ -165,10 +157,8 @@ class TokenService(BaseService):
         token_mgr.authenticate(
             domain_id,
             scope=params.scope,
-            owner_type=decoded_token_info["owner_type"],
             role_type=role_type,
             user_vo=user_vo,
-            app_vo=app_vo,
         )
 
         if role_id:
@@ -205,6 +195,7 @@ class TokenService(BaseService):
             private_jwk,
             refresh_private_jwk,
             domain_id,
+            timeout=timeout,
             workspace_id=params.workspace_id,
             permissions=permissions,
             projects=user_projects,
@@ -278,7 +269,7 @@ class TokenService(BaseService):
     def _get_user_role_info(
         self, user_vo: User, workspace_id: str = None
     ) -> Tuple[str, Union[str, None]]:
-        if user_vo.role_type in ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
+        if user_vo.role_type == "DOMAIN_ADMIN":
             rb_vos = self.rb_mgr.filter_role_bindings(
                 user_id=user_vo.user_id,
                 domain_id=user_vo.domain_id,

@@ -27,11 +27,7 @@ class User(MongoModel):
         max_length=20,
         default="USER",
         choices=(
-            "SYSTEM",
-            "SYSTEM_ADMIN",
             "DOMAIN_ADMIN",
-            "WORKSPACE_OWNER",
-            "WORKSPACE_MEMBER",
             "USER",
         ),
     )

@@ -26,26 +26,19 @@ class GrantTokenManager(TokenManager):
 
     def authenticate(self, domain_id, **kwargs):
         scope = kwargs["scope"]
-        owner_type = kwargs["owner_type"]
         role_type = kwargs["role_type"]
-        user_vo = kwargs.get("user_vo")
-        app_vo = kwargs.get("app_vo")
 
-        if owner_type == "USER":
-            self.user = user_vo
-            self._check_user_state()
-            self._check_role_type_by_scope(role_type, scope)
-            if scope == "WORKSPACE" and role_type == "DOMAIN_ADMIN":
-                self.role_type = "WORKSPACE_OWNER"
-            elif scope == "USER":
-                self.role_type = "USER"
-            else:
-                self.role_type = role_type
-
+        self.user = kwargs["user_vo"]
+        self._check_user_state()
+        self._check_role_type_by_scope(role_type, scope, self.user.domain_id)
+        if scope == "WORKSPACE" and role_type == "DOMAIN_ADMIN":
+            self.role_type = "WORKSPACE_OWNER"
+        elif scope == "USER":
+            self.role_type = "USER"
+        elif scope == "SYSTEM":
+            self.role_type = "SYSTEM_ADMIN"
         else:
-            self.app = app_vo
-            self._check_app_state()
-            self._check_role_type_by_scope(role_type, scope)
+            self.role_type = role_type
 
         self.is_authenticated = True
 
@@ -83,9 +76,9 @@ class GrantTokenManager(TokenManager):
         return role_type
 
     @staticmethod
-    def _check_role_type_by_scope(role_type, scope):
+    def _check_role_type_by_scope(role_type, scope, user_domain_id):
         if scope == "SYSTEM":
-            if role_type != "SYSTEM_ADMIN":
+            if not (role_type == "DOMAIN_ADMIN" and user_domain_id == "domain-root"):
                 raise ERROR_PERMISSION_DENIED()
         elif scope == "DOMAIN":
             if role_type != "DOMAIN_ADMIN":

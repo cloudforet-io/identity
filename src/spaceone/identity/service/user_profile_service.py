@@ -340,7 +340,7 @@ class UserProfileService(BaseService):
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
-        if user_vo.role_type == ["SYSTEM_ADMIN", "DOMAIN_ADMIN"]:
+        if user_vo.role_type == "DOMAIN_ADMIN":
             allow_all = True
         else:
             rb_vos = rb_mgr.filter_role_bindings(

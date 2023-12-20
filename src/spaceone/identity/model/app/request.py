@@ -9,6 +9,7 @@ __all__ = [
     "AppDisableRequest",
     "AppDeleteRequest",
     "AppGetRequest",
+    "AppCheckRequest",
     "AppSearchQueryRequest",
     "AppStatQueryRequest",
     "State",
@@ -18,9 +19,7 @@ __all__ = [
 
 State = Literal["ENABLED", "DISABLED", "EXPIRED"]
 ResourceGroup = Literal["DOMAIN", "WORKSPACE"]
-RoleType = Literal[
-    "SYSTEM_ADMIN", "DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"
-]
+RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER"]
 
 
 class AppCreateRequest(BaseModel):
@@ -69,6 +68,11 @@ class AppDeleteRequest(BaseModel):
 class AppGetRequest(BaseModel):
     app_id: str
     workspace_id: Union[str, None] = None
+    domain_id: str
+
+
+class AppCheckRequest(BaseModel):
+    api_key_id: str
     domain_id: str
 
 
