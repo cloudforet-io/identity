@@ -1,6 +1,6 @@
 import logging
 from spaceone.core.auth.jwt import JWTUtil
-from spaceone.core.cache import cacheable
+from spaceone.core import cache
 from spaceone.core.manager import *
 from spaceone.core import utils
 from spaceone.identity.model.domain.database import Domain, DomainSecret
@@ -31,28 +31,36 @@ class DomainSecretManager(BaseManager):
         domain_secret_vo: DomainSecret = self.domain_secret_model.create(secret)
         self.transaction.add_rollback(_rollback, domain_secret_vo)
 
-    @cacheable(key="identity:public-jwk:{domain_id}", expire=600)
+    def delete_domain_secret(self, domain_id: str) -> None:
+        domain_secret_vos = self.domain_secret_model.filter(domain_id=domain_id)
+        domain_secret_vos.delete()
+        cache.delete(f"identity:public-jwk:{domain_id}")
+        cache.delete(f"identity:private-jwk:{domain_id}")
+        cache.delete(f"identity:refresh-public-jwk:{domain_id}")
+        cache.delete(f"identity:refresh-private-jwk:{domain_id}")
+
+    @cache.cacheable(key="identity:public-jwk:{domain_id}", expire=600)
     def get_domain_public_key(self, domain_id: str) -> dict:
         domain_secret_vo: DomainSecret = self.domain_secret_model.get(
             domain_id=domain_id
         )
         return domain_secret_vo.pub_jwk
 
-    @cacheable(key="identity:private-jwk:{domain_id}", expire=600)
+    @cache.cacheable(key="identity:private-jwk:{domain_id}", expire=600)
     def get_domain_private_key(self, domain_id: str) -> dict:
         domain_secret_vo: DomainSecret = self.domain_secret_model.get(
             domain_id=domain_id
         )
         return domain_secret_vo.prv_jwk
 
-    @cacheable(key="identity:refresh-public-jwk:{domain_id}", expire=600)
+    @cache.cacheable(key="identity:refresh-public-jwk:{domain_id}", expire=600)
     def get_domain_refresh_public_key(self, domain_id: str) -> dict:
         domain_secret_vo: DomainSecret = self.domain_secret_model.get(
             domain_id=domain_id
         )
         return domain_secret_vo.refresh_pub_jwk
 
-    @cacheable(key="identity:refresh-private-jwk:{domain_id}", expire=600)
+    @cache.cacheable(key="identity:refresh-private-jwk:{domain_id}", expire=600)
     def get_domain_refresh_private_key(self, domain_id: str) -> dict:
         domain_secret_vo: DomainSecret = self.domain_secret_model.get(
             domain_id=domain_id

@@ -11,6 +11,7 @@ from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.system_manager import SystemManager
 from spaceone.identity.model.domain.request import *
 from spaceone.identity.model.domain.response import *
 from spaceone.identity.error.error_domain import *
@@ -54,22 +55,18 @@ class DomainService(BaseService):
         # create default role
         role_mgr = RoleManager()
         role_mgr.list_roles({}, domain_vo.domain_id)
-
-        # create admin user
-        params_admin = params.admin
-        params_admin["auth_type"] = "LOCAL"
-        params_admin["domain_id"] = domain_vo.domain_id
-        user_vo = self.user_mgr.create_user(params_admin)
-
-        # create default role
-        role_mgr = RoleManager()
-        role_mgr.list_roles({}, domain_vo.domain_id)
         role_vos = self.role_manager.filter_roles(
             domain_id=domain_vo.domain_id, role_type="DOMAIN_ADMIN"
         )
 
         if len(role_vos) == 0:
             raise ERROR_DOMAIN_ADMIN_ROLE_IS_NOT_DEFINED()
+
+        # create admin user
+        params_admin = params.admin.dict()
+        params_admin["auth_type"] = "LOCAL"
+        params_admin["domain_id"] = domain_vo.domain_id
+        user_vo = self.user_mgr.create_user(params_admin)
 
         # create role binding
         role_binding_mgr = RoleBindingManager()
@@ -116,6 +113,9 @@ class DomainService(BaseService):
         """
 
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
+        if domain_vo.domain_id == SystemManager.get_root_domain_id():
+            raise ERROR_PERMISSION_DENIED()
+
         self.domain_mgr.delete_domain_by_vo(domain_vo)
 
     @transaction(permission="identity:Domain.write", role_types=["SYSTEM_ADMIN"])
@@ -131,6 +131,9 @@ class DomainService(BaseService):
         """
 
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
+        if domain_vo.domain_id == SystemManager.get_root_domain_id():
+            raise ERROR_PERMISSION_DENIED()
+
         domain_vo = self.domain_mgr.enable_domain(domain_vo)
         return DomainResponse(**domain_vo.to_dict())
 
@@ -147,6 +150,10 @@ class DomainService(BaseService):
         """
 
         domain_vo = self.domain_mgr.get_domain(params.domain_id)
+
+        if domain_vo.domain_id == SystemManager.get_root_domain_id():
+            raise ERROR_PERMISSION_DENIED()
+
         domain_vo = self.domain_mgr.disable_domain(domain_vo)
         return DomainResponse(**domain_vo.to_dict())
 

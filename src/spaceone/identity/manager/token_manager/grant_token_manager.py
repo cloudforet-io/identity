@@ -10,6 +10,7 @@ from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.token_manager.base import TokenManager
 from spaceone.identity.manager.api_key_manager import APIKeyManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.system_manager import SystemManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,7 +79,10 @@ class GrantTokenManager(TokenManager):
     @staticmethod
     def _check_role_type_by_scope(role_type, scope, user_domain_id):
         if scope == "SYSTEM":
-            if not (role_type == "DOMAIN_ADMIN" and user_domain_id == "domain-root"):
+            if not (
+                role_type == "DOMAIN_ADMIN"
+                and user_domain_id == SystemManager.get_root_domain_id()
+            ):
                 raise ERROR_PERMISSION_DENIED()
         elif scope == "DOMAIN":
             if role_type != "DOMAIN_ADMIN":

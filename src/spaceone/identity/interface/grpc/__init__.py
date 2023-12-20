@@ -1,5 +1,5 @@
 from spaceone.core.pygrpc.server import GRPCServer
-from spaceone.identity.interface.grpc.app import App
+from spaceone.identity.interface.grpc.system import System
 from spaceone.identity.interface.grpc.domain import Domain
 from spaceone.identity.interface.grpc.endpoint import Endpoint
 from spaceone.identity.interface.grpc.external_auth import ExternalAuth
@@ -10,6 +10,7 @@ from spaceone.identity.interface.grpc.role import Role
 from spaceone.identity.interface.grpc.role_binding import RoleBinding
 from spaceone.identity.interface.grpc.schema import Schema
 from spaceone.identity.interface.grpc.service_account import ServiceAccount
+from spaceone.identity.interface.grpc.app import App
 from spaceone.identity.interface.grpc.token import Token
 from spaceone.identity.interface.grpc.trusted_account import TrustedAccount
 from spaceone.identity.interface.grpc.user_profile import UserProfile
@@ -21,6 +22,7 @@ from spaceone.identity.interface.grpc.workspace_user import WorkspaceUser
 _all_ = ["app"]
 
 app = GRPCServer()
+app.add_service(System)
 app.add_service(Domain)
 app.add_service(ExternalAuth)
 app.add_service(Endpoint)

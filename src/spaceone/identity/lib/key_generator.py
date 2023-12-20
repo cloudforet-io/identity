@@ -71,10 +71,10 @@ class KeyGenerator:
             payload["projects"] = projects
 
         # self._print_key(payload)
-        if token_type in ["ACCESS_TOKEN", "API_KEY"]:
-            return JWTUtil.encode(payload, self.prv_jwk)
-        else:
+        if token_type == "REFRESH_TOKEN":
             return JWTUtil.encode(payload, self.refresh_prv_jwk)
+        else:
+            return JWTUtil.encode(payload, self.prv_jwk)
 
     @staticmethod
     def _print_key(payload: dict):

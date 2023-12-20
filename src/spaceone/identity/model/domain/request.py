@@ -2,6 +2,7 @@ from typing import Union, Literal
 from pydantic import BaseModel
 
 __all__ = [
+    "AdminUser",
     "DomainCreateRequest",
     "DomainUpdateRequest",
     "DomainDeleteRequest",
@@ -18,9 +19,19 @@ __all__ = [
 State = Literal["ENABLED", "DISABLED"]
 
 
+class AdminUser(BaseModel):
+    user_id: str
+    password: str
+    name: str
+    email: Union[str, None] = None
+    language: Union[str, None] = None
+    timezone: Union[str, None] = None
+    tags: Union[dict, None] = None
+
+
 class DomainCreateRequest(BaseModel):
     name: str
-    admin: dict
+    admin: AdminUser
     tags: Union[dict, None] = None
 
 
