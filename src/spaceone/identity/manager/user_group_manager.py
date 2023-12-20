@@ -53,6 +53,9 @@ class UserGroupManager(BaseManager):
 
         return self.user_group_model.get(**conditions)
 
+    def filter_user_groups(self, **conditions) -> QuerySet:
+        return self.user_group_model.filter(**conditions)
+
     def list_user_groups(self, query: dict) -> Tuple[QuerySet, int]:
         return self.user_group_model.query(**query)
 

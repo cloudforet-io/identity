@@ -10,6 +10,7 @@ from spaceone.core.service.utils import *
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import ERROR_DOMAIN_STATE
 from spaceone.identity.error.error_mfa import *
+from spaceone.identity.manager.system_manager import SystemManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.mfa_manager import MFAManager
@@ -124,7 +125,9 @@ class TokenService(BaseService):
             domain_id=domain_id
         )
 
-        if params.scope == "WORKSPACE":
+        if domain_id == SystemManager.get_root_domain_id() and params.scope != "SYSTEM":
+            raise ERROR_PERMISSION_DENIED()
+        elif params.scope == "WORKSPACE":
             if params.workspace_id is None:
                 raise ERROR_REQUIRED_PARAMETER(key="workspace_id")
 

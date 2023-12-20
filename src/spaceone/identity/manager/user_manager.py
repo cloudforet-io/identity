@@ -9,6 +9,9 @@ from spaceone.core.manager import BaseManager
 from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.error.error_user import *
 from spaceone.identity.model.user.database import User
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.user_group_manager import UserGroupManager
+from spaceone.identity.manager.project_manager import ProjectManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,7 +21,7 @@ class UserManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.user_model = User
 
-    def create_user(self, params: dict) -> User:
+    def create_user(self, params: dict, check_user_id: bool = True) -> User:
         def _rollback(vo: User):
             _LOGGER.info(
                 f"[create_user._rollback] Delete user: {vo.user_id} ({vo.name})"
@@ -32,7 +35,8 @@ class UserManager(BaseManager):
             params["password"] = None
 
         else:
-            self._check_user_id_format(params["user_id"])
+            if check_user_id:
+                self._check_user_id_format(params["user_id"])
 
             if password := params.get("password"):
                 self._check_password_format(password)
@@ -43,7 +47,9 @@ class UserManager(BaseManager):
             params["password"] = hashed_pw
 
         params["name"] = params["name"].strip()
-        params["email"] = params["email"].strip()
+
+        if email := params.get("email"):
+            params["email"] = email.strip()
 
         user_vo = self.user_model.create(params)
 
@@ -85,6 +91,37 @@ class UserManager(BaseManager):
 
     @staticmethod
     def delete_user_by_vo(user_vo: User) -> None:
+        rb_mgr = RoleBindingManager()
+        user_group_mgr = UserGroupManager()
+        project_mgr = ProjectManager()
+
+        # Delete role bindings
+        rb_vos = rb_mgr.filter_role_bindings(
+            user_id=user_vo.user_id, domain_id=user_vo.domain_id
+        )
+        for rb_vo in rb_vos:
+            rb_mgr.delete_role_binding_by_vo(rb_vo)
+
+        # Delete user groups
+        user_group_vos = user_group_mgr.filter_user_groups(
+            users=user_vo.user_id, domain_id=user_vo.domain_id
+        )
+        for user_group_vo in user_group_vos:
+            users = user_group_vo.users
+            users.remove(user_vo.user_id)
+            user_group_mgr.update_user_group_by_vo(
+                {"users": users}, user_group_vo=user_group_vo
+            )
+
+        # Delete projects
+        project_vos = project_mgr.filter_projects(
+            users=user_vo.user_id, domain_id=user_vo.domain_id
+        )
+        for project_vo in project_vos:
+            users = project_vo.users
+            users.remove(user_vo.user_id)
+            project_mgr.update_project_by_vo({"users": users}, project_vo=project_vo)
+
         user_vo.delete()
 
     def get_user(self, user_id: str, domain_id: str) -> User:
