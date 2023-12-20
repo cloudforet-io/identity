@@ -55,7 +55,7 @@ class ProjectService(BaseService):
             )
 
         params_data = params.dict()
-        params_data["created_by"] = params.user_id
+        params_data["created_by"] = self.transaction.get_meta("authorization.user_id")
 
         project_vo = self.project_mgr.create_project(params_data)
 

@@ -1,6 +1,3 @@
-# Root Domain Settings
-ROOT_DOMAIN_NAME = "root"
-
 # Email Settings
 EMAIL_CONSOLE_DOMAIN = ""
 EMAIL_SERVICE_NAME = "Cloudforet"
