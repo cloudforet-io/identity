@@ -9,6 +9,7 @@ from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import ERROR_DOMAIN_STATE
+from spaceone.identity.error.error_workspace import ERROR_WORKSPACE_STATE
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.manager.system_manager import SystemManager
 from spaceone.identity.manager.domain_manager import DomainManager
@@ -131,7 +132,12 @@ class TokenService(BaseService):
             if params.workspace_id is None:
                 raise ERROR_REQUIRED_PARAMETER(key="workspace_id")
 
-            self.workspace_mgr.get_workspace(params.workspace_id, domain_id)
+            self._check_workspace_state(params.workspace_id, domain_id)
+            workspace_vo = self.workspace_mgr.get_workspace(
+                params.workspace_id, domain_id
+            )
+            if workspace_vo.state != "ENABLED":
+                raise ERROR_PERMISSION_DENIED()
         else:
             params.workspace_id = None
 
@@ -200,15 +206,24 @@ class TokenService(BaseService):
 
         return GrantTokenResponse(**response)
 
-    @cache.cacheable(key="identity:domain-state:{domain_id}", expire=3600)
-    def _check_domain_state(self, domain_id):
+    @cache.cacheable(
+        key="identity:workspace-state:{domain_id}:{workspace_id}", expire=600
+    )
+    def _check_workspace_state(self, workspace_id: str, domain_id: str) -> None:
+        workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
+
+        if workspace_vo.state != "ENABLED":
+            raise ERROR_WORKSPACE_STATE(workspace_id=workspace_id)
+
+    @cache.cacheable(key="identity:domain-state:{domain_id}", expire=600)
+    def _check_domain_state(self, domain_id: str) -> None:
         domain_vo = self.domain_mgr.get_domain(domain_id)
 
         if domain_vo.state != "ENABLED":
             raise ERROR_DOMAIN_STATE(domain_id=domain_vo.domain_id)
 
     @staticmethod
-    def _get_permissions_from_required_actions(user_vo):
+    def _get_permissions_from_required_actions(user_vo: User) -> Union[List[str], None]:
         if "UPDATE_PASSWORD" in user_vo.required_actions:
             return [
                 "identity.UserProfile",
@@ -285,7 +300,7 @@ class TokenService(BaseService):
     def _get_app_role_info(app_vo: App) -> Tuple[str, str]:
         return app_vo.role_type, app_vo.role_id
 
-    @cache.cacheable(key="identity:role-permissions:{domain_id}:{role_id}", expire=300)
+    @cache.cacheable(key="identity:role-permissions:{domain_id}:{role_id}", expire=600)
     def _get_role_permissions(self, role_id: str, domain_id: str) -> List[str]:
         role_vo = self.role_mgr.get_role(role_id=role_id, domain_id=domain_id)
         return role_vo.permissions

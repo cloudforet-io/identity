@@ -51,9 +51,9 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
     def create_mfa_verify_code(self, user_id, domain_id):
         if cache.is_set():
             verify_code = self._generate_verify_code()
-            cache.delete(f"mfa-verify-code:{domain_id}:{user_id}")
+            cache.delete(f"identity:mfa:verify-code:{domain_id}:{user_id}")
             cache.set(
-                f"mfa-verify-code:{domain_id}:{user_id}",
+                f"identity:mfa:verify-code:{domain_id}:{user_id}",
                 verify_code,
                 expire=self.CONST_MFA_VERIFICATION_CODE_TIMEOUT,
             )
@@ -69,9 +69,11 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
     @staticmethod
     def check_mfa_verify_code(user_id, domain_id, verify_code):
         if cache.is_set():
-            cached_verify_code = cache.get(f"mfa-verify-code:{domain_id}:{user_id}")
+            cached_verify_code = cache.get(
+                f"identity:mfa:verify-code:{domain_id}:{user_id}"
+            )
             if cached_verify_code == verify_code:
-                cache.delete(f"mfa-verify-code:{domain_id}:{user_id}")
+                cache.delete(f"identity:mfa:verify-code:{domain_id}:{user_id}")
                 return True
         raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
 
