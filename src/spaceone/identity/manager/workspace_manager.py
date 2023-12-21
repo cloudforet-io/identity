@@ -50,13 +50,17 @@ class WorkspaceManager(BaseManager):
 
     def enable_workspace(self, workspace_vo: Workspace) -> Workspace:
         self.update_workspace_by_vo({"state": "ENABLED"}, workspace_vo)
-        cache.delete_pattern(f"identity:workspace-state:{workspace_vo.workspace_id}")
+        cache.delete_pattern(
+            f"identity:workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
+        )
 
         return workspace_vo
 
     def disable_workspace(self, workspace_vo: Workspace) -> Workspace:
         self.update_workspace_by_vo({"state": "DISABLED"}, workspace_vo)
-        cache.delete_pattern(f"identity:workspace-state:{workspace_vo.workspace_id}")
+        cache.delete_pattern(
+            f"identity:workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
+        )
 
         return workspace_vo
 
