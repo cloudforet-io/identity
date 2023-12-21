@@ -18,7 +18,6 @@ class WorkspaceCreateRequest(BaseModel):
     name: str
     tags: Union[dict, None] = None
     domain_id: str
-    user_id: str
 
 
 class WorkspaceUpdateRequest(BaseModel):

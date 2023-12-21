@@ -42,7 +42,6 @@ class ProjectService(BaseService):
                 'project_group_id': 'str',
                 'workspace_id': 'str',          # injected from auth (required)
                 'domain_id': 'str',             # injected from auth (required)
-                'user_id': 'str',               # injected from auth (required)
             }
         Returns:
         """

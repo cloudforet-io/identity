@@ -27,7 +27,6 @@ class ProjectCreateRequest(BaseModel):
     project_group_id: Union[str, None] = None
     workspace_id: str
     domain_id: str
-    user_id: str
 
 
 class ProjectUpdateRequest(BaseModel):
