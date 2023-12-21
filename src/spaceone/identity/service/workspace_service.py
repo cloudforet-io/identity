@@ -33,7 +33,6 @@ class WorkspaceService(BaseService):
                 'name': 'str',          # required
                 'tags': 'dict',
                 'domain_id': 'str',     # injected from auth (required)
-                'user_id': 'str'        # injected from auth (required)
             }
         Returns:
             WorkspaceResponse:
