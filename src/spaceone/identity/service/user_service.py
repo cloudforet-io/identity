@@ -69,7 +69,7 @@ class UserService(BaseService):
         reset_password = params["reset_password"]
         domain_id = params["domain_id"]
         email = params.get("email")
-        language = params.get("language", "en")
+        language = params.get("language") or "en"
 
         if reset_password:
             self._check_reset_password_eligibility(user_id, auth_type, email)
