@@ -34,6 +34,7 @@ class DomainAuthInfoResponse(BaseModel):
     name: Union[str, None] = None
     external_auth_state: Union[ExternalAuthState, None] = None
     metadata: Union[dict, None] = None
+    config: Union[dict, None] = None
 
 
 class DomainSecretResponse(BaseModel):

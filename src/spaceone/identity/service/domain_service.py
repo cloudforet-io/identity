@@ -12,6 +12,7 @@ from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.system_manager import SystemManager
+from spaceone.identity.manager.config_manager import ConfigManager
 from spaceone.identity.model.domain.request import *
 from spaceone.identity.model.domain.response import *
 from spaceone.identity.error.error_domain import *
@@ -189,6 +190,9 @@ class DomainService(BaseService):
         domain_vo = self.domain_mgr.get_domain_by_name(params.name)
         external_auth_mgr = ExternalAuthManager()
         auth_info = external_auth_mgr.get_auth_info(domain_vo)
+
+        config_mgr = ConfigManager()
+        auth_info["config"] = config_mgr.get_auth_config(domain_vo.domain_id)
 
         return DomainAuthInfoResponse(**auth_info)
 
