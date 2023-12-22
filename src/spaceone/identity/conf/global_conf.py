@@ -104,3 +104,6 @@ ENDPOINTS = [
     #     "endpoint": "grpc+ssl://<endpoint>>:<port>"
     # }
 ]
+
+# System Token Settings
+TOKEN = ""
