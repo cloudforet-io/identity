@@ -14,7 +14,7 @@ from spaceone.identity.error.error_mfa import *
 from spaceone.identity.manager.system_manager import SystemManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
-from spaceone.identity.manager.mfa_manager import MFAManager
+from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.token_manager.base import TokenManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.app_manager import AppManager

@@ -5,7 +5,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from spaceone.core import config
 from spaceone.identity.connector.smtp_connector import SMTPConnector
-from spaceone.identity.manager.mfa_manager import MFAManager
+from spaceone.identity.manager.mfa_manager.base import MFAManager
 
 _LOGGER = logging.getLogger(__name__)
 

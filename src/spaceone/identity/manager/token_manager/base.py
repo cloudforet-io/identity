@@ -103,9 +103,9 @@ class TokenManager(BaseManager, ABC):
     def create_verify_code(self, user_id, domain_id):
         if cache.is_set():
             verify_code = self._generate_verify_code()
-            cache.delete(f"identity:mfa:verify-code:{domain_id}:{user_id}")
+            cache.delete(f"identity:verify-code:{domain_id}:{user_id}")
             cache.set(
-                f"identity:mfa:verify-code:{domain_id}:{user_id}",
+                f"identity:verify-code:{domain_id}:{user_id}",
                 verify_code,
                 expire=self.CONST_VERIFY_CODE_TIMEOUT,
             )
