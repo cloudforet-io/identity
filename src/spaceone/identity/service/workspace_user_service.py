@@ -87,7 +87,7 @@ class WorkspaceUserService(BaseService):
                 {"k": "domain_id", "v": params.domain_id, "o": "eq"},
                 {"k": "user_id", "v": workspace_user_ids, "o": "not_in"},
             ],
-            "sort": {"key": "user_id"},
+            "sort": [{"key": "user_id"}],
             "page": params.page,
             "only": ["user_id", "name", "state"],
         }
