@@ -58,14 +58,13 @@ class ServiceAccountManager(BaseManager):
         self,
         service_account_id: str,
         domain_id: str,
-        workspace_id: str,
+        workspace_id: str = None,
         user_projects: List[str] = None,
     ) -> ServiceAccount:
-        conditions = {
-            "service_account_id": service_account_id,
-            "domain_id": domain_id,
-            "workspace_id": workspace_id,
-        }
+        conditions = {"service_account_id": service_account_id, "domain_id": domain_id}
+
+        if workspace_id:
+            conditions["workspace_id"] = workspace_id
 
         if user_projects:
             conditions["project_id"] = user_projects
