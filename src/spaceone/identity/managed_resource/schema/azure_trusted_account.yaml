@@ -19,7 +19,7 @@ schema:
     - subscription_id
 provider: azure
 related_schemas:
-  - aws-client-secret
+  - azure-client-secret
 options:
   help:
     en: |
