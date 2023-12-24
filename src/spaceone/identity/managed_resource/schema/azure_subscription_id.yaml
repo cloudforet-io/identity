@@ -1,0 +1,17 @@
+---
+schema_id: azure-subscription-id
+name: Azure Subscription ID
+version: '1.0'
+schema_type: TRUSTING_SECRET
+schema:
+  order:
+    - subscription_id
+  properties:
+    subscription_id:
+      type: string
+      minLength: 4
+      title: Subscription ID
+  required:
+    - subscription_id
+  type: object
+provider: azure
