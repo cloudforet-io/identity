@@ -59,7 +59,7 @@ class UserDisableMFARequest(BaseModel):
 
 class UserSetRequiredActionsRequest(BaseModel):
     user_id: str
-    actions: List[str]
+    required_actions: List[str]
     domain_id: str
 
 
