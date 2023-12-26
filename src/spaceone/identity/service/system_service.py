@@ -83,6 +83,7 @@ class SystemService(BaseService):
         params_admin = params.admin.dict()
         params_admin["auth_type"] = "LOCAL"
         params_admin["domain_id"] = root_domain_vo.domain_id
+        params_admin["role_type"] = "DOMAIN_ADMIN"
         user_vo = self.user_mgr.create_user(params_admin, check_user_id=False)
 
         # create default role

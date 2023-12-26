@@ -67,6 +67,7 @@ class DomainService(BaseService):
         params_admin = params.admin.dict()
         params_admin["auth_type"] = "LOCAL"
         params_admin["domain_id"] = domain_vo.domain_id
+        params_admin["role_type"] = "DOMAIN_ADMIN"
         user_vo = self.user_mgr.create_user(params_admin)
 
         # create role binding
