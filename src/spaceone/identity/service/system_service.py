@@ -106,6 +106,7 @@ class SystemService(BaseService):
             "role_id": role_vos[0].role_id,
             "scope": "DOMAIN",
             "domain_id": user_vo.domain_id,
+            "role_type": role_vos[0].role_type,
         }
         role_binding_mgr.create_role_binding(params_rb)
 
