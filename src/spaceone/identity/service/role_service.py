@@ -34,7 +34,7 @@ class RoleService(BaseService):
             params (RoleCreateRequest): {
                 'name': 'str',                          # required
                 'role_type': 'list',                    # required
-                'permissions': 'list',                  # required
+                'permissions': 'list',
                 'page_access': 'list',
                 'tags': 'dict',
                 'domain_id': 'str'                      # injected from auth (required)

@@ -12,3 +12,14 @@ class ERROR_NOT_ALLOWED_ROLE_TYPE(ERROR_INVALID_ARGUMENT):
         "Role type is not allowed. (request_role_id = {request_role_id}, "
         "request_role_type = {request_role_type}, supported_role_type = {supported_role_type})"
     )
+
+
+class ERROR_DUPLICATED_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
+    _message = (
+        "Role type is duplicated. (role_type = {role_type}), "
+        "Only one {role_type} is allowed per user in the domain."
+    )
+
+
+class ERROR_DUPLICATED_WORKSPACE_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
+    _message = "Only one role binding is allowed per user in then same workspace. (choices = {allowed_role_type})"
