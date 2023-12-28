@@ -1,0 +1,15 @@
+---
+schema_id: google-cloud-project-id
+name: Google Cloud Project ID
+version: '1.0'
+schema_type: TRUSTING_SECRET
+schema:
+  properties:
+    project_id:
+      minLength: 4.0
+      title: Project ID
+      type: string
+  required:
+    - project_id
+  type: object
+provider: google_cloud
