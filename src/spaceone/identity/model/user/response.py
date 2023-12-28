@@ -25,7 +25,6 @@ class UserResponse(BaseModel):
     mfa: Union[dict, None] = None
     language: Union[str, None] = None
     timezone: Union[str, None] = None
-    api_key_count: Union[int, None] = None
     required_actions: Union[List[str], None] = None
     tags: Union[dict, None] = None
     domain_id: Union[str, None] = None
