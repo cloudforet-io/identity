@@ -63,7 +63,7 @@ class ExternalAuthManager(BaseManager):
 
         if external_auth_vos.count() > 0:
             external_auth_state = "ENABLED"
-            metadata = (external_auth_vos[0].plugin_info.get("metadata", {}),)
+            metadata = external_auth_vos[0].plugin_info.get("metadata", {})
 
         else:
             external_auth_state = "DISABLED"
