@@ -17,7 +17,6 @@ class Plugin(BaseModel):
     options: Union[dict, None] = None
     secret_data: Union[dict, None] = None
     schema_id: Union[str, None] = Field(None, alias="schema")
-    metadata: dict
 
 
 class ExternalAuthSetRequest(BaseModel):
