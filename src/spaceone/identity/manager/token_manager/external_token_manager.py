@@ -1,12 +1,14 @@
 import logging
 from datetime import datetime
-from spaceone.identity.connector.auth_plugin_connector import AuthPluginConnector
+from spaceone.identity.connector.external_auth_plugin_connector import (
+    ExternalAuthPluginConnector,
+)
 from spaceone.identity.error.error_authentication import *
-from spaceone.identity.error.error_user import ERROR_USER_STATUS_CHECK_FAILURE
+from spaceone.identity.error.error_user import *
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.token_manager.base import JWTManager
+from spaceone.identity.manager.token_manager.base import TokenManager
 from spaceone.identity.model.external_auth.database import ExternalAuth
 from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.model.user.database import User
@@ -14,7 +16,7 @@ from spaceone.identity.model.user.database import User
 _LOGGER = logging.getLogger(__name__)
 
 
-class ExternalTokenManager(JWTManager):
+class ExternalTokenManager(TokenManager):
     domain: Domain = None
     external_auth: ExternalAuth = None
     auth_type = "EXTERNAL"
@@ -25,7 +27,10 @@ class ExternalTokenManager(JWTManager):
         self.external_auth_mgr = ExternalAuthManager
         self.user_mgr = UserManager()
 
-    def authenticate(self, user_id: str, domain_id: str, credentials: dict):
+    def authenticate(self, domain_id: str, **kwargs):
+        user_id = kwargs.get("user_id")
+        credentials = kwargs.get("credentials", {})
+
         _LOGGER.debug(f"[authenticate] domain_id: {domain_id}")
 
         # Add User ID for External Authentication
@@ -40,10 +45,12 @@ class ExternalTokenManager(JWTManager):
         endpoint, version = self.external_auth_mgr.get_auth_plugin_endpoint(
             self.domain.domain_id, self.external_auth.plugin_info
         )
-        auth_user_info = self._authenticate_with_plugin(endpoint, credentials)
+        external_auth_user_info = self._authenticate_with_plugin(
+            endpoint, credentials, domain_id
+        )
 
         _LOGGER.info(
-            f'[authenticate] Authentication success. (user_id={auth_user_info.get("user_id")})'
+            f'[authenticate] Authentication success. (user_id={external_auth_user_info.get("user_id")})'
         )
 
         auto_user_sync = self.external_auth.plugin_info.options.get(
@@ -51,37 +58,11 @@ class ExternalTokenManager(JWTManager):
         )
 
         self._verify_user_from_plugin_user_info(
-            auth_user_info, domain_id, auto_user_sync
+            external_auth_user_info, domain_id, auto_user_sync
         )
         self._check_user_state()
 
         self.is_authenticated = True
-
-    def issue_token(self, **kwargs):
-        if self.is_authenticated is False:
-            raise ERROR_NOT_AUTHENTICATED()
-
-        if self.user.state == "PENDING":
-            self.user: User = self.user.update({"state": "ENABLED"})
-
-        # Issue token
-        access_token = self.issue_access_token(
-            "USER", self.user.user_id, self.user.domain_id, **kwargs
-        )
-        refresh_token = self.issue_refresh_token(
-            "USER", self.user.user_id, self.user.domain_id, **kwargs
-        )
-
-        # Update user's last_accessed_at field
-        self.user.update({"last_accessed_at": datetime.utcnow()})
-
-        return {"access_token": access_token, "refresh_token": refresh_token}
-
-    def refresh_token(self, user_id, domain_id, **kwargs):
-        self.user: User = self.user_mgr.get_user(user_id, domain_id)
-        self._check_user_state()
-
-        return self.issue_token(**kwargs)
 
     def _verify_user_from_plugin_user_info(
         self, auth_user_info: dict, domain_id: str, auto_user_sync: bool = False
@@ -111,13 +92,15 @@ class ExternalTokenManager(JWTManager):
             else:
                 raise ERROR_NOT_FOUND(key="user_id", value=user_id)
 
-    def _authenticate_with_plugin(self, endpoint: str, credentials: dict) -> dict:
+    def _authenticate_with_plugin(
+        self, endpoint: str, credentials: dict, domain_id: str
+    ) -> dict:
         options = self.external_auth.plugin_info.options
 
-        auth_plugin_conn = AuthPluginConnector("AuthPluginConnector")
+        auth_plugin_conn = ExternalAuthPluginConnector()
         auth_plugin_conn.initialize(endpoint)
 
-        return auth_plugin_conn.call_login(credentials, options, {})
+        return auth_plugin_conn.authorize(credentials, options, {}, domain_id)
 
     def _check_domain_state(self):
         external_auth_info = self.external_auth_mgr.get_auth_info(domain_vo=self.domain)
@@ -130,7 +113,7 @@ class ExternalTokenManager(JWTManager):
 
     def _check_user_state(self) -> None:
         if self.user.state not in ["ENABLED", "PENDING"]:
-            raise ERROR_USER_STATUS_CHECK_FAILURE(user_id=self.user.user_id)
+            raise ERROR_USER_STATE_DISABLED(user_id=self.user.user_id)
 
         if self.user.auth_type != "EXTERNAL":
             raise ERROR_NOT_FOUND(key="user_id", value=self.user.user_id)

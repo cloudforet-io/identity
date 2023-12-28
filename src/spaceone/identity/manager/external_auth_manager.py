@@ -5,7 +5,9 @@ from mongoengine import QuerySet
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
-from spaceone.identity.connector.auth_plugin_connector import AuthPluginConnector
+from spaceone.identity.connector.external_auth_plugin_connector import (
+    ExternalAuthPluginConnector,
+)
 from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.model.external_auth.database import ExternalAuth
 
@@ -34,7 +36,7 @@ class ExternalAuthManager(BaseManager):
             if updated_version:
                 params["plugin_info"]["version"] = updated_version
 
-            response = self.init_auth_plugin(endpoint, options)
+            response = self.init_auth_plugin(endpoint, options, domain_id)
             params["plugin_info"]["metadata"] = response["metadata"]
 
             secret_data = plugin_info.get("secret_data")
@@ -96,11 +98,11 @@ class ExternalAuthManager(BaseManager):
         return response["endpoint"], response.get("updated_version")
 
     @staticmethod
-    def init_auth_plugin(endpoint: str, options: dict) -> dict:
-        auth_conn = AuthPluginConnector()
-        auth_conn.initialize(endpoint)
+    def init_auth_plugin(endpoint: str, options: dict, domain_id: str) -> dict:
+        external_auth_conn = ExternalAuthPluginConnector()
+        external_auth_conn.initialize(endpoint)
 
-        return auth_conn.init(options)
+        return external_auth_conn.init(options, domain_id)
 
     def _create_secret(self, domain_id: str, secret_data: dict, schema: dict) -> str:
         secret_connector: SpaceConnector = self.locator.get_connector(
@@ -110,11 +112,11 @@ class ExternalAuthManager(BaseManager):
         params = {
             "name": f"{domain_id}-auth-plugin-credentials",
             "data": secret_data,
-            "secret_type": "CREDENTIALS",
-            "schema": schema,
+            # "schema_id": schema_id,
             "domain_id": domain_id,
+            "resource_group": "DOMAIN",
         }
 
-        resp = secret_connector.dispatch("Secret.create", params)
-        _LOGGER.debug(f"[_create_secret] {resp}")
-        return resp.get("secret_id")
+        response = secret_connector.dispatch("Secret.create", params)
+        _LOGGER.debug(f"[_create_secret] {response}")
+        return response.get("secret_id")

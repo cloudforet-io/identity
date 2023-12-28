@@ -1,0 +1,30 @@
+---
+schema_id: email-smtp
+name: Email SMTP
+schema_type: SECRET
+schema:
+  properties:
+    password:
+      minLength: 4.0
+      title: SMTP Password
+      type: string
+    smtp_host:
+      minLength: 4.0
+      title: SMTP Host
+      type: string
+    smtp_port:
+      minLength: 2.0
+      title: SMTP Port
+      type: integer
+    user:
+      minLength: 4.0
+      title: SMTP User
+      type: string
+  required:
+    - smtp_host
+    - smtp_port
+    - user
+    - password
+  type: object
+tags:
+  description: Email SMTP Auth

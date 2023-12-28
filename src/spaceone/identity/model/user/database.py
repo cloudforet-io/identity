@@ -35,7 +35,6 @@ class User(MongoModel):
     required_actions = ListField(StringField(choices=("UPDATE_PASSWORD",)), default=[])
     language = StringField(max_length=7, default="en")
     timezone = StringField(max_length=50, default="UTC")
-    api_key_count = IntField(default=0)
     tags = DictField(Default=None)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
@@ -54,7 +53,6 @@ class User(MongoModel):
             "timezone",
             "required_actions",
             "tags",
-            "api_key_count",
             "last_accessed_at",
         ],
         "minimal_fields": ["user_id", "name", "state", "auth_type", "role_type"],
