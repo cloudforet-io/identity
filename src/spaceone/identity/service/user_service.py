@@ -239,14 +239,14 @@ class UserService(BaseService):
 
         Args:
             params (UserSetRequiredActionsRequest): {
-                'user_id': 'str',       # required
-                'actions': 'list',      # required
-                'domain_id': 'str'      # injected from auth (required)
+                'user_id': 'str',               # required
+                'required_actions': 'list',     # required
+                'domain_id': 'str'              # injected from auth (required)
             }
         Returns:
             UserResponse:
         """
-        new_actions = params.actions or []
+        new_actions = params.required_actions or []
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
         if "UPDATE_PASSWORD" in new_actions:

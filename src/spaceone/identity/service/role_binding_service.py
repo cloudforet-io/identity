@@ -10,7 +10,7 @@ from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_ROLE_TYPE
+from spaceone.identity.error.error_role import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,6 +69,7 @@ class RoleBindingService(BaseService):
             workspace_mgr.get_workspace(workspace_id, domain_id)
         else:
             params["workspace_id"] = "*"
+            workspace_id = "*"
 
         # Check role
         role_mgr = RoleManager()
@@ -81,6 +82,9 @@ class RoleBindingService(BaseService):
                     request_role_type=role_vo.role_type,
                     supported_role_type="DOMAIN_ADMIN",
                 )
+            self.check_duplicate_domain_admin_role(
+                domain_id, user_id, role_vo.role_type
+            )
         else:
             if role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(
@@ -88,8 +92,7 @@ class RoleBindingService(BaseService):
                     request_role_type=role_vo.role_type,
                     supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
                 )
-
-        # TODO: check duplication of role_binding
+            self.check_duplicate_workspace_role(domain_id, workspace_id, user_id)
 
         params["role_type"] = role_vo.role_type
 
@@ -303,6 +306,30 @@ class RoleBindingService(BaseService):
 
         query = params.query or {}
         return self.role_binding_manager.stat_role_bindings(query)
+
+    def check_duplicate_domain_admin_role(
+        self, domain_id: str, user_id: str, role_type: str
+    ):
+        rb_vos = self.role_binding_manager.filter_role_bindings(
+            domain_id=domain_id,
+            user_id=user_id,
+            role_type=role_type,
+        )
+
+        if rb_vos.count() > 0:
+            raise ERROR_DUPLICATED_ROLE_BINDING(role_type=role_type)
+
+    def check_duplicate_workspace_role(
+        self, domain_id: str, workspace_id: str, user_id: str
+    ):
+        rb_vos = self.role_binding_manager.filter_role_bindings(
+            domain_id=domain_id, workspace_id=workspace_id, user_id=user_id
+        )
+
+        if rb_vos.count() >= 1:
+            raise ERROR_DUPLICATED_WORKSPACE_ROLE_BINDING(
+                allowed_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+            )
 
     @staticmethod
     def _get_latest_role_type(before: str, after: str) -> str:
