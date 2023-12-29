@@ -16,7 +16,7 @@ class App(MongoModel):
             "WORKSPACE_OWNER",
         ),
     )
-    api_key_id = StringField(max_length=40, default=None, null=True)
+    client_id = StringField(max_length=40, default=None, null=True)
     role_id = StringField(max_length=40, required=True)
     resource_group = StringField(max_length=40, choices=("DOMAIN", "WORKSPACE"))
     workspace_id = StringField(max_length=40)
@@ -28,7 +28,7 @@ class App(MongoModel):
         "updatable_fields": [
             "name",
             "state",
-            "api_key_id",
+            "client_id",
             "tags",
             "expired_at",
         ],
@@ -44,7 +44,7 @@ class App(MongoModel):
         "indexes": [
             "state",
             "role_type",
-            "api_key_id",
+            "client_id",
             "role_id",
             "resource_group",
             "workspace_id",

@@ -10,6 +10,5 @@ from spaceone.identity.model.service_account.database import ServiceAccount
 from spaceone.identity.model.role.database import Role
 from spaceone.identity.model.role_binding.database import RoleBinding
 from spaceone.identity.model.user.database import User
-# from spaceone.identity.model.user_group.database import UserGroup
-# from spaceone.identity.model.app.database import App
-# from spaceone.identity.model.api_key.database import APIKey
+from spaceone.identity.model.user_group.database import UserGroup
+from spaceone.identity.model.app.database import App

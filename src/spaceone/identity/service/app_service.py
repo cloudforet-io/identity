@@ -5,11 +5,11 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
-from spaceone.identity.error.error_api_key import *
+from spaceone.identity.error.error_app import *
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.api_key_manager import APIKeyManager
+from spaceone.identity.manager.client_secret_manager import ClientSecretManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.model.app.request import *
 from spaceone.identity.model.app.response import *
@@ -88,8 +88,8 @@ class AppService(BaseService):
 
         app_vo = self.app_mgr.create_app(params_data)
 
-        api_key_mgr = APIKeyManager()
-        api_key_id, api_key = api_key_mgr.generate_api_key(
+        client_secret_mgr = ClientSecretManager()
+        client_id, client_secret = client_secret_mgr.generate_client_secret(
             app_vo.app_id,
             app_vo.domain_id,
             params.expired_at,
@@ -97,9 +97,9 @@ class AppService(BaseService):
             app_vo.workspace_id,
         )
 
-        app_vo = self.app_mgr.update_app_by_vo({"api_key_id": api_key_id}, app_vo)
+        app_vo = self.app_mgr.update_app_by_vo({"client_id": client_id}, app_vo)
 
-        return AppResponse(**app_vo.to_dict(), api_key=api_key)
+        return AppResponse(**app_vo.to_dict(), client_secret=client_secret)
 
     @transaction(
         permission="identity:App.write",
@@ -133,7 +133,7 @@ class AppService(BaseService):
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
     )
     @convert_model
-    def generate_api_key(
+    def generate_client_secret(
         self, params: AppGenerateAPIKeyRequest
     ) -> Union[AppResponse, dict]:
         """Generate API Key
@@ -157,9 +157,9 @@ class AppService(BaseService):
             params.workspace_id,
         )
 
-        # Create new api_key
-        api_key_mgr = APIKeyManager()
-        api_key_id, api_key = api_key_mgr.generate_api_key(
+        # Create new client secret
+        client_secret_mgr = ClientSecretManager()
+        client_id, client_secret = client_secret_mgr.generate_client_secret(
             app_vo.app_id,
             app_vo.domain_id,
             params.expired_at,
@@ -168,9 +168,9 @@ class AppService(BaseService):
         )
 
         # Update app info
-        app_vo = self.app_mgr.update_app_by_vo({"api_key_id": api_key_id}, app_vo)
+        app_vo = self.app_mgr.update_app_by_vo({"client_id": client_id}, app_vo)
 
-        return AppResponse(**app_vo.to_dict(), api_key=api_key)
+        return AppResponse(**app_vo.to_dict(), client_secret=client_secret)
 
     @transaction(
         permission="identity:App.write",
@@ -225,7 +225,7 @@ class AppService(BaseService):
         """Delete app
         Args:
             params (dict): {
-                'api_key_id': 'str',    # required
+                'app_id': 'str',    # required
                 'workspace_id': 'str',  # injected from auth
                 'domain_id': 'str'      # injected from auth (required)
             }
@@ -268,7 +268,7 @@ class AppService(BaseService):
         """Get API Key
         Args:
             params (dict): {
-                'api_key_id': 'str',        # required
+                'client_id': 'str',         # required
                 'domain_id': 'str'          # required
             }
         Returns:
@@ -276,7 +276,7 @@ class AppService(BaseService):
         """
 
         app_vos = self.app_mgr.filter_apps(
-            api_key_id=params.api_key_id,
+            client_id=params.client_id,
             domain_id=params.domain_id,
         )
 
@@ -315,7 +315,7 @@ class AppService(BaseService):
             "state",
             "role_type",
             "role_id",
-            "api_key_id",
+            "client_id",
             "workspace_id",
             "domain_id",
         ]
@@ -332,7 +332,7 @@ class AppService(BaseService):
                 'state': 'str',
                 'role_type': 'str',
                 'role_id': 'str',
-                'api_key_id': 'str',
+                'client_id': 'str',
                 'workspace_id': 'list'      # injected from auth
                 'domain_id': 'str'          # injected from auth (required)
             }
@@ -379,4 +379,4 @@ class AppService(BaseService):
         one_year_later = datetime.utcnow() + timedelta(days=365)
 
         if one_year_later.strftime("%Y-%m-%d %H:%M:%S") < expired_at:
-            raise ERROR_API_KEY_EXPIRED_LIMIT(expired_at=expired_at)
+            raise ERROR_APP_EXPIRED_LIMIT(expired_at=expired_at)

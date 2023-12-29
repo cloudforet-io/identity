@@ -72,7 +72,7 @@ class AppGetRequest(BaseModel):
 
 
 class AppCheckRequest(BaseModel):
-    api_key_id: str
+    client_id: str
     domain_id: str
 
 
@@ -83,7 +83,7 @@ class AppSearchQueryRequest(BaseModel):
     state: Union[State, None] = None
     role_type: Union[str, None] = None
     role_id: Union[str, None] = None
-    api_key_id: Union[str, None] = None
+    client_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 

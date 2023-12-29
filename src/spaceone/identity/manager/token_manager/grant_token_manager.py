@@ -8,7 +8,6 @@ from spaceone.identity.error.error_user import (
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.token_manager.base import TokenManager
-from spaceone.identity.manager.api_key_manager import APIKeyManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.system_manager import SystemManager
 
@@ -22,7 +21,6 @@ class GrantTokenManager(TokenManager):
         super().__init__(*args, **kwargs)
         self.user_mgr = UserManager()
         self.app_mgr = AppManager()
-        self.api_key_mgr = APIKeyManager()
         self.rb_mgr = RoleBindingManager()
 
     def authenticate(self, domain_id, **kwargs):

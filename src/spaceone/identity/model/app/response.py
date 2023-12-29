@@ -15,12 +15,12 @@ class CheckAppResponse(BaseModel):
 
 class AppResponse(BaseModel):
     app_id: Union[str, None] = None
-    api_key: Union[str, None] = None
+    client_secret: Union[str, None] = None
     name: Union[str, None] = None
     state: Union[State, None] = None
     tags: Union[dict, None] = None
     role_type: Union[RoleType, None] = None
-    api_key_id: Union[str, None] = None
+    client_id: Union[str, None] = None
     role_id: Union[str, None] = None
     resource_group: Union[ResourceGroup, None] = None
     workspace_id: Union[str, None] = None

@@ -16,14 +16,14 @@ class KeyGenerator:
         domain_id: str,
         owner_type: str,
         audience: str,
-        api_key_id: str = None,
+        client_id: str = None,
         refresh_prv_jwk: dict = None,
     ):
         self.prv_jwk = prv_jwk
         self.domain_id = domain_id
         self.owner_type = owner_type
         self.audience = audience
-        self.token_id = api_key_id or utils.random_string(16)
+        self.token_id = client_id or utils.random_string(16)
         self.refresh_prv_jwk = refresh_prv_jwk
 
         self._check_parameter()

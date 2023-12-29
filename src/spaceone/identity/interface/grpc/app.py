@@ -19,10 +19,10 @@ class App(BaseAPI, app_pb2_grpc.AppServicer):
         response: dict = app_svc.update(params)
         return self.dict_to_message(response)
 
-    def generate_api_key(self, request, context):
+    def generate_client_secret(self, request, context):
         params, metadata = self.parse_request(request, context)
         app_svc = AppService(metadata)
-        response: dict = app_svc.generate_api_key(params)
+        response: dict = app_svc.generate_client_secret(params)
         return self.dict_to_message(response)
 
     def enable(self, request, context):
