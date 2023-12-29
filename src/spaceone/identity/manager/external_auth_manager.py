@@ -55,6 +55,10 @@ class ExternalAuthManager(BaseManager):
 
         return external_auth_vo
 
+    @staticmethod
+    def delete_external_auth_by_vo(external_auth_vo: ExternalAuth):
+        external_auth_vo.delete()
+
     def get_external_auth(self, domain_id: str) -> ExternalAuth:
         return self.external_auth_model.get(domain_id=domain_id)
 
@@ -63,7 +67,11 @@ class ExternalAuthManager(BaseManager):
 
         if external_auth_vos.count() > 0:
             external_auth_state = "ENABLED"
-            metadata = external_auth_vos[0].plugin_info.get("metadata", {})
+            plugin_info = external_auth_vos[0].plugin_info
+            metadata = plugin_info.get("metadata", {})
+            # if secret_id := plugin_info.get("secret_id"):
+            #     secret_mgr = SecretManager()
+            #     secret_data = secret_mgr.get_secret_data(secret_id, domain_vo.domain_id)
 
         else:
             external_auth_state = "DISABLED"

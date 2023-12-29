@@ -32,13 +32,22 @@ class ExternalAuthPluginConnector(BaseConnector):
         except Exception as e:
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(messsage=str(e))
 
-    def authorize(self, credentials, options, secret_data, domain_id, schema_id=None):
+    def authorize(
+        self,
+        credentials,
+        options,
+        secret_data,
+        domain_id,
+        schema_id=None,
+        metadata=None,
+    ):
         params = {
             "options": options,
             "secret_data": secret_data,
             "user_credentials": credentials,
             "schema_id": schema_id,
             "domain_id": domain_id,
+            "metadata": metadata or {},
         }
 
         try:

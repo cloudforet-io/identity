@@ -45,6 +45,7 @@ class ExternalTokenManager(TokenManager):
         endpoint, version = self.external_auth_mgr.get_auth_plugin_endpoint(
             self.domain.domain_id, self.external_auth.plugin_info
         )
+
         external_auth_user_info = self._authenticate_with_plugin(
             endpoint, credentials, domain_id
         )
@@ -96,11 +97,18 @@ class ExternalTokenManager(TokenManager):
         self, endpoint: str, credentials: dict, domain_id: str
     ) -> dict:
         options = self.external_auth.plugin_info.options
+        metadata = self.external_auth.plugin_info.metadata
 
         auth_plugin_conn = ExternalAuthPluginConnector()
         auth_plugin_conn.initialize(endpoint)
 
-        return auth_plugin_conn.authorize(credentials, options, {}, domain_id)
+        return auth_plugin_conn.authorize(
+            credentials=credentials,
+            secret_data={},
+            options=options,
+            domain_id=domain_id,
+            metadata=metadata,
+        )
 
     def _check_domain_state(self):
         external_auth_info = self.external_auth_mgr.get_auth_info(domain_vo=self.domain)

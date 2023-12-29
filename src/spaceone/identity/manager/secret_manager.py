@@ -13,6 +13,11 @@ class SecretManager(BaseManager):
             "SpaceConnector", service="secret"
         )
 
+    def get_secret_data(self, secret_id: str, domain_id: str) -> dict:
+        return self.secret_conn.dispatch(
+            "Secret.get_data", {"secret_id": secret_id, "domain_id": domain_id}
+        )
+
     def create_trusted_secret(self, params: dict) -> dict:
         return self.secret_conn.dispatch("TrustedSecret.create", params)
 
