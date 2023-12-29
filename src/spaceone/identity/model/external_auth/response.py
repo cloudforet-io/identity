@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Union, Literal
+
 from pydantic import BaseModel, Field
+from spaceone.core import utils
 
 __all__ = ["ExternalAuthResponse"]
 
@@ -22,3 +24,8 @@ class ExternalAuthResponse(BaseModel):
     state: Union[State, None] = None
     plugin_info: Union[Plugin, None] = None
     updated_at: Union[datetime, None] = None
+
+    def dict(self, *args, **kwargs):
+        data = super().dict(*args, **kwargs)
+        data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
+        return data
