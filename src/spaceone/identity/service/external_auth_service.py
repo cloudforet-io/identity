@@ -59,7 +59,10 @@ class ExternalAuthService(BaseService):
             ExternalAuthResponse:
         """
 
-        return {}
+        external_auth_vo = self.external_auth_mgr.get_external_auth(params.domain_id)
+        self.external_auth_mgr.delete_external_auth_by_vo(external_auth_vo)
+
+        return {"domain_id": params.domain_id, "state": "DISABLED"}
 
     @transaction(permission="identity:ExternalAuth.read", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -73,5 +76,11 @@ class ExternalAuthService(BaseService):
             ExternalAuthResponse:
         """
 
-        external_auth_vo = self.external_auth_mgr.get_external_auth(params.domain_id)
-        return ExternalAuthResponse(**external_auth_vo.to_dict())
+        external_auth_vos = self.external_auth_mgr.filter_external_auth(
+            domain_id=params.domain_id
+        )
+        if external_auth_vos.count() > 0:
+            external_auth_vo = external_auth_vos[0]
+            return ExternalAuthResponse(**external_auth_vo.to_dict())
+        else:
+            return {"domain_id": params.domain_id, "state": "DISABLED"}
