@@ -44,7 +44,7 @@ class ExternalAuthPluginConnector(BaseConnector):
         params = {
             "options": options,
             "secret_data": secret_data,
-            "user_credentials": credentials,
+            "credentials": credentials,
             "schema_id": schema_id,
             "domain_id": domain_id,
             "metadata": metadata or {},
