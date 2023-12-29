@@ -2,6 +2,7 @@
 schema_id: email-smtp
 name: Email SMTP
 schema_type: SECRET
+version: '1.0 '
 schema:
   properties:
     password:
