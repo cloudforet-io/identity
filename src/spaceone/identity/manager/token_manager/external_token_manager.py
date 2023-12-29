@@ -24,7 +24,7 @@ class ExternalTokenManager(TokenManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain_mgr = DomainManager()
-        self.external_auth_mgr = ExternalAuthManager
+        self.external_auth_mgr = ExternalAuthManager()
         self.user_mgr = UserManager()
 
     def authenticate(self, domain_id: str, **kwargs):
@@ -42,6 +42,7 @@ class ExternalTokenManager(TokenManager):
         self._check_domain_state()
 
         self.external_auth = self.external_auth_mgr.get_external_auth(domain_id)
+
         endpoint, version = self.external_auth_mgr.get_auth_plugin_endpoint(
             self.domain.domain_id, self.external_auth.plugin_info
         )
@@ -96,8 +97,8 @@ class ExternalTokenManager(TokenManager):
     def _authenticate_with_plugin(
         self, endpoint: str, credentials: dict, domain_id: str
     ) -> dict:
-        options = self.external_auth.plugin_info.options
-        metadata = self.external_auth.plugin_info.metadata
+        options = self.external_auth.plugin_info.get("options", {})
+        metadata = self.external_auth.plugin_info.get("metadata", {})
 
         auth_plugin_conn = ExternalAuthPluginConnector()
         auth_plugin_conn.initialize(endpoint)
@@ -110,8 +111,8 @@ class ExternalTokenManager(TokenManager):
             metadata=metadata,
         )
 
-    def _check_domain_state(self):
-        external_auth_info = self.external_auth_mgr.get_auth_info(domain_vo=self.domain)
+    def _check_domain_state(self) -> None:
+        external_auth_info = self.external_auth_mgr.get_auth_info(self.domain)
 
         if external_auth_info.get("external_auth_state") != "ENABLED":
             _LOGGER.error(
