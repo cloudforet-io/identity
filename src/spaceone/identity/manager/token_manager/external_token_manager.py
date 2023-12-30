@@ -28,14 +28,18 @@ class ExternalTokenManager(TokenManager):
         self.user_mgr = UserManager()
 
     def authenticate(self, domain_id: str, **kwargs):
-        user_id = kwargs.get("user_id")
         credentials = kwargs.get("credentials", {})
+        user_id = kwargs.get("user_id")
+        access_token = kwargs.get("access_token")
 
         _LOGGER.debug(f"[authenticate] domain_id: {domain_id}")
 
         # Add User ID for External Authentication
         if user_id:
             credentials["user_id"] = user_id
+
+        if access_token:
+            credentials["access_token"] = access_token
 
         self.domain: Domain = self.domain_mgr.get_domain(domain_id)
 
@@ -55,7 +59,7 @@ class ExternalTokenManager(TokenManager):
             f'[authenticate] Authentication success. (user_id={external_auth_user_info.get("user_id")})'
         )
 
-        auto_user_sync = self.external_auth.plugin_info.options.get(
+        auto_user_sync = self.external_auth.plugin_info.get("options", {}).get(
             "auto_user_sync", False
         )
 
