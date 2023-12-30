@@ -108,7 +108,7 @@ class WorkspaceUserService(BaseService):
 
     @transaction(
         permission="identity:WorkspaceUser.read",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def get(
@@ -134,17 +134,10 @@ class WorkspaceUserService(BaseService):
 
     @transaction(
         permission="identity:WorkspaceUser.read",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @append_query_filter(
-        [
-            "user_id",
-            "name",
-            "state",
-            "email",
-            "auth_type",
-            "domain_id",
-        ]
+        ["user_id", "name", "state", "email", "auth_type", "domain_id"]
     )
     @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
