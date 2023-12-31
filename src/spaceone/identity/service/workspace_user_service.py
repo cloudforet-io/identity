@@ -82,6 +82,7 @@ class WorkspaceUserService(BaseService):
         )
         workspace_user_ids = list(set([rb.user_id for rb in rb_vos]))
 
+        # default query
         query = {
             "filter": [
                 {"k": "domain_id", "v": params.domain_id, "o": "eq"},
@@ -92,12 +93,14 @@ class WorkspaceUserService(BaseService):
             "only": ["user_id", "name", "state"],
         }
 
+        # append keyword filter
         if params.keyword:
             query["filter_or"] = [
                 {"k": "user_id", "v": params.keyword, "o": "contain"},
                 {"k": "name", "v": params.keyword, "o": "contain"},
             ]
 
+        # append state filter
         if params.state:
             query["filter"].append({"k": "state", "v": params.state, "o": "eq"})
 
@@ -169,9 +172,9 @@ class WorkspaceUserService(BaseService):
 
     @transaction(
         permission="identity:WorkspaceUser.read",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @append_query_filter(["domain_id", "workspace_id"])
+    @append_query_filter(["domain_id"])
     @convert_model
     def stat(self, params: WorkspaceUserStatQueryRequest) -> dict:
         """stat users in workspace
