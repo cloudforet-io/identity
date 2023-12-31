@@ -172,7 +172,7 @@ class WorkspaceUserService(BaseService):
 
     @transaction(
         permission="identity:WorkspaceUser.read",
-        role_types=["DOMAIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @append_query_filter(["domain_id"])
     @convert_model
