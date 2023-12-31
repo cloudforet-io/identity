@@ -34,5 +34,5 @@ class WorkspaceUser(BaseAPI, workspace_user_pb2_grpc.WorkspaceUserServicer):
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)
         workspace_user_svc = WorkspaceUserService(metadata)
-        response: dict = workspace_user_svc.list(params)
+        response: dict = workspace_user_svc.stat(params)
         return self.dict_to_message(response)

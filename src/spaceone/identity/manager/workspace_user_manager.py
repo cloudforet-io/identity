@@ -40,24 +40,9 @@ class WorkspaceUserManager(BaseManager):
 
         return user_vo
 
-    def get_workspace_user(
-        self, user_id: str, workspace_id: str, domain_id: str
-    ) -> dict:
-        user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
-            workspace_id, domain_id
-        )
-        if user_id not in user_ids:
-            raise ERROR_NOT_FOUND(key="user_id", value=user_id)
-
-        user_vo = self.user_mgr.get_user(user_id, domain_id)
-        user_info = user_vo.to_dict()
-        user_info["role_binding_info"] = user_rb_map[user_id]
-
-        return user_info
-
     def check_workspace_users(
         self, users: List[str], workspace_id: str, domain_id: str
-    ) -> bool:
+    ) -> None:
         rb_vos = self.rb_mgr.filter_role_bindings(
             user_id=users,
             workspace_id=[workspace_id, "*"],
@@ -73,17 +58,29 @@ class WorkspaceUserManager(BaseManager):
                 user_id=user_id, workspace_id=workspace_id
             )
 
-    def list_workspace_users(
-        self, query: dict, domain_id: str, workspace_id: str = None
-    ) -> Tuple[list, int]:
-        user_rb_map = None
+    def get_workspace_user(
+        self, user_id: str, workspace_id: str, domain_id: str
+    ) -> dict:
+        user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
+            workspace_id, domain_id
+        )
+        if user_id not in user_ids:
+            raise ERROR_NOT_FOUND(key="user_id", value=user_id)
 
-        if workspace_id:
-            user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
-                workspace_id, domain_id
-            )
-            query["filter"] = query.get("filter", [])
-            query["filter"].append({"k": "user_id", "v": user_ids, "o": "in"})
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        user_info = user_vo.to_dict()
+        user_info["role_binding_info"] = user_rb_map[user_id]
+
+        return user_info
+
+    def list_workspace_users(
+        self, query: dict, domain_id: str, workspace_id: str
+    ) -> Tuple[list, int]:
+        user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
+            workspace_id, domain_id
+        )
+        query["filter"] = query.get("filter", [])
+        query["filter"].append({"k": "user_id", "v": user_ids, "o": "in"})
 
         user_vos, total_count = self.user_mgr.list_users(query)
 
@@ -99,16 +96,15 @@ class WorkspaceUserManager(BaseManager):
         return users_info, total_count
 
     def stat_workspace_users(
-        self, query: dict, domain_id: str, workspace_id: str = None
+        self, query: dict, domain_id: str, workspace_id: str
     ) -> dict:
-        if workspace_id:
-            user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
-                workspace_id, domain_id
-            )
-            query["filter"] = query.get("filter", [])
-            query["filter"].append({"k": "user_id", "v": user_ids, "o": "in"})
+        user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
+            workspace_id, domain_id
+        )
+        query["filter"] = query.get("filter", [])
+        query["filter"].append({"k": "user_id", "v": user_ids, "o": "in"})
 
-        return self.user_mgr.stat(**query)
+        return self.user_mgr.stat_users(query)
 
     def _get_role_binding_map_in_workspace(
         self, workspace_id: str, domain_id: str
