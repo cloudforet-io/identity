@@ -70,6 +70,9 @@ class ExternalTokenManager(TokenManager):
 
         self.is_authenticated = True
 
+        if self.user.state == "PENDING":
+            self.user: User = self.user.update({"state": "ENABLED"})
+
     def _verify_user_from_plugin_user_info(
         self, auth_user_info: dict, domain_id: str, auto_user_sync: bool = False
     ) -> None:
