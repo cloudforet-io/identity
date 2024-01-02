@@ -23,6 +23,7 @@ class App(MongoModel):
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     expired_at = DateTimeField(required=True)
+    last_accessed_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
@@ -31,6 +32,7 @@ class App(MongoModel):
             "client_id",
             "tags",
             "expired_at",
+            "last_accessed_at",
         ],
         "minimal_fields": [
             "app_id",
