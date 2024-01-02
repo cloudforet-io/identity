@@ -23,6 +23,7 @@ class User(MongoModel):
     email = StringField(max_length=255, default="")
     email_verified = BooleanField(default=False)
     auth_type = StringField(max_length=20, choices=("LOCAL", "EXTERNAL"))
+    role_id = StringField(max_length=40, default=None, null=True)
     role_type = StringField(
         max_length=20,
         default="USER",
@@ -47,6 +48,7 @@ class User(MongoModel):
             "state",
             "email",
             "email_verified",
+            "role_id",
             "role_type",
             "mfa",
             "language",

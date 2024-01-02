@@ -100,7 +100,12 @@ class RoleBindingService(BaseService):
         latest_role_type = self._get_latest_role_type(
             user_vo.role_type, role_vo.role_type
         )
-        self.user_mgr.update_user_by_vo({"role_type": latest_role_type}, user_vo)
+
+        user_role_info = {"role_type": latest_role_type}
+        if role_vo.role_type in ["DOMAIN_ADMIN"]:
+            user_role_info.update({"role_id": role_vo.role_id})
+
+        self.user_mgr.update_user_by_vo(user_role_info, user_vo)
 
         # Create role binding
         return self.role_binding_manager.create_role_binding(params)
@@ -309,7 +314,7 @@ class RoleBindingService(BaseService):
 
     def check_duplicate_domain_admin_role(
         self, domain_id: str, user_id: str, role_type: str
-    ):
+    ) -> None:
         rb_vos = self.role_binding_manager.filter_role_bindings(
             domain_id=domain_id,
             user_id=user_id,
@@ -321,7 +326,7 @@ class RoleBindingService(BaseService):
 
     def check_duplicate_workspace_role(
         self, domain_id: str, workspace_id: str, user_id: str
-    ):
+    ) -> None:
         rb_vos = self.role_binding_manager.filter_role_bindings(
             domain_id=domain_id, workspace_id=workspace_id, user_id=user_id
         )
