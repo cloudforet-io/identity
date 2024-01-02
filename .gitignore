@@ -15,5 +15,3 @@ test/reports
 test/_trial_temp
 /test/api/config.yml
 skaffold.yaml
-
-/src/spaceone/identity_v1

@@ -1,14 +1,15 @@
 import logging
 import random
-from datetime import datetime
 from abc import abstractmethod, ABC
+from datetime import datetime
+from typing import Union
 
 from spaceone.core import config, cache
 from spaceone.core.manager import BaseManager
 from spaceone.identity.error.error_authentication import *
 
-from spaceone.identity.lib.key_generator import KeyGenerator
 from spaceone.identity.error.error_token import *
+from spaceone.identity.lib.key_generator import KeyGenerator
 
 __all__ = ["TokenManager"]
 _LOGGER = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ class TokenManager(BaseManager, ABC):
             refresh_prv_jwk=refresh_private_jwk,
         )
 
-        timeout = timeout or self.CONST_TOKEN_TIMEOUT
+        timeout = self.set_timeout(timeout)
 
         access_token = key_gen.generate_token(
             "ACCESS_TOKEN",
@@ -111,6 +112,13 @@ class TokenManager(BaseManager, ABC):
             )
             return verify_code
 
+    def set_timeout(self, timeout: Union[int, None]) -> int:
+        if timeout and timeout > 0:
+            timeout = min(timeout, self.CONST_TOKEN_TIMEOUT)
+        else:
+            timeout = self.CONST_TOKEN_TIMEOUT
+        return timeout
+
     @staticmethod
     def check_verify_code(user_id, domain_id, verify_code):
         if cache.is_set():
@@ -128,6 +136,6 @@ class TokenManager(BaseManager, ABC):
     def _load_conf(self):
         identity_conf = config.get_global("IDENTITY") or {}
         token_conf = identity_conf.get("token", {})
-        self.CONST_TOKEN_TIMEOUT = token_conf.get("token_timeout", 1800)
+        self.CONST_TOKEN_TIMEOUT = token_conf.get("token_timeout", 600)
         self.CONST_VERIFY_CODE_TIMEOUT = token_conf.get("verify_code_timeout", 3600)
         self.CONST_REFRESH_TIMEOUT = token_conf.get("refresh_timeout", 3600)
