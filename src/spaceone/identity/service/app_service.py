@@ -302,9 +302,8 @@ class AppService(BaseService):
 
         role_mgr = RoleManager()
         role_vo = role_mgr.get_role(app_vo.role_id, app_vo.domain_id)
-        role_vo = role_mgr.update_role_by_vo(
-            {"last_accessed_at": datetime.utcnow()}, role_vo
-        )
+
+        self.app_mgr.update_app_by_vo({"last_accessed_at": datetime.utcnow()}, app_vo)
 
         return CheckAppResponse(permissions=role_vo.permissions)
 
