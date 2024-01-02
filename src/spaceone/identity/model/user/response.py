@@ -21,6 +21,7 @@ class UserResponse(BaseModel):
     email: Union[str, None] = None
     email_verified: Union[bool, None] = None
     auth_type: Union[AuthType, None] = None
+    role_id: Union[str, None] = None
     role_type: Union[RoleType, None] = None
     mfa: Union[dict, None] = None
     language: Union[str, None] = None
