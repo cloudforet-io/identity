@@ -34,7 +34,7 @@ IDENTITY = {
     "token": {
         "verify_code_timeout": 3600,
         "temporary_token_timeout": 86400,  # 24 hours
-        "token_timeout": 10800,
+        "token_timeout": 600,
         "refresh_timeout": 21600,
     },
     "mfa": {"verify_code_timeout": 300},
