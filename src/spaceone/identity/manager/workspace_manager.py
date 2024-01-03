@@ -5,6 +5,7 @@ from mongoengine import QuerySet
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.model.workspace.database import Workspace
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ class WorkspaceManager(BaseManager):
         return workspace_vo
 
     def update_workspace_by_vo(
-        self, params: dict, workspace_vo: Workspace
+            self, params: dict, workspace_vo: Workspace
     ) -> Workspace:
         def _rollback(old_data):
             _LOGGER.info(
@@ -42,6 +43,16 @@ class WorkspaceManager(BaseManager):
 
     @staticmethod
     def delete_workspace_by_vo(workspace_vo: Workspace) -> None:
+        rb_mgr = RoleBindingManager()
+        rb_vos = rb_mgr.filter_role_bindings(
+            workspace_id=workspace_vo.workspace_id, domain_id=workspace_vo.domain_id
+        )
+
+        if rb_vos.count() > 0:
+            _LOGGER.debug(
+                f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}")
+            rb_vos.delete()
+
         workspace_vo.delete()
 
         cache.delete_pattern(
