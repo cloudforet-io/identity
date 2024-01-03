@@ -39,14 +39,14 @@ class TokenManager(BaseManager, ABC):
         raise ERROR_INVALID_AUTHENTICATION_TYPE(auth_type=auth_type)
 
     def issue_token(
-        self,
-        private_jwk,
-        refresh_private_jwk,
-        domain_id,
-        workspace_id=None,
-        timeout=None,
-        permissions=None,
-        projects=None,
+            self,
+            private_jwk,
+            refresh_private_jwk,
+            domain_id,
+            workspace_id=None,
+            timeout=None,
+            permissions=None,
+            projects=None,
     ):
         if self.is_authenticated is False:
             raise ERROR_NOT_AUTHENTICATED()
@@ -114,7 +114,7 @@ class TokenManager(BaseManager, ABC):
 
     def set_timeout(self, timeout: Union[int, None]) -> int:
         if timeout and timeout > 0:
-            timeout = min(timeout, self.CONST_TOKEN_TIMEOUT)
+            timeout = min(timeout, self.CONST_MAX_TOKEN_TIMEOUT)
         else:
             timeout = self.CONST_TOKEN_TIMEOUT
         return timeout
@@ -136,6 +136,7 @@ class TokenManager(BaseManager, ABC):
     def _load_conf(self):
         identity_conf = config.get_global("IDENTITY") or {}
         token_conf = identity_conf.get("token", {})
-        self.CONST_TOKEN_TIMEOUT = token_conf.get("token_timeout", 600)
+        self.CONST_TOKEN_TIMEOUT = token_conf.get("token_timeout", 1800)
         self.CONST_VERIFY_CODE_TIMEOUT = token_conf.get("verify_code_timeout", 3600)
-        self.CONST_REFRESH_TIMEOUT = token_conf.get("refresh_timeout", 3600)
+        self.CONST_REFRESH_TIMEOUT = token_conf.get("refresh_timeout", 10800)
+        self.CONST_MAX_TOKEN_TIMEOUT = token_conf.get("token_max_timeout", 604800)
