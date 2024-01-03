@@ -32,10 +32,11 @@ CACHES = {
 # Identity Settings
 IDENTITY = {
     "token": {
-        "verify_code_timeout": 3600,
+        "verify_code_timeout": 3600,  # 1hour
         "temporary_token_timeout": 86400,  # 24 hours
-        "token_timeout": 600,
-        "refresh_timeout": 21600,
+        "token_timeout": 1800,  # 30 minutes
+        "token_max_timeout": 604800,  # 7 days
+        "refresh_timeout": 10800,  # 3 hours
     },
     "mfa": {"verify_code_timeout": 300},
 }
