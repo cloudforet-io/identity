@@ -23,3 +23,15 @@ class ERROR_DUPLICATED_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
 
 class ERROR_DUPLICATED_WORKSPACE_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
     _message = "Only one role binding is allowed per user in then same workspace. (choices = {allowed_role_type})"
+
+
+class ERROR_NOT_ALLOWED_TO_UPDATE_OR_DELETE_ROLE_BY_SELF(ERROR_INVALID_ARGUMENT):
+    _message = "You are not allowed to update or delete your own role."
+
+
+class ERROR_LAST_WORKSPACE_OWNER_CANNOT_DELETE(ERROR_INVALID_ARGUMENT):
+    _message = "Last workspace owner cannot be deleted."
+
+
+class ERROR_LAST_DOMAIN_ADMIN_CANNOT_DELETE(ERROR_INVALID_ARGUMENT):
+    _message = "Last domain admin cannot be deleted."
