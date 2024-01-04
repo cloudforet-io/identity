@@ -376,7 +376,7 @@ class RoleBindingService(BaseService):
     def _get_enabled_user_ids(self, domain_id: str) -> list:
         user_vos = self.user_mgr.filter_users(
             domain_id=domain_id,
-            state="DISABLED",
+            state="ENABLED",
         )
 
         return [user_vo.user_id for user_vo in user_vos]
