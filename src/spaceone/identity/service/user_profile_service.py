@@ -354,7 +354,9 @@ class UserProfileService(BaseService):
                 allow_all = True
 
         if allow_all:
-            workspace_vos = workspace_mgr.filter_workspaces(domain_id=params.domain_id)
+            workspace_vos = workspace_mgr.filter_workspaces(
+                domain_id=params.domain_id, state="ENABLED"
+            )
         else:
             rb_vos = rb_mgr.filter_role_bindings(
                 user_id=params.user_id,
@@ -364,7 +366,7 @@ class UserProfileService(BaseService):
 
             workspace_ids = list(set([rb.workspace_id for rb in rb_vos]))
             workspace_vos = workspace_mgr.filter_workspaces(
-                workspace_id=workspace_ids, domain_id=params.domain_id
+                workspace_id=workspace_ids, domain_id=params.domain_id, state="ENABLED"
             )
 
         workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
