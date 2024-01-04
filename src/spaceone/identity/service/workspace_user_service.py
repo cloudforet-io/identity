@@ -29,7 +29,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def create(
-            self, params: WorkspaceUserCreateRequest
+        self, params: WorkspaceUserCreateRequest
     ) -> Union[WorkspaceUserResponse, dict]:
         """Create user with role binding
         Args:
@@ -60,7 +60,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def find(
-            self, params: WorkspaceUserFindRequest
+        self, params: WorkspaceUserFindRequest
     ) -> Union[UsersSummaryResponse, dict]:
         """Find user
         Args:
@@ -115,7 +115,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def get(
-            self, params: WorkspaceUserGetRequest
+        self, params: WorkspaceUserGetRequest
     ) -> Union[WorkspaceUserResponse, dict]:
         """Get user in workspace
 
@@ -140,12 +140,12 @@ class WorkspaceUserService(BaseService):
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @append_query_filter(
-        ["user_id", "name", "state", "email", "auth_type", "workspace_id", "domain_id"]
+        ["user_id", "name", "state", "email", "auth_type", "domain_id"]
     )
     @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
     def list(
-            self, params: WorkspaceUserSearchQueryRequest
+        self, params: WorkspaceUserSearchQueryRequest
     ) -> Union[WorkspaceUsersResponse, dict]:
         """List users in workspace
         Args:
