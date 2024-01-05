@@ -29,13 +29,10 @@ setup(
     install_requires=[
         "spaceone-core",
         "spaceone-api",
-        "mongoengine",
         "langcodes",
         "bcrypt",
-        "redis",
         "jinja2",
         "fakeredis",
-        "mongomock",
         "pytz",
     ],
     package_data={
