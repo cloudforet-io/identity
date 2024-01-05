@@ -170,7 +170,12 @@ class RoleBindingService(BaseService):
         latest_role_type = self._get_latest_role_type(
             user_vo.role_type, new_role_vo.role_type
         )
-        self.user_mgr.update_user_by_vo({"role_type": latest_role_type}, user_vo)
+
+        user_role_info = {"role_type": latest_role_type}
+        if latest_role_type in ["DOMAIN_ADMIN"]:
+            user_role_info.update({"role_id": new_role_vo.role_id})
+
+        self.user_mgr.update_user_by_vo(user_role_info, user_vo)
 
         rb_vo = self.role_binding_manager.update_role_binding_by_vo(
             {"role_id": params.role_id, "role_type": new_role_vo.role_type}, rb_vo
