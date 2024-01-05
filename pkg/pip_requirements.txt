@@ -1,10 +1,6 @@
 spaceone-api
-mongoengine
 langcodes
 bcrypt
-redis
 jinja2
 fakeredis
-mongomock
 pytz
-boto3
