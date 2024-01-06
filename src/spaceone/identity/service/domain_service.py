@@ -70,6 +70,7 @@ class DomainService(BaseService):
         params_admin["auth_type"] = "LOCAL"
         params_admin["domain_id"] = domain_vo.domain_id
         params_admin["role_type"] = "DOMAIN_ADMIN"
+        params_admin["role_id"] = "managed-domain-admin"
         params_admin["reset_password"] = params_admin.get("reset_password", True)
         if params_admin.get("email") is None:
             params_admin["email"] = params_admin["user_id"]
