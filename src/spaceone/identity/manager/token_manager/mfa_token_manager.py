@@ -45,7 +45,6 @@ class MFATokenManager(TokenManager):
         else:
             user_mfa = self.user.mfa.to_dict()
             mfa_email = user_mfa["options"].get("email")
-            print(user_mfa, mfa_email)
 
             mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get("mfa_type"))
             mfa_manager.send_mfa_authentication_email(

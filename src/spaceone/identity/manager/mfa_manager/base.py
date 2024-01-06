@@ -52,11 +52,9 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
 
     def create_mfa_verify_code(self, user_id: str, domain_id: str, credentials: dict):
         if cache.is_set():
-            print(credentials)
             verify_code = self._generate_verify_code()
             ordered_credentials = OrderedDict(sorted(credentials.items()))
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
-            print("hashed_credentials", len(hashed_credentials), hashed_credentials)
             cache.delete(f"identity:mfa:{hashed_credentials}")
             cache.set(
                 f"identity:mfa:{hashed_credentials}",
@@ -67,8 +65,6 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
                 },
                 expire=self.CONST_MFA_VERIFICATION_CODE_TIMEOUT,
             )
-            response = cache.get(f"identity:mfa:{hashed_credentials}")
-            print("cache", response)
             return verify_code
 
     @classmethod
@@ -81,7 +77,6 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
     @staticmethod
     def check_mfa_verify_code(credentials: dict, verify_code: str) -> bool:
         if cache.is_set():
-            print(credentials)
             ordered_credentials = OrderedDict(sorted(credentials.items()))
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
             cached_mfa_info = cache.get(
@@ -95,10 +90,8 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
     @staticmethod
     def get_mfa_info(credentials: dict):
         if cache.is_set():
-            print(credentials)
             ordered_credentials = OrderedDict(sorted(credentials.items()))
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
-            print("get info hashed_credentials", hashed_credentials)
             cached_mfa_info = cache.get(
                 f"identity:mfa:{hashed_credentials}"
             )

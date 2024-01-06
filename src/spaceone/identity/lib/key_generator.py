@@ -11,13 +11,13 @@ _LOGGER = logging.getLogger(__name__)
 
 class KeyGenerator:
     def __init__(
-        self,
-        prv_jwk: dict,
-        domain_id: str,
-        owner_type: str,
-        audience: str,
-        client_id: str = None,
-        refresh_prv_jwk: dict = None,
+            self,
+            prv_jwk: dict,
+            domain_id: str,
+            owner_type: str,
+            audience: str,
+            client_id: str = None,
+            refresh_prv_jwk: dict = None,
     ):
         self.prv_jwk = prv_jwk
         self.domain_id = domain_id
@@ -33,14 +33,14 @@ class KeyGenerator:
             raise ERROR_GENERATE_KEY_FAILURE()
 
     def generate_token(
-        self,
-        token_type: str,
-        expired_at: str = None,
-        timeout: int = None,
-        role_type: str = None,
-        workspace_id: str = None,
-        permissions: list = None,
-        projects: list = None,
+            self,
+            token_type: str,
+            expired_at: str = None,
+            timeout: int = None,
+            role_type: str = None,
+            workspace_id: str = None,
+            permissions: list = None,
+            projects: list = None,
     ) -> str:
         payload = {
             "iss": "spaceone.identity",
@@ -70,7 +70,6 @@ class KeyGenerator:
         if projects and len(projects) > 0:
             payload["projects"] = projects
 
-        # self._print_key(payload)
         if token_type == "REFRESH_TOKEN":
             return JWTUtil.encode(payload, self.refresh_prv_jwk)
         else:
