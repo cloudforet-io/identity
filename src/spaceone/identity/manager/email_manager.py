@@ -7,6 +7,9 @@ from spaceone.core import config, utils
 from spaceone.core.manager import BaseManager
 from spaceone.identity.connector.smtp_connector import SMTPConnector
 
+from spaceone.identity.model.domain.database import Domain
+from spaceone.identity.model.user.database import User
+
 _LOGGER = logging.getLogger(__name__)
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), f"../template")
@@ -60,7 +63,7 @@ class EmailManager(BaseManager):
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_temporary_password_email(
-        self, user_id, email, console_link, temp_password, language
+            self, user_id, email, console_link, temp_password, language
     ):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
@@ -77,7 +80,7 @@ class EmailManager(BaseManager):
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_reset_password_email_when_user_added(
-        self, user_id, email, reset_password_link, language
+            self, user_id, email, reset_password_link, language
     ):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
@@ -95,7 +98,7 @@ class EmailManager(BaseManager):
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_temporary_password_email_when_user_added(
-        self, user_id, email, console_link, temp_password, language
+            self, user_id, email, console_link, temp_password, language
     ):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")

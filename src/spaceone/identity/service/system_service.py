@@ -69,7 +69,7 @@ class SystemService(BaseService):
                 )
                 JWTAuthenticator(root_pub_jwk).validate(token)
             except Exception as e:
-                raise ERROR_AUTHENTICATE_FAILURE(message="Invalid System Token")
+                raise ERROR_UNKNOWN(message="Invalid System Token")
 
             root_domain_vo = root_domain_vos[0]
 
