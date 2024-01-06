@@ -5,6 +5,7 @@ from abc import abstractmethod, ABC, ABCMeta
 from spaceone.core import config, utils, cache
 from spaceone.core.manager import BaseManager
 
+from spaceone.identity.error.error_authentication import ERROR_INVALID_CREDENTIALS
 from spaceone.identity.error.error_mfa import ERROR_NOT_SUPPORTED_MFA_TYPE
 from spaceone.identity.error.error_user import ERROR_INVALID_VERIFY_CODE
 
@@ -48,13 +49,18 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
     def confirm_mfa(self, **kwargs):
         raise NotImplementedError("MFAManager.confirm_mfa not implemented!")
 
-    def create_mfa_verify_code(self, user_id, domain_id):
+    def create_mfa_verify_code(self, user_id: str, domain_id: str, credentials: dict):
         if cache.is_set():
             verify_code = self._generate_verify_code()
-            cache.delete(f"identity:mfa:verify-code:{domain_id}:{user_id}")
+            hashed_credentials = utils.dict_to_hash(credentials)
+            cache.delete(f"identity:mfa:{hashed_credentials}")
             cache.set(
-                f"identity:mfa:verify-code:{domain_id}:{user_id}",
-                verify_code,
+                f"identity:mfa:{hashed_credentials}",
+                {
+                    "verify_code": verify_code,
+                    "user_id": user_id,
+                    "domain_id": domain_id,
+                },
                 expire=self.CONST_MFA_VERIFICATION_CODE_TIMEOUT,
             )
             return verify_code
@@ -67,15 +73,27 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
         raise ERROR_NOT_SUPPORTED_MFA_TYPE(support_mfa_types=["EMAIL"])
 
     @staticmethod
-    def check_mfa_verify_code(user_id, domain_id, verify_code):
+    def check_mfa_verify_code(credentials: dict, verify_code: str) -> bool:
         if cache.is_set():
-            cached_verify_code = cache.get(
-                f"identity:mfa:verify-code:{domain_id}:{user_id}"
+            hashed_credentials = utils.dict_to_hash(credentials)
+            cached_mfa_info = cache.get(
+                f"identity:mfa:{hashed_credentials}"
             )
-            if cached_verify_code == verify_code:
-                cache.delete(f"identity:mfa:verify-code:{domain_id}:{user_id}")
+            if cached_mfa_info["verify_code"] == verify_code:
+                cache.delete(f"identity:mfa:{hashed_credentials}")
                 return True
-        raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
+        raise ERROR_INVALID_VERIFY_CODE(verify_code=credentials["verify_code"])
+
+    @staticmethod
+    def get_mfa_info(credentials: dict):
+        if cache.is_set():
+            hashed_credentials = utils.dict_to_hash(credentials)
+            cached_mfa_info = cache.get(
+                f"identity:mfa:{hashed_credentials}"
+            )
+            cache.delete(f"identity:mfa:{hashed_credentials}")
+            return cached_mfa_info
+        raise ERROR_INVALID_CREDENTIALS()
 
     @staticmethod
     def _generate_verify_code():

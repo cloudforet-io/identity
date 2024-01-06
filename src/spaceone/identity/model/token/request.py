@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 __all__: ["TokenIssueRequest"]
 
-AuthType = Literal["LOCAL", "EXTERNAL"]
+AuthType = Literal["LOCAL", "EXTERNAL", "MFA"]
 GrantType = Literal["REFRESH_TOKEN"]
 Scope = Literal["SYSTEM", "DOMAIN", "WORKSPACE", "USER"]
 
