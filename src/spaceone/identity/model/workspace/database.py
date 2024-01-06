@@ -32,7 +32,7 @@ class Workspace(MongoModel):
 
     @classmethod
     def create(cls, data):
-        workspace_vos = cls.filter(name=data["name"])
+        workspace_vos = cls.filter(name=data["name"], domain_id=data["domain_id"])
         if workspace_vos.count() > 0:
             raise ERROR_NOT_UNIQUE(key="name", value=data["name"])
 
