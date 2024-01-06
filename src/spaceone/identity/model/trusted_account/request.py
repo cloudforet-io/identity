@@ -32,7 +32,7 @@ class TrustedAccountUpdateRequest(BaseModel):
     name: Union[str, None] = None
     data: Union[dict, None] = None
     tags: Union[dict, None] = None
-    workspace_id: str
+    workspace_id: Union[str, None] = None
     domain_id: str
 
 
