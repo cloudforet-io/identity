@@ -7,7 +7,6 @@ from spaceone.identity.error.error_smtp import *
 
 from spaceone.core.connector import BaseConnector
 
-
 __all__ = ["SMTPConnector"]
 
 _LOGGER = logging.getLogger(__name__)

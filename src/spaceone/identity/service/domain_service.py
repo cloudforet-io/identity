@@ -17,6 +17,7 @@ from spaceone.identity.manager.system_manager import SystemManager
 from spaceone.identity.model.domain.request import *
 from spaceone.identity.model.domain.response import *
 from spaceone.identity.error.error_domain import *
+from spaceone.identity.service.user_service import UserService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,7 +70,12 @@ class DomainService(BaseService):
         params_admin["auth_type"] = "LOCAL"
         params_admin["domain_id"] = domain_vo.domain_id
         params_admin["role_type"] = "DOMAIN_ADMIN"
-        user_vo = self.user_mgr.create_user(params_admin)
+        params_admin["reset_password"] = params_admin.get("reset_password", True)
+        if params_admin.get("email") is None:
+            params_admin["email"] = params_admin["user_id"]
+
+        user_service = UserService()
+        user_vo = user_service.create_user(params_admin)
 
         # create role binding
         role_binding_mgr = RoleBindingManager()
@@ -179,7 +185,7 @@ class DomainService(BaseService):
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @convert_model
     def get_auth_info(
-        self, params: DomainGetAuthInfoRequest
+            self, params: DomainGetAuthInfoRequest
     ) -> Union[DomainAuthInfoResponse, dict]:
         """GetMetadata domain
         Args:
@@ -202,7 +208,7 @@ class DomainService(BaseService):
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @convert_model
     def get_public_key(
-        self, params: DomainGetPublicKeyRequest
+            self, params: DomainGetPublicKeyRequest
     ) -> Union[DomainSecretResponse, dict]:
         """GetPublicKey domain
         Args:
@@ -220,7 +226,7 @@ class DomainService(BaseService):
             root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(root_domain_id)
             JWTAuthenticator(root_pub_jwk).validate(token)
         except Exception as e:
-            raise ERROR_AUTHENTICATE_FAILURE(message="Invalid System Token")
+            raise ERROR_UNKNOWN(message="Invalid System Token")
 
         # Get Public Key from Domain
         pub_jwk = self.domain_secret_mgr.get_domain_public_key(params.domain_id)
