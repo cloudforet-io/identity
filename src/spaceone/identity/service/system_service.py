@@ -62,9 +62,14 @@ class SystemService(BaseService):
                 raise ERROR_SYSTEM_ALREADY_INITIALIZED()
 
             # Check System Token
-            token = self.transaction.get_meta("token")
-            root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(root_domain_id)
-            JWTAuthenticator(root_pub_jwk).validate(token)
+            try:
+                token = self.transaction.get_meta("token")
+                root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(
+                    root_domain_id
+                )
+                JWTAuthenticator(root_pub_jwk).validate(token)
+            except Exception as e:
+                raise ERROR_AUTHENTICATE_FAILURE(message="Invalid System Token")
 
             root_domain_vo = root_domain_vos[0]
 
