@@ -2,6 +2,7 @@ import logging
 from typing import Tuple
 
 from mongoengine import QuerySet
+from spaceone.core import config
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 
@@ -90,7 +91,7 @@ class ExternalAuthManager(BaseManager):
     def get_auth_plugin_endpoint(
         self, domain_id: str, plugin_info: dict
     ) -> Tuple[str, str]:
-        system_token = self.transaction.get_meta("token")
+        system_token = config.get_global("TOKEN")
         plugin_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="plugin"
         )
