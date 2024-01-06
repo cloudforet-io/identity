@@ -106,7 +106,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
     def confirm_email(
-        self, params: UserProfileConfirmEmailRequest
+            self, params: UserProfileConfirmEmailRequest
     ) -> Union[UserResponse, dict]:
         """Confirm email
 
@@ -190,7 +190,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
     def enable_mfa(
-        self, params: UserProfileEnableMFARequest
+            self, params: UserProfileEnableMFARequest
     ) -> Union[UserResponse, dict]:
         """Enable MFA
 
@@ -235,7 +235,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
     def disable_mfa(
-        self, params: UserProfileDisableMFARequest
+            self, params: UserProfileDisableMFARequest
     ) -> Union[UserResponse, dict]:
         """Disable MFA
 
@@ -265,7 +265,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
     def confirm_mfa(
-        self, params: UserProfileConfirmMFARequest
+            self, params: UserProfileConfirmMFARequest
     ) -> Union[UserResponse, dict]:
         """Confirm MFA
         Args:
@@ -290,7 +290,11 @@ class UserProfileService(BaseService):
         mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
 
         if mfa_type == "EMAIL":
-            if mfa_manager.confirm_mfa(user_id, domain_id, verify_code):
+            credentials = {
+                "user_id": user_id,
+                "domain_id": domain_id,
+            }
+            if mfa_manager.confirm_mfa(credentials, verify_code):
                 user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
                 if user_mfa.get("state", "DISABLED") == "ENABLED":
                     user_mfa = {"state": "DISABLED"}
@@ -322,7 +326,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.read", role_types=["USER"])
     @convert_model
     def get_workspaces(
-        self, params: UserProfileGetWorkspacesRequest
+            self, params: UserProfileGetWorkspacesRequest
     ) -> Union[WorkspacesResponse, dict]:
         """Find user
         Args:
@@ -429,8 +433,8 @@ class UserProfileService(BaseService):
                 for _ in range(12)
             )
             if (
-                re.search("[a-z]", random_password)
-                and re.search("[A-Z]", random_password)
-                and re.search("[0-9]", random_password)
+                    re.search("[a-z]", random_password)
+                    and re.search("[A-Z]", random_password)
+                    and re.search("[0-9]", random_password)
             ):
                 return random_password

@@ -17,9 +17,10 @@ class LocalTokenManager(TokenManager):
         self.user_mgr = UserManager()
 
     def authenticate(self, domain_id, **kwargs):
-        self._check_credentials(kwargs)
-        user_id = kwargs["user_id"]
-        password = kwargs["password"]
+        credentials = kwargs.get("credentials", {})
+        self._check_credentials(credentials)
+        user_id = credentials["user_id"]
+        password = credentials["password"]
 
         self.user = self.user_mgr.get_user(user_id, domain_id)
 

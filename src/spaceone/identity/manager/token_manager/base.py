@@ -28,7 +28,7 @@ class TokenManager(BaseManager, ABC):
         self._load_conf()
 
     @abstractmethod
-    def authenticate(self, domain_id, **kwargs):
+    def authenticate(self, domain_id, *args, **kwargs):
         pass
 
     @classmethod

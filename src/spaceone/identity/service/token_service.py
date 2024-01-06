@@ -64,6 +64,7 @@ class TokenService(BaseService):
         domain_id = params.domain_id
         timeout = params.timeout
         verify_code = params.verify_code
+        credentials = params.credentials
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(
@@ -74,24 +75,19 @@ class TokenService(BaseService):
         self._check_domain_state(domain_id)
 
         token_mgr = TokenManager.get_token_manager_by_auth_type(params.auth_type)
-        token_mgr.authenticate(domain_id, **params.credentials)
+        token_mgr.authenticate(domain_id, verify_code=verify_code, credentials=credentials)
 
         user_vo = token_mgr.user
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         permissions = self._get_permissions_from_required_actions(user_vo)
 
-        if user_mfa.get("state", "DISABLED") == "ENABLED":
+        if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type != "MFA":
             mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get("mfa_type"))
-            if verify_code:
-                mfa_manager.check_mfa_verify_code(
-                    user_vo.user_id, domain_id, verify_code
-                )
-            else:
-                mfa_email = user_mfa["options"].get("email")
-                mfa_manager.send_mfa_authentication_email(
-                    user_vo.user_id, domain_id, mfa_email, user_vo.language
-                )
-                raise ERROR_MFA_REQUIRED(user_id=mfa_email)
+            mfa_email = user_mfa["options"].get("email")
+            mfa_manager.send_mfa_authentication_email(
+                user_vo.user_id, domain_id, mfa_email, user_vo.language, params.credentials
+            )
+            raise ERROR_MFA_REQUIRED(user_id=mfa_email)
 
         token_info = token_mgr.issue_token(
             private_jwk,
@@ -271,7 +267,7 @@ class TokenService(BaseService):
         return token_info
 
     def _get_user_role_info(
-        self, user_vo: User, workspace_id: str = None
+            self, user_vo: User, workspace_id: str = None
     ) -> Tuple[str, Union[str, None]]:
         if user_vo.role_type == "DOMAIN_ADMIN":
             rb_vos = self.rb_mgr.filter_role_bindings(
@@ -306,7 +302,7 @@ class TokenService(BaseService):
         return role_vo.permissions
 
     def _get_user_projects(
-        self, user_id: str, workspace_id: str, domain_id: str
+            self, user_id: str, workspace_id: str, domain_id: str
     ) -> List[str]:
         user_projects = []
 

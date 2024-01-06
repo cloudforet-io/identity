@@ -29,17 +29,8 @@ class ExternalTokenManager(TokenManager):
 
     def authenticate(self, domain_id: str, **kwargs):
         credentials = kwargs.get("credentials", {})
-        user_id = kwargs.get("user_id")
-        access_token = kwargs.get("access_token")
 
         _LOGGER.debug(f"[authenticate] domain_id: {domain_id}")
-
-        # Add User ID for External Authentication
-        if user_id:
-            credentials["user_id"] = user_id
-
-        if access_token:
-            credentials["access_token"] = access_token
 
         self.domain: Domain = self.domain_mgr.get_domain(domain_id)
 
@@ -54,6 +45,10 @@ class ExternalTokenManager(TokenManager):
         external_auth_user_info = self._authenticate_with_plugin(
             endpoint, credentials, domain_id
         )
+
+        # Add User ID for External Authentication
+        if external_auth_user_info:
+            credentials["user_id"] = external_auth_user_info.get("user_id")
 
         _LOGGER.info(
             f'[authenticate] Authentication success. (user_id={external_auth_user_info.get("user_id")})'
@@ -74,7 +69,7 @@ class ExternalTokenManager(TokenManager):
             self.user: User = self.user.update({"state": "ENABLED"})
 
     def _verify_user_from_plugin_user_info(
-        self, auth_user_info: dict, domain_id: str, auto_user_sync: bool = False
+            self, auth_user_info: dict, domain_id: str, auto_user_sync: bool = False
     ) -> None:
         if "user_id" not in auth_user_info:
             _LOGGER.error(
@@ -102,7 +97,7 @@ class ExternalTokenManager(TokenManager):
                 raise ERROR_NOT_FOUND(key="user_id", value=user_id)
 
     def _authenticate_with_plugin(
-        self, endpoint: str, credentials: dict, domain_id: str
+            self, endpoint: str, credentials: dict, domain_id: str
     ) -> dict:
         options = self.external_auth.plugin_info.get("options", {})
         metadata = self.external_auth.plugin_info.get("metadata", {})
@@ -135,12 +130,12 @@ class ExternalTokenManager(TokenManager):
             raise ERROR_NOT_FOUND(key="user_id", value=self.user.user_id)
 
     def _create_external_user(
-        self,
-        user_id: str,
-        state: str,
-        domain_id: str,
-        name: str = None,
-        email: str = None,
+            self,
+            user_id: str,
+            state: str,
+            domain_id: str,
+            name: str = None,
+            email: str = None,
     ) -> User:
         _LOGGER.error(f"[_create_external_user] create user on first login: {user_id}")
         return self.user_mgr.create_user(
