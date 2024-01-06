@@ -46,10 +46,6 @@ class ExternalTokenManager(TokenManager):
             endpoint, credentials, domain_id
         )
 
-        # Add User ID for External Authentication
-        if external_auth_user_info:
-            credentials["user_id"] = external_auth_user_info.get("user_id")
-
         _LOGGER.info(
             f'[authenticate] Authentication success. (user_id={external_auth_user_info.get("user_id")})'
         )
