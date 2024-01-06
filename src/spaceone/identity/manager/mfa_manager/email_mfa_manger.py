@@ -41,9 +41,9 @@ class EmailMFAManager(MFAManager):
         super().__init__(*args, **kwargs)
         self.smtp_connector = SMTPConnector()
 
-    def enable_mfa(self, user_id, domain_id, user_mfa, language, credentials: dict = None):
+    def enable_mfa(self, user_id, domain_id, user_mfa, language):
         self.send_mfa_verify_email(
-            user_id, domain_id, user_mfa["options"].get("email"), language, credentials
+            user_id, domain_id, user_mfa["options"].get("email"), language
         )
 
     def disable_mfa(self, user_id, domain_id, user_mfa, language):
@@ -54,11 +54,10 @@ class EmailMFAManager(MFAManager):
     def confirm_mfa(self, credentials: dict, verify_code: str):
         return self.check_mfa_verify_code(credentials, verify_code)
 
-    def send_mfa_verify_email(self, user_id, domain_id, email, language, credentials: dict = None):
+    def send_mfa_verify_email(self, user_id, domain_id, email, language):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
-        if credentials is None:
-            credentials = {"user_id": user_id, "domain_id": domain_id}
+        credentials = {"user_id": user_id, "domain_id": domain_id}
         verify_code = self.create_mfa_verify_code(user_id, domain_id, credentials)
 
         template = JINJA_ENV.get_template(f"verification_MFA_code_{language}.html")
@@ -69,7 +68,7 @@ class EmailMFAManager(MFAManager):
 
         self.smtp_connector.send_email(email, subject, email_contents)
 
-    def send_mfa_authentication_email(self, user_id, domain_id, email, language, credentials: dict):
+    def send_mfa_authentication_email(self, user_id: str, domain_id: str, email: str, language: str, credentials: dict):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
         verify_code = self.create_mfa_verify_code(user_id, domain_id, credentials)
