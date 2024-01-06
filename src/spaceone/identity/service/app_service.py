@@ -262,7 +262,7 @@ class AppService(BaseService):
         )
         return AppResponse(**app_vo.to_dict())
 
-    @transaction(exclude=["authentication", "authorization", "mutation"])
+    @transaction(role_types=["INTERNAL"])
     @convert_model
     def check(self, params: AppCheckRequest) -> Union[CheckAppResponse, dict]:
         """Get API Key

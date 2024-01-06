@@ -3,6 +3,7 @@ from typing import Union
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
+from spaceone.core.auth.jwt import JWTAuthenticator
 
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
@@ -18,9 +19,6 @@ from spaceone.identity.error.error_domain import *
 _LOGGER = logging.getLogger(__name__)
 
 
-@authentication_handler
-@authorization_handler
-@mutation_handler
 @event_handler
 class SystemService(BaseService):
     resource = "System"
@@ -32,7 +30,7 @@ class SystemService(BaseService):
         self.user_mgr = UserManager()
         self.role_manager = RoleManager()
 
-    @transaction(exclude=["authentication", "authorization", "mutation"])
+    @transaction()
     @convert_model
     def init(self, params: SystemInitRequest) -> Union[SystemResponse, dict]:
         """Init System
@@ -56,11 +54,17 @@ class SystemService(BaseService):
                 {"domain_id": root_domain_id, "name": "root"}
             )
 
+            self.domain_secret_mgr.delete_domain_secret(root_domain_vo.domain_id)
             self.domain_secret_mgr.create_domain_secret(root_domain_vo)
 
         else:
             if params.force is False:
                 raise ERROR_SYSTEM_ALREADY_INITIALIZED()
+
+            # Check System Token
+            token = self.transaction.get_meta("token")
+            root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(root_domain_id)
+            JWTAuthenticator(root_pub_jwk).validate(token)
 
             root_domain_vo = root_domain_vos[0]
 
