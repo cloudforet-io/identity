@@ -90,6 +90,7 @@ class ExternalAuthManager(BaseManager):
     def get_auth_plugin_endpoint(
         self, domain_id: str, plugin_info: dict
     ) -> Tuple[str, str]:
+        system_token = self.transaction.get_meta("token")
         plugin_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="plugin"
         )
@@ -101,6 +102,7 @@ class ExternalAuthManager(BaseManager):
                 "upgrade_mode": plugin_info.get("upgrade_mode", "AUTO"),
                 "domain_id": domain_id,
             },
+            token=system_token,
         )
 
         return response["endpoint"], response.get("updated_version")
