@@ -68,7 +68,7 @@ class EmailMFAManager(MFAManager):
 
         self.smtp_connector.send_email(email, subject, email_contents)
 
-    def send_mfa_authentication_email(self, user_id, domain_id, email, language, credentials: dict):
+    def send_mfa_authentication_email(self, user_id: str, domain_id: str, email: str, language: str, credentials: dict):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
         verify_code = self.create_mfa_verify_code(user_id, domain_id, credentials)

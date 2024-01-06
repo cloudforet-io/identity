@@ -85,7 +85,7 @@ class TokenService(BaseService):
             mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get("mfa_type"))
             mfa_email = user_mfa["options"].get("email")
             mfa_manager.send_mfa_authentication_email(
-                user_vo.user_id, domain_id, mfa_email, user_vo.language, params.credentials
+                user_vo.user_id, domain_id, mfa_email, user_vo.language, credentials
             )
             raise ERROR_MFA_REQUIRED(user_id=mfa_email)
 
