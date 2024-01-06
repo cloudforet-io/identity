@@ -106,7 +106,7 @@ class WorkspaceService(BaseService):
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def disable(
-            self, params: WorkspaceDisableRequest
+        self, params: WorkspaceDisableRequest
     ) -> Union[WorkspaceResponse, dict]:
         """Disable workspace
         Args:
@@ -164,7 +164,7 @@ class WorkspaceService(BaseService):
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def list(
-            self, params: WorkspaceSearchQueryRequest
+        self, params: WorkspaceSearchQueryRequest
     ) -> Union[WorkspacesResponse, dict]:
         """List workspaces
         Args:
