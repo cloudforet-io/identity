@@ -142,9 +142,7 @@ class WorkspaceService(BaseService):
         )
         return WorkspaceResponse(**workspace_vo.to_dict())
 
-    @transaction(
-        exclude=["authentication", "authorization", "mutation"],
-    )
+    @transaction(role_types=["INTERNAL"])
     @convert_model
     def check(self, params: WorkspaceCheckRequest) -> None:
         """Check workspace

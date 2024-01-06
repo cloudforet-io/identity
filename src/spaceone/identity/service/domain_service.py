@@ -4,6 +4,7 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 from spaceone.core import utils
+from spaceone.core.auth.jwt import JWTAuthenticator
 
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.domain_manager import DomainManager
@@ -212,6 +213,13 @@ class DomainService(BaseService):
             DomainSecretResponse:
         """
 
+        # Check System Token
+        token = self.transaction.get_meta("token")
+        root_domain_id = SystemManager.get_root_domain_id()
+        root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(root_domain_id)
+        JWTAuthenticator(root_pub_jwk).validate(token)
+
+        # Get Public Key from Domain
         pub_jwk = self.domain_secret_mgr.get_domain_public_key(params.domain_id)
         return DomainSecretResponse(
             public_key=utils.dump_json(pub_jwk), domain_id=params.domain_id
