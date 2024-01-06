@@ -214,10 +214,13 @@ class DomainService(BaseService):
         """
 
         # Check System Token
-        token = self.transaction.get_meta("token")
-        root_domain_id = SystemManager.get_root_domain_id()
-        root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(root_domain_id)
-        JWTAuthenticator(root_pub_jwk).validate(token)
+        try:
+            token = self.transaction.get_meta("token")
+            root_domain_id = SystemManager.get_root_domain_id()
+            root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(root_domain_id)
+            JWTAuthenticator(root_pub_jwk).validate(token)
+        except Exception as e:
+            raise ERROR_AUTHENTICATE_FAILURE(message="Invalid System Token")
 
         # Get Public Key from Domain
         pub_jwk = self.domain_secret_mgr.get_domain_public_key(params.domain_id)
