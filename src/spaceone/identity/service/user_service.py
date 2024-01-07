@@ -276,7 +276,7 @@ class UserService(BaseService):
         """
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
-        if user_vo.role_type == "DOMAIN_ADMIN":
+        if user_vo.role_type == "DOMAIN_ADMIN" and user_vo.state == "ENABLED":
             self._check_last_admin_user(params.domain_id, user_vo)
 
         self.user_mgr.delete_user_by_vo(user_vo)
@@ -317,7 +317,7 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
-        if user_vo.role_type == "DOMAIN_ADMIN":
+        if user_vo.role_type == "DOMAIN_ADMIN" and user_vo.state == "ENABLED":
             self._check_last_admin_user(params.domain_id, user_vo)
 
         user_vo = self.user_mgr.update_user_by_vo({"state": "DISABLED"}, user_vo)
