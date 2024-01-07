@@ -1,7 +1,7 @@
 ---
 schema_id: google-cloud-trusted-account
 name: Google Cloud Trusted Account
-version: '1.0'
+version: '1.1'
 schema_type: TRUSTED_ACCOUNT
 schema:
   type: object
@@ -14,7 +14,7 @@ schema:
     - project_id
 provider: google_cloud
 related_schemas:
-  - google-cloud-oauth2-credentials
+  - google-secret-oauth2-credentials
 options:
   external_link_template: https://console.cloud.google.com/home/dashboard?project=<%-data.project_id %>
   help:
