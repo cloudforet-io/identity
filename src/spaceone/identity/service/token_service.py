@@ -222,7 +222,7 @@ class TokenService(BaseService):
     def _get_permissions_from_required_actions(user_vo: User) -> Union[List[str], None]:
         if "UPDATE_PASSWORD" in user_vo.required_actions:
             return [
-                "identity.UserProfile",
+                "identity:UserProfile",
             ]
 
         return None
