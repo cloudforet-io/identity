@@ -1,7 +1,7 @@
 ---
 schema_id: azure-trusted-account
 name: Azure Trusted Account
-version: '1.0'
+version: '1.1'
 schema_type: TRUSTED_ACCOUNT
 schema:
   type: object
@@ -19,7 +19,7 @@ schema:
     - subscription_id
 provider: azure
 related_schemas:
-  - azure-client-secret
+  - azure-secret-client-secret
 options:
   help:
     en: |
