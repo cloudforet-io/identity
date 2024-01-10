@@ -30,7 +30,6 @@ class MFATokenManager(TokenManager):
         if mfa_info is None:
             raise ERROR_INVALID_CREDENTIALS()
 
-        saved_verify_code = mfa_info.get("verify_code")
         user_id = mfa_info.get("user_id")
         domain_id = mfa_info.get("domain_id")
 
@@ -38,7 +37,7 @@ class MFATokenManager(TokenManager):
         self._check_user_state()
 
         if verify_code := kwargs.get("verify_code"):
-            if saved_verify_code == verify_code:
+            if MFAManager.check_mfa_verify_code(credentials, verify_code):
                 self.is_authenticated = True
             else:
                 raise ERROR_INVALID_CREDENTIALS()
