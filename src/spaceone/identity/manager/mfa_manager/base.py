@@ -95,7 +95,6 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
             cached_mfa_info = cache.get(
                 f"identity:mfa:{hashed_credentials}"
             )
-            cache.delete(f"identity:mfa:{hashed_credentials}")
             return cached_mfa_info
         raise ERROR_INVALID_CREDENTIALS()
 
