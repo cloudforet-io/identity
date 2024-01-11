@@ -25,6 +25,9 @@ class SchemaManager(BaseManager):
             _LOGGER.info(f"[create_schema._rollback] Delete schema : {vo.schema}")
             vo.delete()
 
+        if "data_schema" in params:
+            params["schema"] = params.pop("data_schema", params.get("schema"))
+
         schema_vo = self.schema_model.create(params)
         self.transaction.add_rollback(_rollback, schema_vo)
 
@@ -90,7 +93,7 @@ class SchemaManager(BaseManager):
         return True
 
     def validate_data_by_schema(
-        self, provider: str, domain_id: str, schema_type: str, data: dict
+            self, provider: str, domain_id: str, schema_type: str, data: dict
     ) -> None:
         schema_vos = self.filter_schemas(
             provider=provider, domain_id=domain_id, schema_type=schema_type
@@ -107,7 +110,7 @@ class SchemaManager(BaseManager):
             )
 
     def validate_secret_data_by_schema_id(
-        self, schema_id: str, domain_id: str, data: dict, schema_type: str
+            self, schema_id: str, domain_id: str, data: dict, schema_type: str
     ) -> None:
         schema_vos = self.filter_schemas(
             schema_id=schema_id,
