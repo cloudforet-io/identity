@@ -56,6 +56,7 @@ class WorkspaceSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     name: Union[str, None] = None
     workspace_id: Union[str, None] = None
+    created_by: Union[str, None] = None
     domain_id: str
 
 

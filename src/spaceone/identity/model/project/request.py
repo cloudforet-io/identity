@@ -102,6 +102,8 @@ class ProjectSearchQueryRequest(BaseModel):
     project_id: Union[str, None] = None
     name: Union[str, None] = None
     project_type: Union[ProjectType, None] = None
+    created_by: Union[str, None] = None
+    include_children: Union[bool, None] = None
     user_id: Union[str, None] = None
     user_group_id: Union[str, None] = None
     project_group_id: Union[str, None] = None
