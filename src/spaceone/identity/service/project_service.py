@@ -325,7 +325,6 @@ class ProjectService(BaseService):
             "created_by",
             "user_id",
             "user_group_id",
-            "project_group_id",
             "workspace_id",
             "domain_id",
             "user_projects",
@@ -342,6 +341,7 @@ class ProjectService(BaseService):
                 'name': 'str',
                 'project_type': 'str',
                 'created_by': 'str',
+                'include_children': 'bool',
                 'user_id': 'str',
                 'user_group_id': 'str',
                 'project_group_id': 'str',
@@ -353,7 +353,21 @@ class ProjectService(BaseService):
             ProjectsResponse:
         """
 
+        include_children = params.include_children or False
+        project_group_id = params.project_group_id
         query = params.query or {}
+
+        if include_children and project_group_id:
+            project_group_ids = self._get_child_group_ids(project_group_id)
+            project_group_ids.append(project_group_id)
+            query["filter"].append(
+                {"k": "project_group_id", "v": project_group_ids, "o": "in"}
+            )
+        elif project_group_id:
+            query["filter"].append(
+                {"k": "project_group_id", "v": project_group_id, "o": "eq"}
+            )
+
         project_vos, total_count = self.project_mgr.list_projects(query)
 
         projects_info = [project_vo.to_dict() for project_vo in project_vos]
@@ -384,3 +398,14 @@ class ProjectService(BaseService):
 
         query = params.query or {}
         return self.project_mgr.stat_projects(query)
+
+    def _get_child_group_ids(self, project_group_id: str) -> list:
+        pg_vos = self.project_group_mgr.filter_project_groups(
+            parent_group_id=project_group_id
+        )
+        project_group_ids = [pg.project_group_id for pg in pg_vos]
+
+        for pg in pg_vos:
+            project_group_ids.extend(self._get_child_group_ids(pg.project_group_id))
+
+        return project_group_ids
