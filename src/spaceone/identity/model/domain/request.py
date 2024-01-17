@@ -27,6 +27,7 @@ class AdminUser(BaseModel):
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
+    reset_password: Union[bool, None] = None
 
 
 class DomainCreateRequest(BaseModel):
