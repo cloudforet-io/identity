@@ -229,9 +229,13 @@ class RoleBindingService(BaseService):
                 latest_role_type, remain_rb_vo.role_type
             )
 
-        user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
-        self.user_mgr.update_user_by_vo({"role_type": latest_role_type}, user_vo)
+        user_role_info = {"role_type": latest_role_type}
+        if latest_role_type == "USER":
+            user_role_info.update({"role_id": None})
 
+        user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
+
+        self.user_mgr.update_user_by_vo(user_role_info, user_vo)
         self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
 
     @transaction(
