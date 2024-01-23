@@ -83,7 +83,9 @@ class UserService(BaseService):
             )
 
             if reset_password_type == "ACCESS_TOKEN":
-                token = self._issue_temporary_token(user_id, domain_id)
+                identity_conf = config.get_global("identity", 86400)
+                timeout = identity_conf.get("invite_token_timeout", 604800)
+                token = self._issue_temporary_token(user_id, domain_id, timeout)
                 reset_password_link = self._get_console_sso_url(
                     domain_id, token["access_token"]
                 )
@@ -404,9 +406,10 @@ class UserService(BaseService):
         domain_vo = self.domain_mgr.get_domain(domain_id)
         return domain_vo.name
 
-    def _issue_temporary_token(self, user_id: str, domain_id: str) -> dict:
-        identity_conf = config.get_global("identity") or {}
-        timeout = identity_conf.get("temporary_token_timeout", 86400)
+    def _issue_temporary_token(self, user_id: str, domain_id: str, timeout: int = None) -> dict:
+        if timeout is None:
+            identity_conf = config.get_global("identity") or {}
+            timeout = identity_conf.get("temporary_token_timeout", 86400)
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
 
