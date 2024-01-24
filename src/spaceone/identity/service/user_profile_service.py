@@ -383,8 +383,9 @@ class UserProfileService(BaseService):
         return domain_vo.name
 
     def _issue_temporary_token(self, user_id: str, domain_id: str) -> dict:
-        identity_conf = config.get_global("identity") or {}
-        timeout = identity_conf.get("temporary_token_timeout", 86400)
+        identity_conf = config.get_global("IDENTITY") or {}
+        token_conf = identity_conf.get("token", {})
+        timeout = token_conf.get("temporary_token_timeout", 86400)
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
 
