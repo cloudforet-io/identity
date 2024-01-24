@@ -28,7 +28,7 @@ class BaseMFAManager(BaseManager, ABC):
 
     def _load_conf(self):
         identity_conf = config.get_global("IDENTITY") or {}
-        mfa_conf = identity_conf.get("token", {})
+        mfa_conf = identity_conf.get("mfa", {})
         self.CONST_MFA_VERIFICATION_CODE_TIMEOUT = mfa_conf.get(
             "verify_code_timeout", 300
         )
