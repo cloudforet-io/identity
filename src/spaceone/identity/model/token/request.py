@@ -21,4 +21,6 @@ class TokenGrantRequest(BaseModel):
     token: str
     scope: Scope
     timeout: Union[int, None] = None
+    permissions: Union[list, None] = None
     workspace_id: Union[str, None] = None
+    domain_id: Union[str, None] = None

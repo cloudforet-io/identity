@@ -47,12 +47,16 @@ class TokenManager(BaseManager, ABC):
             timeout=None,
             permissions=None,
             projects=None,
+            app_id=None,
     ):
         if self.is_authenticated is False:
             raise ERROR_NOT_AUTHENTICATED()
 
         if self.owner_type == "USER":
             audience = self.user.user_id
+        elif self.owner_type == "SYSTEM":
+            # todo : remove
+            audience = app_id
         else:
             audience = self.app.app_id
 
@@ -78,7 +82,9 @@ class TokenManager(BaseManager, ABC):
         refresh_token = key_gen.generate_token(
             "REFRESH_TOKEN", timeout=self.CONST_REFRESH_TIMEOUT
         )
-        self.user.update({"last_accessed_at": datetime.utcnow()})
+        if self.owner_type != "SYSTEM":
+            # todo: remove
+            self.user.update({"last_accessed_at": datetime.utcnow()})
 
         return {"access_token": access_token, "refresh_token": refresh_token}
 
