@@ -110,17 +110,23 @@ class TokenService(BaseService):
                 'scope': 'str',         # required
                 'timeout': 'int',
                 'workspace_id': 'str',
+                'permissions': 'list',
             }
         Returns:
             GrantTokenResponse:
         """
-
         domain_id = self._extract_domain_id(params.token)
         timeout = params.timeout
+        public_jwk = None  # todo: remove
 
         refresh_public_jwk = self.domain_secret_mgr.get_domain_refresh_public_key(
             domain_id=domain_id
         )
+
+        # todo: remove
+        if domain_id == SystemManager.get_root_domain_id() and params.scope == "WORKSPACE":
+            public_jwk = self.domain_secret_mgr.get_domain_public_key(domain_id)
+            domain_id = params.domain_id
 
         if domain_id == SystemManager.get_root_domain_id() and params.scope != "SYSTEM":
             raise ERROR_PERMISSION_DENIED()
@@ -140,19 +146,26 @@ class TokenService(BaseService):
         # Check Domain state is ENABLED
         self._check_domain_state(domain_id)
 
-        decoded_token_info = self._verify_token(
-            params.grant_type, params.token, refresh_public_jwk
-        )
+        if public_jwk:
+            # todo: remove
+            decoded_token_info = self._verify_token(params.grant_type, params.token, public_jwk)
+            role_id = "managed-workspace-owner"
+            role_type = "WORKSPACE_OWNER"
+            user_vo = None
+        else:
+            decoded_token_info = self._verify_token(
+                params.grant_type, params.token, refresh_public_jwk
+            )
 
-        if decoded_token_info["owner_type"] != "USER":
-            raise ERROR_PERMISSION_DENIED()
+            if decoded_token_info["owner_type"] != "USER":
+                raise ERROR_PERMISSION_DENIED()
 
-        user_vo = self.user_mgr.get_user(
-            user_id=decoded_token_info["user_id"], domain_id=domain_id
-        )
-        role_type, role_id = self._get_user_role_info(
-            user_vo, workspace_id=params.workspace_id
-        )
+            user_vo = self.user_mgr.get_user(
+                user_id=decoded_token_info["user_id"], domain_id=domain_id
+            )
+            role_type, role_id = self._get_user_role_info(
+                user_vo, workspace_id=params.workspace_id
+            )
 
         decoded_token_info["scope"] = params.scope
         decoded_token_info["workspace_id"] = params.workspace_id
@@ -163,15 +176,25 @@ class TokenService(BaseService):
         )
 
         token_mgr = TokenManager.get_token_manager_by_auth_type("GRANT")
-        token_mgr.authenticate(
-            domain_id,
-            scope=params.scope,
-            role_type=role_type,
-            user_vo=user_vo,
-        )
+        app_id = None
+        if public_jwk:
+            # todo : remove
+            token_mgr.is_authenticated = True
+            token_mgr.owner_type = decoded_token_info.get("owner_type")
+            app_id = decoded_token_info.get("app_id")
+            token_mgr.role_type = role_type
+        else:
+            token_mgr.authenticate(
+                domain_id,
+                scope=params.scope,
+                role_type=role_type,
+                user_vo=user_vo,
+            )
 
         if role_id:
             permissions = self._get_role_permissions(role_id, domain_id)
+        elif params.grant_type == "SYSTEM_TOKEN" and params.permissions is not None:
+            permissions = params.permissions
         else:
             permissions = None
 
@@ -190,6 +213,7 @@ class TokenService(BaseService):
             workspace_id=params.workspace_id,
             permissions=permissions,
             projects=user_projects,
+            app_id=app_id  # todo : remove
         )
 
         response = {
