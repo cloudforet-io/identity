@@ -191,10 +191,11 @@ class TokenService(BaseService):
                 user_vo=user_vo,
             )
 
-        if role_id:
-            permissions = self._get_role_permissions(role_id, domain_id)
-        elif params.grant_type == "SYSTEM_TOKEN" and params.permissions is not None:
+        if params.grant_type == "SYSTEM_TOKEN" and params.scope == "WORKSPACE":
+            # todo : remove
             permissions = params.permissions
+        elif role_id:
+            permissions = self._get_role_permissions(role_id, domain_id)
         else:
             permissions = None
 
