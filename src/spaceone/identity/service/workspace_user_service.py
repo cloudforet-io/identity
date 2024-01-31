@@ -29,7 +29,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def create(
-        self, params: WorkspaceUserCreateRequest
+            self, params: WorkspaceUserCreateRequest
     ) -> Union[WorkspaceUserResponse, dict]:
         """Create user with role binding
         Args:
@@ -60,7 +60,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def find(
-        self, params: WorkspaceUserFindRequest
+            self, params: WorkspaceUserFindRequest
     ) -> Union[UsersSummaryResponse, dict]:
         """Find user
         Args:
@@ -115,7 +115,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def get(
-        self, params: WorkspaceUserGetRequest
+            self, params: WorkspaceUserGetRequest
     ) -> Union[WorkspaceUserResponse, dict]:
         """Get user in workspace
 
@@ -145,7 +145,7 @@ class WorkspaceUserService(BaseService):
     @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
     def list(
-        self, params: WorkspaceUserSearchQueryRequest
+            self, params: WorkspaceUserSearchQueryRequest
     ) -> Union[WorkspaceUsersResponse, dict]:
         """List users in workspace
         Args:
@@ -156,6 +156,7 @@ class WorkspaceUserService(BaseService):
                 'state': 'str',
                 'email': 'str',
                 'auth_type': 'str',
+                'role_type': 'str',
                 'domain_id': 'str',     # injected from auth (required)
                 'workspace_id': 'str'   # injected from auth (required)
             }
@@ -165,7 +166,7 @@ class WorkspaceUserService(BaseService):
 
         query = params.query or {}
         users_info, total_count = self.workspace_user_mgr.list_workspace_users(
-            query, params.domain_id, params.workspace_id
+            query, params.domain_id, params.workspace_id, params.role_type
         )
 
         return WorkspaceUsersResponse(results=users_info, total_count=total_count)

@@ -41,7 +41,7 @@ class WorkspaceUserManager(BaseManager):
         return user_vo
 
     def check_workspace_users(
-        self, users: List[str], workspace_id: str, domain_id: str
+            self, users: List[str], workspace_id: str, domain_id: str
     ) -> None:
         rb_vos = self.rb_mgr.filter_role_bindings(
             user_id=users,
@@ -59,7 +59,7 @@ class WorkspaceUserManager(BaseManager):
             )
 
     def get_workspace_user(
-        self, user_id: str, workspace_id: str, domain_id: str
+            self, user_id: str, workspace_id: str, domain_id: str
     ) -> dict:
         user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
             workspace_id, domain_id
@@ -74,10 +74,10 @@ class WorkspaceUserManager(BaseManager):
         return user_info
 
     def list_workspace_users(
-        self, query: dict, domain_id: str, workspace_id: str
+            self, query: dict, domain_id: str, workspace_id: str, role_type: str = None
     ) -> Tuple[list, int]:
         user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
-            workspace_id, domain_id
+            workspace_id, domain_id, role_type
         )
         query["filter"] = query.get("filter", [])
         query["filter"].append({"k": "user_id", "v": user_ids, "o": "in"})
@@ -96,7 +96,7 @@ class WorkspaceUserManager(BaseManager):
         return users_info, total_count
 
     def stat_workspace_users(
-        self, query: dict, domain_id: str, workspace_id: str
+            self, query: dict, domain_id: str, workspace_id: str
     ) -> dict:
         user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
             workspace_id, domain_id
@@ -107,14 +107,21 @@ class WorkspaceUserManager(BaseManager):
         return self.user_mgr.stat_users(query)
 
     def _get_role_binding_map_in_workspace(
-        self, workspace_id: str, domain_id: str
+            self, workspace_id: str, domain_id: str, role_type: str = None
     ) -> Tuple[list, dict]:
         user_rb_map = {}
         user_ids = []
+
+        if role_type and role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
+            raise ERROR_INVALID_PARAMETER(message=f"role_type must be one of [WORKSPACE_OWNER, WORKSPACE_MEMBER]")
+
+        if role_type is None:
+            role_type = ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+
         rb_vos = self.rb_mgr.filter_role_bindings(
             domain_id=domain_id,
             workspace_id=[workspace_id, "*"],
-            role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+            role_type=role_type,
         )
 
         for rb_vo in rb_vos:

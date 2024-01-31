@@ -52,6 +52,7 @@ class WorkspaceUserSearchQueryRequest(BaseModel):
     state: Union[State, None] = None
     email: Union[str, None] = None
     auth_type: Union[AuthType, None] = None
+    role_type: Union[str, None] = None
     domain_id: str
     workspace_id: str
 
