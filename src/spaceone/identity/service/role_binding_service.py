@@ -172,7 +172,7 @@ class RoleBindingService(BaseService):
         )
 
         user_role_info = {"role_type": latest_role_type}
-        if latest_role_type in ["DOMAIN_ADMIN"]:
+        if latest_role_type and new_role_vo.role_type in ["DOMAIN_ADMIN"]:
             user_role_info.update({"role_id": new_role_vo.role_id})
 
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
