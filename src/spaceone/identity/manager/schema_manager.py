@@ -25,9 +25,6 @@ class SchemaManager(BaseManager):
             _LOGGER.info(f"[create_schema._rollback] Delete schema : {vo.schema}")
             vo.delete()
 
-        if "data_schema" in params:
-            params["schema"] = params.pop("data_schema", params.get("schema"))
-
         schema_vo = self.schema_model.create(params)
         self.transaction.add_rollback(_rollback, schema_vo)
 
