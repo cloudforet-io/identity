@@ -45,7 +45,7 @@ class SchemaService(BaseService):
             SchemaResponse:
         """
 
-        schema_vo = self.schema_mgr.create_schema(params.dict())
+        schema_vo = self.schema_mgr.create_schema(params.dict(by_alias=True))
         return SchemaResponse(**schema_vo.to_dict())
 
     @transaction(permission="identity:Schema.write", role_types=["DOMAIN_ADMIN"])
@@ -73,7 +73,7 @@ class SchemaService(BaseService):
             raise ERROR_PERMISSION_DENIED()
 
         schema_vo = self.schema_mgr.update_schema_by_vo(
-            params.dict(exclude_unset=True), schema_vo
+            params.dict(exclude_unset=True, by_alias=True), schema_vo
         )
 
         return SchemaResponse(**schema_vo.to_dict())

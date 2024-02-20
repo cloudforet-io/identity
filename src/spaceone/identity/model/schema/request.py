@@ -25,11 +25,6 @@ class SchemaCreateRequest(BaseModel):
     tags: Union[dict, None] = None
     domain_id: str
 
-    class Config:
-        fields = {
-            'data_schema': 'schema'
-        }
-
 
 class SchemaUpdateRequest(BaseModel):
     schema_id: str
@@ -39,11 +34,6 @@ class SchemaUpdateRequest(BaseModel):
     options: Union[dict, None] = None
     tags: Union[dict, None] = None
     domain_id: str
-
-    class Config:
-        fields = {
-            'data_schema': 'schema'
-        }
 
 
 class SchemaDeleteRequest(BaseModel):
