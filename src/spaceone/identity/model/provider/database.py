@@ -3,8 +3,9 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class Provider(MongoModel):
-    provider = StringField(max_length=40, unique_with='domain_id')
+    provider = StringField(max_length=40, unique_with="domain_id")
     name = StringField(max_length=40)
+    plugin_info = DictField(default=None, null=True)
     version = StringField(max_length=40, default=None, null=True)
     alias = StringField(max_length=40, default=None, null=True)
     color = StringField(max_length=7, default=None, null=True)
@@ -18,30 +19,19 @@ class Provider(MongoModel):
     updated_at = DateTimeField(auto_now=True)
 
     meta = {
-        'updatable_fields': [
-            'name',
-            'version',
-            'alias',
-            'color',
-            'icon',
-            'order',
-            'options',
-            'tags',
-            'updated_at'
+        "updatable_fields": [
+            "name",
+            "plugin_info",
+            "version",
+            "alias",
+            "color",
+            "icon",
+            "order",
+            "options",
+            "tags",
+            "updated_at",
         ],
-        'minimal_fields': [
-            'provider',
-            'name',
-            'order',
-            'is_managed'
-        ],
-        'ordering': [
-            'order',
-            'name'
-        ],
-        'indexes': [
-            'provider',
-            'is_managed',
-            'domain_id'
-        ]
+        "minimal_fields": ["provider", "name", "order", "is_managed"],
+        "ordering": ["order", "name"],
+        "indexes": ["provider", "is_managed", "domain_id"],
     }

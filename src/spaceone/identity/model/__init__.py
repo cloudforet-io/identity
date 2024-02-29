@@ -7,6 +7,7 @@ from spaceone.identity.model.provider.database import Provider
 from spaceone.identity.model.schema.database import Schema
 from spaceone.identity.model.trusted_account.database import TrustedAccount
 from spaceone.identity.model.service_account.database import ServiceAccount
+from spaceone.identity.model.job.database import Job
 from spaceone.identity.model.role.database import Role
 from spaceone.identity.model.role_binding.database import RoleBinding
 from spaceone.identity.model.user.database import User

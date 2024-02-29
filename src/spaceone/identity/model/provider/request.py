@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Literal
 from pydantic import BaseModel
 
 __all__ = [
@@ -15,6 +15,7 @@ class ProviderCreateRequest(BaseModel):
     provider: str
     name: str
     alias: Union[str, None] = None
+    plugin_info: Union[dict, None] = None
     color: Union[str, None] = None
     icon: Union[str, None] = None
     order: Union[int, None] = None
@@ -27,6 +28,7 @@ class ProviderUpdateRequest(BaseModel):
     provider: str
     name: Union[str, None] = None
     alias: Union[str, None] = None
+    plugin_info: Union[dict, None] = None
     color: Union[str, None] = None
     icon: Union[str, None] = None
     order: Union[int, None] = None

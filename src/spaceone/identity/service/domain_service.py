@@ -186,7 +186,7 @@ class DomainService(BaseService):
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @convert_model
     def get_auth_info(
-            self, params: DomainGetAuthInfoRequest
+        self, params: DomainGetAuthInfoRequest
     ) -> Union[DomainAuthInfoResponse, dict]:
         """GetMetadata domain
         Args:
@@ -209,7 +209,7 @@ class DomainService(BaseService):
     @transaction(exclude=["authentication", "authorization", "mutation"])
     @convert_model
     def get_public_key(
-            self, params: DomainGetPublicKeyRequest
+        self, params: DomainGetPublicKeyRequest
     ) -> Union[DomainSecretResponse, dict]:
         """GetPublicKey domain
         Args:
@@ -223,6 +223,8 @@ class DomainService(BaseService):
         # Check System Token
         try:
             token = self.transaction.get_meta("token")
+            if token is None:
+                raise ERROR_UNKNOWN(message="Empty Token provided.")
             root_domain_id = SystemManager.get_root_domain_id()
             root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(root_domain_id)
             JWTAuthenticator(root_pub_jwk).validate(token)

@@ -3,6 +3,7 @@ from spaceone.identity.interface.grpc.system import System
 from spaceone.identity.interface.grpc.domain import Domain
 from spaceone.identity.interface.grpc.endpoint import Endpoint
 from spaceone.identity.interface.grpc.external_auth import ExternalAuth
+from spaceone.identity.interface.grpc.job import Job
 from spaceone.identity.interface.grpc.project_group import ProjectGroup
 from spaceone.identity.interface.grpc.project import Project
 from spaceone.identity.interface.grpc.provider import Provider
@@ -33,6 +34,7 @@ app.add_service(Provider)
 app.add_service(Schema)
 app.add_service(TrustedAccount)
 app.add_service(ServiceAccount)
+app.add_service(Job)
 app.add_service(Role)
 app.add_service(RoleBinding)
 app.add_service(UserProfile)

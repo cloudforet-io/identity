@@ -7,6 +7,8 @@ class TrustedAccount(MongoModel):
     name = StringField(max_length=255, unique_with=["domain_id"])
     data = DictField(default=None)
     provider = StringField(max_length=40)
+    schedule = DictField(default=None, null=True)
+    sync_options = DictField(default=None, null=True)
     tags = DictField(default=None)
     secret_schema_id = StringField(max_length=40)
     trusted_secret_id = StringField(max_length=40)
@@ -19,6 +21,8 @@ class TrustedAccount(MongoModel):
         "updatable_fields": [
             "name",
             "data",
+            "schedule",
+            "sync_options",
             "tags",
             "secret_schema_id",
             "trusted_secret_id",
@@ -27,6 +31,7 @@ class TrustedAccount(MongoModel):
             "trusted_account_id",
             "name",
             "provider",
+            "sync_options",
             "secret_schema_id",
             "trusted_secret_id",
             "resource_group",

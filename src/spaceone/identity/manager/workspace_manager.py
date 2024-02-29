@@ -76,7 +76,7 @@ class WorkspaceManager(BaseManager):
         return workspace_vo
 
     def get_workspace(self, workspace_id: str, domain_id: str) -> Workspace:
-        return self.workspace_model.get(workspace_id=workspace_id, domain_id=domain_id)
+        return self.workspace_model.get(domain_id=domain_id, workspace_id=workspace_id)
 
     def filter_workspaces(self, **conditions) -> QuerySet:
         return self.workspace_model.filter(**conditions)

@@ -9,6 +9,7 @@ __all__ = ["ProviderResponse", "ProvidersResponse"]
 class ProviderResponse(BaseModel):
     provider: Union[str, None] = None
     name: Union[str, None] = None
+    plugin_info: Union[dict, None] = None
     alias: Union[str, None] = None
     color: Union[str, None] = None
     icon: Union[str, None] = None
@@ -22,8 +23,8 @@ class ProviderResponse(BaseModel):
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
-        data['created_at'] = utils.datetime_to_iso8601(data['created_at'])
-        data['updated_at'] = utils.datetime_to_iso8601(data['updated_at'])
+        data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
+        data["updated_at"] = utils.datetime_to_iso8601(data["updated_at"])
         return data
 
 
