@@ -31,6 +31,12 @@ class TrustedAccount(BaseAPI, trusted_account_pb2_grpc.TrustedAccountServicer):
         trusted_account_svc.delete(params)
         return self.empty()
 
+    def sync(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        trusted_account_svc = TrustedAccountService(metadata)
+        response: dict = trusted_account_svc.sync(params)
+        return self.dict_to_message(response)
+
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
         trusted_account_svc = TrustedAccountService(metadata)
