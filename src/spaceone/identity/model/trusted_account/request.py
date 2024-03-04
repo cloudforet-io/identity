@@ -21,6 +21,8 @@ class TrustedAccountCreateRequest(BaseModel):
     provider: str
     secret_schema_id: str
     secret_data: dict
+    scheduled: Union[dict, None] = None
+    sync_options: Union[dict, None] = None
     tags: Union[dict, None] = None
     resource_group: ResourceGroup
     workspace_id: Union[str, None] = None
@@ -31,6 +33,8 @@ class TrustedAccountUpdateRequest(BaseModel):
     trusted_account_id: str
     name: Union[str, None] = None
     data: Union[dict, None] = None
+    scheduled: Union[dict, None] = None
+    sync_options: Union[dict, None] = None
     tags: Union[dict, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
@@ -45,6 +49,12 @@ class TrustedAccountUpdateSecretRequest(BaseModel):
 
 
 class TrustedAccountDeleteRequest(BaseModel):
+    trusted_account_id: str
+    workspace_id: Union[str, None] = None
+    domain_id: str
+
+
+class TrustedAccountSyncRequest(BaseModel):
     trusted_account_id: str
     workspace_id: Union[str, None] = None
     domain_id: str

@@ -7,8 +7,8 @@ class ProjectGroup(MongoModel):
     name = StringField(max_length=40)
     tags = DictField(default=None)
     parent_group_id = StringField(max_length=40, null=True, default=None)
-    domain_id = StringField(max_length=40)
     workspace_id = StringField(max_length=40)
+    domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
@@ -21,7 +21,7 @@ class ProjectGroup(MongoModel):
             "project_group_id",
             "name",
             "parent_group_id",
-            "workspace_id"
+            "workspace_id",
         ],
         "ordering": ["name"],
         "indexes": [
