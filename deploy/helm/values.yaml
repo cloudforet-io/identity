@@ -98,6 +98,7 @@ application_grpc:
 
 application_rest: {}
 
+# Overwrite scheduler config
 application_scheduler:
   QUEUES:
     identity_q:
@@ -109,6 +110,11 @@ application_scheduler:
   SCHEDULERS:
     trusted_account_sync_scheduler:
       backend: spaceone.identity.interface.task.v1.trusted_account_sync_scheduler.TrustedAccountSyncScheduler
+      queue: identity_q
+      interval: 1
+      minute: ':00'
+
+# Overwrite worker config
 application_worker:
   QUEUES:
     identity_q:
@@ -120,7 +126,7 @@ application_worker:
     identity_worker:
       backend: spaceone.core.scheduler.worker.BaseWorker
       queue: identity_q
-      interval: 1
+      pool: 1
 
 ##########################
 # local sidecar
@@ -152,6 +158,7 @@ volumes:
           path: /usr/share/zoneinfo/Asia/Seoul
     - name: log-volume
       emptyDir: {}
+
 #######################
 # global variable
 #######################
