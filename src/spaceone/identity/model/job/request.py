@@ -26,13 +26,11 @@ class JobSearchQueryRequest(BaseModel):
     job_id: Union[str, None] = None
     trusted_account_id: Union[str, None] = None
     plugin_id: Union[str, None] = None
-    user_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
 
 class JobStatQueryRequest(BaseModel):
     query: dict
-    user_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str

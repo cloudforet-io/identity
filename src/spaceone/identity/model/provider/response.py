@@ -3,13 +3,22 @@ from typing import Union, List
 from pydantic import BaseModel
 from spaceone.core import utils
 
+from spaceone.identity.model.provider.request import UpgradeMode
+
 __all__ = ["ProviderResponse", "ProvidersResponse"]
+
+
+class Plugin(BaseModel):
+    plugin_id: str = None
+    version: Union[str, None] = None
+    options: dict
+    upgrade_mode: Union[UpgradeMode, None] = None
 
 
 class ProviderResponse(BaseModel):
     provider: Union[str, None] = None
     name: Union[str, None] = None
-    plugin_info: Union[dict, None] = None
+    plugin_info: Union[Plugin, None] = None
     alias: Union[str, None] = None
     color: Union[str, None] = None
     icon: Union[str, None] = None
