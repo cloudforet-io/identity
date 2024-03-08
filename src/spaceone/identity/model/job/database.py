@@ -3,7 +3,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class Job(MongoModel):
-    job_id = StringField(max_length=40, generate_id="pg", unique=True)
+    job_id = StringField(max_length=40, generate_id="job", unique=True)
     status = StringField(
         choices=("PENDING", "IN_PROGRESS", "FAILURE", "SUCCESS", "CANCELED"),
         default="PENDING",

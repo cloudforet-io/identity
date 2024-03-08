@@ -86,6 +86,7 @@ class JobService(BaseService):
         permission="identity:Job.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
     )
+    @convert_model
     def get(self, params: JobGetRequest) -> JobResponse:
         """Get job
         Args:
@@ -166,7 +167,6 @@ class JobService(BaseService):
         return self.job_mgr.stat_jobs(query)
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
-    @check_required(["task_options", "job_task_id", "domain_id"])
     def sync_service_accounts(self, params: dict):
         """Sync account data
         Args:
@@ -204,12 +204,13 @@ class JobService(BaseService):
         domain_id = trusted_account_vo.domain_id
 
         provider_vo = self.provider_mgr.get_provider(provider, domain_id)
+        plugin_id = provider_vo.plugin_info["plugin_id"]
         ac_plugin_mgr = AccountCollectorPluginManager()
         endpoint = ac_plugin_mgr.get_account_collector_plugin_endpoint_by_vo(
             provider_vo
         )
 
-        options = provider_vo.plugin_info.options
+        options = provider_vo.plugin_info.get("options")
         schema_id = trusted_account_vo.secret_schema_id
 
         ac_plugin_mgr.initialize(endpoint)
@@ -231,7 +232,7 @@ class JobService(BaseService):
 
         # Add Job Options
         job_vo = self.job_mgr.create_job(
-            resource_group, trusted_account_id, workspace_id, domain_id
+            resource_group, plugin_id, trusted_account_id, workspace_id, domain_id
         )
 
         if self._check_duplicate_job(domain_id, trusted_account_id, job_vo):
@@ -298,7 +299,7 @@ class JobService(BaseService):
             ]
         }
 
-        job_vos, total_count = self.job_mgr.list_jobs(**query)
+        job_vos, total_count = self.job_mgr.list_jobs(query)
 
         if total_count == 0:
             return True
