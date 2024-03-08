@@ -244,7 +244,7 @@ class TrustedAccountService(BaseService):
             JobResponse: 'dict'
         """
 
-        job_service: JobService = self.locator.get_service("JobService")
+        job_service = JobService()
 
         trusted_account_id = params.trusted_account_id
         workspace_id = params.workspace_id
