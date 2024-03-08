@@ -107,5 +107,18 @@ ENDPOINTS = [
     # }
 ]
 
+# Queue Settings
+collect_queue = "identity_q"  # Queue name for asynchronous collect
+QUEUES = {
+    "identity_q": {
+        "backend": "spaceone.core.queue.redis_queue.RedisQueue",
+        "host": "redis",
+        "port": 6379,
+        "channel": "identity",
+    },
+}
+SCHEDULERS = {}
+WORKERS = {}
+
 # System Token Settings
 TOKEN = ""
