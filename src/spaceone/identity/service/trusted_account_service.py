@@ -232,7 +232,7 @@ class TrustedAccountService(BaseService):
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
     )
     @convert_model
-    def sync(self, params: TrustedAccountSyncRequest) -> dict:
+    def sync(self, params: TrustedAccountSyncRequest) -> Union[JobResponse, dict]:
         """Sync trusted account
         Args:
            params (TrustedAccountSyncRequest): {
@@ -258,8 +258,8 @@ class TrustedAccountService(BaseService):
             trusted_account_vo.provider, domain_id
         )
         self._check_provider_sync(provider_vo)
-
-        return job_service.created_service_account_job(trusted_account_vo, {})
+        job_vo = job_service.created_service_account_job(trusted_account_vo, {})
+        return JobResponse(**job_vo.to_dict())
 
     @transaction(
         permission="identity:TrustedAccount.read",

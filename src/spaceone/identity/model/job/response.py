@@ -25,6 +25,8 @@ class JobResponse(BaseModel):
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
         data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
+        data["updated_at"] = utils.datetime_to_iso8601(data.get("updated_at"))
+        data["finished_at"] = utils.datetime_to_iso8601(data.get("finished_at"))
         return data
 
 
