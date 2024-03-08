@@ -56,14 +56,14 @@ class AccountCollectorPluginManager(BaseManager):
         return plugin_connector.dispatch("AccountCollector.sync", params)
 
     def get_account_collector_plugin_endpoint_by_vo(self, provider_vo: Provider) -> str:
-        plugin_info = provider_vo.plugin_info.to_dict()
+        plugin_info = provider_vo.plugin_info
         endpoint, updated_version = self.get_account_collector_plugin_endpoint(
             plugin_info, provider_vo.domain_id
         )
 
         if updated_version:
             _LOGGER.debug(
-                f'[get_account_collector_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info["version"]} -> {updated_version}'
+                f'[get_account_collector_plugin_endpoint_by_vo] upgrade plugin version: {plugin_info.get("version")} -> {updated_version}'
             )
             self.upgrade_account_collector_plugin_version(
                 provider_vo, endpoint, updated_version
@@ -80,7 +80,7 @@ class AccountCollectorPluginManager(BaseManager):
     def upgrade_account_collector_plugin_version(
         self, provider_vo: Provider, endpoint: str, updated_version: str
     ) -> None:
-        plugin_info = provider_vo.plugin_info.to_dict()
+        plugin_info = provider_vo.plugin_info
         domain_id = provider_vo.domain_id
 
         self.initialize(endpoint)
