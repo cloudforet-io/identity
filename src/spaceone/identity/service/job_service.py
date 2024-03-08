@@ -40,13 +40,17 @@ class JobService(BaseService):
         """Create jobs by trusted account
         Args:
             params (dict): {
-                'params': dict
+                'params':
             }
         Returns:
             None:
         """
 
-        for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts():
+        current_hour = params.get("current_hour", datetime.utcnow().hour)
+
+        for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
+            current_hour
+        ):
             try:
                 self.created_service_account_job(trusted_account_vo, {})
             except Exception as e:
@@ -195,7 +199,6 @@ class JobService(BaseService):
     ) -> Union[Job, dict]:
         resource_group = trusted_account_vo.resource_group
         provider = trusted_account_vo.provider
-        sync_options = trusted_account_vo.sync_options
         trusted_account_id = trusted_account_vo.trusted_account_id
         workspace_id = trusted_account_vo.workspace_id
         domain_id = trusted_account_vo.domain_id
@@ -253,10 +256,21 @@ class JobService(BaseService):
 
         return job_vo
 
-    def _get_all_schedule_enabled_trusted_accounts(self):
-        return self.trusted_account_mgr.filter_trusted_accounts(
-            state="ENABLED", data_source_type="EXTERNAL"
+    def _get_all_schedule_enabled_trusted_accounts(self, current_hour: int) -> list:
+        query = {
+            "filter": [
+                {"k": "schedule.state", "v": "ENABLED", "o": "eq"},
+                {"k": "schedule.hour", "v": current_hour, "o": "contain"},
+            ]
+        }
+        (
+            trusted_account_vos,
+            total_count,
+        ) = self.trusted_account_mgr.list_trusted_accounts(query)
+        _LOGGER.debug(
+            f"[_get_all_schedule_enabled_trusted_accounts] scheduled trusted accounts count (UTC {current_hour}: {total_count}"
         )
+        return trusted_account_vos
 
     def _get_secret_data(self, secret_id: str, domain_id: str) -> dict:
         # todo: this method is internal method
