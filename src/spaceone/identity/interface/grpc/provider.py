@@ -19,6 +19,12 @@ class Provider(BaseAPI, provider_pb2_grpc.ProviderServicer):
         response: dict = provider_svc.update(params)
         return self.dict_to_message(response)
 
+    def update_plugin(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        provider_svc = ProviderService(metadata)
+        response: dict = provider_svc.update_plugin(params)
+        return self.dict_to_message(response)
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
         service_account_svc = ProviderService(metadata)

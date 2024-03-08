@@ -4,8 +4,8 @@
 enabled: true
 developer: false
 grpc: true
-scheduler: false
-worker: false
+scheduler: true
+worker: true
 rest: false
 name: identity
 image:
@@ -98,6 +98,30 @@ application_grpc:
 
 application_rest: {}
 
+application_scheduler:
+  QUEUES:
+    identity_q:
+      backend: spaceone.core.queue.redis_queue.RedisQueue
+      host: redis
+      port: 6379
+      channel: identity_job
+
+  SCHEDULERS:
+    trusted_account_sync_scheduler:
+      backend: spaceone.identity.interface.task.v1.trusted_account_sync_scheduler.TrustedAccountSyncScheduler
+application_worker:
+  QUEUES:
+    identity_q:
+      backend: spaceone.core.queue.redis_queue.RedisQueue
+      host: redis
+      port: 6379
+      channel: identity_job
+  WORKERS:
+    identity_worker:
+      backend: spaceone.core.scheduler.worker.BaseWorker
+      queue: identity_q
+      interval: 1
+
 ##########################
 # local sidecar
 ##########################
@@ -114,7 +138,7 @@ sidecar:
         #     limits:
         #         memory: "256Mi"
         #         cpu: "50m"
-    grpc: {} 
+    grpc: {}
     rest: {}
     scheduler: {}
     worker: {}

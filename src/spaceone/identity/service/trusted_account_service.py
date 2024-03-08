@@ -5,12 +5,16 @@ from spaceone.core.service import *
 from spaceone.core.service.utils import *
 from spaceone.core.error import *
 
-from spaceone.identity.model.trusted_account.request import *
-from spaceone.identity.model.trusted_account.response import *
+from spaceone.identity.manager.provider_manager import ProviderManager
 from spaceone.identity.manager.schema_manager import SchemaManager
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.manager.secret_manager import SecretManager
+from spaceone.identity.model.trusted_account.request import *
+from spaceone.identity.model.trusted_account.response import *
+from spaceone.identity.model.provider.database import Provider
+from spaceone.identity.model.job.response import JobResponse
+from spaceone.identity.service.job_service import JobService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +29,7 @@ class TrustedAccountService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.trusted_account_mgr = TrustedAccountManager()
+        self.provider_mgr = ProviderManager()
 
     @transaction(
         permission="identity:TrustedAccount.write",
@@ -43,6 +48,8 @@ class TrustedAccountService(BaseService):
                 'provider': 'str',              # required
                 'secret_schema_id': 'str',
                 'secret_data': 'dict',
+                'schedule': 'dict',
+                'sync_options': 'dict',
                 'tags': 'dict',
                 'resource_group': 'str',        # required
                 'workspace_id': 'str',          # injected from auth
@@ -221,6 +228,40 @@ class TrustedAccountService(BaseService):
         self.trusted_account_mgr.delete_trusted_account_by_vo(trusted_account_vo)
 
     @transaction(
+        permission="identity:TrustedAccount.write",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
+    @convert_model
+    def sync(self, params: TrustedAccountSyncRequest) -> dict:
+        """Sync trusted account
+        Args:
+           params (TrustedAccountSyncRequest): {
+               'trusted_account_id': 'str',    # required
+               'workspace_id': 'str',          # injected from auth
+               'domain_id': 'str'              # injected from auth (required)
+           }
+        Returns:
+            JobResponse: 'dict'
+        """
+
+        job_service: JobService = self.locator.get_service("JobService")
+
+        trusted_account_id = params.trusted_account_id
+        workspace_id = params.workspace_id
+        domain_id = params.domain_id
+
+        trusted_account_vo = self.trusted_account_mgr.get_trusted_account(
+            trusted_account_id, domain_id, workspace_id
+        )
+
+        provider_vo = self.provider_mgr.get_provider(
+            trusted_account_vo.provider, domain_id
+        )
+        self._check_provider_sync(provider_vo)
+
+        return job_service.created_service_account_job(trusted_account_vo, {})
+
+    @transaction(
         permission="identity:TrustedAccount.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
@@ -328,3 +369,17 @@ class TrustedAccountService(BaseService):
 
         query = params.query or {}
         return self.trusted_account_mgr.stat_trusted_accounts(query)
+
+    @staticmethod
+    def _check_provider_sync(provider_vo: Provider) -> None:
+        options = provider_vo.options or {}
+        if not (
+            options.get("support_trusted_account") and options.get("support_auto_sync")
+        ):
+            raise ERROR_INVALID_PARAMETER(
+                key="provider.options", message="Sync options is disabled"
+            )
+        elif not provider_vo.plugin_info:
+            raise ERROR_INVALID_PARAMETER(
+                key="provider.plugin_info", message="Plugin info not found"
+            )

@@ -32,6 +32,7 @@ class Job(MongoModel):
         ],
         "ordering": ["-created_at"],
         "indexes": [
+            "plugin_id",
             "trusted_account_id",
             "workspace_id",
             "domain_id",

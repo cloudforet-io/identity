@@ -17,24 +17,18 @@ class PluginManager(BaseManager):
             "SpaceConnector", service="plugin"
         )
 
-    def get_endpoint(
-        self,
-        plugin_id: str,
-        domain_id: str,
-        upgrade_mode: str = "AUTO",
-        version: str = None,
-    ) -> Tuple[str, str]:
+    def get_plugin_endpoint(self, plugin_info: dict, domain_id: str) -> Tuple[str, str]:
         system_token = config.get_global("TOKEN")
 
         response = self.plugin_connector.dispatch(
             "Plugin.get_plugin_endpoint",
             {
-                "plugin_id": plugin_id,
+                "plugin_id": plugin_info["plugin_id"],
+                "version": plugin_info.get("version"),
+                "upgrade_mode": plugin_info.get("upgrade_mode", "AUTO"),
                 "domain_id": domain_id,
-                "upgrade_mode": upgrade_mode,
-                "version": version,
             },
             token=system_token,
         )
 
-        return response.get("endpoint"), response.get("updated_version")
+        return response["endpoint"], response.get("updated_version")
