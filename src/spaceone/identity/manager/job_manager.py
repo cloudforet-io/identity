@@ -20,10 +20,10 @@ class JobManager(BaseManager):
     def create_job(
         self,
         resource_group: str,
-        plugin_id: str,
-        trusted_account_id: str,
         domain_id: str,
         workspace_id: str,
+        trusted_account_id: str,
+        plugin_id: str,
     ) -> Job:
         data = {
             "resource_group": resource_group,

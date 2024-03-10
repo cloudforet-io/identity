@@ -27,6 +27,7 @@ class Job(MongoModel):
             "job_id",
             "trusted_account_id",
             "status",
+            "resource_group",
             "created_at",
             "finished_at",
         ],
