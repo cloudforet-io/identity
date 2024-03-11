@@ -42,9 +42,7 @@ class JobManager(BaseManager):
         _LOGGER.debug(f"[delete_job_by_vo] delete job: {job_vo.job_id}")
         job_vo.delete()
 
-    def get_job(
-        self, job_id: str, domain_id: str, workspace_id: Union[str, None] = None
-    ) -> Job:
+    def get_job(self, job_id: str, domain_id: str, workspace_id: str = None) -> Job:
         conditions = {"job_id": job_id, "domain_id": domain_id}
 
         if workspace_id:
@@ -82,7 +80,7 @@ class JobManager(BaseManager):
         token = self.transaction.meta.get("token")
 
         task = {
-            "name": "sync_trusted_account",
+            "name": "sync_service_accounts",
             "version": "v1",
             "executionEngine": "BaseWorker",
             "stages": [
@@ -100,6 +98,11 @@ class JobManager(BaseManager):
         queue.put("identity_q", utils.dump_json(task))
 
     @staticmethod
+    def change_in_progress_status(job_vo: Job) -> None:
+        _LOGGER.debug(f"[change_in_progress_status] start job: {job_vo.job_id}")
+        return job_vo.update({"status": "IN_PROGRESS", "started_at": datetime.utcnow()})
+
+    @staticmethod
     def change_success_status(job_vo: Job) -> None:
         _LOGGER.debug(f"[change_success_status] success job: {job_vo.job_id}")
         job_vo.update(
@@ -108,6 +111,11 @@ class JobManager(BaseManager):
                 "finished_at": datetime.utcnow(),
             }
         )
+
+    @staticmethod
+    def change_canceled_status(job_vo: Job) -> None:
+        _LOGGER.debug(f"[change_cancel_status] job canceled: {job_vo.job_id}")
+        job_vo.update({"status": "CANCELED", "finished_at": datetime.utcnow()})
 
     @staticmethod
     def change_error_status(job_vo: Job, error: ERROR_BASE = None) -> None:
