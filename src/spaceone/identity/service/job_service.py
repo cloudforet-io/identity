@@ -48,6 +48,7 @@ class JobService(BaseService):
 
         current_hour = params.get("current_hour", datetime.utcnow().hour)
 
+        # todo check provider sync condition
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
             current_hour
         ):
@@ -141,7 +142,6 @@ class JobService(BaseService):
         query = params.query or {}
 
         job_vos, total_count = self.job_mgr.list_jobs(query)
-
         jobs_info = [job_vo.to_dict() for job_vo in job_vos]
 
         return JobsResponse(results=jobs_info, total_count=total_count)
@@ -232,7 +232,11 @@ class JobService(BaseService):
 
         # Add Job Options
         job_vo = self.job_mgr.create_job(
-            resource_group, plugin_id, trusted_account_id, workspace_id, domain_id
+            resource_group,
+            domain_id,
+            workspace_id,
+            trusted_account_id,
+            plugin_id,
         )
 
         if self._check_duplicate_job(domain_id, trusted_account_id, job_vo):

@@ -12,8 +12,8 @@ Status = Literal["PENDING", "IN_PROGRESS", "FAILURE", "SUCCESS", "CANCELD"]
 
 class JobResponse(BaseModel):
     job_id: Union[str, None] = None
-    status: Status
-    resource_group: ResourceGroup
+    status: Union[Status, None] = None
+    resource_group: Union[ResourceGroup, None] = None
     trusted_account_id: Union[str, None] = None
     plugin_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
