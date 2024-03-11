@@ -48,6 +48,7 @@ class JobService(BaseService):
 
         current_hour = params.get("current_hour", datetime.utcnow().hour)
 
+        # todo check provider sync condition
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
             current_hour
         ):

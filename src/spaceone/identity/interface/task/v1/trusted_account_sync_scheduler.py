@@ -27,7 +27,8 @@ class TrustedAccountSyncScheduler(HourlyScheduler):
         return tasks
 
     def _create_trusted_account_sync_task(self):
-        if datetime.utcnow().hour == 0:
+        current_hour = datetime.utcnow().hour
+        if current_hour == 0:
             stp = {
                 "name": "trusted_account_sync_schedule",
                 "version": "v1",
@@ -38,7 +39,7 @@ class TrustedAccountSyncScheduler(HourlyScheduler):
                         "name": "JobService",
                         "metadata": {"token": self._token},
                         "method": "create_jobs_by_trusted_account",
-                        "params": {"params": {"current_hour": datetime.utcnow().hour}},
+                        "params": {"params": {"current_hour": current_hour}},
                     }
                 ],
             }
@@ -51,6 +52,6 @@ class TrustedAccountSyncScheduler(HourlyScheduler):
                 f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] create_jobs_by_trusted_account => SKIP"
             )
             print(
-                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] data_source_sync_time: {self._data_source_sync_hour} hour (UTC)"
+                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] data_source_sync_time: {current_hour} hour (UTC)"
             )
             return []
