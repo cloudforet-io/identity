@@ -10,11 +10,16 @@ from spaceone.identity.manager.account_collector_plugin_manager import (
     AccountCollectorPluginManager,
 )
 from spaceone.identity.manager.job_manager import JobManager
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.provider_manager import ProviderManager
-from spaceone.identity.manager.secret_manager import SecretManager
 from spaceone.identity.manager.schema_manager import SchemaManager
+from spaceone.identity.manager.service_account_manager import ServiceAccountManager
+from spaceone.identity.manager.secret_manager import SecretManager
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
+from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.model.project.database import Project
 from spaceone.identity.model.provider.database import Provider
+from spaceone.identity.model.service_account.database import ServiceAccount
 from spaceone.identity.model.trusted_account.database import TrustedAccount
 from spaceone.identity.model.job.database import Job
 from spaceone.identity.model.job.request import *
@@ -36,6 +41,9 @@ class JobService(BaseService):
         self.trusted_account_mgr = TrustedAccountManager()
         self.provider_mgr = ProviderManager()
         self.account_collector_plugin_mgr = AccountCollectorPluginManager()
+        self.workspace_mgr = WorkspaceManager()
+        self.service_account_mgr = ServiceAccountManager()
+        self.project_mgr = ProjectManager()
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
     def create_jobs_by_trusted_account(self, params):
@@ -226,9 +234,11 @@ class JobService(BaseService):
                 response = self.account_collector_plugin_mgr.sync(
                     endpoint, options, secret_data, domain_id, schema_id
                 )
-                for account_data in response.get("results", []):
-                    self._check_service_account_data(account_data, job_vo, sync_options)
-                    self._create_service_account(account_data, job_vo, sync_options)
+                for result in response.get("results", []):
+                    # self._check_service_account_data(result, job_vo, sync_options)
+                    # self._sync_accounts(
+                    #     provider, result, job_vo, sync_options, workspace_id
+                    # )
 
                     if self._is_job_failed(job_id, domain_id, job_vo.workspace_id):
                         self.job_mgr.change_canceled_status(job_vo)
@@ -283,7 +293,7 @@ class JobService(BaseService):
             schema_mgr = SchemaManager()
             # Check secret_data by schema
             schema_mgr.validate_secret_data_by_schema_id(
-                schema_id, domain_id, trusted_secret_data, "SECRET"
+                schema_id, domain_id, trusted_secret_data, "TRUSTED_SECRET"
             )
         except Exception as e:
             trusted_secret_data = {}
@@ -327,7 +337,7 @@ class JobService(BaseService):
         query = {
             "filter": [
                 {"k": "schedule.state", "v": "ENABLED", "o": "eq"},
-                {"k": "schedule.hour", "v": current_hour, "o": "contain"},
+                {"k": "schedule.hour", "v": [current_hour], "o": "in"},
             ]
         }
         (
@@ -405,8 +415,79 @@ class JobService(BaseService):
         # todo : complete this method
         pass
 
-    def _create_service_account(
-        self, account_data: dict, job_vo: Job, sync_options: dict
+    def _sync_accounts(
+        self,
+        domain_id,
+        provider: str,
+        result: dict,
+        job_vo: Job,
+        sync_options: dict,
+        workspace_id: str = None,
     ) -> None:
-        # todo : complete this method
-        pass
+        locations = result.get("locations", [])
+        trusted_account_id = job_vo.trusted_account_id
+
+        if locations:
+            if len(locations) == 1:
+                project_vo = self._create_project(domain_id, workspace_id, locations[0])
+                self._create_service_account(
+                    result, project_vo, trusted_account_id, provider, locations[0]
+                )
+            elif len(locations) == 2:
+                pass
+            else:
+                pass
+
+    def _create_project(
+        self,
+        domain_id: str,
+        workspace_id: str,
+        name: str,
+        project_type: str = "PRIVATE",
+    ) -> Project:
+        params = {
+            "name": name,
+            "domain_id": domain_id,
+            "workspace_id": workspace_id,
+            "project_type": project_type,
+        }
+        project_vos = self.project_mgr.filter_projects(**params)
+        if project_vos:
+            project_vo = project_vos[0]
+        else:
+            project_vo = self.project_mgr.create_project(params)
+        return project_vo
+
+    def _create_service_account(
+        self,
+        result: dict,
+        project_vo: Project,
+        trusted_account_id: str,
+        provider: str,
+        name: str,
+    ) -> ServiceAccount:
+        secret_data = result.get("secret_data", {})
+        data = result.get("data", {})
+        schema_id = result.get("secret_schema_id")
+        tags = result.get("tags", {})
+
+        if secret_data and schema_id is None:
+            raise ERROR_INVALID_PARAMETER(key="secret_schema_id")
+
+        params = {
+            "name": name,
+            "data": data,
+            "secret_data": secret_data,
+            "project_id": project_vo.project_id,
+            "workspace_id": project_vo.workspace_id,
+            "domain_id": project_vo.domain_id,
+            "provider": provider,
+            "trusted_account_id": trusted_account_id,
+            "tags": tags,
+        }
+
+        if schema_id:
+            params["schema_id"] = schema_id
+
+        service_account_vo = self.service_account_mgr.create_service_account(params)
+        return service_account_vo
