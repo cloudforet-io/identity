@@ -277,18 +277,19 @@ class JobService(BaseService):
         ac_plugin_mgr.initialize(endpoint)
 
         try:
-            secret_data = self._get_secret_data(
+            trusted_secret_data = self._get_trusted_secret_data(
                 trusted_account_vo.trusted_secret_id, domain_id
             )
             schema_mgr = SchemaManager()
             # Check secret_data by schema
             schema_mgr.validate_secret_data_by_schema_id(
-                schema_id, domain_id, secret_data, "SECRET"
+                schema_id, domain_id, trusted_secret_data, "SECRET"
             )
         except Exception as e:
-            secret_data = {}
+            trusted_secret_data = {}
             _LOGGER.error(
-                f"[created_trusted_account_job] get secret error: {e}", exc_info=True
+                f"[created_trusted_account_job] get trusted secret error: {e}",
+                exc_info=True,
             )
 
         # Add Job Options
@@ -310,7 +311,7 @@ class JobService(BaseService):
                     "job_id": job_vo.job_id,
                     "trusted_account_id": trusted_account_id,
                     "trusted_secret_id": trusted_account_vo.trusted_secret_id,
-                    "secret_data": secret_data,
+                    "secret_data": trusted_secret_data,
                     "workspace_id": trusted_account_vo.workspace_id,
                     "domain_id": domain_id,
                 }
@@ -338,11 +339,13 @@ class JobService(BaseService):
         )
         return trusted_account_vos
 
-    def _get_secret_data(self, secret_id: str, domain_id: str) -> dict:
+    def _get_trusted_secret_data(self, trusted_secret_id: str, domain_id: str) -> dict:
         # todo: this method is internal method
         secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
-        if secret_id:
-            secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
+        if trusted_secret_id:
+            secret_data = secret_mgr.get_trusted_secret_data(
+                trusted_secret_id, domain_id
+            )
         else:
             secret_data = {}
 

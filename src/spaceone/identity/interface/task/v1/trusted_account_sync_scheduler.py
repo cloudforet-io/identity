@@ -28,30 +28,21 @@ class TrustedAccountSyncScheduler(HourlyScheduler):
 
     def _create_trusted_account_sync_task(self):
         current_hour = datetime.utcnow().hour
-        if current_hour == 0:
-            stp = {
-                "name": "trusted_account_sync_schedule",
-                "version": "v1",
-                "executionEngine": "BaseWorker",
-                "stages": [
-                    {
-                        "locator": "SERVICE",
-                        "name": "JobService",
-                        "metadata": {"token": self._token},
-                        "method": "create_jobs_by_trusted_account",
-                        "params": {"params": {"current_hour": current_hour}},
-                    }
-                ],
-            }
-            print(
-                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] create_jobs_by_trusted_account => START"
-            )
-            return [stp]
-        else:
-            print(
-                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] create_jobs_by_trusted_account => SKIP"
-            )
-            print(
-                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] data_source_sync_time: {current_hour} hour (UTC)"
-            )
-            return []
+        stp = {
+            "name": "trusted_account_sync_schedule",
+            "version": "v1",
+            "executionEngine": "BaseWorker",
+            "stages": [
+                {
+                    "locator": "SERVICE",
+                    "name": "JobService",
+                    "metadata": {"token": self._token},
+                    "method": "create_jobs_by_trusted_account",
+                    "params": {"params": {"current_hour": current_hour}},
+                }
+            ],
+        }
+        print(
+            f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] create_jobs_by_trusted_account => START"
+        )
+        return [stp]

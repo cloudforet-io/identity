@@ -23,6 +23,15 @@ class SecretManager(BaseManager):
             token=system_token,
         )
 
+    def get_trusted_secret_data(self, trusted_secret_id: str, domain_id: str) -> dict:
+        system_token = config.get_global("TOKEN")
+
+        return self.secret_conn.dispatch(
+            "TrustedSecret.get_data",
+            {"trusted_secret_id": trusted_secret_id, "domain_id": domain_id},
+            token=system_token,
+        )
+
     def create_trusted_secret(self, params: dict) -> dict:
         return self.secret_conn.dispatch("TrustedSecret.create", params)
 
