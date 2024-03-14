@@ -10,6 +10,7 @@ class ProjectGroupResponse(BaseModel):
     project_group_id: Union[str, None] = None
     name: Union[str, None] = None
     tags: Union[dict, None] = None
+    users: Union[List[str], None] = None
     parent_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None

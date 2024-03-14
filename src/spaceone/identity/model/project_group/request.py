@@ -1,4 +1,4 @@
-from typing import Union, Literal
+from typing import Union, Literal, List
 from pydantic import BaseModel
 
 __all__ = [
@@ -6,6 +6,8 @@ __all__ = [
     "ProjectGroupUpdateRequest",
     "ProjectChangeParentGroupRequest",
     "ProjectGroupDeleteRequest",
+    "ProjectGroupAddUsersRequest",
+    "ProjectGroupRemoveUsersRequest",
     "ProjectGroupGetRequest",
     "ProjectGroupSearchQueryRequest",
     "ProjectGroupStatQueryRequest",
@@ -37,6 +39,20 @@ class ProjectChangeParentGroupRequest(BaseModel):
 
 class ProjectGroupDeleteRequest(BaseModel):
     project_group_id: str
+    workspace_id: str
+    domain_id: str
+
+
+class ProjectGroupAddUsersRequest(BaseModel):
+    project_group_id: str
+    users: List[str]
+    workspace_id: str
+    domain_id: str
+
+
+class ProjectGroupRemoveUsersRequest(BaseModel):
+    project_group_id: str
+    users: List[str]
     workspace_id: str
     domain_id: str
 
