@@ -9,42 +9,54 @@ class ProjectGroup(BaseAPI, project_group_pb2_grpc.ProjectGroupServicer):
 
     def create(self, request, context):
         params, metadata = self.parse_request(request, context)
-        project_svc = ProjectGroupService(metadata)
-        response: dict = project_svc.create(params)
+        project_group_svc = ProjectGroupService(metadata)
+        response: dict = project_group_svc.create(params)
         return self.dict_to_message(response)
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
-        project_svc = ProjectGroupService(metadata)
-        response: dict = project_svc.update(params)
+        project_group_svc = ProjectGroupService(metadata)
+        response: dict = project_group_svc.update(params)
         return self.dict_to_message(response)
 
     def change_parent_group(self, request, context):
         params, metadata = self.parse_request(request, context)
-        project_svc = ProjectGroupService(metadata)
-        response: dict = project_svc.change_parent_group(params)
+        project_group_svc = ProjectGroupService(metadata)
+        response: dict = project_group_svc.change_parent_group(params)
         return self.dict_to_message(response)
 
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
-        project_svc = ProjectGroupService(metadata)
-        project_svc.delete(params)
+        project_group_svc = ProjectGroupService(metadata)
+        project_group_svc.delete(params)
         return self.empty()
+
+    def add_users(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        project_group_svc = ProjectGroupService(metadata)
+        response: dict = project_group_svc.add_users(params)
+        return self.dict_to_message(response)
+
+    def remove_users(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        project_group_svc = ProjectGroupService(metadata)
+        response: dict = project_group_svc.remove_users(params)
+        return self.dict_to_message(response)
 
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
-        project_svc = ProjectGroupService(metadata)
-        response: dict = project_svc.get(params)
+        project_group_svc = ProjectGroupService(metadata)
+        response: dict = project_group_svc.get(params)
         return self.dict_to_message(response)
 
     def list(self, request, context):
         params, metadata = self.parse_request(request, context)
-        project_svc = ProjectGroupService(metadata)
-        response: dict = project_svc.list(params)
+        project_group_svc = ProjectGroupService(metadata)
+        response: dict = project_group_svc.list(params)
         return self.dict_to_message(response)
 
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)
-        project_svc = ProjectGroupService(metadata)
-        response: dict = project_svc.stat(params)
+        project_group_svc = ProjectGroupService(metadata)
+        response: dict = project_group_svc.stat(params)
         return self.dict_to_message(response)

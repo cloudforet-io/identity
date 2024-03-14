@@ -118,7 +118,9 @@ class JobManager(BaseManager):
         job_vo.update({"status": "CANCELED", "finished_at": datetime.utcnow()})
 
     @staticmethod
-    def change_error_status(job_vo: Job, error: ERROR_BASE = None) -> None:
+    def change_error_status(
+        job_vo: Job, error: Union[ERROR_BASE, Exception] = None
+    ) -> None:
         if not isinstance(error, ERROR_BASE):
             error = ERROR_UNKNOWN(message=str(error))
         _LOGGER.debug(

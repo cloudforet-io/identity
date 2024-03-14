@@ -7,6 +7,7 @@ from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_project_group import *
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
+from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.model.project_group.request import *
 from spaceone.identity.model.project_group.response import *
 
@@ -160,6 +161,83 @@ class ProjectGroupService(BaseService):
         )
 
         self.project_group_mgr.delete_project_group_by_vo(project_group_vo)
+
+    @transaction(
+        permission="identity:ProjectGroup.write", role_types=["WORKSPACE_OWNER"]
+    )
+    @convert_model
+    def add_users(
+        self, params: ProjectGroupAddUsersRequest
+    ) -> Union[ProjectGroupResponse, dict]:
+        """Add users to project group
+
+        Args:
+            params (ProjectGroupAddUsersRequest): {
+                'project_group_id': 'str',      # required
+                'user_ids': 'list',             # required
+                'domain_id': 'str',             # injected from auth (required)
+                'workspace_id': 'str'           # injected from auth (required)
+            }
+        Returns:
+            ProjectGroupResponse:
+        """
+
+        project_group_vo = self.project_group_mgr.get_project_group(
+            params.project_group_id,
+            params.domain_id,
+            params.workspace_id,
+        )
+
+        if len(params.users) > 0:
+            workspace_user_mgr = WorkspaceUserManager()
+            workspace_user_mgr.check_workspace_users(
+                params.users, params.workspace_id, params.domain_id
+            )
+
+            users = project_group_vo.users or []
+            users.extend(params.users)
+            params.users = list(set(users))
+
+            project_group_vo = self.project_group_mgr.update_project_group_by_vo(
+                params.dict(exclude_unset=True), project_group_vo
+            )
+
+        return ProjectGroupResponse(**project_group_vo.to_dict())
+
+    @transaction(
+        permission="identity:ProjectGroup.write", role_types=["WORKSPACE_OWNER"]
+    )
+    @convert_model
+    def remove_users(
+        self, params: ProjectGroupRemoveUsersRequest
+    ) -> ProjectGroupResponse:
+        """Remove users from project group
+        Args:
+            params: (ProjectGroupRemoveUsersRequest): {
+                'project_group_id': 'str',      # required
+                'users': 'list',             # required
+                'workspace_id': 'str',             # injected from auth (required)
+                'domain_id': 'str'           # injected from auth (required)
+            }
+
+        """
+
+        project_group_vo = self.project_group_mgr.get_project_group(
+            params.project_group_id, params.domain_id, params.workspace_id
+        )
+        if len(params.users) > 0:
+            workspace_user_mgr = WorkspaceUserManager()
+            workspace_user_mgr.check_workspace_users(
+                params.users, params.workspace_id, params.domain_id
+            )
+
+            users = project_group_vo.users or []
+            params.users = list(set(users) - set(params.users))
+            project_group_vo = self.project_group_mgr.update_project_group_by_vo(
+                params.dict(exclude_unset=True), project_group_vo
+            )
+
+        return ProjectGroupResponse(**project_group_vo.to_dict())
 
     @transaction(
         permission="identity:ProjectGroup.read",
