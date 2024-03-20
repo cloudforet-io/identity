@@ -19,6 +19,18 @@ class Role(BaseAPI, role_pb2_grpc.RoleServicer):
         response: dict = endpoint_svc.update(params)
         return self.dict_to_message(response)
 
+    def enable(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        endpoint_svc = RoleService(metadata)
+        response: dict = endpoint_svc.enable(params)
+        return self.dict_to_message(response)
+
+    def disable(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        endpoint_svc = RoleService(metadata)
+        response: dict = endpoint_svc.disable(params)
+        return self.dict_to_message(response)
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
         endpoint_svc = RoleService(metadata)

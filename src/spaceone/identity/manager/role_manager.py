@@ -50,6 +50,14 @@ class RoleManager(BaseManager):
 
         return role_vo.update(params)
 
+    def enable_role_by_vo(self, role_vo: Role) -> Role:
+        self.update_role_by_vo({"state": "ENABLED"}, role_vo)
+        return role_vo
+
+    def disable_role_by_vo(self, role_vo: Role) -> Role:
+        self.update_role_by_vo({"state": "DISABLED"}, role_vo)
+        return role_vo
+
     @staticmethod
     def delete_role_by_vo(role_vo: Role) -> None:
         rb_mgr = RoleBindingManager()
