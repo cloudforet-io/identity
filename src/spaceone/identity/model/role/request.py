@@ -4,14 +4,18 @@ from pydantic import BaseModel
 __all__ = [
     "RoleCreateRequest",
     "RoleUpdateRequest",
+    "RoleEnableRequest",
+    "RoleDisableRequest",
     "RoleDeleteRequest",
     "RoleGetRequest",
     "RoleSearchQueryRequest",
     "RoleStatQueryRequest",
     "RoleType",
+    "State",
 ]
 
 RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
+State = Literal["ENABLED", "DISABLED"]
 
 
 class RoleCreateRequest(BaseModel):
@@ -32,6 +36,16 @@ class RoleUpdateRequest(BaseModel):
     domain_id: str
 
 
+class RoleEnableRequest(BaseModel):
+    role_id: str
+    domain_id: str
+
+
+class RoleDisableRequest(BaseModel):
+    role_id: str
+    domain_id: str
+
+
 class RoleDeleteRequest(BaseModel):
     role_id: str
     domain_id: str
@@ -46,6 +60,7 @@ class RoleSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     role_id: Union[str, None] = None
     name: Union[str, None] = None
+    state: Union[State, None] = None
     role_type: Union[RoleType, None] = None
     domain_id: str
 

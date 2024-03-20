@@ -78,6 +78,45 @@ class RoleService(BaseService):
 
     @transaction(permission="identity:Role.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
+    def enable(self, params: RoleEnableRequest) -> Union[RoleResponse, dict]:
+        """enable role
+
+         Args:
+            params (RoleEnableRequest): {
+                'role_id': 'str',           # required
+                'domain_id': 'str',         # injected from auth (required)
+            }
+        Returns:
+            RoleResponse:
+        """
+
+        role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
+        role_vo = self.role_mgr.enable_role_by_vo(role_vo)
+
+        return RoleResponse(**role_vo.to_dict())
+
+    @transaction(permission="identity:Role.write", role_types=["DOMAIN_ADMIN"])
+    @convert_model
+    def disable(self, params: RoleDisableRequest) -> Union[RoleResponse, dict]:
+        """disable role
+
+         Args:
+            params (RoleDisableRequest): {
+                'role_id': 'str',           # required
+                'domain_id': 'str',         # injected from auth (required)
+            }
+
+        Returns:
+            RoleResponse:
+        """
+
+        role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
+        role_vo = self.role_mgr.disable_role_by_vo(role_vo)
+
+        return RoleResponse(**role_vo.to_dict())
+
+    @transaction(permission="identity:Role.write", role_types=["DOMAIN_ADMIN"])
+    @convert_model
     def delete(self, params: RoleDeleteRequest) -> None:
         """delete role
 
@@ -122,7 +161,7 @@ class RoleService(BaseService):
         permission="identity:Role.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @append_query_filter(["role_id", "name", "role_type", "domain_id"])
+    @append_query_filter(["role_id", "name", "state", "role_type", "domain_id"])
     @append_keyword_filter(["role_id", "name"])
     @convert_model
     def list(self, params: RoleSearchQueryRequest) -> Union[RolesResponse, dict]:
@@ -133,6 +172,7 @@ class RoleService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'role_id': 'str',
                 'name': 'str',
+                'state': 'str',
                 'role_type': 'str',
                 'domain_id': 'str',             # injected from auth (required)
             }
