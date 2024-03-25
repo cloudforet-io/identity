@@ -1,10 +1,12 @@
 import logging
-from typing import Tuple
+from typing import Tuple, List
 from mongoengine import QuerySet
+from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.error.error_project_group import *
 from spaceone.identity.manager.project_manager import ProjectManager
+from spaceone.identity.model.project.database import Project
 from spaceone.identity.model.project_group.database import ProjectGroup
 
 _LOGGER = logging.getLogger(__name__)
@@ -14,6 +16,7 @@ class ProjectGroupManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.project_group_model = ProjectGroup
+        self.project_model = Project
 
     def create_project_group(self, params: dict) -> ProjectGroup:
         def _rollback(vo: ProjectGroup):
@@ -28,7 +31,7 @@ class ProjectGroupManager(BaseManager):
         return project_group_vo
 
     def update_project_group_by_vo(
-        self, params: dict, project_group_vo: ProjectGroup
+            self, params: dict, project_group_vo: ProjectGroup
     ) -> ProjectGroup:
         def _rollback(old_data):
             _LOGGER.info(
@@ -59,7 +62,7 @@ class ProjectGroupManager(BaseManager):
         project_group_vo.delete()
 
     def get_project_group(
-        self, project_group_id: str, domain_id: str, workspace_id: str = None
+            self, project_group_id: str, domain_id: str, workspace_id: str = None
     ) -> ProjectGroup:
         conditions = {
             "project_group_id": project_group_id,
@@ -79,3 +82,19 @@ class ProjectGroupManager(BaseManager):
 
     def stat_project_groups(self, query: dict) -> dict:
         return self.project_group_model.stat(**query)
+
+    @cache.cacheable(
+        key="identity:project-group:{domain_id}:{project_group_id}",
+        expire=180,
+    )
+    def get_projects_in_project_groups(
+            self, domain_id: str, project_group_id: list,
+    ) -> List[str]:
+        project_vos = self.project_model.filter(domain_id=domain_id, project_group_id=project_group_id)
+        projects = [project_vo.project_id for project_vo in project_vos]
+
+        child_project_groups = self.project_group_model.filter(domain_id=domain_id, parent_group_id=project_group_id)
+        for child_project_group in child_project_groups:
+            parent_group_id = child_project_group.project_group_id
+            projects.extend(self.get_projects_in_project_groups(domain_id, parent_group_id))
+        return list(set(projects))

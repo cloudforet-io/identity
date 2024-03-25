@@ -21,6 +21,7 @@ from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.project_manager import ProjectManager
+from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.token.request import *
 from spaceone.identity.model.token.response import *
@@ -43,6 +44,7 @@ class TokenService(BaseService):
         self.rb_mgr = RoleBindingManager()
         self.role_mgr = RoleManager()
         self.project_mgr = ProjectManager()
+        self.project_group_mgr = ProjectGroupManager()
         self.workspace_mgr = WorkspaceManager()
 
     @transaction()
@@ -75,7 +77,9 @@ class TokenService(BaseService):
         self._check_domain_state(domain_id)
 
         token_mgr = TokenManager.get_token_manager_by_auth_type(params.auth_type)
-        token_mgr.authenticate(domain_id, verify_code=verify_code, credentials=credentials)
+        token_mgr.authenticate(
+            domain_id, verify_code=verify_code, credentials=credentials
+        )
 
         user_vo = token_mgr.user
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
@@ -124,7 +128,10 @@ class TokenService(BaseService):
         )
 
         # todo: remove
-        if domain_id == SystemManager.get_root_domain_id() and params.scope == "WORKSPACE":
+        if (
+                domain_id == SystemManager.get_root_domain_id()
+                and params.scope == "WORKSPACE"
+        ):
             public_jwk = self.domain_secret_mgr.get_domain_public_key(domain_id)
             domain_id = params.domain_id
 
@@ -148,7 +155,9 @@ class TokenService(BaseService):
 
         if public_jwk:
             # todo: remove
-            decoded_token_info = self._verify_token(params.grant_type, params.token, public_jwk)
+            decoded_token_info = self._verify_token(
+                params.grant_type, params.token, public_jwk
+            )
             role_id = "managed-workspace-owner"
             role_type = "WORKSPACE_OWNER"
             user_vo = None
@@ -200,9 +209,22 @@ class TokenService(BaseService):
             permissions = None
 
         if role_type == "WORKSPACE_MEMBER":
-            user_projects = self._get_user_projects(
-                user_vo.user_id, params.workspace_id, domain_id
+            user_projects = []
+            project_groups = self.project_group_mgr.filter_project_groups(
+                domain_id=domain_id,
+                workspace_id=params.workspace_id,
+                users=user_vo.user_id,
             )
+
+            for project_group in project_groups:
+                project_group_id = project_group.project_group_id
+                user_projects.extend(self.project_group_mgr.get_projects_in_project_groups(domain_id, project_group_id))
+
+            user_projects.extend(self._get_user_projects(
+                user_vo.user_id, params.workspace_id, domain_id
+            ))
+
+            user_projects = list(set(user_projects))
         else:
             user_projects = None
 
@@ -214,7 +236,7 @@ class TokenService(BaseService):
             workspace_id=params.workspace_id,
             permissions=permissions,
             projects=user_projects,
-            app_id=app_id  # todo : remove
+            app_id=app_id,  # todo : remove
         )
 
         response = {
