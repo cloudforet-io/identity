@@ -18,12 +18,12 @@ class JobManager(BaseManager):
         self.job_model = Job
 
     def create_job(
-        self,
-        resource_group: str,
-        domain_id: str,
-        workspace_id: str,
-        trusted_account_id: str,
-        plugin_id: str,
+            self,
+            resource_group: str,
+            domain_id: str,
+            workspace_id: str,
+            trusted_account_id: str,
+            plugin_id: str,
     ) -> Job:
         data = {
             "resource_group": resource_group,
@@ -42,7 +42,7 @@ class JobManager(BaseManager):
         _LOGGER.debug(f"[delete_job_by_vo] delete job: {job_vo.job_id}")
         job_vo.delete()
 
-    def get_job(self, job_id: str, domain_id: str, workspace_id: str = None) -> Job:
+    def get_job(self, domain_id: str, job_id: str, workspace_id: str = None) -> Job:
         conditions = {"job_id": job_id, "domain_id": domain_id}
 
         if workspace_id:
@@ -119,7 +119,7 @@ class JobManager(BaseManager):
 
     @staticmethod
     def change_error_status(
-        job_vo: Job, error: Union[ERROR_BASE, Exception] = None
+            job_vo: Job, error: Union[ERROR_BASE, Exception] = None
     ) -> None:
         if not isinstance(error, ERROR_BASE):
             error = ERROR_UNKNOWN(message=str(error))

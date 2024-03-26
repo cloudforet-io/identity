@@ -32,17 +32,17 @@ class AccountCollectorPluginConnector(BaseConnector):
         self.options = self.config.get("options")
         self.schema = self.config.get("schema")
 
-    def init(self, options, domain_id):
+    def init(self, domain_id: str, options: dict):
         return self.client.dispatch(
             "AccountCollector.init", {"options": options, "domain_id": domain_id}
         )
 
     def sync(
-        self,
-        options: dict,
-        secret_data: dict,
-        schema: str,
-        domain_id: str,
+            self,
+            options: dict,
+            secret_data: dict,
+            schema: str,
+            domain_id: str,
     ):
         params = {
             "options": self.options or options,
