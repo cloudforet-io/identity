@@ -87,7 +87,7 @@ class AccountCollectorPluginManager(BaseManager):
 
         plugin_options = plugin_info.get("options", {})
 
-        plugin_metadata = self.init_plugin(plugin_options, domain_id)
+        plugin_metadata = self.init_plugin(domain_id, plugin_options)
         plugin_info["version"] = updated_version
         plugin_info["metadata"] = plugin_metadata
 

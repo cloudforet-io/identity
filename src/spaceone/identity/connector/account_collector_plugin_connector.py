@@ -18,7 +18,7 @@ class AccountCollectorPluginConnector(BaseConnector):
         token = self.transaction.get_meta("token")
         self.token_type = JWTUtil.get_value_from_token(token, "typ")
 
-    def initialize(self, endpoint):
+    def initialize(self, endpoint: str) -> None:
         static_endpoint = self.config.get("endpoint")
 
         if static_endpoint:
