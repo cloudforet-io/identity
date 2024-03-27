@@ -13,3 +13,7 @@ class ERROR_NOT_ALLOWED_TO_CHANGE_PARENT_GROUP_TO_SUB_PROJECT_GROUP(
     ERROR_INVALID_ARGUMENT
 ):
     _message = "Not allowed to change parent group to sub project group. (project_group_id = {project_group_id})"
+
+
+class ERROR_USER_NOT_IN_PROJECT_GROUP(ERROR_PERMISSION_DENIED):
+    _message = "{user_id} is not in project group."

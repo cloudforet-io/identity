@@ -62,7 +62,7 @@ class ProjectGroupManager(BaseManager):
         project_group_vo.delete()
 
     def get_project_group(
-            self, project_group_id: str, domain_id: str, workspace_id: str = None
+            self, project_group_id: str, domain_id: str, workspace_id: str = None, user_id: str = None
     ) -> ProjectGroup:
         conditions = {
             "project_group_id": project_group_id,
@@ -71,6 +71,9 @@ class ProjectGroupManager(BaseManager):
 
         if workspace_id:
             conditions.update({"workspace_id": workspace_id})
+
+        if user_id:
+            conditions.update({"users": user_id})
 
         return self.project_group_model.get(**conditions)
 
