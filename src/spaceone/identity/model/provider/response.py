@@ -11,7 +11,7 @@ __all__ = ["ProviderResponse", "ProvidersResponse"]
 class Plugin(BaseModel):
     plugin_id: str = None
     version: Union[str, None] = None
-    options: dict
+    options: Union[dict, None] = None
     upgrade_mode: Union[UpgradeMode, None] = None
 
 

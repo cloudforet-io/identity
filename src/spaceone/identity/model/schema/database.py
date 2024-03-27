@@ -33,7 +33,8 @@ class Schema(MongoModel):
             'name',
             'schema_type',
             'provider',
-            'is_managed'
+            'is_managed',
+            'version'
         ],
         'change_query_keys': {
             'related_schema_id': 'related_schemas',

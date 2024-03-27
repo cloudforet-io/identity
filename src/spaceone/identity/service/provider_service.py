@@ -254,7 +254,7 @@ class ProviderService(BaseService):
 
     def _init_plugin(self, endpoint: str, options: dict, domain_id: str) -> dict:
         self.ac_plugin_mgr.initialize(endpoint)
-        return self.ac_plugin_mgr.init_plugin(options, domain_id)
+        return self.ac_plugin_mgr.init_plugin(domain_id, options)
 
     @staticmethod
     def _check_sync_option_with_plugin_info(
