@@ -1,13 +1,17 @@
-from datetime import datetime
-from typing import Union, Literal
+from typing import Union
 from pydantic import BaseModel
 
 __all__ = [
     "ServiceAccountCreateRequest",
+    "ServiceAccountCreateAppRequest",
     "ServiceAccountUpdateRequest",
     "ServiceAccountUpdateSecretRequest",
     "ServiceAccountDeleteSecretRequest",
     "ServiceAccountDeleteRequest",
+    "ServiceAccountEnableAppRequest",
+    "ServiceAccountDisableAppRequest",
+    "ServiceAccountRegenerateAppRequest",
+    "ServiceAccountDeleteAppRequest",
     "ServiceAccountGetRequest",
     "ServiceAccountSearchQueryRequest",
     "ServiceAccountStatQueryRequest",
@@ -25,6 +29,14 @@ class ServiceAccountCreateRequest(BaseModel):
     project_id: str
     workspace_id: str
     domain_id: str
+
+
+class ServiceAccountCreateAppRequest(BaseModel):
+    service_account_id: str
+    options: Union[dict, None] = None
+    workspace_id: Union[str, None] = None
+    domain_id: str
+    user_projects: Union[list, None] = None
 
 
 class ServiceAccountUpdateRequest(BaseModel):
@@ -58,6 +70,34 @@ class ServiceAccountDeleteSecretRequest(BaseModel):
 class ServiceAccountDeleteRequest(BaseModel):
     service_account_id: str
     workspace_id: str
+    domain_id: str
+    user_projects: Union[list, None] = None
+
+
+class ServiceAccountEnableAppRequest(BaseModel):
+    service_account_id: str
+    workspace_id: Union[str, None] = None
+    domain_id: str
+    user_projects: Union[list, None] = None
+
+
+class ServiceAccountDisableAppRequest(BaseModel):
+    service_account_id: str
+    workspace_id: Union[str, None] = None
+    domain_id: str
+    user_projects: Union[list, None] = None
+
+
+class ServiceAccountRegenerateAppRequest(BaseModel):
+    service_account_id: str
+    workspace_id: Union[str, None] = None
+    domain_id: str
+    user_projects: Union[list, None] = None
+
+
+class ServiceAccountDeleteAppRequest(BaseModel):
+    service_account_id: str
+    workspace_id: Union[str, None] = None
     domain_id: str
     user_projects: Union[list, None] = None
 

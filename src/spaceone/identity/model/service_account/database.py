@@ -7,9 +7,11 @@ class ServiceAccount(MongoModel):
     name = StringField(max_length=255, unique_with=["domain_id", "workspace_id"])
     data = DictField(default=None)
     provider = StringField(max_length=40)
+    options = DictField(default=None)
     tags = DictField(default=None)
     secret_schema_id = StringField(max_length=40)
     secret_id = StringField(max_length=40)
+    app_id = StringField(max_length=40, null=True, default=None)
     trusted_account_id = StringField(max_length=40, null=True, default=None)
     project_id = StringField(max_length=40)
     workspace_id = StringField(max_length=40)
@@ -20,9 +22,11 @@ class ServiceAccount(MongoModel):
         "updatable_fields": [
             "name",
             "data",
+            "options",
             "tags",
             "secret_schema_id",
             "secret_id",
+            "app_id",
             "trusted_account_id",
             "project_id",
         ],

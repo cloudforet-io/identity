@@ -192,6 +192,10 @@ class AppService(BaseService):
             params.workspace_id,
         )
         app_vo = self.app_mgr.enable_app(app_vo)
+
+        if app_vo.is_managed:
+            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be enabled.")
+
         return AppResponse(**app_vo.to_dict())
 
     @transaction(
@@ -214,6 +218,10 @@ class AppService(BaseService):
             params.workspace_id,
         )
         app_vo = self.app_mgr.disable_app(app_vo)
+
+        if app_vo.is_managed:
+            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be disabled.")
+
         return AppResponse(**app_vo.to_dict())
 
     @transaction(
@@ -237,6 +245,10 @@ class AppService(BaseService):
             params.domain_id,
             params.workspace_id,
         )
+
+        if app_vo.is_managed:
+            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be deleted.")
+
         self.app_mgr.delete_app_by_vo(app_vo)
 
     @transaction(

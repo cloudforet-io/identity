@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union, Literal, List
+from typing import Union, List
 from pydantic import BaseModel
 from spaceone.core import utils
 
@@ -11,9 +11,11 @@ class ServiceAccountResponse(BaseModel):
     name: Union[str, None] = None
     data: Union[dict, None] = None
     provider: Union[str, None] = None
+    options: Union[dict, None] = None
     tags: Union[dict, None] = None
     secret_schema_id: Union[str, None] = None
     secret_id: Union[str, None] = None
+    app_id: Union[str, None] = None
     trusted_account_id: Union[str, None] = None
     project_id: Union[str, None] = None
     workspace_id: Union[str, None] = None

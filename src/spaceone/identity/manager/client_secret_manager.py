@@ -19,6 +19,7 @@ class ClientSecretManager(BaseManager):
         role_type: str,
         workspace_id: str = None,
         permissions: list = None,
+        injected_params: dict = None,
     ) -> Tuple[str, str]:
         domain_secret_mgr = DomainSecretManager()
         prv_jwk = domain_secret_mgr.get_domain_private_key(domain_id)
@@ -40,6 +41,7 @@ class ClientSecretManager(BaseManager):
             role_type=role_type,
             workspace_id=workspace_id,
             permissions=permissions,
+            injected_params=injected_params,
         )
 
         return client_id, client_secret

@@ -1,10 +1,15 @@
 import logging
-from typing import Union
+from datetime import datetime, timedelta
+from typing import Union, Tuple
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 from spaceone.core.error import *
 
+from spaceone.identity.manager.app_manager import AppManager
+from spaceone.identity.manager.client_secret_manager import ClientSecretManager
+from spaceone.identity.model import App
+from spaceone.identity.model.app.response import AppResponse
 from spaceone.identity.model.service_account.request import *
 from spaceone.identity.model.service_account.response import *
 from spaceone.identity.manager.schema_manager import SchemaManager
@@ -26,6 +31,7 @@ class ServiceAccountService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.service_account_mgr = ServiceAccountManager()
+        self.app_mgr = AppManager()
 
     @transaction(
         permission="identity:ServiceAccount.write",
@@ -124,6 +130,68 @@ class ServiceAccountService(BaseService):
             )
 
         return ServiceAccountResponse(**service_account_vo.to_dict())
+
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @convert_model
+    def create_app(
+        self, params: ServiceAccountCreateAppRequest
+    ) -> Union[AppResponse, dict]:
+        """create app created by service account
+
+         Args:
+            params (ServiceAccountCreateAppRequest): {
+                'service_account_id': 'str',            # required
+                'options': 'dict',
+                'workspace_id': 'str',                  # injected from auth (required)
+                'domain_id': 'str',                     # injected from auth (required)
+                'user_projects': 'list'                 # injected from auth
+            }
+
+        Returns:
+            AppResponse:
+        """
+        resource_group = "WORKSPACE"
+        service_account_id = params.service_account_id
+        options = params.options or {}
+        workspace_id = params.workspace_id
+        domain_id = params.domain_id
+        users_project = params.user_projects
+
+        service_account_vo = self.service_account_mgr.get_service_account(
+            service_account_id, domain_id, workspace_id, users_project
+        )
+
+        if service_account_vo.app_id:
+            raise ERROR_EXIST_RESOURCE(key='app_id', value=service_account_vo.app_id, message="Please delete the existing app first.")
+
+        params_data = {
+            "name": f"{service_account_vo.name} agent app",
+            "role_id": "managed-workspace-owner",
+            "role_type": "WORKSPACE_OWNER",
+            "domain_id": domain_id,
+            "workspace_id": workspace_id,
+            "resource_group": resource_group,
+            "service_account_id": service_account_id,
+            "is_managed": True,
+            "expired_at": self._get_expired_at()
+        }
+
+        app_vo = self.app_mgr.create_app(params_data)
+
+        client_id, client_secret = self._create_service_account_app_client_secret(
+            app_vo, service_account_id
+        )
+
+        app_vo = self.app_mgr.update_app_by_vo({"client_id": client_id}, app_vo)
+
+        self.service_account_mgr.update_service_account_by_vo(
+            {"app_id": app_vo.app_id, "options": options}, service_account_vo
+        )
+
+        return AppResponse(**app_vo.to_dict(), client_secret=client_secret)
 
     @transaction(
         permission="identity:ServiceAccount.write",
@@ -328,10 +396,184 @@ class ServiceAccountService(BaseService):
             params.user_projects,
         )
 
+        if service_account_vo.app_id:
+            raise ERROR_SERVICE_ACCOUNT_CANNOT_BE_DELETED_WITH_EXISTING_APP(key='service_account_id')
+
         secret_mgr = SecretManager()
         secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
 
         self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
+
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @convert_model
+    def enable_app(
+        self, params: ServiceAccountEnableAppRequest
+    ) -> Union[AppResponse, dict]:
+        """enable app created by service account
+
+         Args:
+            params (ServiceAccountEnableAppRequest): {
+                'service_account_id': 'str',            # required
+                'workspace_id': 'str',                  # injected from auth (required)
+                'domain_id': 'str',                     # injected from auth (required)
+                'user_projects': 'list'                 # injected from auth
+            }
+
+        Returns:
+            AppResponse:
+        """
+        service_account_id = params.service_account_id
+        domain_id = params.domain_id
+        workspace_id = params.workspace_id
+        user_projects = params.user_projects
+
+        service_account_vo = self.service_account_mgr.get_service_account(
+            service_account_id,
+            domain_id,
+            workspace_id,
+            user_projects,
+        )
+        app_vo = self.app_mgr.get_app(
+            service_account_vo.app_id,
+            domain_id,
+            workspace_id,
+            service_account_id,
+        )
+        app_vo = self.app_mgr.enable_app(app_vo)
+        return AppResponse(**app_vo.to_dict())
+
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @convert_model
+    def disable_app(
+        self, params: ServiceAccountDisableAppRequest
+    ) -> Union[AppResponse, dict]:
+        """disable app created by service account
+
+         Args:
+            params (ServiceAccountDisableAppRequest): {
+                'service_account_id': 'str',            # required
+                'workspace_id': 'str',                  # injected from auth (required)
+                'domain_id': 'str',                     # injected from auth (required)
+                'user_projects': 'list'                 # injected from auth
+            }
+
+        Returns:
+            AppResponse:
+        """
+        service_account_id = params.service_account_id
+        domain_id = params.domain_id
+        workspace_id = params.workspace_id
+        user_projects = params.user_projects
+
+        service_account_vo = self.service_account_mgr.get_service_account(
+            service_account_id,
+            domain_id,
+            workspace_id,
+            user_projects,
+        )
+        app_vo = self.app_mgr.get_app(
+            service_account_vo.app_id,
+            domain_id,
+            workspace_id,
+            service_account_id,
+        )
+        app_vo = self.app_mgr.disable_app(app_vo)
+        return AppResponse(**app_vo.to_dict())
+
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @convert_model
+    def regenerate_app(
+        self, params: ServiceAccountRegenerateAppRequest
+    ) -> Union[AppResponse, dict]:
+        """regenerate app created by service account
+
+         Args:
+            params (ServiceAccountRegenerateAppRequest): {
+                'service_account_id': 'str',            # required
+                'workspace_id': 'str',                  # injected from auth (required)
+                'domain_id': 'str',                     # injected from auth (required)
+                'user_projects': 'list'                 # injected from auth
+            }
+
+        Returns:
+            AppResponse:
+        """
+        service_account_id = params.service_account_id
+        domain_id = params.domain_id
+        workspace_id = params.workspace_id
+        user_projects = params.user_projects
+
+        service_account_vo = self.service_account_mgr.get_service_account(
+            service_account_id,
+            domain_id,
+            workspace_id,
+            user_projects,
+        )
+
+        app_vo = self.app_mgr.get_app(
+            service_account_vo.app_id,
+            domain_id,
+            workspace_id,
+            service_account_id,
+        )
+
+        client_id, client_secret = self._create_service_account_app_client_secret(
+            app_vo, service_account_id
+        )
+
+        # Update app info
+        app_vo = self.app_mgr.update_app_by_vo({"client_id": client_id}, app_vo)
+
+        return AppResponse(**app_vo.to_dict(), client_secret=client_secret)
+
+    @transaction(
+        permission="identity:ServiceAccount.write",
+        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
+    @convert_model
+    def delete_app(self, params: ServiceAccountDeleteAppRequest) -> None:
+        """delete app created by service account
+
+        Args:
+            params (ServiceAccountDeleteAppRequest): {
+                'service_account_id: 'str'   # required
+                'workspace_id': 'str',       # injected from auth (required)
+                'domain_id': 'str'           # injected from auth (required)
+                'user_projects': 'list'      # injected from auth
+            }
+        Returns:
+            None
+        """
+        service_account_id = params.service_account_id
+        domain_id = params.domain_id
+        workspace_id = params.workspace_id
+        user_projects = params.user_projects
+
+        service_account_vo = self.service_account_mgr.get_service_account(
+            service_account_id,
+            domain_id,
+            workspace_id,
+            user_projects,
+        )
+
+        app_vo = self.app_mgr.get_app(
+            service_account_vo.app_id,
+            domain_id,
+            workspace_id,
+            service_account_id,
+        )
+        self.app_mgr.delete_app_by_vo(app_vo)
+        self.service_account_mgr.update_service_account_by_vo({"app_id": None}, service_account_vo)
+
 
     @transaction(
         permission="identity:ServiceAccount.read",
@@ -449,3 +691,39 @@ class ServiceAccountService(BaseService):
 
         query = params.query or {}
         return self.service_account_mgr.stat_service_accounts(query)
+
+    def _create_service_account_app_client_secret(
+        self, app_vo: App, service_account_id: str
+    ) -> Tuple[str, str]:
+        """create client_id, client_secret for app created by service account
+
+        Args:
+            app_vo: 'App'                   # required
+            service_account_id: 'str'       # required
+
+        Returns:
+            tuple: ('client_id': 'str', 'client_secret': 'str')
+
+        """
+        permissions = ["identity:ServiceAccount.read"]
+        injected_params = {"service_account_id": service_account_id}
+        expired_at = self._get_expired_at()
+
+        client_secret_mgr = ClientSecretManager()
+        client_id, client_secret = client_secret_mgr.generate_client_secret(
+            app_vo.app_id,
+            app_vo.domain_id,
+            expired_at,
+            app_vo.role_type,
+            app_vo.workspace_id,
+            permissions=permissions,
+            injected_params=injected_params,
+        )
+
+        return client_id, client_secret
+
+    @staticmethod
+    def _get_expired_at() -> str:
+        return (datetime.utcnow() + timedelta(days=365)).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
