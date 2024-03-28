@@ -8,6 +8,7 @@ class App(MongoModel):
     state = StringField(
         max_length=20, default="ENABLED", choices=("ENABLED", "DISABLED", "EXPIRED")
     )
+    is_managed = BooleanField(default=False)
     tags = DictField(default=None)
     role_type = StringField(
         max_length=20,
@@ -18,6 +19,7 @@ class App(MongoModel):
     )
     client_id = StringField(max_length=40, default=None, null=True)
     role_id = StringField(max_length=40, required=True)
+    service_account_id = StringField(max_length=40, default=None, null=True)
     resource_group = StringField(max_length=40, choices=("DOMAIN", "WORKSPACE"))
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
@@ -30,6 +32,7 @@ class App(MongoModel):
             "name",
             "state",
             "client_id",
+            "service_account_id",
             "tags",
             "expired_at",
             "last_accessed_at",

@@ -11,13 +11,13 @@ _LOGGER = logging.getLogger(__name__)
 
 class KeyGenerator:
     def __init__(
-            self,
-            prv_jwk: dict,
-            domain_id: str,
-            owner_type: str,
-            audience: str,
-            client_id: str = None,
-            refresh_prv_jwk: dict = None,
+        self,
+        prv_jwk: dict,
+        domain_id: str,
+        owner_type: str,
+        audience: str,
+        client_id: str = None,
+        refresh_prv_jwk: dict = None,
     ):
         self.prv_jwk = prv_jwk
         self.domain_id = domain_id
@@ -33,14 +33,15 @@ class KeyGenerator:
             raise ERROR_GENERATE_KEY_FAILURE()
 
     def generate_token(
-            self,
-            token_type: str,
-            expired_at: str = None,
-            timeout: int = None,
-            role_type: str = None,
-            workspace_id: str = None,
-            permissions: list = None,
-            projects: list = None,
+        self,
+        token_type: str,
+        expired_at: str = None,
+        timeout: int = None,
+        role_type: str = None,
+        workspace_id: str = None,
+        permissions: list = None,
+        projects: list = None,
+        injected_params: dict = None,
     ) -> str:
         payload = {
             "iss": "spaceone.identity",
@@ -70,6 +71,9 @@ class KeyGenerator:
         if projects and len(projects) > 0:
             payload["projects"] = projects
 
+        if injected_params:
+            payload["injected_params"] = injected_params
+
         if token_type == "REFRESH_TOKEN":
             return JWTUtil.encode(payload, self.refresh_prv_jwk)
         else:
@@ -91,5 +95,6 @@ class KeyGenerator:
             f'jti: {payload.get("jti")}, '
             f'projects: {payload.get("projects")},'
             f'permissions: {payload.get("permissions")},'
+            f'injected_params: {payload.get("injected_params")},'
             f'ver: {payload.get("ver")} )'
         )

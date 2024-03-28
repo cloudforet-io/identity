@@ -19,9 +19,11 @@ class AppResponse(BaseModel):
     name: Union[str, None] = None
     state: Union[State, None] = None
     tags: Union[dict, None] = None
+    is_managed: Union[bool, None] = None
     role_type: Union[RoleType, None] = None
     client_id: Union[str, None] = None
     role_id: Union[str, None] = None
+    service_account_id: Union[str, None] = None
     resource_group: Union[ResourceGroup, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None

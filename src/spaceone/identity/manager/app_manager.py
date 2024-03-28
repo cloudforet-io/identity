@@ -54,6 +54,7 @@ class AppManager(BaseManager):
         app_id: str,
         domain_id: str,
         workspace_id: Union[str, None] = None,
+        service_account_id: Union[str, None] = None,
     ) -> App:
         conditions = {
             "app_id": app_id,
@@ -62,6 +63,9 @@ class AppManager(BaseManager):
 
         if workspace_id:
             conditions["workspace_id"] = workspace_id
+
+        if service_account_id:
+            conditions["service_account_id"] = service_account_id
 
         return self.app_model.get(**conditions)
 

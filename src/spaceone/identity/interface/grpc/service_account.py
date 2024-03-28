@@ -1,5 +1,6 @@
+from google.protobuf.json_format import ParseDict
 from spaceone.core.pygrpc import BaseAPI
-from spaceone.api.identity.v2 import service_account_pb2, service_account_pb2_grpc
+from spaceone.api.identity.v2 import service_account_pb2, service_account_pb2_grpc, app_pb2
 from spaceone.identity.service.service_account_service import (
     ServiceAccountService,
 )
@@ -14,6 +15,12 @@ class ServiceAccount(BaseAPI, service_account_pb2_grpc.ServiceAccountServicer):
         service_account_svc = ServiceAccountService(metadata)
         response: dict = service_account_svc.create(params)
         return self.dict_to_message(response)
+
+    def create_app(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        service_account_svc = ServiceAccountService(metadata)
+        response: dict = service_account_svc.create_app(params)
+        return ParseDict(response, app_pb2.AppInfo())
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
@@ -37,6 +44,30 @@ class ServiceAccount(BaseAPI, service_account_pb2_grpc.ServiceAccountServicer):
         params, metadata = self.parse_request(request, context)
         service_account_svc = ServiceAccountService(metadata)
         service_account_svc.delete(params)
+        return self.empty()
+
+    def enable_app(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        service_account_svc = ServiceAccountService(metadata)
+        response: dict = service_account_svc.enable_app(params)
+        return ParseDict(response, app_pb2.AppInfo())
+
+    def disable_app(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        service_account_svc = ServiceAccountService(metadata)
+        response: dict = service_account_svc.disable_app(params)
+        return ParseDict(response, app_pb2.AppInfo())
+
+    def regenerate_app(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        service_account_svc = ServiceAccountService(metadata)
+        response: dict = service_account_svc.regenerate_app(params)
+        return ParseDict(response, app_pb2.AppInfo())
+
+    def delete_app(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        service_account_svc = ServiceAccountService(metadata)
+        service_account_svc.delete_app(params)
         return self.empty()
 
     def get(self, request, context):
