@@ -27,6 +27,7 @@ from spaceone.identity.model.job.database import Job
 from spaceone.identity.model.job.request import *
 from spaceone.identity.model.job.response import *
 from spaceone.identity.model.workspace.database import Workspace
+from spaceone.identity.service.service_account_service import ServiceAccountService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -270,6 +271,7 @@ class JobService(BaseService):
                                                       sync_options)
                     synced_projects.append(project_vo)
                     service_account_vo = self._create_service_account(result, project_vo, trusted_account_id,
+                                                                      trusted_secret_id,
                                                                       provider, result["name"], related_schemas,
                                                                       sync_options)
                     synced_service_accounts.append(service_account_vo)
@@ -329,7 +331,7 @@ class JobService(BaseService):
                 schema_mgr = SchemaManager()
                 # Check secret_data by schema
                 schema_mgr.validate_secret_data_by_schema_id(
-                    schema_id, domain_id, trusted_secret_data, "SECRET"
+                    schema_id, domain_id, trusted_secret_data, "TRUSTED_ACCOUNT"
                 )
         except Exception as e:
             trusted_secret_data = {}
@@ -515,6 +517,7 @@ class JobService(BaseService):
             result: dict,
             project_vo: Project,
             trusted_account_id: str,
+            trusted_secret_id: str,
             provider: str,
             name: str,
             related_schemas: list = None,
@@ -522,31 +525,65 @@ class JobService(BaseService):
     ) -> ServiceAccount:
         secret_data = result.get("secret_data", {})
         data = result.get("data", {})
-        schema_id = result.get("secret_schema_id")
+        secret_schema_id = result.get("secret_schema_id")
         tags = result.get("tags", {})
 
-        if secret_data and schema_id is None:
+        if secret_data and secret_schema_id is None:
             raise ERROR_INVALID_PARAMETER(key="secret_schema_id")
 
-        if schema_id not in related_schemas:
+        if secret_schema_id not in related_schemas:
             raise ERROR_INVALID_PARAMETER(key="secret_schema_id", reason=f"schema_id is not in {related_schemas}")
 
-        params = {
-            "name": name,
-            "data": data,
-            "secret_data": secret_data,
-            "project_id": project_vo.project_id,
-            "workspace_id": project_vo.workspace_id,
-            "domain_id": project_vo.domain_id,
-            "provider": provider,
-            "trusted_account_id": trusted_account_id,
-            "tags": tags,
-        }
+        service_account_vos = self.service_account_mgr.filter_service_accounts(
+            domain_id=project_vo.domain_id, workspace_id=project_vo.workspace_id, project_id=project_vo.project_id,
+            data=data
+        )
 
-        if schema_id:
-            params["schema_id"] = schema_id
+        if service_account_vos:
+            service_account_vo = service_account_vos[0]
+            if service_account_vo.name != result["name"]:
+                service_account_vo = self.service_account_mgr.update_service_account_by_vo(
+                    {"name": name}, service_account_vo
+                )
+        else:
+            params = {
+                "name": name,
+                "provider": provider,
+                "data": data,
+                "trusted_account_id": trusted_account_id,
+                "project_id": project_vo.project_id,
+                "workspace_id": project_vo.workspace_id,
+                "domain_id": project_vo.domain_id,
+                "tags": tags,
+            }
+            if secret_schema_id:
+                params["schema_id"] = secret_schema_id
 
-        service_account_vo = self.service_account_mgr.create_service_account(params)
+            service_account_vo = self.service_account_mgr.create_service_account(params)
+
+        if secret_data:
+            # Check secret_data by schema
+            schema_mgr = SchemaManager()
+            schema_mgr.validate_secret_data_by_schema_id(
+                secret_schema_id,
+                service_account_vo.domain_id,
+                secret_data,
+                "TRUSTING_SECRET",
+            )
+
+            secret_mgr = SecretManager()
+            create_secret_params = {
+                "name": f"{service_account_vo.service_account_id}-secret",
+                "data": secret_data,
+                "schema_id": secret_schema_id,
+                "trusted_secret_id": trusted_secret_id,
+                "resource_group": "PROJECT",
+            }
+            secret_info = secret_mgr.create_secret(create_secret_params)
+            # Update secret_id in service_account_vo
+            service_account_vo = self.service_account_mgr.update_service_account_by_vo(
+                {"secret_id": secret_info["secret_id"]}, service_account_vo
+            )
         return service_account_vo
 
     # todo: change
