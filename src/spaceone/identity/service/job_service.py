@@ -268,7 +268,7 @@ class JobService(BaseService):
                         parent_group_id = project_group_vo.project_group_id
 
                     project_vo = self._create_project(result, domain_id, sync_workspace_id,
-                                                      parent_group_id=parent_group_id,
+                                                      project_group_id=parent_group_id,
                                                       sync_options=sync_options)
                     synced_projects.append(project_vo)
                     service_account_vo = self._create_service_account(result, project_vo, trusted_account_id,
@@ -512,7 +512,7 @@ class JobService(BaseService):
             result: dict,
             domain_id: str,
             workspace_id: str,
-            parent_group_id: str = None,
+            project_group_id: str = None,
             sync_options: dict = None,
             project_type: str = "PRIVATE",
     ) -> Project:
@@ -527,8 +527,8 @@ class JobService(BaseService):
             "is_managed": True
         }
 
-        if parent_group_id:
-            params["parent_group_id"] = parent_group_id
+        if project_group_id:
+            params["project_group_id"] = project_group_id
 
         project_vos = self.project_mgr.filter_projects(**params)
 
