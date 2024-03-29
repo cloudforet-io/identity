@@ -604,9 +604,13 @@ class JobService(BaseService):
             create_secret_params = {
                 "name": f"{service_account_vo.service_account_id}-secret",
                 "data": secret_data,
-                "schema_id": secret_schema_id,
-                "trusted_secret_id": trusted_secret_id,
                 "resource_group": "PROJECT",
+                "workspace_id": workspace_id,
+                "project_id": project_id,
+                "service_account_id": service_account_vo.service_account_id,
+                "trusted_secret_id": trusted_secret_id,
+                "schema_id": secret_schema_id,
+
             }
             secret_info = secret_mgr.create_secret(create_secret_params)
             # Update secret_id in service_account_vo
