@@ -564,12 +564,6 @@ class JobService(BaseService):
         secret_schema_id = result.get("secret_schema_id")
         tags = result.get("tags", {})
 
-        if secret_data and secret_schema_id is None:
-            raise ERROR_INVALID_PARAMETER(key="secret_schema_id")
-
-        if secret_schema_id not in related_schemas:
-            raise ERROR_INVALID_PARAMETER(key="secret_schema_id", reason=f"schema_id is not in {related_schemas}")
-
         service_account_vos = self.service_account_mgr.filter_service_accounts(reference_id=reference_id,
                                                                                is_managed=True, domain_id=domain_id,
                                                                                workspace_id=workspace_id,
