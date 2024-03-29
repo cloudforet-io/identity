@@ -17,26 +17,28 @@ class SecretManager(BaseManager):
     def get_secret_data(self, secret_id: str, domain_id: str) -> dict:
         system_token = config.get_global("TOKEN")
 
-        return self.secret_conn.dispatch(
+        response = self.secret_conn.dispatch(
             "Secret.get_data",
             {"secret_id": secret_id, "domain_id": domain_id},
             token=system_token,
         )
+        return response["data"]
 
     def get_trusted_secret_data(self, trusted_secret_id: str, domain_id: str) -> dict:
         system_token = config.get_global("TOKEN")
 
-        return self.secret_conn.dispatch(
+        response = self.secret_conn.dispatch(
             "TrustedSecret.get_data",
             {"trusted_secret_id": trusted_secret_id, "domain_id": domain_id},
             token=system_token,
         )
+        return response["data"]
 
     def create_trusted_secret(self, params: dict) -> dict:
         return self.secret_conn.dispatch("TrustedSecret.create", params)
 
     def update_trusted_secret_data(
-        self, trusted_secret_id: str, schema_id: str, data: dict
+            self, trusted_secret_id: str, schema_id: str, data: dict
     ) -> None:
         self.secret_conn.dispatch(
             "TrustedSecret.update_data",

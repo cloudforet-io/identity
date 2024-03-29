@@ -392,9 +392,7 @@ class JobService(BaseService):
         # todo: this method is internal method
         secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
         if trusted_secret_id:
-            secret_data = secret_mgr.get_trusted_secret_data(
-                trusted_secret_id, domain_id
-            )
+            secret_data = secret_mgr.get_secret_data(trusted_secret_id, domain_id)
         else:
             secret_data = {}
 
