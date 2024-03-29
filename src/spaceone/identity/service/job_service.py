@@ -218,7 +218,6 @@ class JobService(BaseService):
 
         provider = provider_vo.provider
         sync_options = trusted_account_vo.sync_options or {}
-        related_schemas = schema_vo.related_schemas or []
 
         if self._is_job_failed(job_id, domain_id, job_vo.workspace_id):
             self.job_mgr.change_canceled_status(job_vo)
@@ -272,8 +271,7 @@ class JobService(BaseService):
                                                       sync_options=sync_options)
                     synced_projects.append(project_vo)
                     service_account_vo = self._create_service_account(result, project_vo, trusted_account_id,
-                                                                      trusted_secret_id, provider, related_schemas,
-                                                                      sync_options)
+                                                                      trusted_secret_id, provider, sync_options)
                     synced_service_accounts.append(service_account_vo)
 
                 if self._is_job_failed(job_id, domain_id, job_vo.workspace_id):
@@ -551,7 +549,6 @@ class JobService(BaseService):
             trusted_account_id: str,
             trusted_secret_id: str,
             provider: str,
-            related_schemas: list = None,
             sync_options: dict = None,
     ) -> ServiceAccount:
         domain_id = project_vo.domain_id

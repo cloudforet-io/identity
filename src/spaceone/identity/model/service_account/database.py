@@ -10,7 +10,7 @@ class ServiceAccount(MongoModel):
     options = DictField(default=None)
     tags = DictField(default=None)
     reference_id = StringField(max_length=255, default=None, null=True)
-    is_manged = BooleanField(default=False)
+    is_managed = BooleanField(default=False)
     secret_schema_id = StringField(max_length=40)
     secret_id = StringField(max_length=40)
     app_id = StringField(max_length=40, null=True, default=None)
