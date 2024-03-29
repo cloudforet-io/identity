@@ -214,7 +214,7 @@ class JobService(BaseService):
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
         schema_vo = schema_mgr.get_schema(trusted_account_vo.secret_schema_id, domain_id)
         provider_vo: Provider = self.provider_mgr.get_provider(trusted_account_vo.provider, domain_id)
-        plugin_info = provider_vo.plugin_info.to_dict()
+        plugin_info = provider_vo.plugin_info
 
         provider = provider_vo.provider
         sync_options = trusted_account_vo.sync_options or {}
