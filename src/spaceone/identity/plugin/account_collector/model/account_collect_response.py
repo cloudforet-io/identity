@@ -10,6 +10,7 @@ class PluginResponse(BaseModel):
 
 class AccountResponse(BaseModel):
     name: Union[str, None] = None
+    resource_id: Union[str, None] = None
     data: Union[dict, None] = None
     secret_schema_id: Union[str, None] = None
     secret_data: Union[dict, None] = None
