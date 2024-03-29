@@ -516,7 +516,6 @@ class JobService(BaseService):
             sync_options: dict = None,
             project_type: str = "PRIVATE",
     ) -> Project:
-        _LOGGER.debug(f"[_create_project] result {result}")
         name = result["name"]
         reference_id = result["resource_id"]
 

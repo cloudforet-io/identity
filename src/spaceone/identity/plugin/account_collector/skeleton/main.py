@@ -45,7 +45,12 @@ def account_collector_sync(params: dict) -> dict:
                     secret_schema_id: 'str',
                     secret_data: 'dict',
                     tags: 'dict',
-                    location: 'list'
+                    location: [
+                        {
+                            'name': 'str',
+                            'resource_id': 'str'
+                        }
+                    ]
                 }
             ]
         }
