@@ -70,7 +70,7 @@ class JobManager(BaseManager):
     def stat_jobs(self, query: dict) -> dict:
         return self.job_model.stat(**query)
 
-    def make_canceled_by_vo(self, job_vo: Job) -> None:
+    def change_canceled_by_vo(self, job_vo: Job) -> None:
         _LOGGER.debug(f"[make_canceled_by_vo] cancel job: {job_vo.job_id}")
         self.update_job_by_vo(
             {"status": "CANCELED", "finished_at": datetime.utcnow()}, job_vo
@@ -130,7 +130,7 @@ class JobManager(BaseManager):
         job_vo.update(
             {
                 "status": "FAILURE",
-                # "error": error.to_dict(),
+                "error_message": error.message,
                 "finished_at": datetime.utcnow(),
             }
         )

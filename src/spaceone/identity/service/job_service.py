@@ -332,7 +332,7 @@ class JobService(BaseService):
                 schema_mgr = SchemaManager()
                 # Check secret_data by schema
                 schema_mgr.validate_secret_data_by_schema_id(
-                    schema_id, domain_id, trusted_secret_data, "TRUSTED_ACCOUNT"
+                    schema_id, domain_id, trusted_secret_data, "SECRET"
                 )
         except Exception as e:
             trusted_secret_data = {}
@@ -404,25 +404,27 @@ class JobService(BaseService):
             self,
             domain_id: str,
             trusted_account_id: str,
-            his_job_vo: Job,
+            this_job_vo: Job,
     ) -> bool:
         query = {
             "filter": [
                 {"k": "trusted_account_id", "v": trusted_account_id, "o": "eq"},
-                {"k": "workspace_id", "v": his_job_vo.workspace_id, "o": "eq"},
+                {"k": "workspace_id", "v": this_job_vo.workspace_id, "o": "eq"},
                 {"k": "domain_id", "v": domain_id, "o": "eq"},
-                {"k": "status", "v": ["PENDING", "IN_PROGRESS"], "o": "in"},
-                {"k": "job_id", "v": his_job_vo.job_id, "o": "not"},
+                {"k": "status", "v": "IN_PROGRESS", "o": "eq"},
+                {"k": "job_id", "v": this_job_vo.job_id, "o": "not"},
             ]
         }
 
         job_vos, total_count = self.job_mgr.list_jobs(query)
 
-        if total_count == 0:
-            return True
-        else:
-            for job_vo in job_vos:
-                self.job_mgr.make_canceled_by_vo(job_vo)
+        duplicate_job_time = datetime.utcnow() - timedelta(minutes=10)
+
+        for job_vo in job_vos:
+            if job_vo.created_at > duplicate_job_time:
+                return True
+            else:
+                self.job_mgr.change_canceled_by_vo(job_vo)
         return False
 
     def _is_job_failed(
