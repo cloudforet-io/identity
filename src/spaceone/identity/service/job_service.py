@@ -267,8 +267,9 @@ class JobService(BaseService):
                                                                       parent_group_id)
                         parent_group_id = project_group_vo.project_group_id
 
-                    project_vo = self._create_project(result, domain_id, sync_workspace_id, parent_group_id,
-                                                      sync_options)
+                    project_vo = self._create_project(result, domain_id, sync_workspace_id,
+                                                      parent_group_id=parent_group_id,
+                                                      sync_options=sync_options)
                     synced_projects.append(project_vo)
                     service_account_vo = self._create_service_account(result, project_vo, trusted_account_id,
                                                                       trusted_secret_id, provider, related_schemas,
@@ -387,7 +388,7 @@ class JobService(BaseService):
             f"[_get_all_schedule_enabled_trusted_accounts] scheduled trusted accounts count (UTC {current_hour}: {total_count}"
         )
         return trusted_account_vos
- 
+
     def _get_trusted_secret_data(self, trusted_secret_id: str, domain_id: str) -> dict:
         secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
         if trusted_secret_id:
@@ -515,6 +516,7 @@ class JobService(BaseService):
             sync_options: dict = None,
             project_type: str = "PRIVATE",
     ) -> Project:
+        _LOGGER.debug(f"[_create_project] result {result}")
         name = result["name"]
         reference_id = result["resource_id"]
 
