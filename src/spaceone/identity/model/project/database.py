@@ -12,10 +12,13 @@ class Project(MongoModel):
     users = ListField(StringField(max_length=40), default=None)
     user_groups = ListField(StringField(max_length=255), default=None)
     created_by = StringField(max_length=255)
+    reference_id = StringField(max_length=255, default=None, null=True)
+    is_managed = BooleanField(default=False)
     project_group_id = StringField(max_length=40, default=None, null=True)
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
+    last_synced_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
@@ -24,7 +27,9 @@ class Project(MongoModel):
             "tags",
             "users",
             "user_groups",
+            "is_managed",
             "project_group_id",
+            "last_synced_at",
         ],
         "minimal_fields": [
             "project_id",

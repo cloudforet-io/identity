@@ -17,6 +17,8 @@ class ProjectResponse(BaseModel):
     users: Union[List[str], None] = None
     user_groups: Union[List[str], None] = None
     created_by: Union[str, None] = None
+    reference_id: Union[str, None] = None
+    is_managed: Union[bool, None] = None
     project_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
@@ -25,6 +27,7 @@ class ProjectResponse(BaseModel):
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
         data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
+        data["last_synced_at"] = utils.datetime_to_iso8601(data.get("last_synced_at"))
         return data
 
 

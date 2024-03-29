@@ -7,17 +7,22 @@ class ProjectGroup(MongoModel):
     name = StringField(max_length=40)
     tags = DictField(default=None)
     users = ListField(StringField(max_length=255), default=None)
+    reference_id = StringField(max_length=255, default=None, null=True)
+    is_managed = BooleanField(default=False)
     parent_group_id = StringField(max_length=40, null=True, default=None)
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
+    last_accessed_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
             "name",
             "tags",
             "users",
+            "is_managed",
             "parent_group_id",
+            "last_accessed_at",
         ],
         "minimal_fields": [
             "project_group_id",

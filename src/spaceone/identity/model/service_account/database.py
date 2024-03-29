@@ -9,6 +9,8 @@ class ServiceAccount(MongoModel):
     provider = StringField(max_length=40)
     options = DictField(default=None)
     tags = DictField(default=None)
+    reference_id = StringField(max_length=255, default=None, null=True)
+    is_manged = BooleanField(default=False)
     secret_schema_id = StringField(max_length=40)
     secret_id = StringField(max_length=40)
     app_id = StringField(max_length=40, null=True, default=None)
@@ -17,6 +19,7 @@ class ServiceAccount(MongoModel):
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
+    last_synced_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
@@ -24,16 +27,19 @@ class ServiceAccount(MongoModel):
             "data",
             "options",
             "tags",
+            "is_managed",
             "secret_schema_id",
             "secret_id",
             "app_id",
             "trusted_account_id",
             "project_id",
+            "last_synced_at",
         ],
         "minimal_fields": [
             "service_account_id",
             "name",
             "provider",
+            "is_managed",
             "trusted_account_id",
             "project_id",
             "workspace_id",
