@@ -3,6 +3,7 @@ import logging
 from spaceone.core import config
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.core.auth.jwt.jwt_util import JWTUtil
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -10,6 +11,9 @@ _LOGGER = logging.getLogger(__name__)
 class SecretManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        token = self.transaction.get_meta("token")
+        self.token_type = JWTUtil.get_value_from_token(token, "typ")
+
         self.secret_conn: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="secret"
         )
@@ -62,8 +66,11 @@ class SecretManager(BaseManager):
     def list_trusted_secrets(self, params: dict) -> dict:
         return self.secret_conn.dispatch("TrustedSecret.list", params)
 
-    def create_secret(self, params: dict) -> dict:
-        return self.secret_conn.dispatch("Secret.create", params)
+    def create_secret(self, params: dict, domain_id: str = None) -> dict:
+        if self.token_type == "SYSTEM_TOKEN":
+            return self.secret_conn.dispatch("Secret.create", params, x_domain_id=domain_id)
+        else:
+            return self.secret_conn.dispatch("Secret.create", params)
 
     def update_secret(self, params: dict) -> dict:
         return self.secret_conn.dispatch("Secret.update", params)

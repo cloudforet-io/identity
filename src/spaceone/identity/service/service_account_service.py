@@ -6,6 +6,7 @@ from spaceone.core.service import *
 from spaceone.core.service.utils import *
 from spaceone.core.error import *
 
+from spaceone.identity.error.custom import *
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.client_secret_manager import ClientSecretManager
 from spaceone.identity.model import App
@@ -17,6 +18,7 @@ from spaceone.identity.manager.service_account_manager import ServiceAccountMana
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.secret_manager import SecretManager
+from spaceone.identity.manager.resource_manager import ResourceManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +34,7 @@ class ServiceAccountService(BaseService):
         super().__init__(*args, **kwargs)
         self.service_account_mgr = ServiceAccountManager()
         self.app_mgr = AppManager()
+        self.resource_mgr = ResourceManager()
 
     @transaction(
         permission="identity:ServiceAccount.write",
@@ -39,7 +42,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def create(
-        self, params: ServiceAccountCreateRequest
+            self, params: ServiceAccountCreateRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """create service account
 
@@ -137,7 +140,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def create_app(
-        self, params: ServiceAccountCreateAppRequest
+            self, params: ServiceAccountCreateAppRequest
     ) -> Union[AppResponse, dict]:
         """create app created by service account
 
@@ -165,7 +168,8 @@ class ServiceAccountService(BaseService):
         )
 
         if service_account_vo.app_id:
-            raise ERROR_EXIST_RESOURCE(key='app_id', value=service_account_vo.app_id, message="Please delete the existing app first.")
+            raise ERROR_EXIST_RESOURCE(key='app_id', value=service_account_vo.app_id,
+                                       message="Please delete the existing app first.")
 
         params_data = {
             "name": f"{service_account_vo.name} agent app",
@@ -199,7 +203,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def update(
-        self, params: ServiceAccountUpdateRequest
+            self, params: ServiceAccountUpdateRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """update service account
 
@@ -226,6 +230,9 @@ class ServiceAccountService(BaseService):
             params.user_projects,
         )
 
+        # Check is managed resource
+        self.resource_mgr.check_is_managed_resource(service_account_vo)
+
         if params.data:
             # Check data by schema
             schema_mgr = SchemaManager()
@@ -248,7 +255,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def update_secret_data(
-        self, params: ServiceAccountUpdateSecretRequest
+            self, params: ServiceAccountUpdateSecretRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """update service account secret data
 
@@ -336,7 +343,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def delete_secret_data(
-        self, params: ServiceAccountDeleteSecretRequest
+            self, params: ServiceAccountDeleteSecretRequest
     ) -> ServiceAccountResponse:
         """delete service account secret data
 
@@ -396,6 +403,9 @@ class ServiceAccountService(BaseService):
             params.user_projects,
         )
 
+        # Check is managed resource
+        self.resource_mgr.check_is_managed_resource(service_account_vo)
+
         if service_account_vo.app_id:
             raise ERROR_SERVICE_ACCOUNT_CANNOT_BE_DELETED_WITH_EXISTING_APP(key='service_account_id')
 
@@ -410,7 +420,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def enable_app(
-        self, params: ServiceAccountEnableAppRequest
+            self, params: ServiceAccountEnableAppRequest
     ) -> Union[AppResponse, dict]:
         """enable app created by service account
 
@@ -451,7 +461,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def disable_app(
-        self, params: ServiceAccountDisableAppRequest
+            self, params: ServiceAccountDisableAppRequest
     ) -> Union[AppResponse, dict]:
         """disable app created by service account
 
@@ -492,7 +502,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def regenerate_app(
-        self, params: ServiceAccountRegenerateAppRequest
+            self, params: ServiceAccountRegenerateAppRequest
     ) -> Union[AppResponse, dict]:
         """regenerate app created by service account
 
@@ -574,14 +584,13 @@ class ServiceAccountService(BaseService):
         self.app_mgr.delete_app_by_vo(app_vo)
         self.service_account_mgr.update_service_account_by_vo({"app_id": None}, service_account_vo)
 
-
     @transaction(
         permission="identity:ServiceAccount.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def get(
-        self, params: ServiceAccountGetRequest
+            self, params: ServiceAccountGetRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """get service account
 
@@ -627,7 +636,7 @@ class ServiceAccountService(BaseService):
     @set_query_page_limit(1000)
     @convert_model
     def list(
-        self, params: ServiceAccountSearchQueryRequest
+            self, params: ServiceAccountSearchQueryRequest
     ) -> Union[ServiceAccountsResponse, dict]:
         """list service accounts
 
@@ -693,7 +702,7 @@ class ServiceAccountService(BaseService):
         return self.service_account_mgr.stat_service_accounts(query)
 
     def _create_service_account_app_client_secret(
-        self, app_vo: App, service_account_id: str
+            self, app_vo: App, service_account_id: str
     ) -> Tuple[str, str]:
         """create client_id, client_secret for app created by service account
 
