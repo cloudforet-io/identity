@@ -612,7 +612,7 @@ class JobService(BaseService):
                 "schema_id": secret_schema_id,
 
             }
-            secret_info = secret_mgr.create_secret(create_secret_params)
+            secret_info = secret_mgr.create_secret(create_secret_params, domain_id)
             # Update secret_id in service_account_vo
             service_account_vo = self.service_account_mgr.update_service_account_by_vo(
                 {"secret_id": secret_info["secret_id"]}, service_account_vo

@@ -129,7 +129,7 @@ class JobManager(BaseManager):
 
         job_vo.update(
             {
-                "status": "FAILURE",
+                "status": "ERROR",
                 "error_message": error.message,
                 "finished_at": datetime.utcnow(),
             }

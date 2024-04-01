@@ -5,6 +5,7 @@ from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
 from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.manager.resource_manager import ResourceManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.workspace.request import *
 from spaceone.identity.model.workspace.response import *
@@ -22,6 +23,7 @@ class WorkspaceService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain_mgr = DomainManager()
+        self.resource_mgr = ResourceManager()
         self.workspace_mgr = WorkspaceManager()
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
@@ -62,6 +64,10 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.get_workspace(
             params.workspace_id, params.domain_id
         )
+
+        # Check is managed resource
+        self.resource_mgr.check_is_managed_resource(workspace_vo)
+
         workspace_vo = self.workspace_mgr.update_workspace_by_vo(
             params.dict(exclude_unset=True), workspace_vo
         )
@@ -83,6 +89,10 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.get_workspace(
             params.workspace_id, params.domain_id
         )
+
+        # Check is managed resource
+        self.resource_mgr.check_is_managed_resource(workspace_vo)
+
         self.workspace_mgr.delete_workspace_by_vo(workspace_vo)
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
@@ -100,13 +110,17 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.get_workspace(
             params.workspace_id, params.domain_id
         )
+
+        # Check is managed resource
+        self.resource_mgr.check_is_managed_resource(workspace_vo)
+
         workspace_vo = self.workspace_mgr.enable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def disable(
-        self, params: WorkspaceDisableRequest
+            self, params: WorkspaceDisableRequest
     ) -> Union[WorkspaceResponse, dict]:
         """Disable workspace
         Args:
@@ -121,6 +135,10 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.get_workspace(
             params.workspace_id, params.domain_id
         )
+
+        # Check is managed resource
+        self.resource_mgr.check_is_managed_resource(workspace_vo)
+
         workspace_vo = self.workspace_mgr.disable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
 
@@ -162,7 +180,7 @@ class WorkspaceService(BaseService):
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def list(
-        self, params: WorkspaceSearchQueryRequest
+            self, params: WorkspaceSearchQueryRequest
     ) -> Union[WorkspacesResponse, dict]:
         """List workspaces
         Args:
