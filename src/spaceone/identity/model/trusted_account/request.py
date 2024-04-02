@@ -24,6 +24,7 @@ class TrustedAccountCreateRequest(BaseModel):
     secret_data: dict
     schedule: Union[dict, None] = None
     sync_options: Union[dict, None] = None
+    plugin_options: Union[dict, None] = None
     tags: Union[dict, None] = None
     resource_group: ResourceGroup
     workspace_id: Union[str, None] = None
@@ -36,6 +37,7 @@ class TrustedAccountUpdateRequest(BaseModel):
     data: Union[dict, None] = None
     schedule: Union[dict, None] = None
     sync_options: Union[dict, None] = None
+    plugin_options: Union[dict, None] = None
     tags: Union[dict, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str

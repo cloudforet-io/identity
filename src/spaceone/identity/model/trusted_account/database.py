@@ -9,6 +9,7 @@ class TrustedAccount(MongoModel):
     provider = StringField(max_length=40)
     schedule = DictField(default=None, null=True)
     sync_options = DictField(default=None, null=True)
+    plugin_options = DictField(default=None, null=True)
     tags = DictField(default=None)
     secret_schema_id = StringField(max_length=40)
     trusted_secret_id = StringField(max_length=40)
@@ -23,6 +24,7 @@ class TrustedAccount(MongoModel):
             "data",
             "schedule",
             "sync_options",
+            "plugin_options",
             "tags",
             "secret_schema_id",
             "trusted_secret_id",

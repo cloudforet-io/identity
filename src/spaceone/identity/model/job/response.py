@@ -13,6 +13,7 @@ Status = Literal["PENDING", "IN_PROGRESS", "FAILURE", "SUCCESS", "CANCELD"]
 class JobResponse(BaseModel):
     job_id: Union[str, None] = None
     status: Union[Status, None] = None
+    options: Union[dict, None] = None
     error_message: Union[str, None] = None
     resource_group: Union[ResourceGroup, None] = None
     trusted_account_id: Union[str, None] = None

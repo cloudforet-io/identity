@@ -24,6 +24,7 @@ class JobManager(BaseManager):
             workspace_id: str,
             trusted_account_id: str,
             plugin_id: str,
+            options: dict,
     ) -> Job:
         data = {
             "resource_group": resource_group,
@@ -31,6 +32,7 @@ class JobManager(BaseManager):
             "trusted_account_id": trusted_account_id,
             "domain_id": domain_id,
             "workspace_id": workspace_id,
+            "options": options,
         }
         job_vo = self.job_model.create(data)
 
@@ -129,7 +131,7 @@ class JobManager(BaseManager):
 
         job_vo.update(
             {
-                "status": "ERROR",
+                "status": "FAILED",
                 "error_message": error.message,
                 "finished_at": datetime.utcnow(),
             }
