@@ -8,6 +8,7 @@ class Job(MongoModel):
         choices=("PENDING", "IN_PROGRESS", "FAILURE", "SUCCESS", "CANCELED"),
         default="PENDING",
     )
+    options = DictField(default=None, null=True)
     error_message = StringField(default=None, null=True)
     resource_group = StringField(max_length=40, choices=("DOMAIN", "WORKSPACE"))
     trusted_account_id = StringField(max_length=40)

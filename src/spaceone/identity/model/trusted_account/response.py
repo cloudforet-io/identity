@@ -14,6 +14,7 @@ class TrustedAccountResponse(BaseModel):
     provider: Union[str, None] = None
     schedule: Union[dict, None] = None
     sync_options: Union[dict, None] = None
+    plugin_options: Union[dict, None] = None
     tags: Union[dict, None] = None
     secret_schema_id: Union[str, None] = None
     trusted_secret_id: Union[str, None] = None

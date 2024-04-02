@@ -192,6 +192,7 @@ class JobService(BaseService):
                     'secret_data': 'dict',
                     'workspace_id': 'str',
                     'domain_id': 'str'
+                    'options': 'dict'
             }
         Returns:
             None:
@@ -218,6 +219,7 @@ class JobService(BaseService):
 
         provider = provider_vo.provider
         sync_options = trusted_account_vo.sync_options or {}
+        plugin_options = trusted_account_vo.plugin_options or {}
 
         if self._is_job_failed(job_id, domain_id, job_vo.workspace_id):
             self.job_mgr.change_canceled_status(job_vo)
@@ -227,7 +229,9 @@ class JobService(BaseService):
             synced_service_accounts = []
 
             try:
+                # Merge plugin options and trusted_account plugin options
                 options = plugin_info.get("options", {})
+                options.update(plugin_options)
                 schema_id = plugin_info.get("schema_id")
 
                 (
@@ -347,6 +351,7 @@ class JobService(BaseService):
             workspace_id,
             trusted_account_id,
             plugin_id,
+            job_options
         )
 
         if self._check_duplicate_job(domain_id, trusted_account_id, job_vo):
@@ -362,6 +367,7 @@ class JobService(BaseService):
                     "secret_data": trusted_secret_data,
                     "workspace_id": trusted_account_vo.workspace_id,
                     "domain_id": domain_id,
+                    "options": job_options,
                 }
             )
             try:
@@ -600,7 +606,7 @@ class JobService(BaseService):
                 "TRUSTING_SECRET",
             )
 
-            secret_mgr = SecretManager()
+            secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
             create_secret_params = {
                 "name": f"{service_account_vo.service_account_id}-secret",
                 "data": secret_data,

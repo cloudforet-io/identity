@@ -37,7 +37,7 @@ class TrustedAccountService(BaseService):
     )
     @convert_model
     def create(
-        self, params: TrustedAccountCreateRequest
+            self, params: TrustedAccountCreateRequest
     ) -> Union[TrustedAccountResponse, dict]:
         """create trusted account
 
@@ -50,6 +50,7 @@ class TrustedAccountService(BaseService):
                 'secret_data': 'dict',
                 'schedule': 'dict',
                 'sync_options': 'dict',
+                'plugin_options': 'dict',
                 'tags': 'dict',
                 'resource_group': 'str',        # required
                 'workspace_id': 'str',          # injected from auth
@@ -69,6 +70,11 @@ class TrustedAccountService(BaseService):
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
         else:
             params.workspace_id = "*"
+
+        # Check provider
+        if params.schedule or params.sync_options or params.plugin_options:
+            provider_vo = self.provider_mgr.get_provider(params.provider, params.domain_id)
+            self._check_provider_sync(provider_vo)
 
         # Check data by schema
         schema_mgr = SchemaManager()
@@ -112,7 +118,7 @@ class TrustedAccountService(BaseService):
     )
     @convert_model
     def update(
-        self, params: TrustedAccountUpdateRequest
+            self, params: TrustedAccountUpdateRequest
     ) -> Union[TrustedAccountResponse, dict]:
         """update trusted account
 
@@ -121,6 +127,9 @@ class TrustedAccountService(BaseService):
                 'trusted_account_id': 'str',    # required
                 'name': 'str',
                 'data': 'dict',
+                'schedule': 'dict',
+                'sync_options': 'dict',
+                'plugin_options': 'dict',
                 'tags': 'dict',
                 'workspace_id': 'str',          # injected from auth
                 'domain_id': 'str'              # injected from auth (required)
@@ -144,6 +153,12 @@ class TrustedAccountService(BaseService):
                 params.data,
             )
 
+        if params.sync_options or params.schedule or params.plugin_options:
+            provider_vo = self.provider_mgr.get_provider(
+                trusted_account_vo.provider, params.domain_id
+            )
+            self._check_provider_sync(provider_vo)
+
         trusted_account_vo = self.trusted_account_mgr.update_trusted_account_by_vo(
             params.dict(exclude_unset=True), trusted_account_vo
         )
@@ -156,7 +171,7 @@ class TrustedAccountService(BaseService):
     )
     @convert_model
     def update_secret_data(
-        self, params: TrustedAccountUpdateSecretRequest
+            self, params: TrustedAccountUpdateSecretRequest
     ) -> Union[TrustedAccountResponse, dict]:
         """update trusted account secret data
 
@@ -268,7 +283,7 @@ class TrustedAccountService(BaseService):
     @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def get(
-        self, params: TrustedAccountGetRequest
+            self, params: TrustedAccountGetRequest
     ) -> Union[TrustedAccountResponse, dict]:
         """get trusted account
 
@@ -308,7 +323,7 @@ class TrustedAccountService(BaseService):
     @append_keyword_filter(["trusted_account_id", "name"])
     @convert_model
     def list(
-        self, params: TrustedAccountSearchQueryRequest
+            self, params: TrustedAccountSearchQueryRequest
     ) -> Union[TrustedAccountsResponse, dict]:
         """list trusted accounts
 
@@ -373,13 +388,7 @@ class TrustedAccountService(BaseService):
     @staticmethod
     def _check_provider_sync(provider_vo: Provider) -> None:
         options = provider_vo.options or {}
-        if not (
-            options.get("support_trusted_account") and options.get("support_auto_sync")
-        ):
-            raise ERROR_INVALID_PARAMETER(
-                key="provider.options", message="Sync options is disabled"
-            )
+        if not options.get("support_trusted_account") and options.get("support_auto_sync"):
+            raise ERROR_INVALID_PARAMETER(key="provider.options", message="Sync options is disabled")
         elif not provider_vo.plugin_info:
-            raise ERROR_INVALID_PARAMETER(
-                key="provider.plugin_info", message="Plugin info not found"
-            )
+            raise ERROR_INVALID_PARAMETER(key="provider.plugin_info", message="Plugin info not found")
