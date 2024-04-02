@@ -65,4 +65,4 @@ class UserProfile(BaseAPI, user_profile_pb2_grpc.UserProfileServicer):
         params, metadata = self.parse_request(request, context)
         user_profile_svc = UserProfileService(metadata)
         response: dict = user_profile_svc.get_workspaces(params)
-        return ParseDict(response, workspace_pb2.WorkspacesInfo())
+        return self.dict_to_message(response)
