@@ -229,8 +229,6 @@ class JobService(BaseService):
             self.job_mgr.change_canceled_status(job_vo)
         else:
             self.job_mgr.change_in_progress_status(job_vo)
-            synced_projects = []
-            synced_service_accounts = []
 
             try:
                 # Merge plugin options and trusted_account plugin options
@@ -287,8 +285,7 @@ class JobService(BaseService):
                         project_group_id=parent_group_id,
                         sync_options=sync_options,
                     )
-                    synced_projects.append(project_vo)
-                    service_account_vo = self._create_service_account(
+                    self._create_service_account(
                         result,
                         project_vo,
                         trusted_account_id,
@@ -296,7 +293,6 @@ class JobService(BaseService):
                         provider,
                         sync_options,
                     )
-                    synced_service_accounts.append(service_account_vo)
 
                 if self._is_job_failed(job_id, domain_id, job_vo.workspace_id):
                     self.job_mgr.change_canceled_status(job_vo)
@@ -313,7 +309,7 @@ class JobService(BaseService):
                     self.job_mgr.change_success_status(job_vo)
 
                     # todo : not yet implemented
-                    self._delete_not_synced_resources()
+                    self._delete_not_synced_resources(domain_id, provider)
 
             except Exception as e:
                 self.job_mgr.change_error_status(job_vo, e)
@@ -607,16 +603,19 @@ class JobService(BaseService):
 
         service_account_vos = self.service_account_mgr.filter_service_accounts(**params)
         _LOGGER.debug(
-            f"[_create_service_account] service_account_vos: {service_account_vos}"
+            f"[_create_service_account] service_account_vos: {name} {params} count: {len(service_account_vos)}"
         )
 
         if service_account_vos:
             service_account_vo = service_account_vos[0]
+            update_params = {}
             if service_account_vo.name != result["name"]:
+                update_params.update({"name": name, "last_syned_at": datetime.utcnow()})
+
+            if update_params:
                 service_account_vo = (
                     self.service_account_mgr.update_service_account_by_vo(
-                        {"name": name, "last_syned_at": datetime.utcnow()},
-                        service_account_vo,
+                        update_params, service_account_vo
                     )
                 )
         else:
@@ -634,6 +633,10 @@ class JobService(BaseService):
             service_account_vo = self.service_account_mgr.create_service_account(params)
 
         if secret_data:
+            secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
+            if service_account_vo.secret_id:
+                secret_mgr.delete_secret(service_account_vo.secret_id, domain_id)
+
             # Check secret_data by schema
             schema_mgr = SchemaManager()
             schema_mgr.validate_secret_data_by_schema_id(
@@ -643,7 +646,6 @@ class JobService(BaseService):
                 "TRUSTING_SECRET",
             )
 
-            secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
             create_secret_params = {
                 "name": f"{service_account_vo.service_account_id}-secret",
                 "data": secret_data,
@@ -661,8 +663,24 @@ class JobService(BaseService):
             )
         return service_account_vo
 
-    def _delete_not_synced_resources(self) -> None:
-        delete_date = datetime.utcnow() - timedelta(days=2)
+    def _delete_not_synced_resources(self, domain_id: str, provider: str) -> None:
+        delete_last_synced_time = datetime.utcnow() - timedelta(days=2)
+        query = {
+            "filter": [
+                {"k": "last_synced_at", "v": delete_last_synced_time, "o": "lt"},
+                {"k": "is_managed", "v": True, "o": "eq"},
+                {"k": "domain_id", "v": domain_id, "o": "eq"},
+                {"k": "provider", "v": provider, "o": "eq"},
+            ]
+        }
+        secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
+
+        # Delete service accounts
+        service_account_vos, _ = self.service_account_mgr.list_service_accounts(query)
+        for service_account_vo in service_account_vos:
+            if service_account_vo.secret_id:
+                secret_mgr.delete_secret(service_account_vo.secret_id, domain_id)
+            self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
 
     @staticmethod
     def _get_location(result: dict, resource_group: str, sync_options: dict) -> list:
