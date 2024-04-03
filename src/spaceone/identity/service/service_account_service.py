@@ -42,7 +42,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def create(
-            self, params: ServiceAccountCreateRequest
+        self, params: ServiceAccountCreateRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """create service account
 
@@ -111,7 +111,7 @@ class ServiceAccountService(BaseService):
             )
 
             # Create a secret
-            secret_mgr = SecretManager()
+            secret_mgr = self.locator.get_manager("SecretManager")
             create_secret_params = {
                 "name": f"{service_account_vo.service_account_id}-secret",
                 "data": params.secret_data,
@@ -125,7 +125,8 @@ class ServiceAccountService(BaseService):
                     "trusted_secret_id"
                 ] = trusted_account_vo.trusted_secret_id
 
-            secret_info = secret_mgr.create_secret(create_secret_params)
+            domain_id = params.domain_id
+            secret_info = secret_mgr.create_secret(create_secret_params, domain_id)
 
             # Update secret_id in service_account_vo
             service_account_vo = self.service_account_mgr.update_service_account_by_vo(
@@ -140,7 +141,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def create_app(
-            self, params: ServiceAccountCreateAppRequest
+        self, params: ServiceAccountCreateAppRequest
     ) -> Union[AppResponse, dict]:
         """create app created by service account
 
@@ -168,8 +169,11 @@ class ServiceAccountService(BaseService):
         )
 
         if service_account_vo.app_id:
-            raise ERROR_EXIST_RESOURCE(key='app_id', value=service_account_vo.app_id,
-                                       message="Please delete the existing app first.")
+            raise ERROR_EXIST_RESOURCE(
+                key="app_id",
+                value=service_account_vo.app_id,
+                message="Please delete the existing app first.",
+            )
 
         params_data = {
             "name": f"{service_account_vo.name} agent app",
@@ -180,7 +184,7 @@ class ServiceAccountService(BaseService):
             "resource_group": resource_group,
             "service_account_id": service_account_id,
             "is_managed": True,
-            "expired_at": self._get_expired_at()
+            "expired_at": self._get_expired_at(),
         }
 
         app_vo = self.app_mgr.create_app(params_data)
@@ -203,7 +207,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def update(
-            self, params: ServiceAccountUpdateRequest
+        self, params: ServiceAccountUpdateRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """update service account
 
@@ -251,11 +255,11 @@ class ServiceAccountService(BaseService):
 
     @transaction(
         permission="identity:ServiceAccount.write",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def update_secret_data(
-            self, params: ServiceAccountUpdateSecretRequest
+        self, params: ServiceAccountUpdateSecretRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """update service account secret data
 
@@ -343,7 +347,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def delete_secret_data(
-            self, params: ServiceAccountDeleteSecretRequest
+        self, params: ServiceAccountDeleteSecretRequest
     ) -> ServiceAccountResponse:
         """delete service account secret data
 
@@ -407,7 +411,9 @@ class ServiceAccountService(BaseService):
         self.resource_mgr.check_is_managed_resource(service_account_vo)
 
         if service_account_vo.app_id:
-            raise ERROR_SERVICE_ACCOUNT_CANNOT_BE_DELETED_WITH_EXISTING_APP(key='service_account_id')
+            raise ERROR_SERVICE_ACCOUNT_CANNOT_BE_DELETED_WITH_EXISTING_APP(
+                key="service_account_id"
+            )
 
         secret_mgr = SecretManager()
         secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
@@ -420,7 +426,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def enable_app(
-            self, params: ServiceAccountEnableAppRequest
+        self, params: ServiceAccountEnableAppRequest
     ) -> Union[AppResponse, dict]:
         """enable app created by service account
 
@@ -461,7 +467,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def disable_app(
-            self, params: ServiceAccountDisableAppRequest
+        self, params: ServiceAccountDisableAppRequest
     ) -> Union[AppResponse, dict]:
         """disable app created by service account
 
@@ -502,7 +508,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def regenerate_app(
-            self, params: ServiceAccountRegenerateAppRequest
+        self, params: ServiceAccountRegenerateAppRequest
     ) -> Union[AppResponse, dict]:
         """regenerate app created by service account
 
@@ -582,7 +588,9 @@ class ServiceAccountService(BaseService):
             service_account_id,
         )
         self.app_mgr.delete_app_by_vo(app_vo)
-        self.service_account_mgr.update_service_account_by_vo({"app_id": None}, service_account_vo)
+        self.service_account_mgr.update_service_account_by_vo(
+            {"app_id": None}, service_account_vo
+        )
 
     @transaction(
         permission="identity:ServiceAccount.read",
@@ -590,7 +598,7 @@ class ServiceAccountService(BaseService):
     )
     @convert_model
     def get(
-            self, params: ServiceAccountGetRequest
+        self, params: ServiceAccountGetRequest
     ) -> Union[ServiceAccountResponse, dict]:
         """get service account
 
@@ -636,7 +644,7 @@ class ServiceAccountService(BaseService):
     @set_query_page_limit(1000)
     @convert_model
     def list(
-            self, params: ServiceAccountSearchQueryRequest
+        self, params: ServiceAccountSearchQueryRequest
     ) -> Union[ServiceAccountsResponse, dict]:
         """list service accounts
 
@@ -702,7 +710,7 @@ class ServiceAccountService(BaseService):
         return self.service_account_mgr.stat_service_accounts(query)
 
     def _create_service_account_app_client_secret(
-            self, app_vo: App, service_account_id: str
+        self, app_vo: App, service_account_id: str
     ) -> Tuple[str, str]:
         """create client_id, client_secret for app created by service account
 
@@ -733,6 +741,4 @@ class ServiceAccountService(BaseService):
 
     @staticmethod
     def _get_expired_at() -> str:
-        return (datetime.utcnow() + timedelta(days=365)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
+        return (datetime.utcnow() + timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S")

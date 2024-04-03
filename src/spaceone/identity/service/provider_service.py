@@ -93,7 +93,7 @@ class ProviderService(BaseService):
     )
     @convert_model
     def update_plugin(
-            self, params: ProviderUpdatePluginRequest
+        self, params: ProviderUpdatePluginRequest
     ) -> Union[ProviderResponse, dict]:
         """update provider plugin info
         Args:
@@ -118,7 +118,7 @@ class ProviderService(BaseService):
 
         self.check_update_provider_plugin_info(provider.options)
 
-        plugin_info = provider.plugin_info.to_dict()
+        plugin_info = provider.plugin_info
         if version:
             plugin_info["version"] = version
 
@@ -199,7 +199,7 @@ class ProviderService(BaseService):
     @append_keyword_filter(["provider", "name"])
     @convert_model
     def list(
-            self, params: ProviderSearchQueryRequest
+        self, params: ProviderSearchQueryRequest
     ) -> Union[ProvidersResponse, dict]:
         """list providers
 
@@ -258,8 +258,8 @@ class ProviderService(BaseService):
 
     @staticmethod
     def _check_sync_option_with_plugin_info(
-            provider_options: Union[dict, None],
-            plugin_info: Union[Plugin, dict, None],
+        provider_options: Union[dict, None],
+        plugin_info: Union[Plugin, dict, None],
     ) -> None:
         if provider_options:
             if provider_options.get("support_auto_sync"):
@@ -276,8 +276,8 @@ class ProviderService(BaseService):
 
             if plugin_info:
                 if not (
-                        provider_options.get("support_trusted_account")
-                        or not provider_options.get("support_auto_sync")
+                    provider_options.get("support_trusted_account")
+                    or not provider_options.get("support_auto_sync")
                 ):
                     raise ERROR_INVALID_PARAMETER(
                         key="options",
