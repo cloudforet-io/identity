@@ -11,6 +11,8 @@ class Workspace(MongoModel):
     state = StringField(max_length=20, default="ENABLED")
     tags = DictField(default=None)
     created_by = StringField(max_length=255)
+    reference_id = StringField(max_length=255, default=None, null=True)
+    is_managed = BooleanField(default=False)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
@@ -21,6 +23,7 @@ class Workspace(MongoModel):
             "workspace_id",
             "name",
             "state",
+            "is_managed",
         ],
         "ordering": ["name"],
         "indexes": ["name", "domain_id"],

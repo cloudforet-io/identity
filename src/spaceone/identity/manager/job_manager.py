@@ -18,13 +18,13 @@ class JobManager(BaseManager):
         self.job_model = Job
 
     def create_job(
-            self,
-            resource_group: str,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            plugin_id: str,
-            options: dict,
+        self,
+        resource_group: str,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        plugin_id: str,
+        options: dict,
     ) -> Job:
         data = {
             "resource_group": resource_group,
@@ -121,7 +121,7 @@ class JobManager(BaseManager):
 
     @staticmethod
     def change_error_status(
-            job_vo: Job, error: Union[ERROR_BASE, Exception] = None
+        job_vo: Job, error: Union[ERROR_BASE, Exception] = None
     ) -> None:
         if not isinstance(error, ERROR_BASE):
             error = ERROR_UNKNOWN(message=str(error))
@@ -131,7 +131,7 @@ class JobManager(BaseManager):
 
         job_vo.update(
             {
-                "status": "FAILED",
+                "status": "FAILURE",
                 "error_message": error.message,
                 "finished_at": datetime.utcnow(),
             }
