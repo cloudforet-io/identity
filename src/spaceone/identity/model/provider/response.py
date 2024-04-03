@@ -13,6 +13,7 @@ class Plugin(BaseModel):
     version: Union[str, None] = None
     options: Union[dict, None] = None
     upgrade_mode: Union[UpgradeMode, None] = None
+    metadata: Union[dict, None] = None
 
 
 class ProviderResponse(BaseModel):
