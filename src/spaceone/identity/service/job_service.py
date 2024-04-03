@@ -581,7 +581,7 @@ class JobService(BaseService):
         trusted_secret_id: str,
         provider: str,
         sync_options: dict = None,
-    ) -> ServiceAccount:
+    ) -> Union[ServiceAccount, None]:
         domain_id = project_vo.domain_id
         workspace_id = project_vo.workspace_id
         project_id = project_vo.project_id
@@ -630,7 +630,16 @@ class JobService(BaseService):
             if secret_schema_id:
                 params["schema_id"] = secret_schema_id
 
-            service_account_vo = self.service_account_mgr.create_service_account(params)
+            # When the same name exists, skip creating service account
+            try:
+                service_account_vo = self.service_account_mgr.create_service_account(
+                    params
+                )
+            except ERROR_SAVE_UNIQUE_VALUES:
+                _LOGGER.error(
+                    f"[_create_service_account] Skip => duplicate service account name. reference id: {reference_id}, {provider} {name} {domain_id} {workspace_id}"
+                )
+                return
 
         if secret_data:
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
