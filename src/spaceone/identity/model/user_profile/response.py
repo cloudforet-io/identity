@@ -13,6 +13,7 @@ class MyWorkspaceResponse(BaseModel):
     workspace_id: Union[str, None] = None
     name: Union[str, None] = None
     state: Union[State, None] = None
+    role_name: Union[str, None] = None
     role_type: Union[str, None] = None
     tags: Union[dict, None] = None
     created_by: Union[str, None] = None

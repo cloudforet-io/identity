@@ -15,6 +15,7 @@ from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
+from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.token_manager.local_token_manager import (
     LocalTokenManager,
 )
@@ -23,10 +24,10 @@ from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.user_profile.request import *
 from spaceone.identity.model.user.response import *
 from spaceone.identity.model.user.database import User
-from spaceone.identity.model.role_binding.response import RoleBindingsResponse
-from spaceone.identity.model.workspace.response import WorkspaceResponse, WorkspacesResponse
-from spaceone.identity.model.workspace.response import WorkspacesResponse
-from spaceone.identity.model.user_profile.response import MyWorkspaceResponse, MyWorkspacesResponse
+from spaceone.identity.model.user_profile.response import (
+    MyWorkspaceResponse,
+    MyWorkspacesResponse,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,7 +110,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
     def confirm_email(
-            self, params: UserProfileConfirmEmailRequest
+        self, params: UserProfileConfirmEmailRequest
     ) -> Union[UserResponse, dict]:
         """Confirm email
 
@@ -193,7 +194,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
     def enable_mfa(
-            self, params: UserProfileEnableMFARequest
+        self, params: UserProfileEnableMFARequest
     ) -> Union[UserResponse, dict]:
         """Enable MFA
 
@@ -238,7 +239,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
     def disable_mfa(
-            self, params: UserProfileDisableMFARequest
+        self, params: UserProfileDisableMFARequest
     ) -> Union[UserResponse, dict]:
         """Disable MFA
 
@@ -268,7 +269,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
     def confirm_mfa(
-            self, params: UserProfileConfirmMFARequest
+        self, params: UserProfileConfirmMFARequest
     ) -> Union[UserResponse, dict]:
         """Confirm MFA
         Args:
@@ -329,7 +330,7 @@ class UserProfileService(BaseService):
     @transaction(permission="identity:UserProfile.read", role_types=["USER"])
     @convert_model
     def get_workspaces(
-            self, params: UserProfileGetWorkspacesRequest
+        self, params: UserProfileGetWorkspacesRequest
     ) -> Union[MyWorkspacesResponse, dict]:
         """Find user
         Args:
@@ -341,6 +342,7 @@ class UserProfileService(BaseService):
             MyWorkspaceResponse:
         """
 
+        role_mgr = RoleManager()
         rb_mgr = RoleBindingManager()
         workspace_mgr = WorkspaceManager()
         allow_all = False
@@ -366,11 +368,21 @@ class UserProfileService(BaseService):
                 workspace_id=workspace_ids, domain_id=params.domain_id, state="ENABLED"
             )
 
-        role_bindings_info_map = {
-            rb.workspace_id: rb.to_dict() for rb in rb_vos
-        }
+        role_vos = role_mgr.filter_roles(
+            domain_id=params.domain_id,
+            role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        )
+
+        for role_vo in role_vos:
+            print(role_vo.to_dict())
+        role_name_map = {role_vo.role_id: role_vo.name for role_vo in role_vos}
+        print(role_name_map)
+        role_bindings_info_map = {rb.workspace_id: rb.to_dict() for rb in rb_vos}
+
         workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
-        my_workspaces_info = self._get_my_workspaces_info(workspaces_info, role_bindings_info_map)
+        my_workspaces_info = self._get_my_workspaces_info(
+            workspaces_info, role_name_map, role_bindings_info_map
+        )
 
         return MyWorkspacesResponse(
             results=my_workspaces_info, total_count=len(my_workspaces_info)
@@ -434,21 +446,26 @@ class UserProfileService(BaseService):
                 for _ in range(12)
             )
             if (
-                    re.search("[a-z]", random_password)
-                    and re.search("[A-Z]", random_password)
-                    and re.search("[0-9]", random_password)
+                re.search("[a-z]", random_password)
+                and re.search("[A-Z]", random_password)
+                and re.search("[0-9]", random_password)
             ):
                 return random_password
 
     @staticmethod
-    def _get_my_workspaces_info(workspaces_info: list, role_bindings_info_map: dict) -> list:
+    def _get_my_workspaces_info(
+        workspaces_info: list, role_name_map: dict, role_bindings_info_map: dict
+    ) -> list:
         my_workspaces_info = []
 
         for workspace_info in workspaces_info:
             if rb_info := role_bindings_info_map.get(workspace_info["workspace_id"]):
-                workspace_info.update({
-                    "role_id": rb_info.get("role_id"),
-                    "role_type": rb_info.get("role_type"),
-                })
+                workspace_info.update(
+                    {
+                        "role_id": rb_info.get("role_id"),
+                        "role_type": rb_info.get("role_type"),
+                        "role_name": role_name_map.get(rb_info.get("role_id")),
+                    }
+                )
             my_workspaces_info.append(workspace_info)
         return my_workspaces_info
