@@ -22,6 +22,8 @@ class Job(MongoModel):
     meta = {
         "updatable_fields": [
             "status",
+            "options",
+            "error_message",
             "updated_at",
             "finished_at",
         ],
