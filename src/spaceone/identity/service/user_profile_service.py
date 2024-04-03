@@ -373,10 +373,7 @@ class UserProfileService(BaseService):
             role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
         )
 
-        for role_vo in role_vos:
-            print(role_vo.to_dict())
         role_name_map = {role_vo.role_id: role_vo.name for role_vo in role_vos}
-        print(role_name_map)
         role_bindings_info_map = {rb.workspace_id: rb.to_dict() for rb in rb_vos}
 
         workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
