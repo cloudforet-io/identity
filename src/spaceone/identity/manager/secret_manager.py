@@ -42,7 +42,7 @@ class SecretManager(BaseManager):
         return self.secret_conn.dispatch("TrustedSecret.create", params)
 
     def update_trusted_secret_data(
-            self, trusted_secret_id: str, schema_id: str, data: dict
+        self, trusted_secret_id: str, schema_id: str, data: dict
     ) -> None:
         self.secret_conn.dispatch(
             "TrustedSecret.update_data",
@@ -68,15 +68,22 @@ class SecretManager(BaseManager):
 
     def create_secret(self, params: dict, domain_id: str = None) -> dict:
         if self.token_type == "SYSTEM_TOKEN":
-            return self.secret_conn.dispatch("Secret.create", params, x_domain_id=domain_id)
+            return self.secret_conn.dispatch(
+                "Secret.create", params, x_domain_id=domain_id
+            )
         else:
             return self.secret_conn.dispatch("Secret.create", params)
 
     def update_secret(self, params: dict) -> dict:
         return self.secret_conn.dispatch("Secret.update", params)
 
-    def delete_secret(self, secret_id: str) -> None:
-        self.secret_conn.dispatch("Secret.delete", {"secret_id": secret_id})
+    def delete_secret(self, secret_id: str, domain_id: str = None) -> None:
+        if self.token_type == "SYSTEM_TOKEN":
+            self.secret_conn.dispatch(
+                "Secret.delete", {"secret_id": secret_id}, x_domain_id=domain_id
+            )
+        else:
+            self.secret_conn.dispatch("Secret.delete", {"secret_id": secret_id})
 
     def update_secret_data(self, secret_id: str, schema_id: str, data: dict) -> None:
         self.secret_conn.dispatch(
