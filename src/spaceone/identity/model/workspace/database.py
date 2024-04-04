@@ -13,12 +13,19 @@ class Workspace(MongoModel):
     created_by = StringField(max_length=255)
     reference_id = StringField(max_length=255, default=None, null=True)
     is_managed = BooleanField(default=False)
+    trusted_account_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
 
     meta = {
-        "updatable_fields": ["name", "state", "tags", "deleted_at"],
+        "updatable_fields": [
+            "name",
+            "state",
+            "tags",
+            "trusted_account_id",
+            "deleted_at",
+        ],
         "minimal_fields": [
             "workspace_id",
             "name",

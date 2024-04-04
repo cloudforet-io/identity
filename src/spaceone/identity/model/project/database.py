@@ -14,6 +14,7 @@ class Project(MongoModel):
     created_by = StringField(max_length=255)
     reference_id = StringField(max_length=255, default=None, null=True)
     is_managed = BooleanField(default=False)
+    trusted_account_id = StringField(max_length=40, default=None, null=True)
     project_group_id = StringField(max_length=40, default=None, null=True)
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
@@ -28,6 +29,7 @@ class Project(MongoModel):
             "users",
             "user_groups",
             "is_managed",
+            "trusted_account_id",
             "project_group_id",
             "last_synced_at",
         ],

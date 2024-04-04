@@ -95,7 +95,9 @@ class JobManager(BaseManager):
                 }
             ],
         }
-        _LOGGER.debug(f"[push_job] push job: {params}")
+        _LOGGER.debug(
+            f"[push_job] push job: {params['job_id']}, {params['domain_id'], params['trusted_account_id']}"
+        )
 
         queue.put("identity_q", utils.dump_json(task))
 

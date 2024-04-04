@@ -13,6 +13,7 @@ class ProjectGroupResponse(BaseModel):
     users: Union[List[str], None] = None
     reference_id: Union[str, None] = None
     is_managed: Union[bool, None] = None
+    trusted_account_id: Union[str, None] = None
     parent_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
