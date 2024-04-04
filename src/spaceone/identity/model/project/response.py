@@ -19,6 +19,7 @@ class ProjectResponse(BaseModel):
     created_by: Union[str, None] = None
     reference_id: Union[str, None] = None
     is_managed: Union[bool, None] = None
+    trusted_account_id: Union[str, None] = None
     project_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None

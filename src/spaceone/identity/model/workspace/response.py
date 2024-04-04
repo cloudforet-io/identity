@@ -17,6 +17,7 @@ class WorkspaceResponse(BaseModel):
     created_by: Union[str, None] = None
     reference_id: Union[str, None] = None
     is_managed: Union[bool, None] = None
+    trusted_account_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
     last_synced_at: Union[datetime, None] = None

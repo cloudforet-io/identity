@@ -9,6 +9,7 @@ class ProjectGroup(MongoModel):
     users = ListField(StringField(max_length=255), default=None)
     reference_id = StringField(max_length=255, default=None, null=True)
     is_managed = BooleanField(default=False)
+    trusted_account_id = StringField(max_length=40, default=None, null=True)
     parent_group_id = StringField(max_length=40, null=True, default=None)
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
@@ -21,6 +22,7 @@ class ProjectGroup(MongoModel):
             "tags",
             "users",
             "is_managed",
+            "trusted_account_id",
             "parent_group_id",
             "last_accessed_at",
         ],

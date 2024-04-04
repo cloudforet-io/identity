@@ -65,7 +65,7 @@ class JobService(BaseService):
 
         # todo check provider sync condition
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
-            current_hour
+                current_hour
         ):
             try:
                 self.created_service_account_job(trusted_account_vo, {})
@@ -274,7 +274,11 @@ class JobService(BaseService):
                     parent_group_id = None
                     for location_info in location:
                         project_group_vo = self._create_project_group(
-                            domain_id, sync_workspace_id, location_info, parent_group_id
+                            domain_id,
+                            sync_workspace_id,
+                            trusted_account_id,
+                            location_info,
+                            parent_group_id,
                         )
                         parent_group_id = project_group_vo.project_group_id
 
@@ -282,6 +286,7 @@ class JobService(BaseService):
                         result,
                         domain_id,
                         sync_workspace_id,
+                        trusted_account_id,
                         project_group_id=parent_group_id,
                         sync_options=sync_options,
                     )
@@ -308,9 +313,6 @@ class JobService(BaseService):
                     )
                     self.job_mgr.change_success_status(job_vo)
 
-                    # todo : not yet implemented
-                    self._delete_not_synced_resources(domain_id, provider)
-
             except Exception as e:
                 self.job_mgr.change_error_status(job_vo, e)
                 _LOGGER.error(f"[sync_service_accounts] sync error: {e}", exc_info=True)
@@ -322,7 +324,7 @@ class JobService(BaseService):
         )
 
     def created_service_account_job(
-        self, trusted_account_vo: TrustedAccount, job_options: dict
+            self, trusted_account_vo: TrustedAccount, job_options: dict
     ) -> Union[Job, dict]:
         resource_group = trusted_account_vo.resource_group
         provider = trusted_account_vo.provider
@@ -421,10 +423,10 @@ class JobService(BaseService):
         return secret_data
 
     def _check_duplicate_job(
-        self,
-        domain_id: str,
-        trusted_account_id: str,
-        this_job_vo: Job,
+            self,
+            domain_id: str,
+            trusted_account_id: str,
+            this_job_vo: Job,
     ) -> bool:
         query = {
             "filter": [
@@ -448,7 +450,7 @@ class JobService(BaseService):
         return False
 
     def _is_job_failed(
-        self, job_id: str, domain_id: str, workspace_id: str = None
+            self, job_id: str, domain_id: str, workspace_id: str = None
     ) -> bool:
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
 
@@ -458,10 +460,10 @@ class JobService(BaseService):
             return False
 
     def _close_job(
-        self,
-        job_id: str,
-        domain_id: str,
-        workspace_id: str = None,
+            self,
+            job_id: str,
+            domain_id: str,
+            workspace_id: str = None,
     ):
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
         if job_vo.status == "IN_PROGRESS":
@@ -477,6 +479,9 @@ class JobService(BaseService):
         )
         if workspace_vos:
             workspace_vo = workspace_vos[0]
+            workspace_vo = self.workspace_mgr.update_workspace_by_vo(
+                {"last_synced_at": datetime.utcnow()}, workspace_vo
+            )
         else:
             workspace_vo = self.workspace_mgr.create_workspace(
                 {
@@ -490,11 +495,12 @@ class JobService(BaseService):
         return workspace_vo
 
     def _create_project_group(
-        self,
-        domain_id: str,
-        workspace_id: str,
-        location_info: dict,
-        parent_group_id: str = None,
+            self,
+            domain_id: str,
+            workspace_id: str,
+            trusted_account_id: str,
+            location_info: dict,
+            parent_group_id: str = None,
     ) -> ProjectGroup:
         name = location_info["name"]
         reference_id = location_info["resource_id"]
@@ -514,22 +520,31 @@ class JobService(BaseService):
 
         project_group_vos, _ = self.project_group_mgr.list_project_groups(query_filter)
 
+        params = {
+            "trusted_account_id": trusted_account_id,
+        }
+
         if project_group_vos:
             project_group_vo = project_group_vos[0]
             if project_group_vo.name != name:
-                update_pg_params = {"name": name, "last_synced_at": datetime.utcnow()}
-                project_group_vo = self.project_group_mgr.update_project_group_by_vo(
-                    update_pg_params, project_group_vo
-                )
+                params.update({"name": name})
+
+            params.update({"last_synced_at": datetime.utcnow()})
+            project_group_vo = self.project_group_mgr.update_project_group_by_vo(
+                params, project_group_vo
+            )
+
         else:
-            params = {
-                "name": name,
-                "reference_id": reference_id,
-                "is_managed": True,
-                "domain_id": domain_id,
-                "workspace_id": workspace_id,
-                "last_synced_at": datetime.utcnow(),
-            }
+            params.update(
+                {
+                    "name": name,
+                    "reference_id": reference_id,
+                    "is_managed": True,
+                    "domain_id": domain_id,
+                    "workspace_id": workspace_id,
+                    "last_synced_at": datetime.utcnow(),
+                }
+            )
             if parent_group_id:
                 params["parent_group_id"] = parent_group_id
             project_group_vo = self.project_group_mgr.create_project_group(params)
@@ -537,13 +552,14 @@ class JobService(BaseService):
         return project_group_vo
 
     def _create_project(
-        self,
-        result: dict,
-        domain_id: str,
-        workspace_id: str,
-        project_group_id: str = None,
-        sync_options: dict = None,
-        project_type: str = "PRIVATE",
+            self,
+            result: dict,
+            domain_id: str,
+            workspace_id: str,
+            trusted_account_id: str,
+            project_group_id: str = None,
+            sync_options: dict = None,
+            project_type: str = "PRIVATE",
     ) -> Project:
         name = result["name"]
         reference_id = result["resource_id"]
@@ -564,23 +580,28 @@ class JobService(BaseService):
         if project_vos:
             project_vo = project_vos[0]
             if project_vo.name != name:
-                params["name"] = name
-                params["last_synced_at"] = datetime.utcnow()
-                project_vo = self.project_mgr.update_project_by_vo(params, project_vo)
+                params.update({"name": name})
+
+            params.update(
+                {
+                    "trusted_account_id": trusted_account_id,
+                    "last_synced_at": datetime.utcnow(),
+                }
+            )
+            project_vo = self.project_mgr.update_project_by_vo(params, project_vo)
         else:
-            params["name"] = name
-            params["last_synced_at"] = datetime.utcnow()
+            params.update({"name": name, "last_synced_at": datetime.utcnow()})
             project_vo = self.project_mgr.create_project(params)
         return project_vo
 
     def _create_service_account(
-        self,
-        result: dict,
-        project_vo: Project,
-        trusted_account_id: str,
-        trusted_secret_id: str,
-        provider: str,
-        sync_options: dict = None,
+            self,
+            result: dict,
+            project_vo: Project,
+            trusted_account_id: str,
+            trusted_secret_id: str,
+            provider: str,
+            sync_options: dict = None,
     ) -> Union[ServiceAccount, None]:
         domain_id = project_vo.domain_id
         workspace_id = project_vo.workspace_id
@@ -610,14 +631,16 @@ class JobService(BaseService):
             service_account_vo = service_account_vos[0]
             update_params = {}
             if service_account_vo.name != result["name"]:
-                update_params.update({"name": name, "last_syned_at": datetime.utcnow()})
+                update_params.update({"name": name})
 
-            if update_params:
-                service_account_vo = (
-                    self.service_account_mgr.update_service_account_by_vo(
-                        update_params, service_account_vo
-                    )
-                )
+            update_params = {
+                "trusted_account_id": trusted_account_id,
+                "last_synced_at": datetime.utcnow(),
+            }
+
+            service_account_vo = self.service_account_mgr.update_service_account_by_vo(
+                update_params, service_account_vo
+            )
         else:
             params.update(
                 {
@@ -630,16 +653,7 @@ class JobService(BaseService):
             if secret_schema_id:
                 params["schema_id"] = secret_schema_id
 
-            # When the same name exists, skip creating service account
-            try:
-                service_account_vo = self.service_account_mgr.create_service_account(
-                    params
-                )
-            except ERROR_SAVE_UNIQUE_VALUES:
-                _LOGGER.error(
-                    f"[_create_service_account] Skip => duplicate service account name. reference id: {reference_id}, {provider} {name} {domain_id} {workspace_id}"
-                )
-                return
+            service_account_vo = self.service_account_mgr.create_service_account(params)
 
         if secret_data:
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
@@ -671,25 +685,6 @@ class JobService(BaseService):
                 {"secret_id": secret_info["secret_id"]}, service_account_vo
             )
         return service_account_vo
-
-    def _delete_not_synced_resources(self, domain_id: str, provider: str) -> None:
-        delete_last_synced_time = datetime.utcnow() - timedelta(days=2)
-        query = {
-            "filter": [
-                {"k": "last_synced_at", "v": delete_last_synced_time, "o": "lt"},
-                {"k": "is_managed", "v": True, "o": "eq"},
-                {"k": "domain_id", "v": domain_id, "o": "eq"},
-                {"k": "provider", "v": provider, "o": "eq"},
-            ]
-        }
-        secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
-
-        # Delete service accounts
-        service_account_vos, _ = self.service_account_mgr.list_service_accounts(query)
-        for service_account_vo in service_account_vos:
-            if service_account_vo.secret_id:
-                secret_mgr.delete_secret(service_account_vo.secret_id, domain_id)
-            self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
 
     @staticmethod
     def _get_location(result: dict, resource_group: str, sync_options: dict) -> list:
