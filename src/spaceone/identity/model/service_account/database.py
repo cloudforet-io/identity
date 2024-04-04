@@ -4,7 +4,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 class ServiceAccount(MongoModel):
     service_account_id = StringField(max_length=40, generate_id="sa", unique=True)
-    name = StringField(max_length=255, unique_with=["domain_id"])
+    name = StringField(max_length=255, unique_with=["project_id"])
     data = DictField(default=None)
     provider = StringField(max_length=40)
     options = DictField(default=None)
