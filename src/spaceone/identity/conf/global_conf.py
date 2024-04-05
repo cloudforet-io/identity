@@ -109,12 +109,12 @@ ENDPOINTS = [
 
 # Queue Settings
 QUEUES = {
-    "identity_q": {
-        "backend": "spaceone.core.queue.redis_queue.RedisQueue",
-        "host": "redis",
-        "port": 6379,
-        "channel": "identity_job",
-    },
+    # "identity_q": {
+    #     "backend": "spaceone.core.queue.redis_queue.RedisQueue",
+    #     "host": "redis",
+    #     "port": 6379,
+    #     "channel": "identity_job",
+    # },
 }
 SCHEDULERS = {}
 WORKERS = {}
