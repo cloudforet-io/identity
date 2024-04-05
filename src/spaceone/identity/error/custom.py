@@ -6,4 +6,4 @@ class ERROR_GENERATE_KEY_FAILURE(ERROR_BASE):
 
 
 class ERROR_MANAGED_RESOURCE_CAN_NOT_BE_MODIFIED(ERROR_PERMISSION_DENIED):
-    _message = "Managed resource can not be deleted."
+    _message = "Managed resource can not be deleted. please disable schedule first."

@@ -29,7 +29,7 @@ class ResourceManager(BaseManager):
                     trusted_account_id=resource_vo.trusted_account_id,
                     domain_id=resource_vo.domain_id,
                 )
-                if trusted_account_vo.schedule.get("state") != "ENABLED":
+                if trusted_account_vo.schedule.get("state") == "ENABLED":
                     raise ERROR_MANAGED_RESOURCE_CAN_NOT_BE_MODIFIED()
         except ERROR_NOT_FOUND:
             _LOGGER.debug(
