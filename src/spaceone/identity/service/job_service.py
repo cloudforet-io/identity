@@ -65,7 +65,7 @@ class JobService(BaseService):
 
         # todo check provider sync condition
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
-                current_hour
+            current_hour
         ):
             try:
                 self.created_service_account_job(trusted_account_vo, {})
@@ -324,7 +324,7 @@ class JobService(BaseService):
         )
 
     def created_service_account_job(
-            self, trusted_account_vo: TrustedAccount, job_options: dict
+        self, trusted_account_vo: TrustedAccount, job_options: dict
     ) -> Union[Job, dict]:
         resource_group = trusted_account_vo.resource_group
         provider = trusted_account_vo.provider
@@ -423,10 +423,10 @@ class JobService(BaseService):
         return secret_data
 
     def _check_duplicate_job(
-            self,
-            domain_id: str,
-            trusted_account_id: str,
-            this_job_vo: Job,
+        self,
+        domain_id: str,
+        trusted_account_id: str,
+        this_job_vo: Job,
     ) -> bool:
         query = {
             "filter": [
@@ -450,7 +450,7 @@ class JobService(BaseService):
         return False
 
     def _is_job_failed(
-            self, job_id: str, domain_id: str, workspace_id: str = None
+        self, job_id: str, domain_id: str, workspace_id: str = None
     ) -> bool:
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
 
@@ -460,10 +460,10 @@ class JobService(BaseService):
             return False
 
     def _close_job(
-            self,
-            job_id: str,
-            domain_id: str,
-            workspace_id: str = None,
+        self,
+        job_id: str,
+        domain_id: str,
+        workspace_id: str = None,
     ):
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
         if job_vo.status == "IN_PROGRESS":
@@ -495,12 +495,12 @@ class JobService(BaseService):
         return workspace_vo
 
     def _create_project_group(
-            self,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            location_info: dict,
-            parent_group_id: str = None,
+        self,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        location_info: dict,
+        parent_group_id: str = None,
     ) -> ProjectGroup:
         name = location_info["name"]
         reference_id = location_info["resource_id"]
@@ -552,14 +552,14 @@ class JobService(BaseService):
         return project_group_vo
 
     def _create_project(
-            self,
-            result: dict,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            project_group_id: str = None,
-            sync_options: dict = None,
-            project_type: str = "PRIVATE",
+        self,
+        result: dict,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        project_group_id: str = None,
+        sync_options: dict = None,
+        project_type: str = "PRIVATE",
     ) -> Project:
         name = result["name"]
         reference_id = result["resource_id"]
@@ -595,13 +595,13 @@ class JobService(BaseService):
         return project_vo
 
     def _create_service_account(
-            self,
-            result: dict,
-            project_vo: Project,
-            trusted_account_id: str,
-            trusted_secret_id: str,
-            provider: str,
-            sync_options: dict = None,
+        self,
+        result: dict,
+        project_vo: Project,
+        trusted_account_id: str,
+        trusted_secret_id: str,
+        provider: str,
+        sync_options: dict = None,
     ) -> Union[ServiceAccount, None]:
         domain_id = project_vo.domain_id
         workspace_id = project_vo.workspace_id
@@ -692,8 +692,9 @@ class JobService(BaseService):
         if not sync_options.get("skip_project_group", False):
             location = result.get("location", [])
             if resource_group == "DOMAIN" and not location:
-                raise ERROR_REQUIRED_PARAMETER(
-                    key="location", reason="location is required"
-                )
+                _LOGGER.debug(f"[_get_location] location is empty: {result} => SKIP")
+                # raise ERROR_REQUIRED_PARAMETER(
+                #     key="location", reason="location is required"
+                # )
 
         return location
