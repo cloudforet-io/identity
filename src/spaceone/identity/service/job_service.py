@@ -264,7 +264,7 @@ class JobService(BaseService):
                             )
                         else:
                             workspace_vo = self.workspace_mgr.get_workspace(
-                                domain_id, sync_options.get("single_workspace_id")
+                                sync_options.get("single_workspace_id"), domain_id
                             )
                         sync_workspace_id = workspace_vo.workspace_id
 
