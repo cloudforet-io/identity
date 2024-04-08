@@ -1,0 +1,17 @@
+---
+name: AWS Security OU Secret
+provider: aws
+schema:
+  order:
+    - account_id
+  properties:
+    account_id:
+      format: string
+      minLength: 4.0
+      title: AWS Account ID
+      type: string
+  required:
+    - account_id
+  type: object
+schema_id: aws-security-ou-secret
+schema_type: TRUSTING_SECRET
