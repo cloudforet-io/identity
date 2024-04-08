@@ -15,6 +15,7 @@ schema:
 provider: aws
 related_schemas:
   - aws-secret-access-key
+  - aws-control-tower-access-key
 options:
   external_link: 'https://<%- data.account_id %>.signin.aws.amazon.com/console'
   help:
