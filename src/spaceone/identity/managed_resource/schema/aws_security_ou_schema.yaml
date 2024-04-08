@@ -1,5 +1,6 @@
 ---
 name: AWS Security OU Secret
+version: '1.0'
 provider: aws
 schema:
   order:
