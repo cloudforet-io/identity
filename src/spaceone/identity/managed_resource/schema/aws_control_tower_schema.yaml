@@ -1,0 +1,38 @@
+---
+name: AWS Control Tower Access Key
+provider: aws
+schema:
+  order:
+    - aws_access_key_id
+    - aws_secret_access_key
+    - external_id
+    - role_name
+  properties:
+    aws_access_key_id:
+      format: password
+      minLength: 4.0
+      title: AWS Access Key
+      type: string
+    aws_secret_access_key:
+      format: password
+      minLength: 4.0
+      title: AWS Secret Key
+      type: string
+    external_id:
+      format: generate_id
+      markdown: '[How to use an external ID?](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html)'
+      minLength: 4.0
+      title: External ID
+      type: string
+    role_name:
+      minLength: 4.0
+      title: Role Name
+      type: string
+  required:
+    - aws_access_key_id
+    - aws_secret_access_key
+    - role_name
+    - external_id
+  type: object
+schema_id: aws-control-tower-access-key
+schema_type: SECRET
