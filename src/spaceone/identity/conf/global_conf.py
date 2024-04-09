@@ -5,6 +5,17 @@ EMAIL_SERVICE_NAME = "Cloudforet"
 # Enums: ACCESS_TOKEN (default) | PASSWORD
 RESET_PASSWORD_TYPE = "ACCESS_TOKEN"
 
+# WORKSPACE COLORS
+WORKSPACE_COLORS_NAME = [
+    "blue",
+    "yellow",
+    "gray",
+    "green",
+    "coral",
+    "indigo",
+    "peacock",
+]
+
 # Database Settings
 DATABASE_AUTO_CREATE_INDEX = True
 DATABASES = {

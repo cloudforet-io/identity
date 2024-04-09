@@ -1,10 +1,12 @@
 import logging
+import random
 from datetime import datetime, timedelta
 from typing import Union, List
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
+from spaceone.identity.conf.global_conf import WORKSPACE_COLORS_NAME
 from spaceone.identity.error.error_job import *
 from spaceone.identity.manager.account_collector_plugin_manager import (
     AccountCollectorPluginManager,
@@ -27,7 +29,6 @@ from spaceone.identity.model.job.database import Job
 from spaceone.identity.model.job.request import *
 from spaceone.identity.model.job.response import *
 from spaceone.identity.model.workspace.database import Workspace
-from spaceone.identity.service.service_account_service import ServiceAccountService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class JobService(BaseService):
         current_hour = params.get("current_hour", datetime.utcnow().hour)
 
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
-                current_hour
+            current_hour
         ):
             try:
                 self.created_service_account_job(trusted_account_vo, {})
@@ -326,7 +327,7 @@ class JobService(BaseService):
         )
 
     def created_service_account_job(
-            self, trusted_account_vo: TrustedAccount, job_options: dict
+        self, trusted_account_vo: TrustedAccount, job_options: dict
     ) -> Union[Job, dict]:
         resource_group = trusted_account_vo.resource_group
         provider = trusted_account_vo.provider
@@ -430,10 +431,10 @@ class JobService(BaseService):
         return secret_data
 
     def _check_duplicate_job(
-            self,
-            domain_id: str,
-            trusted_account_id: str,
-            this_job_vo: Job,
+        self,
+        domain_id: str,
+        trusted_account_id: str,
+        this_job_vo: Job,
     ) -> bool:
         query = {
             "filter": [
@@ -457,7 +458,7 @@ class JobService(BaseService):
         return False
 
     def _is_job_failed(
-            self, job_id: str, domain_id: str, workspace_id: str = None
+        self, job_id: str, domain_id: str, workspace_id: str = None
     ) -> bool:
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
 
@@ -467,10 +468,10 @@ class JobService(BaseService):
             return False
 
     def _close_job(
-            self,
-            job_id: str,
-            domain_id: str,
-            workspace_id: str = None,
+        self,
+        job_id: str,
+        domain_id: str,
+        workspace_id: str = None,
     ):
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
         if job_vo.status == "IN_PROGRESS":
@@ -497,17 +498,18 @@ class JobService(BaseService):
                     "is_managed": True,
                     "reference_id": reference_id,
                     "last_synced_at": datetime.utcnow(),
+                    "tags": self._set_workspace_theme(),
                 }
             )
         return workspace_vo
 
     def _create_project_group(
-            self,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            location_info: dict,
-            parent_group_id: str = None,
+        self,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        location_info: dict,
+        parent_group_id: str = None,
     ) -> ProjectGroup:
         name = location_info["name"]
         reference_id = location_info["resource_id"]
@@ -559,14 +561,14 @@ class JobService(BaseService):
         return project_group_vo
 
     def _create_project(
-            self,
-            result: dict,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            project_group_id: str = None,
-            sync_options: dict = None,
-            project_type: str = "PRIVATE",
+        self,
+        result: dict,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        project_group_id: str = None,
+        sync_options: dict = None,
+        project_type: str = "PRIVATE",
     ) -> Project:
         name = result["name"]
         reference_id = result["resource_id"]
@@ -602,13 +604,13 @@ class JobService(BaseService):
         return project_vo
 
     def _create_service_account(
-            self,
-            result: dict,
-            project_vo: Project,
-            trusted_account_id: str,
-            trusted_secret_id: str,
-            provider: str,
-            sync_options: dict = None,
+        self,
+        result: dict,
+        project_vo: Project,
+        trusted_account_id: str,
+        trusted_secret_id: str,
+        provider: str,
+        sync_options: dict = None,
     ) -> Union[ServiceAccount, None]:
         domain_id = project_vo.domain_id
         workspace_id = project_vo.workspace_id
@@ -705,3 +707,13 @@ class JobService(BaseService):
                 # )
 
         return location
+
+    @staticmethod
+    def _set_workspace_theme(tags: dict = None) -> dict:
+        theme = random.choice(WORKSPACE_COLORS_NAME)
+        if tags:
+            tags.update({"theme": theme})
+        else:
+            tags = {"theme": theme}
+
+        return tags
