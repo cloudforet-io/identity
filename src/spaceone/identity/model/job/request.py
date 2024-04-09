@@ -17,7 +17,7 @@ class JobDeleteRequest(BaseModel):
 
 class JobGetRequest(BaseModel):
     job_id: str
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[list, str, None] = None
     domain_id: str
 
 
@@ -26,7 +26,7 @@ class JobSearchQueryRequest(BaseModel):
     job_id: Union[str, None] = None
     trusted_account_id: Union[str, None] = None
     plugin_id: Union[str, None] = None
-    workspace_id: Union[str, None] = None
+    workspace_id: Union[list, str, None] = None
     domain_id: str
 
 

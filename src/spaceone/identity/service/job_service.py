@@ -1,10 +1,12 @@
 import logging
+import random
 from datetime import datetime, timedelta
 from typing import Union, List
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
+from spaceone.identity.conf.global_conf import WORKSPACE_COLORS_NAME
 from spaceone.identity.error.error_job import *
 from spaceone.identity.manager.account_collector_plugin_manager import (
     AccountCollectorPluginManager,
@@ -27,7 +29,6 @@ from spaceone.identity.model.job.database import Job
 from spaceone.identity.model.job.request import *
 from spaceone.identity.model.job.response import *
 from spaceone.identity.model.workspace.database import Workspace
-from spaceone.identity.service.service_account_service import ServiceAccountService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,7 +64,6 @@ class JobService(BaseService):
 
         current_hour = params.get("current_hour", datetime.utcnow().hour)
 
-        # todo check provider sync condition
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
             current_hour
         ):
@@ -100,8 +100,9 @@ class JobService(BaseService):
 
     @transaction(
         permission="identity:Job.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def get(self, params: JobGetRequest) -> JobResponse:
         """Get job
@@ -124,8 +125,10 @@ class JobService(BaseService):
         return JobResponse(**job_vo.to_dict())
 
     @transaction(
-        permission="identity:Job.read", role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"]
+        permission="identity:Job.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(
         [
             "job_id",
@@ -162,7 +165,8 @@ class JobService(BaseService):
         return JobsResponse(results=jobs_info, total_count=total_count)
 
     @transaction(
-        permission="identity:Job.read", role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"]
+        permission="identity:Job.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["job_id"])
@@ -213,9 +217,8 @@ class JobService(BaseService):
             )
         )
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
-        schema_vo = schema_mgr.get_schema(
-            trusted_account_vo.secret_schema_id, domain_id
-        )
+        schema_mgr.get_schema(trusted_account_vo.secret_schema_id, domain_id)
+
         provider_vo: Provider = self.provider_mgr.get_provider(
             trusted_account_vo.provider, domain_id
         )
@@ -329,7 +332,12 @@ class JobService(BaseService):
         resource_group = trusted_account_vo.resource_group
         provider = trusted_account_vo.provider
         trusted_account_id = trusted_account_vo.trusted_account_id
-        workspace_id = trusted_account_vo.workspace_id
+
+        if resource_group == "DOMAIN":
+            workspace_id = "*"
+        else:
+            workspace_id = trusted_account_vo.workspace_id
+
         domain_id = trusted_account_vo.domain_id
 
         provider_vo = self.provider_mgr.get_provider(provider, domain_id)
@@ -490,6 +498,7 @@ class JobService(BaseService):
                     "is_managed": True,
                     "reference_id": reference_id,
                     "last_synced_at": datetime.utcnow(),
+                    "tags": self._set_workspace_theme(),
                 }
             )
         return workspace_vo
@@ -698,3 +707,13 @@ class JobService(BaseService):
                 # )
 
         return location
+
+    @staticmethod
+    def _set_workspace_theme(tags: dict = None) -> dict:
+        theme = random.choice(WORKSPACE_COLORS_NAME)
+        if tags:
+            tags.update({"theme": theme})
+        else:
+            tags = {"theme": theme}
+
+        return tags
