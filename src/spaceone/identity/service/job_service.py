@@ -128,6 +128,7 @@ class JobService(BaseService):
         permission="identity:Job.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @append_query_filter(
         [
             "job_id",
@@ -139,7 +140,6 @@ class JobService(BaseService):
         ]
     )
     @append_keyword_filter(["job_id", "status"])
-    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def list(self, params: JobSearchQueryRequest) -> Union[JobsResponse, dict]:
         """List jobs
