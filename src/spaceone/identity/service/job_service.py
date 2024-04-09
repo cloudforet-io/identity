@@ -63,9 +63,8 @@ class JobService(BaseService):
 
         current_hour = params.get("current_hour", datetime.utcnow().hour)
 
-        # todo check provider sync condition
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
-            current_hour
+                current_hour
         ):
             try:
                 self.created_service_account_job(trusted_account_vo, {})
@@ -100,8 +99,9 @@ class JobService(BaseService):
 
     @transaction(
         permission="identity:Job.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def get(self, params: JobGetRequest) -> JobResponse:
         """Get job
@@ -124,7 +124,8 @@ class JobService(BaseService):
         return JobResponse(**job_vo.to_dict())
 
     @transaction(
-        permission="identity:Job.read", role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"]
+        permission="identity:Job.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @append_query_filter(
         [
@@ -137,6 +138,7 @@ class JobService(BaseService):
         ]
     )
     @append_keyword_filter(["job_id", "status"])
+    @change_value_by_rule("APPEND", "workspace_id", "*")
     @convert_model
     def list(self, params: JobSearchQueryRequest) -> Union[JobsResponse, dict]:
         """List jobs
@@ -162,7 +164,8 @@ class JobService(BaseService):
         return JobsResponse(results=jobs_info, total_count=total_count)
 
     @transaction(
-        permission="identity:Job.read", role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"]
+        permission="identity:Job.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @append_query_filter(["workspace_id", "domain_id"])
     @append_keyword_filter(["job_id"])
@@ -213,9 +216,8 @@ class JobService(BaseService):
             )
         )
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
-        schema_vo = schema_mgr.get_schema(
-            trusted_account_vo.secret_schema_id, domain_id
-        )
+        schema_mgr.get_schema(trusted_account_vo.secret_schema_id, domain_id)
+
         provider_vo: Provider = self.provider_mgr.get_provider(
             trusted_account_vo.provider, domain_id
         )
@@ -324,12 +326,17 @@ class JobService(BaseService):
         )
 
     def created_service_account_job(
-        self, trusted_account_vo: TrustedAccount, job_options: dict
+            self, trusted_account_vo: TrustedAccount, job_options: dict
     ) -> Union[Job, dict]:
         resource_group = trusted_account_vo.resource_group
         provider = trusted_account_vo.provider
         trusted_account_id = trusted_account_vo.trusted_account_id
-        workspace_id = trusted_account_vo.workspace_id
+
+        if resource_group == "DOMAIN":
+            workspace_id = "*"
+        else:
+            workspace_id = trusted_account_vo.workspace_id
+
         domain_id = trusted_account_vo.domain_id
 
         provider_vo = self.provider_mgr.get_provider(provider, domain_id)
@@ -423,10 +430,10 @@ class JobService(BaseService):
         return secret_data
 
     def _check_duplicate_job(
-        self,
-        domain_id: str,
-        trusted_account_id: str,
-        this_job_vo: Job,
+            self,
+            domain_id: str,
+            trusted_account_id: str,
+            this_job_vo: Job,
     ) -> bool:
         query = {
             "filter": [
@@ -450,7 +457,7 @@ class JobService(BaseService):
         return False
 
     def _is_job_failed(
-        self, job_id: str, domain_id: str, workspace_id: str = None
+            self, job_id: str, domain_id: str, workspace_id: str = None
     ) -> bool:
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
 
@@ -460,10 +467,10 @@ class JobService(BaseService):
             return False
 
     def _close_job(
-        self,
-        job_id: str,
-        domain_id: str,
-        workspace_id: str = None,
+            self,
+            job_id: str,
+            domain_id: str,
+            workspace_id: str = None,
     ):
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
         if job_vo.status == "IN_PROGRESS":
@@ -495,12 +502,12 @@ class JobService(BaseService):
         return workspace_vo
 
     def _create_project_group(
-        self,
-        domain_id: str,
-        workspace_id: str,
-        trusted_account_id: str,
-        location_info: dict,
-        parent_group_id: str = None,
+            self,
+            domain_id: str,
+            workspace_id: str,
+            trusted_account_id: str,
+            location_info: dict,
+            parent_group_id: str = None,
     ) -> ProjectGroup:
         name = location_info["name"]
         reference_id = location_info["resource_id"]
@@ -552,14 +559,14 @@ class JobService(BaseService):
         return project_group_vo
 
     def _create_project(
-        self,
-        result: dict,
-        domain_id: str,
-        workspace_id: str,
-        trusted_account_id: str,
-        project_group_id: str = None,
-        sync_options: dict = None,
-        project_type: str = "PRIVATE",
+            self,
+            result: dict,
+            domain_id: str,
+            workspace_id: str,
+            trusted_account_id: str,
+            project_group_id: str = None,
+            sync_options: dict = None,
+            project_type: str = "PRIVATE",
     ) -> Project:
         name = result["name"]
         reference_id = result["resource_id"]
@@ -595,13 +602,13 @@ class JobService(BaseService):
         return project_vo
 
     def _create_service_account(
-        self,
-        result: dict,
-        project_vo: Project,
-        trusted_account_id: str,
-        trusted_secret_id: str,
-        provider: str,
-        sync_options: dict = None,
+            self,
+            result: dict,
+            project_vo: Project,
+            trusted_account_id: str,
+            trusted_secret_id: str,
+            provider: str,
+            sync_options: dict = None,
     ) -> Union[ServiceAccount, None]:
         domain_id = project_vo.domain_id
         workspace_id = project_vo.workspace_id
