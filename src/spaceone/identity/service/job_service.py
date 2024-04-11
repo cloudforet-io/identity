@@ -263,7 +263,7 @@ class JobService(BaseService):
                     if trusted_account_vo.resource_group == "DOMAIN":
                         if not sync_options.get("single_workspace_id"):
                             workspace_vo = self._create_workspace(
-                                domain_id, location.pop(0)
+                                domain_id, trusted_account_id, location.pop(0)
                             )
                         else:
                             workspace_vo = self.workspace_mgr.get_workspace(
@@ -479,28 +479,36 @@ class JobService(BaseService):
         elif job_vo.status == "FAILURE":
             self.job_mgr.update_job_by_vo({"finished_at": datetime.utcnow()}, job_vo)
 
-    def _create_workspace(self, domain_id: str, location_info: dict) -> Workspace:
+    def _create_workspace(
+        self, domain_id: str, trusted_account_id: str, location_info: dict
+    ) -> Workspace:
         name = location_info.get("name")
         reference_id = location_info.get("resource_id")
         workspace_vos = self.workspace_mgr.filter_workspaces(
-            domain_id=domain_id, name=name
+            domain_id=domain_id, reference_id=reference_id, is_managed=True
         )
+
+        params = {"trusted_account_id": trusted_account_id}
         if workspace_vos:
             workspace_vo = workspace_vos[0]
+            if workspace_vo.name != name:
+                params.update({"name": name})
+            params.update({"last_synced_at": datetime.utcnow()})
             workspace_vo = self.workspace_mgr.update_workspace_by_vo(
-                {"last_synced_at": datetime.utcnow()}, workspace_vo
+                params, workspace_vo
             )
         else:
-            workspace_vo = self.workspace_mgr.create_workspace(
+            params.update(
                 {
-                    "domain_id": domain_id,
                     "name": name,
                     "is_managed": True,
-                    "reference_id": reference_id,
-                    "last_synced_at": datetime.utcnow(),
                     "tags": self._set_workspace_theme(),
+                    "reference_id": reference_id,
+                    "domain_id": domain_id,
+                    "last_synced_at": datetime.utcnow(),
                 }
             )
+            workspace_vo = self.workspace_mgr.create_workspace(params)
         return workspace_vo
 
     def _create_project_group(
@@ -514,20 +522,16 @@ class JobService(BaseService):
         name = location_info["name"]
         reference_id = location_info["resource_id"]
 
-        query_filter = {
-            "filter": [
-                {"k": "is_managed", "v": True, "o": "eq"},
-                {"k": "reference_id", "v": reference_id, "o": "eq"},
-                {"k": "domain_id", "v": domain_id, "o": "eq"},
-                {"k": "workspace_id", "v": workspace_id, "o": "eq"},
-            ]
+        conditions = {
+            "is_managed": True,
+            "reference_id": reference_id,
+            "domain_id": domain_id,
+            "workspace_id": workspace_id,
         }
         if parent_group_id:
-            query_filter["filter"].append(
-                {"k": "parent_group_id", "v": parent_group_id, "o": "eq"}
-            )
+            conditions["parent_group_id"] = parent_group_id
 
-        project_group_vos, _ = self.project_group_mgr.list_project_groups(query_filter)
+        project_group_vos = self.project_group_mgr.filter_project_groups(**conditions)
 
         params = {
             "trusted_account_id": trusted_account_id,
