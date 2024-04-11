@@ -19,7 +19,6 @@ class App(MongoModel):
     )
     client_id = StringField(max_length=40, default=None, null=True)
     role_id = StringField(max_length=40, required=True)
-    service_account_id = StringField(max_length=40, default=None, null=True)
     resource_group = StringField(max_length=40, choices=("DOMAIN", "WORKSPACE"))
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
@@ -32,7 +31,6 @@ class App(MongoModel):
             "name",
             "state",
             "client_id",
-            "service_account_id",
             "tags",
             "expired_at",
             "last_accessed_at",
@@ -45,7 +43,7 @@ class App(MongoModel):
             "role_id",
             "expired_at",
         ],
-        "ordering": ["app_id"],
+        "ordering": ["-created_at"],
         "indexes": [
             "state",
             "role_type",

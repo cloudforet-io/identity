@@ -13,3 +13,4 @@ from spaceone.identity.model.role_binding.database import RoleBinding
 from spaceone.identity.model.user.database import User
 from spaceone.identity.model.user_group.database import UserGroup
 from spaceone.identity.model.app.database import App
+from spaceone.identity.model.agent.database import Agent
