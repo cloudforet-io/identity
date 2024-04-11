@@ -4,26 +4,24 @@ from pydantic import BaseModel
 
 from spaceone.core import utils
 
-from spaceone.identity.model.app.request import State, ResourceGroup, RoleType
+from spaceone.identity.model.agent.request import State, RoleType
 
-__all__ = ["CheckAppResponse", "AppResponse", "AppsResponse"]
-
-
-class CheckAppResponse(BaseModel):
-    permissions: List[str]
+__all__ = ["AgentResponse", "AgentsResponse"]
 
 
-class AppResponse(BaseModel):
-    app_id: Union[str, None] = None
+class AgentResponse(BaseModel):
+    agent_id: Union[str, None] = None
+    options: Union[dict, None] = None
     client_secret: Union[str, None] = None
     name: Union[str, None] = None
     state: Union[State, None] = None
-    tags: Union[dict, None] = None
     is_managed: Union[bool, None] = None
     role_type: Union[RoleType, None] = None
     client_id: Union[str, None] = None
     role_id: Union[str, None] = None
-    resource_group: Union[ResourceGroup, None] = None
+    app_id: Union[str, None] = None
+    service_account_id: Union[str, None] = None
+    project_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
@@ -40,6 +38,6 @@ class AppResponse(BaseModel):
         return data
 
 
-class AppsResponse(BaseModel):
-    results: List[AppResponse]
+class AgentsResponse(BaseModel):
+    results: List[AgentResponse]
     total_count: int

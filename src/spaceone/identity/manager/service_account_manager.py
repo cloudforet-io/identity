@@ -37,7 +37,7 @@ class ServiceAccountManager(BaseManager):
         return self.update_service_account_by_vo(params, service_account_vo)
 
     def update_service_account_by_vo(
-            self, params: dict, service_account_vo: ServiceAccount
+        self, params: dict, service_account_vo: ServiceAccount
     ) -> ServiceAccount:
         def _rollback(old_data):
             _LOGGER.info(
@@ -55,11 +55,11 @@ class ServiceAccountManager(BaseManager):
         service_account_vo.delete()
 
     def get_service_account(
-            self,
-            service_account_id: str,
-            domain_id: str,
-            workspace_id: str = None,
-            user_projects: List[str] = None,
+        self,
+        service_account_id: str,
+        domain_id: str,
+        workspace_id: str = None,
+        user_projects: List[str] = None,
     ) -> ServiceAccount:
         conditions = {"service_account_id": service_account_id, "domain_id": domain_id}
 
@@ -81,11 +81,11 @@ class ServiceAccountManager(BaseManager):
         return self.service_account_model.stat(**query)
 
     def update_secret_project(
-            self,
-            service_account_id: str,
-            domain_id: str,
-            workspace_id: str,
-            project_id: str,
+        self,
+        service_account_id: str,
+        domain_id: str,
+        workspace_id: str,
+        project_id: str,
     ) -> None:
         secret_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="secret"
@@ -106,7 +106,7 @@ class ServiceAccountManager(BaseManager):
             )
 
     def delete_secrets(
-            self, service_account_id: str, domain_id: str, workspace_id: str
+        self, service_account_id: str, domain_id: str, workspace_id: str
     ) -> None:
         secret_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="secret"
@@ -126,7 +126,7 @@ class ServiceAccountManager(BaseManager):
             )
 
     def get_all_service_account_ids_using_secret(
-            self, domain_id: str, workspace_id: str
+        self, domain_id: str, workspace_id: str
     ) -> List[str]:
         secret_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="secret"
@@ -147,10 +147,10 @@ class ServiceAccountManager(BaseManager):
 
     @staticmethod
     def _list_secrets(
-            secret_connector: SpaceConnector,
-            service_account_id: str,
-            domain_id: str,
-            workspace_id: str,
+        secret_connector: SpaceConnector,
+        service_account_id: str,
+        domain_id: str,
+        workspace_id: str,
     ) -> dict:
         return secret_connector.dispatch(
             "Secret.list",
