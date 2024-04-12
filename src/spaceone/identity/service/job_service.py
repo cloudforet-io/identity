@@ -490,7 +490,7 @@ class JobService(BaseService):
         )
 
         _LOGGER.debug(
-            f"[_create_workspace] {name} 'domain_id': {domain_id}, 'reference_id': {reference_id} 'tags': {tags}, 'is_managed' :True  count: {len(workspace_vos)}"
+            f"[_create_workspace] {name} 'domain_id': {domain_id}, count: {len(workspace_vos)}"
         )
 
         params = {"trusted_account_id": trusted_account_id, "is_managed": True}
@@ -506,9 +506,7 @@ class JobService(BaseService):
             params.update(
                 {
                     "name": name,
-                    "is_managed": True,
                     "tags": self._set_workspace_theme(),
-                    "reference_id": reference_id,
                     "domain_id": domain_id,
                     "last_synced_at": datetime.utcnow(),
                 }
