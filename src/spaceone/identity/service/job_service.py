@@ -1,7 +1,7 @@
 import logging
 import random
 from datetime import datetime, timedelta
-from typing import Union, List
+from typing import Union, List, Tuple
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
@@ -484,11 +484,16 @@ class JobService(BaseService):
     ) -> Workspace:
         name = location_info.get("name")
         reference_id = location_info.get("resource_id")
+
         workspace_vos = self.workspace_mgr.filter_workspaces(
-            domain_id=domain_id, reference_id=reference_id, is_managed=True
+            domain_id=domain_id, name=name
         )
 
-        params = {"trusted_account_id": trusted_account_id}
+        _LOGGER.debug(
+            f"[_create_workspace] {name} 'domain_id': {domain_id}, count: {len(workspace_vos)}"
+        )
+
+        params = {"trusted_account_id": trusted_account_id, "is_managed": True}
         if workspace_vos:
             workspace_vo = workspace_vos[0]
             if workspace_vo.name != name:
@@ -501,9 +506,7 @@ class JobService(BaseService):
             params.update(
                 {
                     "name": name,
-                    "is_managed": True,
                     "tags": self._set_workspace_theme(),
-                    "reference_id": reference_id,
                     "domain_id": domain_id,
                     "last_synced_at": datetime.utcnow(),
                 }

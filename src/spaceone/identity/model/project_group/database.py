@@ -14,7 +14,7 @@ class ProjectGroup(MongoModel):
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
-    last_accessed_at = DateTimeField(default=None, null=True)
+    last_synced_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
@@ -24,7 +24,7 @@ class ProjectGroup(MongoModel):
             "is_managed",
             "trusted_account_id",
             "parent_group_id",
-            "last_accessed_at",
+            "last_synced_at",
         ],
         "minimal_fields": [
             "project_group_id",

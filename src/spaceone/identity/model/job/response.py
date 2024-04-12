@@ -7,7 +7,7 @@ from spaceone.core import utils
 __all__ = ["JobResponse", "JobsResponse"]
 
 ResourceGroup = Literal["DOMAIN", "WORKSPACE"]
-Status = Literal["PENDING", "IN_PROGRESS", "FAILURE", "SUCCESS", "CANCELD"]
+Status = Literal["PENDING", "IN_PROGRESS", "FAILURE", "SUCCESS", "CANCELED"]
 
 
 class JobResponse(BaseModel):
