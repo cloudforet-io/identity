@@ -368,10 +368,17 @@ class AgentService(BaseService):
         agent_vos, agent_total_count = self.agent_mgr.list_agents(query)
         agents_info = [agent_vo.to_dict() for agent_vo in agent_vos]
 
-        # app_ids = [agent_vo.app_id for agent_vo in agent_vos]
-        # app_vos, app_total_count = self.app_mgr.list_apps({"app_id": {"$in": app_ids}})
+        app_ids = [agent_vo.app_id for agent_vo in agent_vos]
 
-        return AgentsResponse(results=agents_info, total_count=agent_total_count)
+        app_vos, app_total_count = self.app_mgr.list_apps(
+            {"filter": [{"k": "app_id", "v": app_ids, "o": "in"}]}
+        )
+
+        apps_info = [app_vo.to_dict() for app_vo in app_vos]
+
+        agents_info = self._update_agents_info_with_apps_info(agents_info, apps_info)
+
+        return AgentsResponse(results=agents_info, total_count=len(agents_info))
 
     def _create_agent_client_secret(
         self, app_vo: App, service_account_id: str
@@ -413,7 +420,29 @@ class AgentService(BaseService):
         agent_info["client_id"] = app_vo.client_id
         agent_info["expired_at"] = app_vo.expired_at
         agent_info["last_accessed_at"] = app_vo.last_accessed_at
+
         return agent_info
+
+    @staticmethod
+    def _update_agents_info_with_apps_info(agents_info, apps_info):
+        agents_info_with_apps_info = []
+
+        for agent_info, app_info in zip(agents_info, apps_info):
+            agent_info.update(
+                {
+                    "state": app_info["state"],
+                    "is_managed": app_info["is_managed"],
+                    "role_type": app_info["role_type"],
+                    "role_id": app_info["role_id"],
+                    "app_id": app_info["app_id"],
+                    "client_id": app_info["client_id"],
+                    "expired_at": app_info["expired_at"],
+                    "last_accessed_at": app_info["last_accessed_at"],
+                }
+            )
+            agents_info_with_apps_info.append(agent_info)
+
+        return agents_info_with_apps_info
 
     @staticmethod
     def _get_expired_at() -> str:
