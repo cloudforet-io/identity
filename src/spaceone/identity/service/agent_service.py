@@ -123,7 +123,9 @@ class AgentService(BaseService):
 
         agent_vo = self.agent_mgr.create_agent(create_agent_params)
 
-        return AgentResponse(**agent_vo.to_dict(), client_secret=client_secret)
+        agent_info = self._update_agent_info_with_app_vo(agent_vo, app_vo)
+
+        return AgentResponse(**agent_info, client_secret=client_secret)
 
     @transaction(
         permission="identity:Agent.write",
@@ -162,7 +164,9 @@ class AgentService(BaseService):
         app_vo = self.app_mgr.get_app(agent_vo.app_id, domain_id, workspace_id)
         app_vo = self.app_mgr.enable_app(app_vo)
 
-        return AgentResponse(**app_vo.to_dict())
+        agent_info = self._update_agent_info_with_app_vo(agent_vo, app_vo)
+
+        return AgentResponse(**agent_info)
 
     @transaction(
         permission="identity:Agent.write",
@@ -201,7 +205,9 @@ class AgentService(BaseService):
         app_vo = self.app_mgr.get_app(agent_vo.app_id, domain_id, workspace_id)
         app_vo = self.app_mgr.disable_app(app_vo)
 
-        return AgentResponse(**app_vo.to_dict())
+        agent_info = self._update_agent_info_with_app_vo(agent_vo, app_vo)
+
+        return AgentResponse(**agent_info)
 
     @transaction(
         permission="identity:Agent.write",
@@ -246,7 +252,9 @@ class AgentService(BaseService):
 
         app_vo = self.app_mgr.update_app_by_vo({"client_id": client_id}, app_vo)
 
-        return AgentResponse(**app_vo.to_dict(), client_secret=client_secret)
+        agent_info = self._update_agent_info_with_app_vo(agent_vo, app_vo)
+
+        return AgentResponse(**agent_info, client_secret=client_secret)
 
     @transaction(
         permission="identity:Agent.write",
@@ -307,14 +315,23 @@ class AgentService(BaseService):
         Returns:
             AgentResponse:
         """
+        service_account_id = params.service_account_id
+        domain_id = params.domain_id
+        workspace_id = params.workspace_id
+        user_projects = params.user_projects
+
         agent_vo = self.agent_mgr.get_agent(
-            params.service_account_id,
-            params.domain_id,
-            params.workspace_id,
-            params.user_projects,
+            service_account_id,
+            domain_id,
+            workspace_id,
+            user_projects,
         )
 
-        return AgentResponse(**agent_vo.to_dict())
+        app_vo = self.app_mgr.get_app(agent_vo.app_id, domain_id, workspace_id)
+
+        agent_info = self._update_agent_info_with_app_vo(agent_vo, app_vo)
+
+        return AgentResponse(**agent_info)
 
     @transaction(
         permission="identity:Agent.read",
@@ -348,11 +365,13 @@ class AgentService(BaseService):
             AgentsResponse:
         """
         query = params.query or {}
-        print(query)
-        agent_vos, total_count = self.agent_mgr.list_agents(query)
+        agent_vos, agent_total_count = self.agent_mgr.list_agents(query)
         agents_info = [agent_vo.to_dict() for agent_vo in agent_vos]
 
-        return AgentsResponse(results=agents_info, total_count=total_count)
+        # app_ids = [agent_vo.app_id for agent_vo in agent_vos]
+        # app_vos, app_total_count = self.app_mgr.list_apps({"app_id": {"$in": app_ids}})
+
+        return AgentsResponse(results=agents_info, total_count=agent_total_count)
 
     def _create_agent_client_secret(
         self, app_vo: App, service_account_id: str
@@ -382,6 +401,19 @@ class AgentService(BaseService):
         )
 
         return client_id, client_secret
+
+    @staticmethod
+    def _update_agent_info_with_app_vo(agent_vo, app_vo):
+        agent_info = agent_vo.to_dict()
+        agent_info["state"] = app_vo.state
+        agent_info["is_managed"] = app_vo.is_managed
+        agent_info["role_type"] = app_vo.role_type
+        agent_info["role_id"] = app_vo.role_id
+        agent_info["app_id"] = app_vo.app_id
+        agent_info["client_id"] = app_vo.client_id
+        agent_info["expired_at"] = app_vo.expired_at
+        agent_info["last_accessed_at"] = app_vo.last_accessed_at
+        return agent_info
 
     @staticmethod
     def _get_expired_at() -> str:
