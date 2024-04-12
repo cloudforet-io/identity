@@ -8,7 +8,9 @@ from spaceone.core.model.mongo_model import MongoModel
 class Workspace(MongoModel):
     workspace_id = StringField(max_length=40, generate_id="workspace", unique=True)
     name = StringField(max_length=255)
-    state = StringField(max_length=20, default="ENABLED")
+    state = StringField(
+        max_length=20, default="ENABLED", choices=["ENABLED", "DISABLED", "DELETED"]
+    )
     tags = DictField(default=None)
     created_by = StringField(max_length=255)
     reference_id = StringField(max_length=255, default=None, null=True)
@@ -17,14 +19,17 @@ class Workspace(MongoModel):
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
+    last_synced_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
             "name",
             "state",
             "tags",
+            "is_managed",
             "trusted_account_id",
             "deleted_at",
+            "last_synced_at",
         ],
         "minimal_fields": [
             "workspace_id",

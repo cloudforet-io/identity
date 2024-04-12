@@ -488,6 +488,10 @@ class JobService(BaseService):
             domain_id=domain_id, reference_id=reference_id, is_managed=True
         )
 
+        _LOGGER.debug(
+            f"[_create_workspace] {name} 'domain_id': {domain_id}, 'reference_id': {reference_id}, 'is_managed' :True  count: {len(workspace_vos)}"
+        )
+
         params = {"trusted_account_id": trusted_account_id}
         if workspace_vos:
             workspace_vo = workspace_vos[0]
