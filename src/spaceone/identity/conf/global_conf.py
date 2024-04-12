@@ -79,6 +79,7 @@ LOG = {
                 "WorkspaceUser.create": ["password"],
                 "Token.issue": ["credentials"],
                 "Token.grant": ["token"],
+                "Job.sync_service_accounts": ["secret_data"],
             }
         }
     }
