@@ -13,7 +13,6 @@ class AgentResponse(BaseModel):
     agent_id: Union[str, None] = None
     options: Union[dict, None] = None
     client_secret: Union[str, None] = None
-    name: Union[str, None] = None
     state: Union[State, None] = None
     is_managed: Union[bool, None] = None
     role_type: Union[RoleType, None] = None
