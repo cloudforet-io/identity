@@ -1,6 +1,7 @@
 import logging
 from typing import Union
 
+from spaceone.core.error import *
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
@@ -86,12 +87,19 @@ class WorkspaceService(BaseService):
             None
         """
 
-        workspace_vo = self.workspace_mgr.get_workspace(
-            params.workspace_id, params.domain_id
-        )
+        domain_id = params.domain_id
+        workspace_id = params.workspace_id
+
+        workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
 
         # Check is managed resource
         self.resource_mgr.check_is_managed_resource(workspace_vo)
+
+        service_account_vos = self.workspace_mgr.filter_workspaces(
+            domain_id=domain_id, workspace_id=workspace_id
+        )
+        if service_account_vos.count() > 0:
+            raise ERROR_EXIST_RESOURCE(key="Service Account", value=workspace_vo.name)
 
         self.workspace_mgr.delete_workspace_by_vo(workspace_vo)
 
@@ -120,7 +128,7 @@ class WorkspaceService(BaseService):
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def disable(
-            self, params: WorkspaceDisableRequest
+        self, params: WorkspaceDisableRequest
     ) -> Union[WorkspaceResponse, dict]:
         """Disable workspace
         Args:
@@ -180,7 +188,7 @@ class WorkspaceService(BaseService):
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def list(
-            self, params: WorkspaceSearchQueryRequest
+        self, params: WorkspaceSearchQueryRequest
     ) -> Union[WorkspacesResponse, dict]:
         """List workspaces
         Args:
