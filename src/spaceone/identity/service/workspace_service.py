@@ -5,9 +5,15 @@ from spaceone.core.error import *
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
+from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.manager.project_group_manager import ProjectGroupManager
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
+from spaceone.identity.manager.service_account_manager import ServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
 from spaceone.identity.model.workspace.response import *
 
@@ -80,6 +86,7 @@ class WorkspaceService(BaseService):
         """Delete workspace
         Args:
             params (WorkspaceDeleteRequest): {
+                'force': 'bool',
                 'workspace_id': 'str',  # required
                 'domain_id': 'str'      # injected from auth (required)
             }
@@ -98,8 +105,13 @@ class WorkspaceService(BaseService):
         service_account_vos = self.workspace_mgr.filter_workspaces(
             domain_id=domain_id, workspace_id=workspace_id
         )
-        if service_account_vos.count() > 0:
+
+        if params.force:
+            self._delete_related_resources_in_workspace(workspace_vo)
+        elif service_account_vos.count() > 0:
             raise ERROR_EXIST_RESOURCE(key="Service Account", value=workspace_vo.name)
+        else:
+            self._delete_related_resources_in_workspace(workspace_vo)
 
         self.workspace_mgr.delete_workspace_by_vo(workspace_vo)
 
@@ -229,3 +241,59 @@ class WorkspaceService(BaseService):
 
         query = params.query or {}
         return self.workspace_mgr.stat_workspaces(query)
+
+    @staticmethod
+    def _delete_related_resources_in_workspace(workspace_vo: Workspace):
+        project_group_mgr = ProjectGroupManager()
+        project_mgr = ProjectManager()
+        trusted_account_mgr = TrustedAccountManager()
+        service_account_mgr = ServiceAccountManager()
+        secret_mgr = SecretManager()
+
+        project_group_vos = project_group_mgr.filter_project_groups(
+            domain_id=workspace_vo.domain_id, workspace_id=workspace_vo.workspace_id
+        )
+
+        project_vos = project_mgr.filter_projects(
+            domain_id=workspace_vo.domain_id, workspace_id=workspace_vo.workspace_id
+        )
+
+        trusted_account_vos = trusted_account_mgr.filter_trusted_accounts(
+            domain_id=workspace_vo.domain_id, workspace_id=workspace_vo.workspace_id
+        )
+
+        service_account_vos = service_account_mgr.filter_service_accounts(
+            domain_id=workspace_vo.domain_id, workspace_id=workspace_vo.workspace_id
+        )
+
+        _LOGGER.debug(
+            f"[_delete_related_resources_in_workspace] Start delete related resources in workspace: {workspace_vo.domain_id} {workspace_vo.name}( {workspace_vo.workspace_id} )"
+        )
+
+        if project_group_vos:
+            _LOGGER.debug(
+                f"[_delete_related_resources_in_workspace] Delete project groups count {workspace_vo.workspace_id} : {project_group_vos.count()}"
+            )
+            project_group_vos.delete()
+
+        if project_vos:
+            _LOGGER.debug(
+                f"[_delete_related_resources_in_workspace] Delete projects count  {workspace_vo.workspace_id} : {project_vos.count()}"
+            )
+            project_vos.delete()
+
+        for service_account_vo in service_account_vos:
+            secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
+            _LOGGER.debug(
+                f"[_delete_related_resources_in_workspace] Delete service account: {service_account_vo.name} ({service_account_vo.service_account_id})"
+            )
+            service_account_mgr.delete_service_account_by_vo(service_account_vo)
+
+        for trusted_account_vo in trusted_account_vos:
+            secret_mgr.delete_related_trusted_secrets(
+                trusted_account_vo.trusted_account_id
+            )
+            _LOGGER.debug(
+                f"[_delete_related_resources_in_workspace] Delete trusted account: {trusted_account_vo.name} ({trusted_account_vo.trusted_account_id})"
+            )
+            trusted_account_mgr.delete_trusted_account_by_vo(trusted_account_vo)

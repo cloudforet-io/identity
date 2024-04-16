@@ -28,6 +28,7 @@ class WorkspaceUpdateRequest(BaseModel):
 
 
 class WorkspaceDeleteRequest(BaseModel):
+    force: Union[bool, None] = False
     workspace_id: str
     domain_id: str
 
