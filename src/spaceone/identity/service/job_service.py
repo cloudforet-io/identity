@@ -52,7 +52,7 @@ class JobService(BaseService):
         self.project_group_mgr = ProjectGroupManager()
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
-    def create_jobs_by_trusted_account(self, params):
+    def create_jobs_by_trusted_account(self, params: dict):
         """Create jobs by trusted account
         Args:
             params (dict): {
@@ -68,7 +68,7 @@ class JobService(BaseService):
             current_hour
         ):
             try:
-                self.created_service_account_job(trusted_account_vo, {})
+                self.create_service_account_job(trusted_account_vo, {})
             except Exception as e:
                 _LOGGER.error(
                     f"[create_jobs_by_trusted_account] sync error: {e}", exc_info=True
@@ -326,7 +326,7 @@ class JobService(BaseService):
             job_vo.workspace_id,
         )
 
-    def created_service_account_job(
+    def create_service_account_job(
         self, trusted_account_vo: TrustedAccount, job_options: dict
     ) -> Union[Job, dict]:
         resource_group = trusted_account_vo.resource_group
@@ -385,19 +385,18 @@ class JobService(BaseService):
                 job_vo, ERROR_DUPLICATE_JOB(trusted_account_id=trusted_account_id)
             )
         else:
-            self.job_mgr.push_job(
-                {
-                    "job_id": job_vo.job_id,
-                    "trusted_account_id": trusted_account_id,
-                    "trusted_secret_id": trusted_account_vo.trusted_secret_id,
-                    "secret_data": trusted_secret_data,
-                    "workspace_id": trusted_account_vo.workspace_id,
-                    "domain_id": domain_id,
-                    "options": job_options,
-                }
-            )
             try:
-                pass
+                self.job_mgr.push_job(
+                    {
+                        "job_id": job_vo.job_id,
+                        "trusted_account_id": trusted_account_id,
+                        "trusted_secret_id": trusted_account_vo.trusted_secret_id,
+                        "secret_data": trusted_secret_data,
+                        "workspace_id": trusted_account_vo.workspace_id,
+                        "domain_id": domain_id,
+                        "options": job_options,
+                    }
+                )
             except Exception as e:
                 self.job_mgr.change_error_status(job_vo, e)
 

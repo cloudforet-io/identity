@@ -10,7 +10,7 @@ from spaceone.identity.error.custom import *
 from spaceone.identity.manager.agent_manager import AgentManager
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.client_secret_manager import ClientSecretManager
-from spaceone.identity.model import App
+from spaceone.identity.model import App, ServiceAccount
 from spaceone.identity.model.app.response import AppResponse
 from spaceone.identity.model.service_account.request import *
 from spaceone.identity.model.service_account.response import *
@@ -350,26 +350,7 @@ class ServiceAccountService(BaseService):
         # Check is managed resource
         self.resource_mgr.check_is_managed_resource(service_account_vo)
 
-        condition = {
-            "service_account_id": service_account_id,
-            "domain_id": domain_id,
-            "workspace_id": workspace_id,
-        }
-        if user_projects:
-            condition["project_id"] = user_projects
-
-        agent_vos = self.agent_mgr.filter_agents(**condition)
-
-        if agent_vos:
-            app_id = agent_vos[0].app_id
-            app_vo = self.app_mgr.get_app(app_id, domain_id, workspace_id)
-            app_vo.delete()
-            agent_vos.delete()
-
-        secret_mgr = SecretManager()
-        secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
-
-        self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
+        self.delete_service_account(service_account_vo)
 
     @transaction(
         permission="identity:ServiceAccount.read",
@@ -487,6 +468,34 @@ class ServiceAccountService(BaseService):
 
         query = params.query or {}
         return self.service_account_mgr.stat_service_accounts(query)
+
+    def delete_service_account(
+        self, service_account_vo: ServiceAccount, user_projects=None
+    ):
+        service_account_id = service_account_vo.service_account_id
+        domain_id = service_account_vo.domain_id
+        workspace_id = service_account_vo.workspace_id
+
+        condition = {
+            "service_account_id": service_account_id,
+            "domain_id": domain_id,
+            "workspace_id": workspace_id,
+        }
+        if user_projects:
+            condition["project_id"] = user_projects
+
+        agent_vos = self.agent_mgr.filter_agents(**condition)
+
+        if agent_vos:
+            app_id = agent_vos[0].app_id
+            app_vo = self.app_mgr.get_app(app_id, domain_id, workspace_id)
+            app_vo.delete()
+            agent_vos.delete()
+
+        secret_mgr = SecretManager()
+        secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
+
+        self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
 
     def _create_service_account_app_client_secret(
         self, app_vo: App, service_account_id: str
