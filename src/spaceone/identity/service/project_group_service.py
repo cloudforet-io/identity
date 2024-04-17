@@ -33,7 +33,7 @@ class ProjectGroupService(BaseService):
     )
     @convert_model
     def create(
-            self, params: ProjectGroupCreateRequest
+        self, params: ProjectGroupCreateRequest
     ) -> Union[ProjectGroupResponse, dict]:
         """Create project group
 
@@ -64,7 +64,7 @@ class ProjectGroupService(BaseService):
     )
     @convert_model
     def update(
-            self, params: ProjectGroupUpdateRequest
+        self, params: ProjectGroupUpdateRequest
     ) -> Union[ProjectGroupResponse, dict]:
         """Update project group
 
@@ -87,7 +87,7 @@ class ProjectGroupService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(project_group_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(project_group_vo)
 
         project_group_vo = self.project_group_mgr.update_project_group_by_vo(
             params.dict(exclude_unset=True), project_group_vo
@@ -100,7 +100,7 @@ class ProjectGroupService(BaseService):
     )
     @convert_model
     def change_parent_group(
-            self, params: ProjectChangeParentGroupRequest
+        self, params: ProjectChangeParentGroupRequest
     ) -> Union[ProjectGroupResponse, dict]:
         """Change parent project group
 
@@ -122,7 +122,7 @@ class ProjectGroupService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(project_group_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(project_group_vo)
 
         # Check parent project group is
         if params.parent_group_id:
@@ -171,7 +171,7 @@ class ProjectGroupService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(project_group_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(project_group_vo)
 
         self.project_group_mgr.delete_project_group_by_vo(project_group_vo)
 
@@ -180,7 +180,7 @@ class ProjectGroupService(BaseService):
     )
     @convert_model
     def add_users(
-            self, params: ProjectGroupAddUsersRequest
+        self, params: ProjectGroupAddUsersRequest
     ) -> Union[ProjectGroupResponse, dict]:
         """Add users to project group
 
@@ -221,7 +221,7 @@ class ProjectGroupService(BaseService):
     )
     @convert_model
     def remove_users(
-            self, params: ProjectGroupRemoveUsersRequest
+        self, params: ProjectGroupRemoveUsersRequest
     ) -> ProjectGroupResponse:
         """Remove users from project group
         Args:
@@ -288,7 +288,7 @@ class ProjectGroupService(BaseService):
     @append_keyword_filter(["project_group_id", "name"])
     @convert_model
     def list(
-            self, params: ProjectGroupSearchQueryRequest
+        self, params: ProjectGroupSearchQueryRequest
     ) -> Union[ProjectGroupsResponse, dict]:
         """List project groups
 
@@ -337,10 +337,10 @@ class ProjectGroupService(BaseService):
         return self.project_group_mgr.stat_project_groups(query)
 
     def _check_is_sub_project_group(
-            self,
-            change_parent_group_id: str,
-            cur_group_id: str,
-            project_group_vos: QuerySet,
+        self,
+        change_parent_group_id: str,
+        cur_group_id: str,
+        project_group_vos: QuerySet,
     ) -> Union[None, Exception]:
         for project_group_vo in project_group_vos:
             if project_group_vo.parent_group_id == cur_group_id:
@@ -357,7 +357,7 @@ class ProjectGroupService(BaseService):
         return None
 
     def _check_workspace_member_permission(
-            self, project_group_vo: ProjectGroup
+        self, project_group_vo: ProjectGroup
     ) -> None:
         role_type = self.transaction.get_meta("authorization.role_type")
         if role_type == "WORKSPACE_MEMBER":

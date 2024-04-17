@@ -19,7 +19,7 @@ class ResourceManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.trusted_account_model = TrustedAccount
 
-    def check_is_managed_resource(
+    def check_is_managed_resource_by_trusted_account(
         self,
         resource_vo: Union[ServiceAccount, Project, ProjectGroup, Workspace],
     ) -> None:

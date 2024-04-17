@@ -73,7 +73,7 @@ class WorkspaceService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(workspace_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(workspace_vo)
 
         workspace_vo = self.workspace_mgr.update_workspace_by_vo(
             params.dict(exclude_unset=True), workspace_vo
@@ -100,7 +100,7 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(workspace_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(workspace_vo)
 
         service_account_vos = self.workspace_mgr.filter_workspaces(
             domain_id=domain_id, workspace_id=workspace_id
@@ -109,7 +109,9 @@ class WorkspaceService(BaseService):
         if params.force:
             self._delete_related_resources_in_workspace(workspace_vo)
         elif service_account_vos.count() > 0:
-            raise ERROR_EXIST_RESOURCE(child="Service Account", parent=workspace_vo.name)
+            raise ERROR_UNKNOWN(
+                _message=f"Please delete service accounts in workspace : {workspace_id}"
+            )
         else:
             self._delete_related_resources_in_workspace(workspace_vo)
 
@@ -132,7 +134,7 @@ class WorkspaceService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(workspace_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(workspace_vo)
 
         workspace_vo = self.workspace_mgr.enable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
@@ -140,7 +142,7 @@ class WorkspaceService(BaseService):
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def disable(
-            self, params: WorkspaceDisableRequest
+        self, params: WorkspaceDisableRequest
     ) -> Union[WorkspaceResponse, dict]:
         """Disable workspace
         Args:
@@ -157,7 +159,7 @@ class WorkspaceService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(workspace_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(workspace_vo)
 
         workspace_vo = self.workspace_mgr.disable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
@@ -200,7 +202,7 @@ class WorkspaceService(BaseService):
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def list(
-            self, params: WorkspaceSearchQueryRequest
+        self, params: WorkspaceSearchQueryRequest
     ) -> Union[WorkspacesResponse, dict]:
         """List workspaces
         Args:

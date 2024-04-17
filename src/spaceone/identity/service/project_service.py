@@ -90,7 +90,7 @@ class ProjectService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(project_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(project_vo)
 
         project_vo = self.project_mgr.update_project_by_vo(
             params.dict(exclude_unset=True), project_vo
@@ -101,7 +101,7 @@ class ProjectService(BaseService):
     @transaction(permission="identity:Project.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def update_project_type(
-            self, params: ProjectUpdateProjectTypeRequest
+        self, params: ProjectUpdateProjectTypeRequest
     ) -> Union[ProjectResponse, dict]:
         """Update project type
         Args:
@@ -120,7 +120,7 @@ class ProjectService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(project_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(project_vo)
 
         params_dict = params.dict(exclude_unset=True)
         if params.project_type == "PUBLIC":
@@ -134,7 +134,7 @@ class ProjectService(BaseService):
     @transaction(permission="identity:Project.write", role_types=["WORKSPACE_OWNER"])
     @convert_model
     def change_project_group(
-            self, params: ProjectChangeProjectGroupRequest
+        self, params: ProjectChangeProjectGroupRequest
     ) -> Union[ProjectResponse, dict]:
         """Change project group
         Args:
@@ -162,7 +162,7 @@ class ProjectService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(project_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(project_vo)
 
         project_vo = self.project_mgr.update_project_by_vo(params.dict(), project_vo)
 
@@ -189,7 +189,7 @@ class ProjectService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(project_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(project_vo)
 
         self.project_mgr.delete_project_by_vo(project_vo)
 
@@ -244,7 +244,7 @@ class ProjectService(BaseService):
     )
     @convert_model
     def remove_users(
-            self, params: ProjectRemoveUsersRequest
+        self, params: ProjectRemoveUsersRequest
     ) -> Union[ProjectResponse, dict]:
         """Remove users from project
         Args:
@@ -287,7 +287,7 @@ class ProjectService(BaseService):
     )
     @convert_model
     def add_user_groups(
-            self, params: ProjectAddUserGroupsRequest
+        self, params: ProjectAddUserGroupsRequest
     ) -> Union[ProjectResponse, dict]:
         return {}
 
@@ -297,7 +297,7 @@ class ProjectService(BaseService):
     )
     @convert_model
     def remove_user_groups(
-            self, params: ProjectRemoveUserGroupsRequest
+        self, params: ProjectRemoveUserGroupsRequest
     ) -> Union[ProjectResponse, dict]:
         return {}
 
