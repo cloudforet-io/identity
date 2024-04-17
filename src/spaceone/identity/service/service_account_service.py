@@ -171,7 +171,9 @@ class ServiceAccountService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(service_account_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(
+            service_account_vo
+        )
 
         if params.data:
             # Check data by schema
@@ -348,7 +350,9 @@ class ServiceAccountService(BaseService):
         )
 
         # Check is managed resource
-        self.resource_mgr.check_is_managed_resource(service_account_vo)
+        self.resource_mgr.check_is_managed_resource_by_trusted_account(
+            service_account_vo
+        )
 
         self.delete_service_account(service_account_vo)
 
