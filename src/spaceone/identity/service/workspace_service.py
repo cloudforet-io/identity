@@ -110,7 +110,7 @@ class WorkspaceService(BaseService):
             self._delete_related_resources_in_workspace(workspace_vo)
         elif service_account_vos.count() > 0:
             raise ERROR_UNKNOWN(
-                _message=f"Please delete service accounts in workspace : {workspace_id}"
+                message=f"Please delete service accounts in workspace ({workspace_id})"
             )
         else:
             self._delete_related_resources_in_workspace(workspace_vo)
