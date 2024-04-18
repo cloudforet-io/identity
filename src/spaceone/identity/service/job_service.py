@@ -261,14 +261,21 @@ class JobService(BaseService):
                     )
 
                     if trusted_account_vo.resource_group == "DOMAIN":
-                        if not sync_options.get("single_workspace_id"):
-                            workspace_vo = self._create_workspace(
-                                domain_id, trusted_account_id, location.pop(0)
-                            )
-                        else:
+                        if sync_options.get("single_workspace_id"):
                             workspace_vo = self.workspace_mgr.get_workspace(
                                 sync_options.get("single_workspace_id"), domain_id
                             )
+                        elif location:
+                            location_info = location.pop(0)
+                            workspace_vo = self._create_workspace(
+                                domain_id, trusted_account_id, location_info
+                            )
+                        else:
+                            _LOGGER.debug(
+                                f"[sync_service_accounts] location is empty => SKIP"
+                            )
+                            continue
+
                         sync_workspace_id = workspace_vo.workspace_id
 
                     else:
@@ -703,11 +710,21 @@ class JobService(BaseService):
 
     @staticmethod
     def _get_location(result: dict, resource_group: str, sync_options: dict) -> list:
-        location = []
-        if not sync_options.get("skip_project_group", False):
-            location = result.get("location", [])
+        location = result.get("location", [])
+        skip_project_group_option = sync_options.get("skip_project_group")
+
+        if skip_project_group_option:
+            if resource_group == "DOMAIN":
+                if location:
+                    location = [location[0]]
+            else:
+                location = []
+
+        else:
             if resource_group == "DOMAIN" and not location:
-                _LOGGER.debug(f"[_get_location] location is empty: {result} => SKIP")
+                _LOGGER.debug(
+                    f"[_get_location] location is empty: {result} {sync_options} => SKIP"
+                )
                 # raise ERROR_REQUIRED_PARAMETER(
                 #     key="location", reason="location is required"
                 # )
