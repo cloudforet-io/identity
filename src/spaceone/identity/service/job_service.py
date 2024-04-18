@@ -531,20 +531,22 @@ class JobService(BaseService):
         name = location_info["name"]
         reference_id = location_info["resource_id"]
 
-        conditions = {
+        filter_params = {
             "is_managed": True,
             "reference_id": reference_id,
             "domain_id": domain_id,
             "workspace_id": workspace_id,
         }
-        if parent_group_id:
-            conditions["parent_group_id"] = parent_group_id
 
-        project_group_vos = self.project_group_mgr.filter_project_groups(**conditions)
+        project_group_vos = self.project_group_mgr.filter_project_groups(
+            **filter_params
+        )
 
         params = {
             "trusted_account_id": trusted_account_id,
         }
+        if parent_group_id:
+            params.update({"parent_group_id": parent_group_id})
 
         if project_group_vos:
             project_group_vo = project_group_vos[0]
@@ -594,10 +596,10 @@ class JobService(BaseService):
             "is_managed": True,
         }
 
+        project_vos = self.project_mgr.filter_projects(**params)
+
         if project_group_id:
             params["project_group_id"] = project_group_id
-
-        project_vos = self.project_mgr.filter_projects(**params)
 
         if project_vos:
             project_vo = project_vos[0]
