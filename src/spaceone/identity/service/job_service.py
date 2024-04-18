@@ -597,6 +597,9 @@ class JobService(BaseService):
         }
 
         project_vos = self.project_mgr.filter_projects(**params)
+        _LOGGER.debug(
+            f"[_create_service_account] project_vos: {name} {params} count: {len(project_vos)}"
+        )
 
         if project_group_id:
             params["project_group_id"] = project_group_id
