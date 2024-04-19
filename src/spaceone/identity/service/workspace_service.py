@@ -32,6 +32,7 @@ class WorkspaceService(BaseService):
         self.domain_mgr = DomainManager()
         self.resource_mgr = ResourceManager()
         self.workspace_mgr = WorkspaceManager()
+        self.service_account_mgr = ServiceAccountManager()
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -102,13 +103,13 @@ class WorkspaceService(BaseService):
         # Check is managed resource
         self.resource_mgr.check_is_managed_resource_by_trusted_account(workspace_vo)
 
-        service_account_vos = self.workspace_mgr.filter_workspaces(
+        service_account_vos = self.service_account_mgr.filter_service_accounts(
             domain_id=domain_id, workspace_id=workspace_id
         )
 
         if params.force:
             self._delete_related_resources_in_workspace(workspace_vo)
-        elif service_account_vos.count() > 0:
+        elif len(service_account_vos) > 0:
             raise ERROR_UNKNOWN(
                 message=f"Please delete service accounts in workspace ({workspace_id})"
             )
