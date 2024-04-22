@@ -1,0 +1,8 @@
+---
+provider: kubernetes
+name: Kubernetes
+version: '1.0'
+color: '#326CE5'
+icon: 'https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/cloud-services/kubernetes/kubernetes.svg'
+order: 4
+options: {}
