@@ -502,12 +502,18 @@ class JobService(BaseService):
         params = {"trusted_account_id": trusted_account_id, "is_managed": True}
         if workspace_vos:
             workspace_vo = workspace_vos[0]
+
             if workspace_vo.name != name:
                 params.update({"name": name})
+            if workspace_vo.references not in reference_id:
+                params.update({"references": workspace_vo.references + [reference_id]})
+
             params.update({"last_synced_at": datetime.utcnow()})
             workspace_vo = self.workspace_mgr.update_workspace_by_vo(
                 params, workspace_vo
             )
+
+            self._remove_old_reference_id_from_workspace(domain_id, reference_id)
         else:
             params.update(
                 {
@@ -515,6 +521,7 @@ class JobService(BaseService):
                     "tags": self._set_workspace_theme(),
                     "domain_id": domain_id,
                     "last_synced_at": datetime.utcnow(),
+                    "references": [reference_id],
                 }
             )
             workspace_vo = self.workspace_mgr.create_workspace(params)
@@ -712,6 +719,19 @@ class JobService(BaseService):
                 {"secret_id": secret_info["secret_id"]}, service_account_vo
             )
         return service_account_vo
+
+    def _remove_old_reference_id_from_workspace(
+        self, domain_id: str, reference_id: str
+    ) -> None:
+        workspace_vos = self.workspace_mgr.filter_workspaces(
+            domain_id=domain_id, references=[reference_id]
+        )
+        for workspace_vo in workspace_vos:
+            references = workspace_vo.references
+            references.remove(reference_id)
+            self.workspace_mgr.update_workspace_by_vo(
+                {"references": references}, workspace_vo
+            )
 
     @staticmethod
     def _get_location(result: dict, resource_group: str, sync_options: dict) -> list:
