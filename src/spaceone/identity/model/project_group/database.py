@@ -4,7 +4,7 @@ from spaceone.core.model.mongo_model import MongoModel
 
 class ProjectGroup(MongoModel):
     project_group_id = StringField(max_length=40, generate_id="pg", unique=True)
-    name = StringField(max_length=40)
+    name = StringField(max_length=255)
     tags = DictField(default=None)
     users = ListField(StringField(max_length=255), default=None)
     reference_id = StringField(max_length=255, default=None, null=True)
