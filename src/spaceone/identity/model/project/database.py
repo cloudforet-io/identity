@@ -3,8 +3,8 @@ from spaceone.core.model.mongo_model import MongoModel
 
 
 class Project(MongoModel):
-    project_id = StringField(max_length=255, generate_id="project", unique=True)
-    name = StringField(max_length=40)
+    project_id = StringField(max_length=40, generate_id="project", unique=True)
+    name = StringField(max_length=255)
     project_type = StringField(
         max_length=20, default="PRIVATE", choices=("PRIVATE", "PUBLIC")
     )
