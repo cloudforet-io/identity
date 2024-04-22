@@ -13,7 +13,7 @@ class Workspace(MongoModel):
     )
     tags = DictField(default=None)
     created_by = StringField(max_length=255)
-    reference_id = StringField(max_length=255, default=None, null=True)
+    references = ListField(StringField(max_length=255), default=None, null=True)
     is_managed = BooleanField(default=False)
     trusted_account_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=40)
@@ -28,6 +28,7 @@ class Workspace(MongoModel):
             "tags",
             "is_managed",
             "trusted_account_id",
+            "references",
             "deleted_at",
             "last_synced_at",
         ],
@@ -37,6 +38,9 @@ class Workspace(MongoModel):
             "state",
             "is_managed",
         ],
+        "change_query_keys": {
+            "reference_id": "references",
+        },
         "ordering": ["name"],
         "indexes": ["name", "domain_id"],
     }

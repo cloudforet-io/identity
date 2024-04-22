@@ -15,7 +15,7 @@ class WorkspaceResponse(BaseModel):
     state: Union[State, None] = None
     tags: Union[dict, None] = None
     created_by: Union[str, None] = None
-    reference_id: Union[str, None] = None
+    references: Union[list, None] = None
     is_managed: Union[bool, None] = None
     trusted_account_id: Union[str, None] = None
     domain_id: Union[str, None] = None
