@@ -505,7 +505,10 @@ class JobService(BaseService):
 
             if workspace_vo.name != name:
                 params.update({"name": name})
-            if workspace_vo.references and reference_id not in workspace_vo.references:
+
+            if not workspace_vo.references:
+                params.update({"references": [reference_id]})
+            elif reference_id not in workspace_vo.references:
                 params.update({"references": workspace_vo.references + [reference_id]})
 
             params.update({"last_synced_at": datetime.utcnow()})
