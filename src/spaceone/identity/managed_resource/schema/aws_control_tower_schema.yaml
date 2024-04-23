@@ -1,13 +1,13 @@
 ---
-name: AWS Control Tower Access Key
-version: '1.0'
+name: AWS Control Tower
+version: '1.1'
 provider: aws
 schema:
   order:
     - aws_access_key_id
     - aws_secret_access_key
-    - external_id
     - role_name
+    - external_id
   properties:
     aws_access_key_id:
       format: password
@@ -26,6 +26,7 @@ schema:
       title: External ID
       type: string
     role_name:
+      default: SpaceONERole
       minLength: 4.0
       title: Role Name
       type: string
