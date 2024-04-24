@@ -512,6 +512,7 @@ class JobService(BaseService):
                 params.update({"references": workspace_vo.references + [reference_id]})
 
             params.update({"last_synced_at": datetime.utcnow()})
+            _LOGGER.debug(f"[_create_workspace] update workspace: {params}")
             workspace_vo = self.workspace_mgr.update_workspace_by_vo(
                 params, workspace_vo
             )
