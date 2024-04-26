@@ -22,21 +22,25 @@ LANGUAGE_MAPPER = {
         "reset_password": "Reset your password",
         "temp_password": "Your password has been changed",
         "verify_email": "Verify your notification email",
+        "invite_external_user": "You've been invited to join.",
     },
     "ko": {
         "reset_password": "비밀번호 재설정 안내",
         "temp_password": "임시 비밀번호 발급 안내",
         "verify_email": "알림전용 이메일 계정 인증 안내",
+        "invite_external_user": "계정 초대 안내.",
     },
     "en": {
         "reset_password": "Reset your password",
         "temp_password": "Your password has been changed",
         "verify_email": "Verify your notification email",
+        "invite_external_user": "You've been invited to join.",
     },
     "ja": {
         "reset_password": "パスワードリセットのご案内",
         "temp_password": "仮パスワード発行のご案内",
         "verify_email": "通知メールアカウント認証のご案内",
+        "invite_external_user": "参加するように招待されました",
     },
 }
 
@@ -63,7 +67,7 @@ class EmailManager(BaseManager):
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_temporary_password_email(
-            self, user_id, email, console_link, temp_password, language
+        self, user_id, email, console_link, temp_password, language
     ):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
@@ -80,7 +84,7 @@ class EmailManager(BaseManager):
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_reset_password_email_when_user_added(
-            self, user_id, email, reset_password_link, language
+        self, user_id, email, reset_password_link, language
     ):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
@@ -98,7 +102,7 @@ class EmailManager(BaseManager):
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_temporary_password_email_when_user_added(
-            self, user_id, email, console_link, temp_password, language
+        self, user_id, email, console_link, temp_password, language
     ):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
@@ -112,6 +116,29 @@ class EmailManager(BaseManager):
         )
         subject = f'[{service_name}] {language_map_info["temp_password"]}'
 
+        self.smtp_connector.send_email(email, subject, email_contents)
+
+    def send_invite_email_when_external_user_added(
+        self,
+        user_id: str,
+        email: str,
+        console_link: str,
+        language: str,
+        auth_type: str = "EXTERNAL",
+    ):
+        service_name = self._get_service_name()
+        language_map_info = LANGUAGE_MAPPER.get(language, "default")
+
+        template = JINJA_ENV.get_template(f"sso_invite_user_link_{language}.html")
+
+        email_contents = template.render(
+            user_name=user_id,
+            auth_type=auth_type,
+            service_name=service_name,
+            login_link=console_link,
+        )
+
+        subject = f'[{service_name}] {language_map_info["invite_external_user"]}'
         self.smtp_connector.send_email(email, subject, email_contents)
 
     def send_verification_email(self, user_id, email, verification_code, language):

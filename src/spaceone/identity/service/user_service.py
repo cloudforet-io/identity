@@ -69,7 +69,7 @@ class UserService(BaseService):
         reset_password = params["reset_password"]
         domain_id = params["domain_id"]
         email = params.get("email")
-        language = params.get("language") or "en"
+        language = params.get("language", "en") or "en"
 
         if reset_password:
             self._check_reset_password_eligibility(user_id, auth_type, email)
@@ -86,7 +86,7 @@ class UserService(BaseService):
                 identity_conf = config.get_global("IDENTITY", {}) or {}
                 token_conf = identity_conf.get("token", {})
                 timeout = token_conf.get("invite_token_timeout", 604800)
-                
+
                 token = self._issue_temporary_token(user_id, domain_id, timeout)
                 reset_password_link = self._get_console_sso_url(
                     domain_id, token["access_token"]
@@ -107,6 +107,20 @@ class UserService(BaseService):
                 )
         else:
             user_vo = self.user_mgr.create_user(params)
+            if (
+                auth_type == "EXTERNAL"
+                and self._check_invite_external_user_eligibility(user_id, user_id)
+            ):
+                email_manager = EmailManager()
+                console_link = self._get_console_url(domain_id)
+
+                email_manager.send_invite_email_when_external_user_added(
+                    user_id,
+                    user_id,
+                    console_link,
+                    language,
+                    user_vo.auth_type,
+                )
 
         return user_vo
 
@@ -237,7 +251,7 @@ class UserService(BaseService):
     @transaction(permission="identity:User.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def set_required_actions(
-            self, params: UserSetRequiredActionsRequest
+        self, params: UserSetRequiredActionsRequest
     ) -> Union[UserResponse, dict]:
         """Set required actions
 
@@ -408,7 +422,9 @@ class UserService(BaseService):
         domain_vo = self.domain_mgr.get_domain(domain_id)
         return domain_vo.name
 
-    def _issue_temporary_token(self, user_id: str, domain_id: str, timeout: int = None) -> dict:
+    def _issue_temporary_token(
+        self, user_id: str, domain_id: str, timeout: int = None
+    ) -> dict:
         if timeout is None:
             identity_conf = config.get_global("IDENTITY", {}) or {}
             token_conf = identity_conf.get("token", {})
@@ -444,7 +460,7 @@ class UserService(BaseService):
         return console_domain.format(domain_name=domain_name)
 
     @staticmethod
-    def _check_reset_password_eligibility(user_id, auth_type, email):
+    def _check_reset_password_eligibility(user_id: str, auth_type: str, email: str):
         if auth_type == "EXTERNAL":
             raise ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(user_id=user_id)
         elif email is None:
@@ -460,8 +476,26 @@ class UserService(BaseService):
                 for _ in range(12)
             )
             if (
-                    re.search("[a-z]", random_password)
-                    and re.search("[A-Z]", random_password)
-                    and re.search("[0-9]", random_password)
+                re.search("[a-z]", random_password)
+                and re.search("[A-Z]", random_password)
+                and re.search("[0-9]", random_password)
             ):
                 return random_password
+
+    @staticmethod
+    def _check_invite_external_user_eligibility(user_id: str, email: str) -> bool:
+        rule = r"[^@]+@[^@]+\.[^@]+"
+
+        if email is None:
+            _LOGGER.debug(
+                f"[_check_invite_external_user_eligibility] email is None (user_id={user_id})"
+            )
+            return False
+
+        if not re.match(rule, email):
+            _LOGGER.debug(
+                f"[_check_invite_external_user_eligibility] email format is incorrect (user_id={user_id}, email={email})"
+            )
+            return False
+
+        return True
