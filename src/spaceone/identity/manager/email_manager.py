@@ -124,7 +124,7 @@ class EmailManager(BaseManager):
         email: str,
         console_link: str,
         language: str,
-        auth_type: str = "EXTERNAL",
+        external_auth_provider: str = "EXTERNAL",
     ):
         service_name = self._get_service_name()
         language_map_info = LANGUAGE_MAPPER.get(language, "default")
@@ -133,7 +133,7 @@ class EmailManager(BaseManager):
 
         email_contents = template.render(
             user_name=user_id,
-            auth_type=auth_type,
+            auth_type=external_auth_provider,
             service_name=service_name,
             login_link=console_link,
         )
