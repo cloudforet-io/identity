@@ -11,9 +11,11 @@ from spaceone.core import config
 
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_user import *
+from spaceone.identity.manager.config_manager import ConfigManager
 from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
+from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 
 from spaceone.identity.manager.token_manager.local_token_manager import (
     LocalTokenManager,
@@ -69,7 +71,8 @@ class UserService(BaseService):
         reset_password = params["reset_password"]
         domain_id = params["domain_id"]
         email = params.get("email")
-        language = params.get("language", "en") or "en"
+        language = self._get_domain_default_language(domain_id, params.get("language"))
+        params["language"] = language
 
         if reset_password:
             self._check_reset_password_eligibility(user_id, auth_type, email)
@@ -111,15 +114,13 @@ class UserService(BaseService):
                 auth_type == "EXTERNAL"
                 and self._check_invite_external_user_eligibility(user_id, user_id)
             ):
-                email_manager = EmailManager()
-                console_link = self._get_console_url(domain_id)
+                email_mgr = EmailManager()
 
-                email_manager.send_invite_email_when_external_user_added(
-                    user_id,
-                    user_id,
-                    console_link,
-                    language,
-                    user_vo.auth_type,
+                console_link = self._get_console_url(domain_id)
+                external_auth_provider = self._get_external_auth_provider(domain_id)
+
+                email_mgr.send_invite_email_when_external_user_added(
+                    user_id, user_id, console_link, language, external_auth_provider
                 )
 
         return user_vo
@@ -499,3 +500,21 @@ class UserService(BaseService):
             return False
 
         return True
+
+    @staticmethod
+    def _get_external_auth_provider(domain_id: str) -> str:
+        external_auth_mgr = ExternalAuthManager()
+        external_auth_vo = external_auth_mgr.get_external_auth(domain_id)
+        plugin_info_metadata = external_auth_vo.plugin_info.get("metadata", {})
+        identity_provider = plugin_info_metadata.get("identity_provider", "EXTERNAL")
+        return identity_provider
+
+    @staticmethod
+    def _get_domain_default_language(domain_id: str, language: str = None) -> str:
+        if not language:
+            config_mgr = ConfigManager()
+            domain_config_data_info = config_mgr.get_auth_config(domain_id)
+            settings = domain_config_data_info.get("settings", {})
+            if settings:
+                language = settings.get("language", "en")
+        return language
