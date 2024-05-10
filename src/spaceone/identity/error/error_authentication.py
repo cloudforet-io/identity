@@ -19,3 +19,7 @@ class ERROR_AUTHENTICATION_FAILURE_PLUGIN(ERROR_INTERNAL_API):
 
 class ERROR_INVALID_GRANT_TYPE(ERROR_INVALID_ARGUMENT):
     _message = "Invalid grant type. (grant_type = {grant_type})"
+
+
+class ERROR_UPDATE_PASSWORD_REQUIRED(ERROR_INVALID_ARGUMENT):
+    _message = "Password reset is required.(user_id = {user_id})"
