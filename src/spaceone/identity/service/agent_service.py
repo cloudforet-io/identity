@@ -300,7 +300,7 @@ class AgentService(BaseService):
 
     @transaction(
         permission="identity:Agent.read",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def get(self, params: AgentGetRequest) -> Union[AgentResponse, dict]:
@@ -335,7 +335,7 @@ class AgentService(BaseService):
 
     @transaction(
         permission="identity:Agent.read",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @append_query_filter(
         [
