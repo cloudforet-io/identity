@@ -129,8 +129,8 @@ class TokenService(BaseService):
 
         # todo: remove
         if (
-                domain_id == SystemManager.get_root_domain_id()
-                and params.scope == "WORKSPACE"
+            domain_id == SystemManager.get_root_domain_id()
+            and params.scope == "WORKSPACE"
         ):
             public_jwk = self.domain_secret_mgr.get_domain_public_key(domain_id)
             domain_id = params.domain_id
@@ -172,9 +172,13 @@ class TokenService(BaseService):
             user_vo = self.user_mgr.get_user(
                 user_id=decoded_token_info["user_id"], domain_id=domain_id
             )
+
+            self._check_user_required_actions(user_vo.required_actions, user_vo.user_id)
+
             role_type, role_id = self._get_user_role_info(
                 user_vo, workspace_id=params.workspace_id
             )
+            role_type = "DOMAIN_ADMIN"
 
         decoded_token_info["scope"] = params.scope
         decoded_token_info["workspace_id"] = params.workspace_id
@@ -218,11 +222,15 @@ class TokenService(BaseService):
 
             for project_group in project_groups:
                 project_group_id = project_group.project_group_id
-                user_projects.extend(self.project_group_mgr.get_projects_in_project_groups(domain_id, project_group_id))
+                user_projects.extend(
+                    self.project_group_mgr.get_projects_in_project_groups(
+                        domain_id, project_group_id
+                    )
+                )
 
-            user_projects.extend(self._get_user_projects(
-                user_vo.user_id, params.workspace_id, domain_id
-            ))
+            user_projects.extend(
+                self._get_user_projects(user_vo.user_id, params.workspace_id, domain_id)
+            )
 
             user_projects = list(set(user_projects))
         else:
@@ -314,7 +322,7 @@ class TokenService(BaseService):
         return token_info
 
     def _get_user_role_info(
-            self, user_vo: User, workspace_id: str = None
+        self, user_vo: User, workspace_id: str = None
     ) -> Tuple[str, Union[str, None]]:
         if user_vo.role_type == "DOMAIN_ADMIN":
             rb_vos = self.rb_mgr.filter_role_bindings(
@@ -349,7 +357,7 @@ class TokenService(BaseService):
         return role_vo.permissions
 
     def _get_user_projects(
-            self, user_id: str, workspace_id: str, domain_id: str
+        self, user_id: str, workspace_id: str, domain_id: str
     ) -> List[str]:
         user_projects = []
 
@@ -371,3 +379,10 @@ class TokenService(BaseService):
         user_projects.extend([project_vo.project_id for project_vo in user_project_vos])
 
         return user_projects
+
+    @staticmethod
+    def _check_user_required_actions(required_actions: list, user_id: str) -> None:
+        if required_actions:
+            for required_action in required_actions:
+                if required_action == "UPDATE_PASSWORD":
+                    raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
