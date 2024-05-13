@@ -516,5 +516,7 @@ class UserService(BaseService):
             domain_config_data_info = config_mgr.get_auth_config(domain_id)
             settings = domain_config_data_info.get("settings", {})
             if settings:
-                language = settings.get("language", "en")
+                language = settings["data"].get("language", "en")
+            else:
+                language = "en"
         return language
