@@ -158,7 +158,7 @@ class AppService(BaseService):
     )
     @convert_model
     def generate_client_secret(
-        self, params: AppGenerateAPIKeyRequest
+            self, params: AppGenerateAPIKeyRequest
     ) -> Union[AppResponse, dict]:
         """Generate API Key
         Args:
@@ -344,7 +344,7 @@ class AppService(BaseService):
         if domain_vo.state != "ENABLED":
             raise ERROR_PERMISSION_DENIED()
 
-        if app_vo.role_type == ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
+        if app_vo.role_type in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             workspace_mgr = WorkspaceManager()
             workspace_vo = workspace_mgr.get_workspace(
                 app_vo.workspace_id, app_vo.domain_id
