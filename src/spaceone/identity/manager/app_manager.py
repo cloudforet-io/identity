@@ -54,6 +54,7 @@ class AppManager(BaseManager):
         app_id: str,
         domain_id: str,
         workspace_id: Union[str, None] = None,
+        projects: Union[list, str, None] = None,
     ) -> App:
         conditions = {
             "app_id": app_id,
@@ -62,6 +63,8 @@ class AppManager(BaseManager):
 
         if workspace_id:
             conditions["workspace_id"] = workspace_id
+        if projects:
+            conditions["projects"] = projects
 
         return self.app_model.get(**conditions)
 

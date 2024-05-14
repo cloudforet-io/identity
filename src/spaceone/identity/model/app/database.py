@@ -12,14 +12,15 @@ class App(MongoModel):
     tags = DictField(default=None)
     role_type = StringField(
         max_length=20,
-        choices=(
-            "DOMAIN_ADMIN",
-            "WORKSPACE_OWNER",
-        ),
+        choices=("DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"),
     )
+
     client_id = StringField(max_length=40, default=None, null=True)
     role_id = StringField(max_length=40, required=True)
-    resource_group = StringField(max_length=40, choices=("DOMAIN", "WORKSPACE"))
+    resource_group = StringField(
+        max_length=40, choices=("DOMAIN", "WORKSPACE", "PROJECT")
+    )
+    projects = ListField(StringField(max_length=40), default=None)
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
@@ -43,6 +44,9 @@ class App(MongoModel):
             "role_id",
             "expired_at",
         ],
+        "change_query_keys": {
+            "user_projects": "project_id",
+        },
         "ordering": ["-created_at"],
         "indexes": [
             "state",

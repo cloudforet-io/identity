@@ -31,7 +31,7 @@ class AppService(BaseService):
 
     @transaction(
         permission="identity:App.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def create(self, params: AppCreateRequest) -> Union[AppResponse, dict]:
@@ -42,7 +42,9 @@ class AppService(BaseService):
                 'role_id': 'str',           # required
                 'tags': 'dict',
                 'expired_at': 'str',
+                'projects': 'list',
                 'resource_group': 'str',    # required
+                'users_project': 'list',    # injected from auth
                 'workspace_id': 'str',      # injected from auth
                 'domain_id': 'str',         # injected from auth (required)
             }
@@ -54,13 +56,25 @@ class AppService(BaseService):
         role_mgr = RoleManager()
         role_vo = role_mgr.get_role(params.role_id, params.domain_id)
 
-        # Check workspace
-        if params.resource_group == "WORKSPACE":
+        # Check workspace and project
+        if params.resource_group in ["WORKSPACE", "PROJECT"]:
             if params.workspace_id is None:
                 raise ERROR_REQUIRED_PARAMETER(key="workspace_id")
 
             workspace_mgr = WorkspaceManager()
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
+
+            # todo :  check permission
+            if params.resource_group == "PROJECT":
+                params.projects = set(params.projects)
+
+                if params.projects is None:
+                    raise ERROR_REQUIRED_PARAMETER(key="projects")
+                if params.users_projects:
+                    not_in_users_projects = params.projects - set(params.users_projects)
+
+                    if not_in_users_projects:
+                        raise ERROR_PERMISSION_DENIED()
         else:
             params.workspace_id = "*"
 
@@ -72,12 +86,19 @@ class AppService(BaseService):
                     request_role_type=role_vo.role_type,
                     supported_role_type="DOMAIN_ADMIN",
                 )
-        else:
+        elif params.resource_group == "WORKSPACE":
             if role_vo.role_type != "WORKSPACE_OWNER":
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(
                     request_role_id=role_vo.role_id,
                     request_role_type=role_vo.role_type,
                     supported_role_type="WORKSPACE_OWNER",
+                )
+        else:
+            if role_vo.role_type != "WORKSPACE_MEMBER":
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
+                    request_role_id=role_vo.role_id,
+                    request_role_type=role_vo.role_type,
+                    supported_role_type="WORKSPACE_MEMBER",
                 )
 
         params.expired_at = self._get_expired_at(params.expired_at)
@@ -95,6 +116,7 @@ class AppService(BaseService):
             params.expired_at,
             app_vo.role_type,
             app_vo.workspace_id,
+            app_vo.projects,
         )
 
         app_vo = self.app_mgr.update_app_by_vo({"client_id": client_id}, app_vo)
@@ -103,18 +125,19 @@ class AppService(BaseService):
 
     @transaction(
         permission="identity:App.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def update(self, params: AppUpdateRequest) -> Union[AppResponse, dict]:
         """Update App
         Args:
             params (dict): {
-                'app_id': 'str',        # required
+                'app_id': 'str',            # required
                 'name': 'str',
                 'tags': 'dict',
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'users_projects': 'list',   # injected from auth
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Return:
             AppResponse:
@@ -124,13 +147,14 @@ class AppService(BaseService):
             params.app_id,
             params.domain_id,
             params.workspace_id,
+            params.users_projects,
         )
         app_vo = self.app_mgr.update_app_by_vo(params.dict(exclude_unset=True), app_vo)
         return AppResponse(**app_vo.to_dict())
 
     @transaction(
         permission="identity:App.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def generate_client_secret(
@@ -139,10 +163,11 @@ class AppService(BaseService):
         """Generate API Key
         Args:
             params (dict): {
-                'app_id': 'str',        # required
+                'app_id': 'str',            # required
                 'expired_at': 'str',
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'users_projects': 'list',   # injected from auth
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Return:
             AppResponse:
@@ -155,6 +180,7 @@ class AppService(BaseService):
             params.app_id,
             params.domain_id,
             params.workspace_id,
+            params.users_projects,
         )
 
         # Create new client secret
@@ -165,6 +191,7 @@ class AppService(BaseService):
             params.expired_at,
             app_vo.role_type,
             app_vo.workspace_id,
+            app_vo.projects,
         )
 
         # Update app info
@@ -174,68 +201,77 @@ class AppService(BaseService):
 
     @transaction(
         permission="identity:App.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def enable(self, params: AppEnableRequest) -> Union[AppResponse, dict]:
         """Enable App Key
         Args:
             params (dict): {
-                'app_id': 'str',        # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'app_id': 'str',            # required
+                'users_projects': 'list',   # injected from auth
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         """
         app_vo = self.app_mgr.get_app(
             params.app_id,
             params.domain_id,
             params.workspace_id,
+            params.users_projects,
         )
         app_vo = self.app_mgr.enable_app(app_vo)
 
         if app_vo.is_managed:
-            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be enabled.")
+            raise ERROR_PERMISSION_DENIED(
+                key="app_id", _message="Managed App cannot be enabled."
+            )
 
         return AppResponse(**app_vo.to_dict())
 
     @transaction(
         permission="identity:App.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def disable(self, params: AppDisableRequest) -> Union[AppResponse, dict]:
         """Disable App Key
         Args:
             params (dict): {
-                'app_id': 'str',        # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'app_id': 'str',            # required
+                'users_projects': 'list',   # injected from auth
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         """
         app_vo = self.app_mgr.get_app(
             params.app_id,
             params.domain_id,
             params.workspace_id,
+            params.users_projects,
         )
         app_vo = self.app_mgr.disable_app(app_vo)
 
         if app_vo.is_managed:
-            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be disabled.")
+            raise ERROR_PERMISSION_DENIED(
+                key="app_id", _message="Managed App cannot be disabled."
+            )
 
         return AppResponse(**app_vo.to_dict())
 
     @transaction(
         permission="identity:App.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def delete(self, params: AppDeleteRequest) -> None:
         """Delete app
         Args:
             params (dict): {
-                'app_id': 'str',    # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'app_id': 'str',            # required
+                'users_projects': 'list',   # injected from auth
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             None
@@ -244,16 +280,19 @@ class AppService(BaseService):
             params.app_id,
             params.domain_id,
             params.workspace_id,
+            params.users_projects,
         )
 
         if app_vo.is_managed:
-            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be deleted.")
+            raise ERROR_PERMISSION_DENIED(
+                key="app_id", _message="Managed App cannot be deleted."
+            )
 
         self.app_mgr.delete_app_by_vo(app_vo)
 
     @transaction(
         permission="identity:App.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def get(self, params: AppGetRequest) -> Union[AppResponse, dict]:
@@ -271,6 +310,7 @@ class AppService(BaseService):
             params.app_id,
             params.domain_id,
             params.workspace_id,
+            params.users_projects,
         )
         return AppResponse(**app_vo.to_dict())
 
@@ -304,7 +344,7 @@ class AppService(BaseService):
         if domain_vo.state != "ENABLED":
             raise ERROR_PERMISSION_DENIED()
 
-        if app_vo.role_type == "WORKSPACE_OWNER":
+        if app_vo.role_type == ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             workspace_mgr = WorkspaceManager()
             workspace_vo = workspace_mgr.get_workspace(
                 app_vo.workspace_id, app_vo.domain_id
@@ -321,7 +361,7 @@ class AppService(BaseService):
 
     @transaction(
         permission="identity:App.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @append_query_filter(
         [
@@ -331,6 +371,7 @@ class AppService(BaseService):
             "role_type",
             "role_id",
             "client_id",
+            "users_projects",
             "workspace_id",
             "domain_id",
         ]
@@ -348,7 +389,8 @@ class AppService(BaseService):
                 'role_type': 'str',
                 'role_id': 'str',
                 'client_id': 'str',
-                'workspace_id': 'list'      # injected from auth
+                'users_projects': 'list',   # injected from auth
+                'workspace_id': 'str'       # injected from auth
                 'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
@@ -361,18 +403,19 @@ class AppService(BaseService):
 
     @transaction(
         permission="identity:App.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @append_query_filter(["workspace_id", "domain_id"])
+    @append_query_filter(["domain_id", "workspace_id", "users_projects"])
     @append_keyword_filter(["app_id", "name"])
     @convert_model
     def stat(self, params: AppStatQueryRequest) -> dict:
         """Stat API Keys
         Args:
             params (dict): {
-                'query': 'dict',        # required
-                'workspace_id': 'list', # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'query': 'dict',            # required
+                'users_projects': 'list',   # injected from auth
+                'workspace_id': 'list',     # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
             Returns:
                 dict:

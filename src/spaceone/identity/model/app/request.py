@@ -18,8 +18,8 @@ __all__ = [
 ]
 
 State = Literal["ENABLED", "DISABLED", "EXPIRED"]
-ResourceGroup = Literal["DOMAIN", "WORKSPACE"]
-RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER"]
+ResourceGroup = Literal["DOMAIN", "WORKSPACE", "PROJECT"]
+RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
 
 
 class AppCreateRequest(BaseModel):
@@ -27,7 +27,9 @@ class AppCreateRequest(BaseModel):
     role_id: str
     tags: Union[dict, None] = None
     expired_at: Union[str, None] = None
+    projects: Union[list, None] = None
     resource_group: ResourceGroup
+    users_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
@@ -36,37 +38,43 @@ class AppUpdateRequest(BaseModel):
     app_id: str
     name: Union[str, None] = None
     tags: Union[dict, None] = None
+    users_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
 
 class AppGenerateAPIKeyRequest(BaseModel):
     app_id: str
-    workspace_id: Union[str, None] = None
     expired_at: Union[str, None] = None
+    users_projects: Union[list, None] = None
+    workspace_id: Union[str, None] = None
     domain_id: str
 
 
 class AppEnableRequest(BaseModel):
     app_id: str
+    users_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
 
 class AppDisableRequest(BaseModel):
     app_id: str
+    users_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
 
 class AppDeleteRequest(BaseModel):
     app_id: str
+    users_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
 
 class AppGetRequest(BaseModel):
     app_id: str
+    users_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
@@ -84,11 +92,13 @@ class AppSearchQueryRequest(BaseModel):
     role_type: Union[str, None] = None
     role_id: Union[str, None] = None
     client_id: Union[str, None] = None
+    users_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
 
 class AppStatQueryRequest(BaseModel):
     query: dict
+    users_projects: Union[list, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
