@@ -158,7 +158,7 @@ class AppService(BaseService):
     )
     @convert_model
     def generate_client_secret(
-            self, params: AppGenerateAPIKeyRequest
+        self, params: AppGenerateAPIKeyRequest
     ) -> Union[AppResponse, dict]:
         """Generate API Key
         Args:
