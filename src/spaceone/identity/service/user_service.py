@@ -98,6 +98,7 @@ class UserService(BaseService):
                 params["required_actions"] = ["UPDATE_PASSWORD"]
 
                 user_vo = self.user_mgr.create_user(params)
+                user_id = user_vo.user_id
                 email_manager.send_reset_password_email_when_user_added(
                     user_id, email, reset_password_link, language
                 )
@@ -105,11 +106,15 @@ class UserService(BaseService):
                 console_link = self._get_console_url(domain_id)
 
                 user_vo = self.user_mgr.create_user(params)
+                user_id = user_vo.user_id
+
                 email_manager.send_temporary_password_email_when_user_added(
                     user_id, email, console_link, temp_password, language
                 )
         else:
             user_vo = self.user_mgr.create_user(params)
+            user_id = user_vo.user_id
+
             if (
                 auth_type == "EXTERNAL"
                 and self._check_invite_external_user_eligibility(user_id, user_id)
