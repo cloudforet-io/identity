@@ -65,7 +65,7 @@ class JobService(BaseService):
         current_hour = params.get("current_hour", datetime.utcnow().hour)
 
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
-                current_hour
+            current_hour
         ):
             try:
                 self.create_service_account_job(trusted_account_vo, {})
@@ -334,7 +334,7 @@ class JobService(BaseService):
         )
 
     def create_service_account_job(
-            self, trusted_account_vo: TrustedAccount, job_options: dict
+        self, trusted_account_vo: TrustedAccount, job_options: dict
     ) -> Union[Job, dict]:
         resource_group = trusted_account_vo.resource_group
         provider = trusted_account_vo.provider
@@ -437,10 +437,10 @@ class JobService(BaseService):
         return secret_data
 
     def _check_duplicate_job(
-            self,
-            domain_id: str,
-            trusted_account_id: str,
-            this_job_vo: Job,
+        self,
+        domain_id: str,
+        trusted_account_id: str,
+        this_job_vo: Job,
     ) -> bool:
         query = {
             "filter": [
@@ -464,7 +464,7 @@ class JobService(BaseService):
         return False
 
     def _is_job_failed(
-            self, job_id: str, domain_id: str, workspace_id: str = None
+        self, job_id: str, domain_id: str, workspace_id: str = None
     ) -> bool:
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
 
@@ -474,10 +474,10 @@ class JobService(BaseService):
             return False
 
     def _close_job(
-            self,
-            job_id: str,
-            domain_id: str,
-            workspace_id: str = None,
+        self,
+        job_id: str,
+        domain_id: str,
+        workspace_id: str = None,
     ):
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
         if job_vo.status == "IN_PROGRESS":
@@ -486,7 +486,7 @@ class JobService(BaseService):
             self.job_mgr.update_job_by_vo({"finished_at": datetime.utcnow()}, job_vo)
 
     def _create_workspace(
-            self, domain_id: str, trusted_account_id: str, location_info: dict
+        self, domain_id: str, trusted_account_id: str, location_info: dict
     ) -> Workspace:
         name = location_info.get("name")
         reference_id = location_info.get("resource_id")
@@ -532,12 +532,12 @@ class JobService(BaseService):
         return workspace_vo
 
     def _create_project_group(
-            self,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            location_info: dict,
-            parent_group_id: str = None,
+        self,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        location_info: dict,
+        parent_group_id: str = None,
     ) -> ProjectGroup:
         name = location_info["name"]
         reference_id = location_info["resource_id"]
@@ -587,14 +587,14 @@ class JobService(BaseService):
         return project_group_vo
 
     def _create_project(
-            self,
-            result: dict,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            project_group_id: str = None,
-            sync_options: dict = None,
-            project_type: str = "PRIVATE",
+        self,
+        result: dict,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        project_group_id: str = None,
+        sync_options: dict = None,
+        project_type: str = "PRIVATE",
     ) -> Project:
         name = result["name"]
         reference_id = result["resource_id"]
@@ -633,13 +633,13 @@ class JobService(BaseService):
         return project_vo
 
     def _create_service_account(
-            self,
-            result: dict,
-            project_vo: Project,
-            trusted_account_id: str,
-            trusted_secret_id: str,
-            provider: str,
-            sync_options: dict = None,
+        self,
+        result: dict,
+        project_vo: Project,
+        trusted_account_id: str,
+        trusted_secret_id: str,
+        provider: str,
+        sync_options: dict = None,
     ) -> Union[ServiceAccount, None]:
         domain_id = project_vo.domain_id
         workspace_id = project_vo.workspace_id
@@ -688,15 +688,11 @@ class JobService(BaseService):
                     "tags": tags,
                 }
             )
-            if secret_schema_id:
-                params["schema_id"] = secret_schema_id
 
             service_account_vo = self.service_account_mgr.create_service_account(params)
 
         if secret_data:
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
-            if service_account_vo.secret_id:
-                secret_mgr.delete_secret(service_account_vo.secret_id, domain_id)
 
             # Check secret_data by schema
             schema_mgr = SchemaManager()
@@ -707,25 +703,40 @@ class JobService(BaseService):
                 "TRUSTING_SECRET",
             )
 
-            create_secret_params = {
-                "name": f"{service_account_vo.service_account_id}-secret",
-                "data": secret_data,
-                "resource_group": "PROJECT",
-                "workspace_id": workspace_id,
-                "project_id": project_id,
-                "service_account_id": service_account_vo.service_account_id,
-                "trusted_secret_id": trusted_secret_id,
-                "schema_id": secret_schema_id,
-            }
-            secret_info = secret_mgr.create_secret(create_secret_params, domain_id)
-            # Update secret_id in service_account_vo
-            service_account_vo = self.service_account_mgr.update_service_account_by_vo(
-                {"secret_id": secret_info["secret_id"]}, service_account_vo
-            )
+            if service_account_vo.secret_id:
+                update_secret_params = {
+                    "secret_id": service_account_vo.secret_id,
+                    "data": secret_data,
+                    "schema_id": secret_schema_id,
+                    "domain_id": domain_id,
+                    "workspace_id": workspace_id,
+                }
+                secret_mgr.update_secret_data(
+                    update_secret_params, domain_id, workspace_id
+                )
+            else:
+                create_secret_params = {
+                    "name": f"{service_account_vo.service_account_id}-secret",
+                    "data": secret_data,
+                    "resource_group": "PROJECT",
+                    "workspace_id": workspace_id,
+                    "project_id": project_id,
+                    "service_account_id": service_account_vo.service_account_id,
+                    "trusted_secret_id": trusted_secret_id,
+                    "schema_id": secret_schema_id,
+                }
+                secret_info = secret_mgr.create_secret(create_secret_params, domain_id)
+
+                # Update secret_id in service_account_vo
+                service_account_vo = (
+                    self.service_account_mgr.update_service_account_by_vo(
+                        {"secret_id": secret_info["secret_id"]}, service_account_vo
+                    )
+                )
         return service_account_vo
 
     def _remove_old_reference_id_from_workspace(
-            self, domain_id: str, workspace_id: str, reference_id: str
+        self, domain_id: str, workspace_id: str, reference_id: str
     ) -> None:
         query = {
             "filter": [

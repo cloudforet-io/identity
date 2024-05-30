@@ -31,7 +31,7 @@ class ProjectGroupManager(BaseManager):
         return project_group_vo
 
     def update_project_group_by_vo(
-            self, params: dict, project_group_vo: ProjectGroup
+        self, params: dict, project_group_vo: ProjectGroup
     ) -> ProjectGroup:
         def _rollback(old_data):
             _LOGGER.info(
@@ -62,7 +62,11 @@ class ProjectGroupManager(BaseManager):
         project_group_vo.delete()
 
     def get_project_group(
-            self, project_group_id: str, domain_id: str, workspace_id: str = None, user_id: str = None
+        self,
+        project_group_id: str,
+        domain_id: str,
+        workspace_id: str = None,
+        user_id: str = None,
     ) -> ProjectGroup:
         conditions = {
             "project_group_id": project_group_id,
@@ -91,13 +95,21 @@ class ProjectGroupManager(BaseManager):
         expire=180,
     )
     def get_projects_in_project_groups(
-            self, domain_id: str, project_group_id: list,
+        self,
+        domain_id: str,
+        project_group_id: str,
     ) -> List[str]:
-        project_vos = self.project_model.filter(domain_id=domain_id, project_group_id=project_group_id)
+        project_vos = self.project_model.filter(
+            domain_id=domain_id, project_group_id=project_group_id
+        )
         projects = [project_vo.project_id for project_vo in project_vos]
 
-        child_project_groups = self.project_group_model.filter(domain_id=domain_id, parent_group_id=project_group_id)
+        child_project_groups = self.project_group_model.filter(
+            domain_id=domain_id, parent_group_id=project_group_id
+        )
         for child_project_group in child_project_groups:
             parent_group_id = child_project_group.project_group_id
-            projects.extend(self.get_projects_in_project_groups(domain_id, parent_group_id))
+            projects.extend(
+                self.get_projects_in_project_groups(domain_id, parent_group_id)
+            )
         return list(set(projects))
