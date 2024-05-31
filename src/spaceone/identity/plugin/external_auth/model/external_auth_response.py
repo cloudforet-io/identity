@@ -1,4 +1,5 @@
 from typing import Union
+
 from pydantic import BaseModel
 
 
@@ -12,4 +13,4 @@ class UserResponse(BaseModel):
     name: Union[str, None] = None
     email: Union[str, None] = None
     mobile: Union[str, None] = None
-    group_id: Union[str, None] = None
+    group: Union[str, None] = None
