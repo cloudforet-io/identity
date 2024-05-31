@@ -3,13 +3,14 @@ from typing import Union
 
 from spaceone.core.service import BaseService, transaction
 from spaceone.core.service.utils import convert_model
-from spaceone.identity.model.user.response import UserResponse
+
 from spaceone.identity.plugin.external_auth.model.external_auth_request import (
-    ExternalAuthInitRequest,
     ExternalAuthAuthorizeRequest,
+    ExternalAuthInitRequest,
 )
 from spaceone.identity.plugin.external_auth.model.external_auth_response import (
     PluginResponse,
+    UserResponse,
 )
 
 _LOGGER = logging.getLogger(__name__)
