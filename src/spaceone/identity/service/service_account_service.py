@@ -393,19 +393,20 @@ class ServiceAccountService(BaseService):
     )
     @append_query_filter(
         [
-            "service_account_id",
             "name",
             "provider",
             "secret_schema_id",
             "secret_id",
+            "trusted_account_id",
             "project_id",
             "workspace_id",
             "domain_id",
             "user_projects",
+            "service_account_id",
         ]
     )
     @append_keyword_filter(["service_account_id", "name"])
-    @set_query_page_limit(1000)
+    @set_query_page_limit(2000)
     @convert_model
     def list(
         self, params: ServiceAccountSearchQueryRequest
@@ -447,7 +448,7 @@ class ServiceAccountService(BaseService):
         permission="identity:ServiceAccount.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @append_query_filter(["workspace_id", "domain_id", "user_projects"])
+    @append_query_filter(["user_projects", "workspace_id", "domain_id"])
     @append_keyword_filter(["service_account_id", "name"])
     @set_query_page_limit(1000)
     @convert_model
