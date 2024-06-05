@@ -14,7 +14,7 @@ class MFA(EmbeddedDocument):
 
 
 class User(MongoModel):
-    user_id = StringField(max_length=40, unique_with="domain_id", required=True)
+    user_id = StringField(max_length=60, unique_with="domain_id", required=True)
     password = BinaryField(default=None)
     name = StringField(max_length=128, default="")
     state = StringField(
