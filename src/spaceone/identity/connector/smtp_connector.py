@@ -43,9 +43,12 @@ class SMTPConnector(BaseConnector):
 
         multipart_msg.attach(MIMEText(contents, "html"))
 
-        self.smtp.sendmail(
+        response = self.smtp.sendmail(
             self.from_email, to_emails.split(","), multipart_msg.as_string()
         )
+
+        if response:
+            _LOGGER.debug(f"[send_email] send email response : {response}")
 
     def quit_smtp(self):
         self.smtp.quit()
