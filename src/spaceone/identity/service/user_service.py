@@ -116,8 +116,8 @@ class UserService(BaseService):
             user_id = user_vo.user_id
 
             if (
-                auth_type == "EXTERNAL"
-                and self._check_invite_external_user_eligibility(user_id, user_id)
+                    auth_type == "EXTERNAL"
+                    and self._check_invite_external_user_eligibility(user_id, user_id)
             ):
                 email_mgr = EmailManager()
 
@@ -257,7 +257,7 @@ class UserService(BaseService):
     @transaction(permission="identity:User.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def set_required_actions(
-        self, params: UserSetRequiredActionsRequest
+            self, params: UserSetRequiredActionsRequest
     ) -> Union[UserResponse, dict]:
         """Set required actions
 
@@ -367,14 +367,7 @@ class UserService(BaseService):
 
     @transaction(permission="identity:User.read", role_types=["DOMAIN_ADMIN"])
     @append_query_filter(
-        [
-            "user_id",
-            "name",
-            "state",
-            "email",
-            "auth_type",
-            "domain_id",
-        ]
+        ["user_id", "state", "auth_type", "role_type", "domain_id", "name", "email"]
     )
     @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
@@ -429,7 +422,7 @@ class UserService(BaseService):
         return domain_vo.name
 
     def _issue_temporary_token(
-        self, user_id: str, domain_id: str, timeout: int = None
+            self, user_id: str, domain_id: str, timeout: int = None
     ) -> dict:
         if timeout is None:
             identity_conf = config.get_global("IDENTITY", {}) or {}
@@ -469,7 +462,7 @@ class UserService(BaseService):
     def _check_reset_password_eligibility(user_id: str, auth_type: str, email: str):
         if auth_type == "EXTERNAL":
             raise ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(user_id=user_id)
-        elif email is None:
+        elif not email:
             raise ERROR_UNABLE_TO_RESET_PASSWORD_WITHOUT_EMAIL(user_id=user_id)
 
     @staticmethod
@@ -482,9 +475,9 @@ class UserService(BaseService):
                 for _ in range(12)
             )
             if (
-                re.search("[a-z]", random_password)
-                and re.search("[A-Z]", random_password)
-                and re.search("[0-9]", random_password)
+                    re.search("[a-z]", random_password)
+                    and re.search("[A-Z]", random_password)
+                    and re.search("[0-9]", random_password)
             ):
                 return random_password
 
