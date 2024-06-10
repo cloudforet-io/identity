@@ -4,6 +4,7 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
+from spaceone.identity.error.error_external_auth import ERROR_REQUIRED_FIELDS
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.model.external_auth.request import *
@@ -38,6 +39,8 @@ class ExternalAuthService(BaseService):
 
         domain_mgr = DomainManager()
         domain_vo = domain_mgr.get_domain(params.domain_id)
+
+        self._validate_params(params)
 
         external_auth_vo = self.external_auth_mgr.set_external_auth(
             params.dict(), domain_vo
@@ -84,3 +87,30 @@ class ExternalAuthService(BaseService):
             return ExternalAuthResponse(**external_auth_vo.to_dict())
         else:
             return {"domain_id": params.domain_id, "state": "DISABLED"}
+
+    @staticmethod
+    def _validate_params(params):
+        plugin_info = params.dict().get("plugin_info", {})
+        options = plugin_info.get("options", {})
+
+        protocol = options.get("protocol", "")
+        identity_provider = options.get("identity_provider", "")
+
+        if (not protocol) or (not identity_provider):
+            if (not protocol) and (not identity_provider):
+                _LOGGER.error(
+                    "[_validate_params] ERROR_REQUIRED_FIELDS: options.protocol, options.identity_provider"
+                )
+                raise ERROR_REQUIRED_FIELDS(
+                    field="options.protocol, options.identity_provider"
+                )
+            elif not protocol:
+                _LOGGER.error(
+                    "[_validate_params] ERROR_REQUIRED_FIELDS: options.protocol"
+                )
+                raise ERROR_REQUIRED_FIELDS(field="options.protocol")
+            elif not identity_provider:
+                _LOGGER.error(
+                    "[_validate_params] ERROR_REQUIRED_FIELDS: options.identity_provider"
+                )
+                raise ERROR_REQUIRED_FIELDS(field="options.identity_provider")
