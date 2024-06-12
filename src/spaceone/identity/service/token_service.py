@@ -178,7 +178,6 @@ class TokenService(BaseService):
             role_type, role_id = self._get_user_role_info(
                 user_vo, workspace_id=params.workspace_id
             )
-            role_type = "DOMAIN_ADMIN"
 
         decoded_token_info["scope"] = params.scope
         decoded_token_info["workspace_id"] = params.workspace_id
