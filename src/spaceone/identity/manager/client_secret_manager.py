@@ -18,7 +18,6 @@ class ClientSecretManager(BaseManager):
         expired_at: str,
         role_type: str,
         workspace_id: str = None,
-        projects: list = None,
         permissions: list = None,
         injected_params: dict = None,
     ) -> Tuple[str, str]:
@@ -42,7 +41,6 @@ class ClientSecretManager(BaseManager):
             role_type=role_type,
             workspace_id=workspace_id,
             permissions=permissions,
-            projects=projects,
             injected_params=injected_params,
         )
 

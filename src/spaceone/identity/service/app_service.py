@@ -7,6 +7,8 @@ from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_app import *
 from spaceone.identity.manager.app_manager import AppManager
+from spaceone.identity.manager.project_group_manager import ProjectGroupManager
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.client_secret_manager import ClientSecretManager
@@ -31,7 +33,7 @@ class AppService(BaseService):
 
     @transaction(
         permission="identity:App.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
     )
     @convert_model
     def create(self, params: AppCreateRequest) -> Union[AppResponse, dict]:
@@ -42,9 +44,10 @@ class AppService(BaseService):
                 'role_id': 'str',           # required
                 'tags': 'dict',
                 'expired_at': 'str',
-                'projects': 'list',
                 'resource_group': 'str',    # required
                 'users_project': 'list',    # injected from auth
+                'project_id': 'str',
+                'project_group_id': 'str',
                 'workspace_id': 'str',      # injected from auth
                 'domain_id': 'str',         # injected from auth (required)
             }
@@ -64,17 +67,18 @@ class AppService(BaseService):
             workspace_mgr = WorkspaceManager()
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
 
-            # todo :  check permission
             if params.resource_group == "PROJECT":
-                params.projects = set(params.projects)
+                if params.project_group_id:
+                    project_group_mgr = ProjectGroupManager()
+                    project_group_mgr.get_project_group(
+                        params.project_group_id, params.domain_id
+                    )
+                elif params.project_id:
+                    project_mgr = ProjectManager()
+                    project_mgr.get_project(params.project_id, params.domain_id)
+                else:
+                    raise ERROR_REQUIRED_PARAMETER(key="project_id or project_group_id")
 
-                if params.projects is None:
-                    raise ERROR_REQUIRED_PARAMETER(key="projects")
-                if params.users_projects:
-                    not_in_users_projects = params.projects - set(params.users_projects)
-
-                    if not_in_users_projects:
-                        raise ERROR_PERMISSION_DENIED()
         else:
             params.workspace_id = "*"
 
@@ -116,7 +120,6 @@ class AppService(BaseService):
             params.expired_at,
             app_vo.role_type,
             app_vo.workspace_id,
-            app_vo.projects,
         )
 
         app_vo = self.app_mgr.update_app_by_vo({"client_id": client_id}, app_vo)
@@ -331,6 +334,7 @@ class AppService(BaseService):
             client_id=params.client_id,
             domain_id=params.domain_id,
         )
+        projects = []
 
         if app_vos.count() == 0:
             raise ERROR_PERMISSION_DENIED()
@@ -352,12 +356,28 @@ class AppService(BaseService):
             if workspace_vo.state != "ENABLED":
                 raise ERROR_PERMISSION_DENIED()
 
+            if app_vo.project_group_id:
+                project_group_mgr = ProjectGroupManager()
+                project_group_vo = project_group_mgr.get_project_group(
+                    app_vo.project_group_id, app_vo.domain_id
+                )
+                projects = project_group_mgr.get_projects_in_project_groups(
+                    project_group_vo.domain_id, project_group_vo.project_group_id
+                )
+
+            elif app_vo.project_id:
+                project_mgr = ProjectManager()
+                project_vo = project_mgr.get_project(
+                    app_vo.project_id, app_vo.domain_id
+                )
+                projects = [project_vo.project_id]
+
         role_mgr = RoleManager()
         role_vo = role_mgr.get_role(app_vo.role_id, app_vo.domain_id)
 
         self.app_mgr.update_app_by_vo({"last_accessed_at": datetime.utcnow()}, app_vo)
 
-        return CheckAppResponse(permissions=role_vo.permissions)
+        return CheckAppResponse(permissions=role_vo.permissions, projects=projects)
 
     @transaction(
         permission="identity:App.read",

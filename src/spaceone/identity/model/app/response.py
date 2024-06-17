@@ -11,6 +11,7 @@ __all__ = ["CheckAppResponse", "AppResponse", "AppsResponse"]
 
 class CheckAppResponse(BaseModel):
     permissions: List[str]
+    projects: List[str]
 
 
 class AppResponse(BaseModel):
