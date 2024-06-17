@@ -27,9 +27,10 @@ class AppCreateRequest(BaseModel):
     role_id: str
     tags: Union[dict, None] = None
     expired_at: Union[str, None] = None
-    projects: Union[list, None] = None
     resource_group: ResourceGroup
     users_projects: Union[list, None] = None
+    project_id: Union[str, None] = None
+    project_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 
