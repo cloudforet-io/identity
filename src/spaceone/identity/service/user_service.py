@@ -73,6 +73,7 @@ class UserService(BaseService):
         email = params.get("email")
         language = self._get_domain_default_language(domain_id, params.get("language"))
         params["language"] = language
+        params["timezone"] = params.get("timezone", "UTC")
 
         if reset_password:
             self._check_reset_password_eligibility(user_id, auth_type, email)
@@ -116,8 +117,8 @@ class UserService(BaseService):
             user_id = user_vo.user_id
 
             if (
-                    auth_type == "EXTERNAL"
-                    and self._check_invite_external_user_eligibility(user_id, user_id)
+                auth_type == "EXTERNAL"
+                and self._check_invite_external_user_eligibility(user_id, user_id)
             ):
                 email_mgr = EmailManager()
 
@@ -257,7 +258,7 @@ class UserService(BaseService):
     @transaction(permission="identity:User.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def set_required_actions(
-            self, params: UserSetRequiredActionsRequest
+        self, params: UserSetRequiredActionsRequest
     ) -> Union[UserResponse, dict]:
         """Set required actions
 
@@ -422,7 +423,7 @@ class UserService(BaseService):
         return domain_vo.name
 
     def _issue_temporary_token(
-            self, user_id: str, domain_id: str, timeout: int = None
+        self, user_id: str, domain_id: str, timeout: int = None
     ) -> dict:
         if timeout is None:
             identity_conf = config.get_global("IDENTITY", {}) or {}
@@ -475,9 +476,9 @@ class UserService(BaseService):
                 for _ in range(12)
             )
             if (
-                    re.search("[a-z]", random_password)
-                    and re.search("[A-Z]", random_password)
-                    and re.search("[0-9]", random_password)
+                re.search("[a-z]", random_password)
+                and re.search("[A-Z]", random_password)
+                and re.search("[0-9]", random_password)
             ):
                 return random_password
 
