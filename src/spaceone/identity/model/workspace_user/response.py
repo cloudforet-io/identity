@@ -22,6 +22,7 @@ class WorkspaceUserResponse(BaseModel):
     name: Union[str, None] = None
     state: Union[State, None] = None
     email: Union[str, None] = None
+    email_verified: Union[bool, None] = None
     auth_type: Union[AuthType, None] = None
     role_type: Union[RoleType, None] = None
     language: Union[str, None] = None

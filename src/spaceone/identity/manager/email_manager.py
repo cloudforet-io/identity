@@ -3,12 +3,9 @@ import os
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from spaceone.core import config, utils
+from spaceone.core import config
 from spaceone.core.manager import BaseManager
 from spaceone.identity.connector.smtp_connector import SMTPConnector
-
-from spaceone.identity.model.domain.database import Domain
-from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
 
