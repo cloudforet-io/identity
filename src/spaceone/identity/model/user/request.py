@@ -90,7 +90,7 @@ class UserSearchQueryRequest(BaseModel):
     state: Union[State, None] = None
     email: Union[str, None] = None
     auth_type: Union[AuthType, None] = None
-    # domain_id: str
+    domain_id: str
 
 
 class UserStatQueryRequest(BaseModel):
