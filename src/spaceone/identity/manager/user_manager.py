@@ -31,6 +31,9 @@ class UserManager(BaseManager):
         if timezone := params.get("timezone"):
             self._check_timezone(timezone)
 
+        if email := params.get("email"):
+            self._check_email_format(email)
+
         if params["auth_type"] == "EXTERNAL":
             params["password"] = None
 
@@ -66,6 +69,9 @@ class UserManager(BaseManager):
 
         if timezone := params.get("timezone"):
             self._check_timezone(timezone)
+
+        if email := params.get("email"):
+            self._check_email_format(email)
 
         required_actions = list(user_vo.required_actions)
         is_change_required_actions = False
@@ -141,6 +147,12 @@ class UserManager(BaseManager):
         rule = r"[^@]+@[^@]+\.[^@]+"
         if not re.match(rule, user_id):
             raise ERROR_INCORRECT_USER_ID_FORMAT(rule="Email format required.")
+
+    @staticmethod
+    def _check_email_format(email: str) -> None:
+        rule = r"[^@]+@[^@]+\.[^@]+"
+        if not re.match(rule, email):
+            raise ERROR_INCORRECT_EMAIL_FORMAT(rule="Email format required.")
 
     @staticmethod
     def _check_password_format(password: str) -> None:
