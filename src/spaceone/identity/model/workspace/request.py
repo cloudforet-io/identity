@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Literal
 from pydantic import BaseModel
 
 __all__ = [
@@ -11,7 +11,10 @@ __all__ = [
     "WorkspaceCheckRequest",
     "WorkspaceSearchQueryRequest",
     "WorkspaceStatQueryRequest",
+    "State",
 ]
+
+State = Literal["ENABLED", "DISABLED"]
 
 
 class WorkspaceCreateRequest(BaseModel):
@@ -56,8 +59,11 @@ class WorkspaceCheckRequest(BaseModel):
 class WorkspaceSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     name: Union[str, None] = None
+    state: Union[State, None] = None
     workspace_id: Union[str, None] = None
     created_by: Union[str, None] = None
+    is_managed: Union[bool, None] = None
+    is_dormant: Union[bool, None] = None
     domain_id: str
 
 

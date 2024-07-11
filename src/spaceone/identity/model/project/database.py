@@ -10,7 +10,6 @@ class Project(MongoModel):
     )
     tags = DictField(default=None)
     users = ListField(StringField(max_length=40), default=None)
-    user_groups = ListField(StringField(max_length=255), default=None)
     created_by = StringField(max_length=255)
     reference_id = StringField(max_length=255, default=None, null=True)
     is_managed = BooleanField(default=False)
@@ -27,7 +26,6 @@ class Project(MongoModel):
             "project_type",
             "tags",
             "users",
-            "user_groups",
             "is_managed",
             "trusted_account_id",
             "project_group_id",
@@ -43,13 +41,11 @@ class Project(MongoModel):
         "change_query_keys": {
             "user_projects": "project_id",
             "user_id": "users",
-            "user_group_id": "user_groups",
         },
         "ordering": ["name"],
         "indexes": [
             "project_type",
             "users",
-            "user_groups",
             "project_group_id",
             "workspace_id",
             "domain_id",

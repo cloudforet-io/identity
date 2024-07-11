@@ -394,6 +394,7 @@ class ServiceAccountService(BaseService):
     @append_query_filter(
         [
             "name",
+            "state",
             "provider",
             "secret_schema_id",
             "secret_id",
@@ -418,6 +419,7 @@ class ServiceAccountService(BaseService):
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'service_account_id': 'str',
                 'name': 'str',
+                'state': 'str',
                 'provider': 'str',
                 'secret_schema_id': 'str',
                 'secret_id': 'str',

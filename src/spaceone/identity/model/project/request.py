@@ -8,8 +8,6 @@ __all__ = [
     "ProjectDeleteRequest",
     "ProjectAddUsersRequest",
     "ProjectRemoveUsersRequest",
-    "ProjectAddUserGroupsRequest",
-    "ProjectRemoveUserGroupsRequest",
     "ProjectGetRequest",
     "ProjectSearchQueryRequest",
     "ProjectStatQueryRequest",
@@ -74,22 +72,6 @@ class ProjectRemoveUsersRequest(BaseModel):
     user_projects: Union[list, None] = None
 
 
-class ProjectAddUserGroupsRequest(BaseModel):
-    project_id: str
-    user_groups: List[str]
-    workspace_id: str
-    domain_id: str
-    user_projects: Union[list, None] = None
-
-
-class ProjectRemoveUserGroupsRequest(BaseModel):
-    project_id: str
-    user_groups: List[str]
-    workspace_id: str
-    domain_id: str
-    user_projects: Union[list, None] = None
-
-
 class ProjectGetRequest(BaseModel):
     project_id: str
     workspace_id: Union[str, None] = None
@@ -105,7 +87,6 @@ class ProjectSearchQueryRequest(BaseModel):
     created_by: Union[str, None] = None
     include_children: Union[bool, None] = None
     user_id: Union[str, None] = None
-    user_group_id: Union[str, None] = None
     project_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str

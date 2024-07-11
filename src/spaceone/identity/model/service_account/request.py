@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Literal
 from pydantic import BaseModel
 
 __all__ = [
@@ -10,7 +10,10 @@ __all__ = [
     "ServiceAccountGetRequest",
     "ServiceAccountSearchQueryRequest",
     "ServiceAccountStatQueryRequest",
+    "State",
 ]
+
+State = Literal["PENDING", "ACTIVE", "INACTIVE", "DELETED"]
 
 
 class ServiceAccountCreateRequest(BaseModel):
@@ -72,6 +75,7 @@ class ServiceAccountSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     service_account_id: Union[str, None] = None
     name: Union[str, None] = None
+    state: Union[State, None] = None
     provider: Union[str, None] = None
     secret_schema_id: Union[str, None] = None
     secret_id: Union[str, None] = None
