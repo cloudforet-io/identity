@@ -49,18 +49,6 @@ class Project(BaseAPI, project_pb2_grpc.ProjectServicer):
         response: dict = project_svc.remove_users(params)
         return self.dict_to_message(response)
 
-    def add_user_groups(self, request, context):
-        params, metadata = self.parse_request(request, context)
-        project_svc = ProjectService(metadata)
-        response: dict = project_svc.add_user_groups(params)
-        return self.dict_to_message(response)
-
-    def remove_user_groups(self, request, context):
-        params, metadata = self.parse_request(request, context)
-        project_svc = ProjectService(metadata)
-        response: dict = project_svc.remove_user_groups(params)
-        return self.dict_to_message(response)
-
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
         project_svc = ProjectService(metadata)

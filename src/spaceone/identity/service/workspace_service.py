@@ -199,7 +199,17 @@ class WorkspaceService(BaseService):
         self.workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
 
     @transaction(permission="identity:Workspace.read", role_types=["DOMAIN_ADMIN"])
-    @append_query_filter(["workspace_id", "name", "created_by", "domain_id"])
+    @append_query_filter(
+        [
+            "workspace_id",
+            "name",
+            "state",
+            "created_by",
+            "is_managed",
+            "is_dormant",
+            "domain_id",
+        ]
+    )
     @append_keyword_filter(["workspace_id", "name"])
     @convert_model
     def list(
@@ -209,9 +219,12 @@ class WorkspaceService(BaseService):
         Args:
             params (WorkspaceSearchQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.Query)',
-                'name': 'str',
                 'workspace_id': 'str',
+                'name': 'str',
+                'state': 'str',
                 'created_by': 'str',
+                'is_managed': 'bool',
+                'is_dormant': 'bool',
                 'domain_id': 'str',         # injected from auth (required)
             }
         Returns:

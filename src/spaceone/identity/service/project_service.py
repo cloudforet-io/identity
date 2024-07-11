@@ -125,7 +125,6 @@ class ProjectService(BaseService):
         params_dict = params.dict(exclude_unset=True)
         if params.project_type == "PUBLIC":
             params_dict["users"] = []
-            params_dict["user_groups"] = []
 
         project_vo = self.project_mgr.update_project_by_vo(params_dict, project_vo)
 
@@ -282,26 +281,6 @@ class ProjectService(BaseService):
         return ProjectResponse(**project_vo.to_dict())
 
     @transaction(
-        permission="identity:Project.write",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
-    )
-    @convert_model
-    def add_user_groups(
-        self, params: ProjectAddUserGroupsRequest
-    ) -> Union[ProjectResponse, dict]:
-        return {}
-
-    @transaction(
-        permission="identity:Project.write",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
-    )
-    @convert_model
-    def remove_user_groups(
-        self, params: ProjectRemoveUserGroupsRequest
-    ) -> Union[ProjectResponse, dict]:
-        return {}
-
-    @transaction(
         permission="identity:Project.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
@@ -339,7 +318,6 @@ class ProjectService(BaseService):
             "project_type",
             "created_by",
             "user_id",
-            "user_group_id",
             "workspace_id",
             "domain_id",
             "user_projects",
@@ -358,7 +336,6 @@ class ProjectService(BaseService):
                 'created_by': 'str',
                 'include_children': 'bool',
                 'user_id': 'str',
-                'user_group_id': 'str',
                 'project_group_id': 'str',
                 'workspace_id': 'str',      # injected from auth
                 'domain_id': 'str',         # injected from auth (required)
