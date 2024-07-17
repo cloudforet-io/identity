@@ -200,16 +200,9 @@ class JobService(BaseService):
 
         domain_mgr = DomainManager()
 
-        # Temporary Code
-        # from spaceone.core import config, pygrpc, fastapi, utils, model
-        #
-        # model.init_all(False)
-
-        # domain_vos = domain_mgr.filter_domains(
-        #     state="ENABLED", domain_id="domain-286776a1516a"
-        # )
-        # for domain_vo in domain_vos:
-        #     self.job_mgr.push_dormancy_job({"domain_id": domain_vo.domain_id})
+        domain_vos = domain_mgr.filter_domains(state="ENABLED")
+        for domain_vo in domain_vos:
+            self.job_mgr.push_dormancy_job({"domain_id": domain_vo.domain_id})
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
     def check_dormancy_by_domain(self, params: dict) -> None:
@@ -225,15 +218,20 @@ class JobService(BaseService):
         domain_id = params["domain_id"]
         dormancy_settings = self._get_dormancy_settings(domain_id)
         dormancy_state = dormancy_settings.get("state")
+        threshold = dormancy_settings.get("cost")
+        dormancy_send_email = dormancy_settings.get("send_email")
 
         cost_analysis_mgr = CostAnalysisManager()
-        is_report_exists, currency = self._get_currency(cost_analysis_mgr, domain_id)
 
         workspace_vos = self.workspace_mgr.filter_workspaces(domain_id=domain_id)
         for workspace_vo in workspace_vos:
+            if self._is_dormancy_updated(workspace_vo):
+                continue
+
             cost_info = workspace_vo.cost_info or {}
             before_month_cost = cost_info.get("month", 0)
-            before_day_cost = cost_info.get("day", 0)
+            before_dormant_ttl = workspace_vo.dormant_ttl or -1
+            before_is_dormant = workspace_vo.is_dormant
 
             update_params = {
                 "is_dormant": workspace_vo.is_dormant,
@@ -248,39 +246,66 @@ class JobService(BaseService):
 
             update_params["service_account_count"] = service_account_vos.count()
 
-            if is_report_exists:
-                month_cost = self._get_this_month_cost(
-                    cost_analysis_mgr, domain_id, workspace_id, currency
-                )
-                update_params["cost_info"] = {"month": month_cost, "day": 0}
+            month_cost = self._get_this_month_cost(
+                cost_analysis_mgr, domain_id, workspace_id
+            )
 
-                if dormancy_state == "ENABLED":
-                    # Check Dormancy and Notify
-                    pass
+            day_cost = month_cost - before_month_cost
+            if day_cost < 0:
+                day_cost = 0
+
+            update_params["cost_info"] = {"month": month_cost, "day": day_cost}
+
+            if dormancy_state == "ENABLED" and before_dormant_ttl >= 0:
+                if day_cost <= threshold:
+                    _LOGGER.debug(
+                        f"[check_dormancy_by_domain] change dormant: {workspace_vo.name}"
+                    )
+                    update_params["is_dormant"] = True
+
+                    if before_dormant_ttl > 0:
+                        dormant_ttl = before_dormant_ttl - 1
+                        if dormancy_send_email:
+                            # Send Email
+                            if dormant_ttl == 0:
+                                pass
+                            else:
+                                pass
+
+                        update_params["dormant_ttl"] = dormant_ttl
+                else:
+                    if before_is_dormant:
+                        _LOGGER.debug(
+                            f"[check_dormancy_by_domain] change active: {workspace_vo.name}"
+                        )
+
+                    update_params["is_dormant"] = False
+                    update_params["dormant_ttl"] = 3
+
+            update_params["dormant_updated_at"] = datetime.utcnow()
+            self.workspace_mgr.update_workspace_by_vo(update_params, workspace_vo)
 
     @staticmethod
-    def _get_currency(
-        cost_analysis_mgr: CostAnalysisManager, domain_id: str
-    ) -> Tuple[bool, str]:
-        system_token = config.get_global("TOKEN")
+    def _is_dormancy_updated(workspace_vo: Workspace) -> bool:
+        if not workspace_vo.dormant_updated_at:
+            return False
 
-        # Get Cost Report Config
-        response = cost_analysis_mgr.list_cost_report_configs(
-            {}, token=system_token, x_domain_id=domain_id
-        )
-        if response.get("total_count", 0) == 0:
-            return False, ""
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        last_dormant_updated_date = workspace_vo.dormant_updated_at.strftime("%Y-%m-%d")
 
-        cost_report_config = response["results"][0]
-        currency = cost_report_config.get("currency", "USD")
-        return True, currency
+        if today == last_dormant_updated_date:
+            _LOGGER.debug(
+                f"[_is_dormancy_updated] dormant has already been updated: {workspace_vo.name}"
+            )
+            return True
+        else:
+            return False
 
     @staticmethod
     def _get_this_month_cost(
         cost_analysis_mgr: CostAnalysisManager,
         domain_id: str,
         workspace_id: str,
-        currency: str,
     ) -> float:
         system_token = config.get_global("TOKEN")
         now = datetime.utcnow()
@@ -288,22 +313,22 @@ class JobService(BaseService):
 
         # Get Monthly Cost
         params = {
+            "status": "IN_PROGRESS",
             "query": {
-                "granularity": "MONTHLY",
-                "start": report_month,
-                "end": report_month,
-                "fields": {"cost": {"key": f"cost.{currency}", "operator": "sum"}},
-                "filter": [{"k": "is_confirmed", "v": False, "o": "eq"}],
+                "filter": [
+                    {"k": "report_month", "v": report_month, "o": "eq"},
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                ]
             },
-            "workspace_id": workspace_id,
         }
 
-        response = cost_analysis_mgr.analyze_cost_report_data(
+        response = cost_analysis_mgr.list_cost_reports(
             params, token=system_token, x_domain_id=domain_id
         )
         results = response.get("results", [])
         if len(results) > 0:
-            return results[0]["cost"]
+            currency = results[0]["currency"]
+            return results[0]["cost"][currency]
         else:
             return 0
 

@@ -17,7 +17,7 @@ WORKSPACE_COLORS_NAME = [
 ]
 
 # Dormancy Settings
-DORMANCY_CHECK_HOUR = 13
+DORMANCY_CHECK_HOUR = 14
 DORMANCY_SETTINGS_KEY = "identity:dormancy:workspace"
 
 # Database Settings

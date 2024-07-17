@@ -17,7 +17,6 @@ class ServiceAccount(MongoModel):
     tags = DictField(default=None)
     reference_id = StringField(max_length=255, default=None, null=True)
     is_managed = BooleanField(default=False)
-    asset_info = DictField(default=None)
     cost_info = DictField(default=None)
     secret_schema_id = StringField(max_length=40)
     secret_id = StringField(max_length=40)
@@ -37,13 +36,13 @@ class ServiceAccount(MongoModel):
             "data",
             "tags",
             "is_managed",
-            "asset_info",
             "cost_info",
             "secret_schema_id",
             "secret_id",
             "trusted_account_id",
             "project_id",
             "last_synced_at",
+            "inactivated_at",
         ],
         "minimal_fields": [
             "service_account_id",

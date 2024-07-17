@@ -14,21 +14,11 @@ class CostAnalysisManager(BaseManager):
             "SpaceConnector", service="cost_analysis"
         )
 
-    def analyze_cost_report_data(
+    def list_cost_reports(
         self, params: dict, token: str = None, x_domain_id: str = None
     ) -> dict:
         return self.cost_analysis_conn.dispatch(
-            "CostReportData.analyze",
-            params,
-            token=token,
-            x_domain_id=x_domain_id,
-        )
-
-    def list_cost_report_configs(
-        self, params: dict, token: str = None, x_domain_id: str = None
-    ) -> dict:
-        return self.cost_analysis_conn.dispatch(
-            "CostReportConfig.list",
+            "CostReport.list",
             params,
             token=token,
             x_domain_id=x_domain_id,
