@@ -5,6 +5,7 @@ from typing import Union, List, Tuple
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
+from spaceone.core import config
 
 from spaceone.identity.conf.global_conf import WORKSPACE_COLORS_NAME
 from spaceone.identity.error.error_job import *
@@ -20,6 +21,9 @@ from spaceone.identity.manager.service_account_manager import ServiceAccountMana
 from spaceone.identity.manager.secret_manager import SecretManager
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.manager.config_manager import ConfigManager
+from spaceone.identity.manager.cost_analysis_manager import CostAnalysisManager
 from spaceone.identity.model.project.database import Project
 from spaceone.identity.model.project_group.database import ProjectGroup
 from spaceone.identity.model.provider.database import Provider
@@ -65,7 +69,7 @@ class JobService(BaseService):
         current_hour = params.get("current_hour", datetime.utcnow().hour)
 
         for trusted_account_vo in self._get_all_schedule_enabled_trusted_accounts(
-                current_hour
+            current_hour
         ):
             try:
                 self.create_service_account_job(trusted_account_vo, {})
@@ -184,6 +188,151 @@ class JobService(BaseService):
         query = params.query or {}
 
         return self.job_mgr.stat_jobs(query)
+
+    @transaction(exclude=["authentication", "authorization", "mutation"])
+    def check_dormancy(self, params: dict) -> None:
+        """Check dormancy by domains
+        Args:
+            params (dict): {}
+        Returns:
+            None:
+        """
+
+        domain_mgr = DomainManager()
+
+        # Temporary Code
+        # from spaceone.core import config, pygrpc, fastapi, utils, model
+        #
+        # model.init_all(False)
+
+        # domain_vos = domain_mgr.filter_domains(
+        #     state="ENABLED", domain_id="domain-286776a1516a"
+        # )
+        # for domain_vo in domain_vos:
+        #     self.job_mgr.push_dormancy_job({"domain_id": domain_vo.domain_id})
+
+    @transaction(exclude=["authentication", "authorization", "mutation"])
+    def check_dormancy_by_domain(self, params: dict) -> None:
+        """Check dormancy by domains
+        Args:
+            params (dict): {
+                'domain_id': 'str'
+            }
+        Returns:
+            None:
+        """
+
+        domain_id = params["domain_id"]
+        dormancy_settings = self._get_dormancy_settings(domain_id)
+        dormancy_state = dormancy_settings.get("state")
+
+        cost_analysis_mgr = CostAnalysisManager()
+        is_report_exists, currency = self._get_currency(cost_analysis_mgr, domain_id)
+
+        workspace_vos = self.workspace_mgr.filter_workspaces(domain_id=domain_id)
+        for workspace_vo in workspace_vos:
+            cost_info = workspace_vo.cost_info or {}
+            before_month_cost = cost_info.get("month", 0)
+            before_day_cost = cost_info.get("day", 0)
+
+            update_params = {
+                "is_dormant": workspace_vo.is_dormant,
+                "dormant_ttl": workspace_vo.dormant_ttl,
+                "service_account_count": workspace_vo.service_account_count,
+            }
+
+            workspace_id = workspace_vo.workspace_id
+            service_account_vos = self.service_account_mgr.filter_service_accounts(
+                domain_id=domain_id, workspace_id=workspace_id
+            )
+
+            update_params["service_account_count"] = service_account_vos.count()
+
+            if is_report_exists:
+                month_cost = self._get_this_month_cost(
+                    cost_analysis_mgr, domain_id, workspace_id, currency
+                )
+                update_params["cost_info"] = {"month": month_cost, "day": 0}
+
+                if dormancy_state == "ENABLED":
+                    # Check Dormancy and Notify
+                    pass
+
+    @staticmethod
+    def _get_currency(
+        cost_analysis_mgr: CostAnalysisManager, domain_id: str
+    ) -> Tuple[bool, str]:
+        system_token = config.get_global("TOKEN")
+
+        # Get Cost Report Config
+        response = cost_analysis_mgr.list_cost_report_configs(
+            {}, token=system_token, x_domain_id=domain_id
+        )
+        if response.get("total_count", 0) == 0:
+            return False, ""
+
+        cost_report_config = response["results"][0]
+        currency = cost_report_config.get("currency", "USD")
+        return True, currency
+
+    @staticmethod
+    def _get_this_month_cost(
+        cost_analysis_mgr: CostAnalysisManager,
+        domain_id: str,
+        workspace_id: str,
+        currency: str,
+    ) -> float:
+        system_token = config.get_global("TOKEN")
+        now = datetime.utcnow()
+        report_month = now.strftime("%Y-%m")
+
+        # Get Monthly Cost
+        params = {
+            "query": {
+                "granularity": "MONTHLY",
+                "start": report_month,
+                "end": report_month,
+                "fields": {"cost": {"key": f"cost.{currency}", "operator": "sum"}},
+                "filter": [{"k": "is_confirmed", "v": False, "o": "eq"}],
+            },
+            "workspace_id": workspace_id,
+        }
+
+        response = cost_analysis_mgr.analyze_cost_report_data(
+            params, token=system_token, x_domain_id=domain_id
+        )
+        results = response.get("results", [])
+        if len(results) > 0:
+            return results[0]["cost"]
+        else:
+            return 0
+
+    @staticmethod
+    def _get_dormancy_settings(domain_id: str) -> dict:
+        settings_key = config.get_global(
+            "DORMANCY_SETTINGS_KEY", "identity:dormancy:workspace"
+        )
+
+        config_mgr = ConfigManager()
+        system_token = config.get_global("TOKEN")
+        response = config_mgr.list_domain_configs(
+            params={"name": settings_key}, token=system_token, x_domain_id=domain_id
+        )
+        if response.get("total_count", 0) > 0:
+            dormancy_settings = response["results"][0]["data"]
+            dormancy_state = "ENABLED"
+            dormancy_send_email = dormancy_settings.get("send_email", False)
+            dormancy_cost = dormancy_settings.get("cost", 0)
+        else:
+            dormancy_state = "DISABLED"
+            dormancy_send_email = False
+            dormancy_cost = 0
+
+        return {
+            "state": dormancy_state,
+            "send_email": dormancy_send_email,
+            "cost": dormancy_cost,
+        }
 
     @transaction(exclude=["authentication", "authorization", "mutation"])
     def sync_service_accounts(self, params: dict) -> None:
@@ -334,7 +483,7 @@ class JobService(BaseService):
         )
 
     def create_service_account_job(
-            self, trusted_account_vo: TrustedAccount, job_options: dict
+        self, trusted_account_vo: TrustedAccount, job_options: dict
     ) -> Union[Job, dict]:
         resource_group = trusted_account_vo.resource_group
         provider = trusted_account_vo.provider
@@ -437,10 +586,10 @@ class JobService(BaseService):
         return secret_data
 
     def _check_duplicate_job(
-            self,
-            domain_id: str,
-            trusted_account_id: str,
-            this_job_vo: Job,
+        self,
+        domain_id: str,
+        trusted_account_id: str,
+        this_job_vo: Job,
     ) -> bool:
         query = {
             "filter": [
@@ -464,7 +613,7 @@ class JobService(BaseService):
         return False
 
     def _is_job_failed(
-            self, job_id: str, domain_id: str, workspace_id: str = None
+        self, job_id: str, domain_id: str, workspace_id: str = None
     ) -> bool:
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
 
@@ -474,10 +623,10 @@ class JobService(BaseService):
             return False
 
     def _close_job(
-            self,
-            job_id: str,
-            domain_id: str,
-            workspace_id: str = None,
+        self,
+        job_id: str,
+        domain_id: str,
+        workspace_id: str = None,
     ):
         job_vo: Job = self.job_mgr.get_job(domain_id, job_id, workspace_id)
         if job_vo.status == "IN_PROGRESS":
@@ -486,7 +635,7 @@ class JobService(BaseService):
             self.job_mgr.update_job_by_vo({"finished_at": datetime.utcnow()}, job_vo)
 
     def _create_workspace(
-            self, domain_id: str, trusted_account_id: str, location_info: dict
+        self, domain_id: str, trusted_account_id: str, location_info: dict
     ) -> Workspace:
         name = location_info.get("name")
         reference_id = location_info.get("resource_id")
@@ -532,12 +681,12 @@ class JobService(BaseService):
         return workspace_vo
 
     def _create_project_group(
-            self,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            location_info: dict,
-            parent_group_id: str = None,
+        self,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        location_info: dict,
+        parent_group_id: str = None,
     ) -> ProjectGroup:
         name = location_info["name"]
         reference_id = location_info["resource_id"]
@@ -587,14 +736,14 @@ class JobService(BaseService):
         return project_group_vo
 
     def _create_project(
-            self,
-            result: dict,
-            domain_id: str,
-            workspace_id: str,
-            trusted_account_id: str,
-            project_group_id: str = None,
-            sync_options: dict = None,
-            project_type: str = "PRIVATE",
+        self,
+        result: dict,
+        domain_id: str,
+        workspace_id: str,
+        trusted_account_id: str,
+        project_group_id: str = None,
+        sync_options: dict = None,
+        project_type: str = "PRIVATE",
     ) -> Project:
         name = result["name"]
         reference_id = result["resource_id"]
@@ -633,13 +782,13 @@ class JobService(BaseService):
         return project_vo
 
     def _create_service_account(
-            self,
-            result: dict,
-            project_vo: Project,
-            trusted_account_id: str,
-            trusted_secret_id: str,
-            provider: str,
-            sync_options: dict = None,
+        self,
+        result: dict,
+        project_vo: Project,
+        trusted_account_id: str,
+        trusted_secret_id: str,
+        provider: str,
+        sync_options: dict = None,
     ) -> Union[ServiceAccount, None]:
         domain_id = project_vo.domain_id
         workspace_id = project_vo.workspace_id
@@ -725,7 +874,7 @@ class JobService(BaseService):
         return service_account_vo
 
     def _remove_old_reference_id_from_workspace(
-            self, domain_id: str, workspace_id: str, reference_id: str
+        self, domain_id: str, workspace_id: str, reference_id: str
     ) -> None:
         query = {
             "filter": [

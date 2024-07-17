@@ -9,11 +9,11 @@ worker: true
 rest: false
 name: identity
 image:
-    name: spaceone/identity
-    version: latest
+  name: spaceone/identity
+  version: latest
 imagePullPolicy: IfNotPresent
 
-resources: {}
+resources: { }
 #     grpc: 
 #         requests:
 #             memory: "128Mi"
@@ -43,60 +43,53 @@ resources: {}
 #             memory: "256Mi"
 #             cpu: "50m"
 
-database: {}
+database: { }
 
 ###########################################################
 # if you want to use API key or spacectl
 # Put full FQDN at endpoint
-# Ex) endpoint: grpc+ssl://identity.example.com:443/v1
-# grpc+ssl is for gRPC ALB ingress controller
+# Ex) endpoint: grpc://identity.example.com:50051
+# grpc is for gRPC ALB ingress controller
 # If you want to use NLB instead of ALB, 
 # You have to use grpc://identity.example.com:50051/v1
 ###########################################################
 application_grpc:
-    ENDPOINTS:
+  ENDPOINTS:
     - service: identity
       name: Identity Service
-      endpoint: grpc+ssl://identity:443/v1
+      endpoint: grpc://identity:50051
     - service: inventory
       name: Inventory Service
-      endpoint: grpc+ssl://inventory:443/v1
-    - service: plugin
-      name: Plugin Manager
-      endpoint: grpc+ssl://plugin:443/v1
+      endpoint: grpc://inventory:50051
+    - service: cost_analysis
+      name: Cost Analysis Service
+      endpoint: grpc://cost:50051
+    - service: dashboard
+      name: Dashboard Service
+      endpoint: grpc://cost:50051
     - service: repository
       name: Repository Service
-      endpoint: grpc+ssl://repository:443/v1
+      endpoint: grpc://repository:50051
+    - service: board
+      name: Board Service
+      endpoint: grpc://board:50051
     - service: secret
       name: Secret Manager
-      endpoint: grpc+ssl://secret:443/v1
-    - service: monitoring
-      name: Monitoring Service
-      endpoint: grpc+ssl://monitoring:443/v1
+      endpoint: grpc://secret:50051
     - service: config
       name: Config Service
-      endpoint: grpc+ssl://config:443/v1
-    - service: power_scheduler
-      name: Power Scheduler Service
-      endpoint: grpc+ssl://power-scheduler:443/v1
-    - service: statistics
-      name: Statistics Service
-      endpoint: grpc+ssl://statistics:443/v1
-    - service: billing
-      name: Billing Service
-      endpoint: grpc+ssl://billing:443/v1
-    - service: notification
-      name: Notification Service
-      endpoint: grpc+ssl://notification:443/v1
-    LOG:
-        filters:
-            exclude:
-                rules:
-                  tnx_method:
-                  - Domain.get_public_key
-                  - Authorization.verify
+      endpoint: grpc://config:50051
+    - service: file_manager
+      name: File Manager
+      endpoint: grpc://file-manager:50051
+    - service: plugin
+      name: Plugin Manager
+      endpoint: grpc://plugin:50051
+    - service: search
+      name: Search Service
+      endpoint: grpc://search:50051
 
-application_rest: {}
+application_rest: { }
 
 # Overwrite scheduler config
 application_scheduler:
@@ -113,6 +106,11 @@ application_scheduler:
       queue: identity_q
       interval: 1
       minute: ':00'
+    dormancy_scheduler:
+      backend: spaceone.identity.interface.task.v1.dormancy_scheduler.DormancyScheduler
+      queue: identity_q
+      interval: 1
+      minute: ':30'
 
 # Overwrite worker config
 application_worker:
@@ -132,40 +130,40 @@ application_worker:
 # local sidecar
 ##########################
 sidecar:
-    rest_web:
-        image:
-            name: nginx
-            version: stable
-            imagePullPolicy: IfNotPresent
-        resources: {}
-        #     requests:
-        #         memory: "128Mi"
-        #         cpu: "25m"
-        #     limits:
-        #         memory: "256Mi"
-        #         cpu: "50m"
-    grpc: {}
-    rest: {}
-    scheduler: {}
-    worker: {}
+  rest_web:
+    image:
+      name: nginx
+      version: stable
+      imagePullPolicy: IfNotPresent
+    resources: { }
+    #     requests:
+    #         memory: "128Mi"
+    #         cpu: "25m"
+    #     limits:
+    #         memory: "256Mi"
+    #         cpu: "50m"
+  grpc: { }
+  rest: { }
+  scheduler: { }
+  worker: { }
 
 ##########################
 # Local volumes
 ##########################
 volumes:
-    - name: timezone
-      hostPath:
-          path: /usr/share/zoneinfo/Asia/Seoul
-    - name: log-volume
-      emptyDir: {}
+  - name: timezone
+    hostPath:
+      path: /usr/share/zoneinfo/Asia/Seoul
+  - name: log-volume
+    emptyDir: { }
 
 #######################
 # global variable
 #######################
 global:
-    shared: {}
-    backend:
-        sidecar: []
+  shared: { }
+  backend:
+    sidecar: [ ]
     #        - name: mongos
     #          image: mongo:4.4.0-bionic
     #          command: [ 'mongos', '--config', '/mnt/mongos.yml', '--bind_ip_all' ]
@@ -179,38 +177,38 @@ global:
     #              subPath: mongo-shard.pem
     #              readOnly: true
     #
-        volumes: []
-    #        - name: mongo-shard-key
-    #          secret:
-    #              defaultMode: 0400
-    #              secretName: mongo-shard-key
-    #        - name: mongos-conf
-    #          configMap:
-    #              name: mongos-conf
-    #        - name: shared-conf
-    #          configMap:
-    #              name: shared-conf
+    volumes: [ ]
+  #        - name: mongo-shard-key
+  #          secret:
+  #              defaultMode: 0400
+  #              secretName: mongo-shard-key
+  #        - name: mongos-conf
+  #          configMap:
+  #              name: mongos-conf
+  #        - name: shared-conf
+  #          configMap:
+  #              name: shared-conf
 
 # Service
 service:
-    grpc:
-        type: ClusterIP
-        annotations:
-            nil: nil
-        ports:
-            - name: grpc
-              port: 50051
-              targetPort: 50051
-              protocol: TCP
+  grpc:
+    type: ClusterIP
+    annotations:
+      nil: nil
+    ports:
+      - name: grpc
+        port: 50051
+        targetPort: 50051
+        protocol: TCP
 
 ################################
 # volumeMount per deployment
 ################################
 volumeMounts:
-    application_grpc: []
-    application_rest: []
-    application_scheduler: []
-    application_worker: []
+  application_grpc: [ ]
+  application_rest: [ ]
+  application_scheduler: [ ]
+  application_worker: [ ]
 
 
 ####################################
@@ -223,4 +221,4 @@ volumeMounts:
 #       application: my-node-group
 ####################################
 pod:
-    spec: {}
+  spec: { }
