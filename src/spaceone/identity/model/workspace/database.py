@@ -17,7 +17,7 @@ class Workspace(MongoModel):
     is_managed = BooleanField(default=False)
 
     is_dormant = BooleanField(default=False)
-    dormant_ttl = IntField(default=None)
+    dormant_ttl = IntField(default=None, required=True)
     service_account_count = IntField(default=None)
     cost_info = DictField(default=None)
 
@@ -42,6 +42,7 @@ class Workspace(MongoModel):
             "references",
             "deleted_at",
             "last_synced_at",
+            "dormant_updated_at",
         ],
         "minimal_fields": [
             "workspace_id",

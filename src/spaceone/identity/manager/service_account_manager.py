@@ -23,6 +23,10 @@ class ServiceAccountManager(BaseManager):
             service_account_vo.delete()
 
         params["state"] = "ACTIVE"
+        params["cost_info"] = {
+            "day": 0,
+            "month": 0,
+        }
 
         service_account_vo = self.service_account_model.create(params)
         self.transaction.add_rollback(_rollback, service_account_vo)

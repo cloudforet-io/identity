@@ -23,13 +23,20 @@ class WorkspaceManager(BaseManager):
             )
             vo.delete()
 
+        params["dormant_ttl"] = -1
+        params["service_account_count"] = 0
+        params["cost_info"] = {
+            "day": 0,
+            "month": 0,
+        }
+
         workspace_vo = self.workspace_model.create(params)
         self.transaction.add_rollback(_rollback, workspace_vo)
 
         return workspace_vo
 
     def update_workspace_by_vo(
-            self, params: dict, workspace_vo: Workspace
+        self, params: dict, workspace_vo: Workspace
     ) -> Workspace:
         def _rollback(old_data):
             _LOGGER.info(
@@ -50,7 +57,8 @@ class WorkspaceManager(BaseManager):
 
         if rb_vos.count() > 0:
             _LOGGER.debug(
-                f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}")
+                f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}"
+            )
             rb_vos.delete()
 
         workspace_vo.delete()
