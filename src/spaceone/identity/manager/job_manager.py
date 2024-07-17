@@ -138,3 +138,24 @@ class JobManager(BaseManager):
                 "finished_at": datetime.utcnow(),
             }
         )
+
+    def push_dormancy_job(self, params: dict) -> None:
+        token = self.transaction.meta.get("token")
+
+        task = {
+            "name": "check_dormancy_by_domain",
+            "version": "v1",
+            "executionEngine": "BaseWorker",
+            "stages": [
+                {
+                    "locator": "SERVICE",
+                    "name": "JobService",
+                    "metadata": {"token": token},
+                    "method": "check_dormancy_by_domain",
+                    "params": {"params": params},
+                }
+            ],
+        }
+        _LOGGER.debug(f"[push_dormancy_job] {params['domain_id']}")
+
+        queue.put("identity_q", utils.dump_json(task))

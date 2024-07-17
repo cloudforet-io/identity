@@ -16,6 +16,10 @@ WORKSPACE_COLORS_NAME = [
     "peacock",
 ]
 
+# Dormancy Settings
+DORMANCY_CHECK_HOUR = 13
+DORMANCY_SETTINGS_KEY = "identity:dormancy:workspace"
+
 # Database Settings
 DATABASE_AUTO_CREATE_INDEX = True
 DATABASES = {

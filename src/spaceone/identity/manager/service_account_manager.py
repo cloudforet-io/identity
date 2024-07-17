@@ -1,5 +1,6 @@
 import logging
 from typing import Tuple, List
+from mongoengine import QuerySet
 
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
@@ -20,6 +21,8 @@ class ServiceAccountManager(BaseManager):
                 f"Delete service account: {vo.name} ({vo.service_account_id})"
             )
             service_account_vo.delete()
+
+        params["state"] = "ACTIVE"
 
         service_account_vo = self.service_account_model.create(params)
         self.transaction.add_rollback(_rollback, service_account_vo)
@@ -71,7 +74,7 @@ class ServiceAccountManager(BaseManager):
 
         return self.service_account_model.get(**conditions)
 
-    def filter_service_accounts(self, **conditions) -> List[ServiceAccount]:
+    def filter_service_accounts(self, **conditions) -> QuerySet:
         return self.service_account_model.filter(**conditions)
 
     def list_service_accounts(self, query: dict) -> Tuple[list, int]:
