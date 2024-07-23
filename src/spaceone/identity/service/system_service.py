@@ -94,7 +94,7 @@ class SystemService(BaseService):
         params_admin["domain_id"] = root_domain_vo.domain_id
         params_admin["role_type"] = "DOMAIN_ADMIN"
         params_admin["role_id"] = "managed-domain-admin"
-        user_vo = self.user_mgr.create_user(params_admin, check_user_id=False)
+        user_vo = self.user_mgr.create_user(params_admin)
 
         # create default role
         role_mgr = RoleManager()

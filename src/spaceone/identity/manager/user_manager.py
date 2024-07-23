@@ -21,7 +21,7 @@ class UserManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.user_model = User
 
-    def create_user(self, params: dict, check_user_id: bool = True) -> User:
+    def create_user(self, params: dict) -> User:
         def _rollback(vo: User):
             _LOGGER.info(
                 f"[create_user._rollback] Delete user: {vo.user_id} ({vo.name})"
@@ -38,9 +38,6 @@ class UserManager(BaseManager):
             params["password"] = None
 
         else:
-            if check_user_id:
-                self._check_user_id_format(params["user_id"])
-
             if password := params.get("password"):
                 self._check_password_format(password)
             else:
