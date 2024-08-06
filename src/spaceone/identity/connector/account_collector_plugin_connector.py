@@ -38,11 +38,11 @@ class AccountCollectorPluginConnector(BaseConnector):
         )
 
     def sync(
-            self,
-            options: dict,
-            secret_data: dict,
-            schema: str,
-            domain_id: str,
+        self,
+        options: dict,
+        secret_data: dict,
+        schema: str,
+        domain_id: str,
     ):
         params = {
             "options": self.options or options,

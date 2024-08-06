@@ -79,9 +79,7 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
         if cache.is_set():
             ordered_credentials = OrderedDict(sorted(credentials.items()))
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
-            cached_mfa_info = cache.get(
-                f"identity:mfa:{hashed_credentials}"
-            )
+            cached_mfa_info = cache.get(f"identity:mfa:{hashed_credentials}")
             if cached_mfa_info["verify_code"] == verify_code:
                 cache.delete(f"identity:mfa:{hashed_credentials}")
                 return True
@@ -92,9 +90,7 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
         if cache.is_set():
             ordered_credentials = OrderedDict(sorted(credentials.items()))
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
-            cached_mfa_info = cache.get(
-                f"identity:mfa:{hashed_credentials}"
-            )
+            cached_mfa_info = cache.get(f"identity:mfa:{hashed_credentials}")
             return cached_mfa_info
         raise ERROR_INVALID_CREDENTIALS()
 

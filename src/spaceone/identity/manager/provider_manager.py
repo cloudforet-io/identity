@@ -17,7 +17,7 @@ class ProviderManager(BaseManager):
 
     def create_provider(self, params: dict) -> Provider:
         def _rollback(vo: Provider):
-            _LOGGER.info(f'[create_provider._rollback] Delete provider : {vo.provider}')
+            _LOGGER.info(f"[create_provider._rollback] Delete provider : {vo.provider}")
             vo.delete()
 
         provider_vo = self.provider_model.create(params)
@@ -25,11 +25,11 @@ class ProviderManager(BaseManager):
 
         return provider_vo
 
-    def update_provider_by_vo(
-        self, params: dict, provider_vo: Provider
-    ) -> Provider:
+    def update_provider_by_vo(self, params: dict, provider_vo: Provider) -> Provider:
         def _rollback(old_data):
-            _LOGGER.info(f'[update_provider._rollback] Revert Data : {old_data["provider"]}')
+            _LOGGER.info(
+                f'[update_provider._rollback] Revert Data : {old_data["provider"]}'
+            )
             provider_vo.update(old_data)
 
         self.transaction.add_rollback(_rollback, provider_vo.to_dict())
@@ -53,7 +53,7 @@ class ProviderManager(BaseManager):
     def stat_providers(self, query: dict) -> dict:
         return self.provider_model.stat(**query)
 
-    @cache.cacheable(key='identity:managed-provider:{domain_id}:sync', expire=300)
+    @cache.cacheable(key="identity:managed-provider:{domain_id}:sync", expire=300)
     def _create_managed_provider(self, domain_id: str) -> bool:
         managed_resource_mgr = ManagedResourceManager()
 
@@ -66,16 +66,20 @@ class ProviderManager(BaseManager):
         managed_provider_map = managed_resource_mgr.get_managed_providers()
 
         for managed_provider, managed_provider_info in managed_provider_map.items():
-            managed_provider_info['domain_id'] = domain_id
-            managed_provider_info['is_managed'] = True
+            managed_provider_info["domain_id"] = domain_id
+            managed_provider_info["is_managed"] = True
 
             if provider_version := installed_provider_version_map.get(managed_provider):
-                if provider_version != managed_provider_info['version']:
-                    _LOGGER.debug(f'[_create_managed_provider] update managed provider: {managed_provider}')
+                if provider_version != managed_provider_info["version"]:
+                    _LOGGER.debug(
+                        f"[_create_managed_provider] update managed provider: {managed_provider}"
+                    )
                     provider_vo = self.get_provider(managed_provider, domain_id)
                     self.update_provider_by_vo(managed_provider_info, provider_vo)
             else:
-                _LOGGER.debug(f'[_create_managed_provider] create new managed provider: {managed_provider}')
+                _LOGGER.debug(
+                    f"[_create_managed_provider] create new managed provider: {managed_provider}"
+                )
                 self.create_provider(managed_provider_info)
 
         return True

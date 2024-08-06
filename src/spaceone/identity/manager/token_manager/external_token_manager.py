@@ -1,16 +1,17 @@
 import logging
 from datetime import datetime
+
 from spaceone.identity.connector.external_auth_plugin_connector import (
     ExternalAuthPluginConnector,
 )
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_user import *
-from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.domain_manager import DomainManager
-from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.token_manager.base import TokenManager
-from spaceone.identity.model.external_auth.database import ExternalAuth
+from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.model.domain.database import Domain
+from spaceone.identity.model.external_auth.database import ExternalAuth
 from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,11 +66,11 @@ class ExternalTokenManager(TokenManager):
             self.user: User = self.user.update({"state": "ENABLED"})
 
     def _verify_user_from_plugin_user_info(
-            self, auth_user_info: dict, domain_id: str, auto_user_sync: bool = False
+        self, auth_user_info: dict, domain_id: str, auto_user_sync: bool = False
     ) -> None:
         if "user_id" not in auth_user_info:
             _LOGGER.error(
-                f"[_verify_user_from_plugin_user_info] does not return user_id from plugin user info."
+                "[_verify_user_from_plugin_user_info] does not return user_id from plugin user info."
             )
             raise ERROR_AUTHENTICATION_FAILURE_PLUGIN(
                 message="plugin response is invalid."
@@ -93,7 +94,7 @@ class ExternalTokenManager(TokenManager):
                 raise ERROR_NOT_FOUND(key="user_id", value=user_id)
 
     def _authenticate_with_plugin(
-            self, endpoint: str, credentials: dict, domain_id: str
+        self, endpoint: str, credentials: dict, domain_id: str
     ) -> dict:
         options = self.external_auth.plugin_info.get("options", {})
         metadata = self.external_auth.plugin_info.get("metadata", {})
@@ -126,12 +127,12 @@ class ExternalTokenManager(TokenManager):
             raise ERROR_NOT_FOUND(key="user_id", value=self.user.user_id)
 
     def _create_external_user(
-            self,
-            user_id: str,
-            state: str,
-            domain_id: str,
-            name: str = None,
-            email: str = None,
+        self,
+        user_id: str,
+        state: str,
+        domain_id: str,
+        name: str = None,
+        email: str = None,
     ) -> User:
         _LOGGER.error(f"[_create_external_user] create user on first login: {user_id}")
         return self.user_mgr.create_user(
