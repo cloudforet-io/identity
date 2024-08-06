@@ -33,7 +33,7 @@ class RoleBindingService(BaseService):
     )
     @convert_model
     def create(
-            self, params: RoleBindingCreateRequest
+        self, params: RoleBindingCreateRequest
     ) -> Union[RoleBindingResponse, dict]:
         """create role binding
 
@@ -116,7 +116,7 @@ class RoleBindingService(BaseService):
     )
     @convert_model
     def update_role(
-            self, params: RoleBindingUpdateRoleRequest
+        self, params: RoleBindingUpdateRoleRequest
     ) -> Union[RoleBindingResponse, dict]:
         """update role of role binding
 
@@ -213,7 +213,9 @@ class RoleBindingService(BaseService):
         if rb_vo.role_type == "DOMAIN_ADMIN":
             self.check_last_domain_admin_role_binding(None, rb_vo.domain_id)
         elif rb_vo.role_type == "WORKSPACE_OWNER":
-            self.check_last_workspace_owner_role_binding(None, rb_vo.workspace_id, rb_vo.domain_id)
+            self.check_last_workspace_owner_role_binding(
+                None, rb_vo.workspace_id, rb_vo.domain_id
+            )
 
         # Update user role type
         remain_rb_vos = self.role_binding_manager.filter_role_bindings(
@@ -279,7 +281,7 @@ class RoleBindingService(BaseService):
     @append_keyword_filter(["role_binding_id", "user_id", "role_id"])
     @convert_model
     def list(
-            self, params: RoleBindingSearchQueryRequest
+        self, params: RoleBindingSearchQueryRequest
     ) -> Union[RoleBindingsResponse, dict]:
         """list role bindings
 
@@ -332,7 +334,7 @@ class RoleBindingService(BaseService):
         return self.role_binding_manager.stat_role_bindings(query)
 
     def check_duplicate_domain_admin_role(
-            self, domain_id: str, user_id: str, role_type: str
+        self, domain_id: str, user_id: str, role_type: str
     ) -> None:
         rb_vos = self.role_binding_manager.filter_role_bindings(
             domain_id=domain_id,
@@ -344,7 +346,7 @@ class RoleBindingService(BaseService):
             raise ERROR_DUPLICATED_ROLE_BINDING(role_type=role_type)
 
     def check_duplicate_workspace_role(
-            self, domain_id: str, workspace_id: str, user_id: str
+        self, domain_id: str, workspace_id: str, user_id: str
     ) -> None:
         rb_vos = self.role_binding_manager.filter_role_bindings(
             domain_id=domain_id, workspace_id=workspace_id, user_id=user_id
@@ -355,7 +357,9 @@ class RoleBindingService(BaseService):
                 allowed_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
             )
 
-    def check_last_domain_admin_role_binding(self, new_role_type: Union[str, None], domain_id: str) -> None:
+    def check_last_domain_admin_role_binding(
+        self, new_role_type: Union[str, None], domain_id: str
+    ) -> None:
 
         user_ids = self._get_enabled_user_ids(domain_id)
         rb_vos = self.role_binding_manager.filter_role_bindings(
@@ -368,7 +372,7 @@ class RoleBindingService(BaseService):
             raise ERROR_LAST_DOMAIN_ADMIN_CANNOT_DELETE()
 
     def check_last_workspace_owner_role_binding(
-            self, new_role_type: Union[str, None], workspace_id: str, domain_id: str
+        self, new_role_type: Union[str, None], workspace_id: str, domain_id: str
     ) -> None:
 
         user_ids = self._get_enabled_user_ids(domain_id)

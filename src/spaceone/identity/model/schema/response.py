@@ -24,12 +24,12 @@ class SchemaResponse(BaseModel):
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
 
-        if 'data_schema' in data:
-            data['schema'] = data['data_schema']
-            del data['data_schema']
+        if "data_schema" in data:
+            data["schema"] = data["data_schema"]
+            del data["data_schema"]
 
-        data['created_at'] = utils.datetime_to_iso8601(data['created_at'])
-        data['updated_at'] = utils.datetime_to_iso8601(data['updated_at'])
+        data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
+        data["updated_at"] = utils.datetime_to_iso8601(data["updated_at"])
         return data
 
 

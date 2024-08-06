@@ -123,9 +123,9 @@ class ServiceAccountService(BaseService):
             }
 
             if trusted_account_vo:
-                create_secret_params[
-                    "trusted_secret_id"
-                ] = trusted_account_vo.trusted_secret_id
+                create_secret_params["trusted_secret_id"] = (
+                    trusted_account_vo.trusted_secret_id
+                )
 
             domain_id = params.domain_id
             secret_info = secret_mgr.create_secret(create_secret_params, domain_id)
@@ -263,9 +263,9 @@ class ServiceAccountService(BaseService):
         }
 
         if trusted_account_vo:
-            create_secret_params[
-                "trusted_secret_id"
-            ] = trusted_account_vo.trusted_secret_id
+            create_secret_params["trusted_secret_id"] = (
+                trusted_account_vo.trusted_secret_id
+            )
 
         secret_info = secret_mgr.create_secret(create_secret_params)
 

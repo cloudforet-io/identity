@@ -11,9 +11,11 @@ class EndpointManager(BaseManager):
 
     @staticmethod
     def list_endpoints(service: str = None) -> Tuple[list, int]:
-        endpoints: list = config.get_global('ENDPOINTS', [])
+        endpoints: list = config.get_global("ENDPOINTS", [])
 
         if service:
-            endpoints: list = [endpoint for endpoint in endpoints if endpoint.get('service') == service]
+            endpoints: list = [
+                endpoint for endpoint in endpoints if endpoint.get("service") == service
+            ]
 
         return endpoints, len(endpoints)
