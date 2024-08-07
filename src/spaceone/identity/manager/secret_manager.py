@@ -85,11 +85,21 @@ class SecretManager(BaseManager):
         else:
             self.secret_conn.dispatch("Secret.delete", {"secret_id": secret_id})
 
-    def update_secret_data(self, secret_id: str, schema_id: str, data: dict) -> None:
-        self.secret_conn.dispatch(
-            "Secret.update_data",
-            {"secret_id": secret_id, "schema_id": schema_id, "data": data},
-        )
+    def update_secret_data(
+        self,
+        params: dict,
+        domain_id: str = None,
+        workspace_id: str = None,
+    ) -> None:
+        if self.token_type == "SYSTEM_TOKEN":
+            self.secret_conn.dispatch(
+                "Secret.update_data",
+                params,
+                x_domain_id=domain_id,
+                workspace_id=workspace_id,
+            )
+        else:
+            self.secret_conn.dispatch("Secret.update_data", params)
 
     def delete_related_secrets(self, service_account_id: str):
         response = self.list_secrets({"service_account_id": service_account_id})

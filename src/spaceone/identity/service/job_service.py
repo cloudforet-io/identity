@@ -869,33 +869,49 @@ class JobService(BaseService):
 
         if secret_data:
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
-            if service_account_vo.secret_id:
-                secret_mgr.delete_secret(service_account_vo.secret_id, domain_id)
+            secret_id = service_account_vo.secret_id
 
-            # Check secret_data by schema
-            schema_mgr = SchemaManager()
-            schema_mgr.validate_secret_data_by_schema_id(
-                secret_schema_id,
-                service_account_vo.domain_id,
-                secret_data,
-                "TRUSTING_SECRET",
-            )
+            response = secret_mgr.list_secrets({"secret_id": secret_id})
+            secret_total_count = response.get("total_count", 0)
 
-            create_secret_params = {
-                "name": f"{service_account_vo.service_account_id}-secret",
-                "data": secret_data,
-                "resource_group": "PROJECT",
-                "workspace_id": workspace_id,
-                "project_id": project_id,
-                "service_account_id": service_account_vo.service_account_id,
-                "trusted_secret_id": trusted_secret_id,
-                "schema_id": secret_schema_id,
-            }
-            secret_info = secret_mgr.create_secret(create_secret_params, domain_id)
-            # Update secret_id in service_account_vo
-            service_account_vo = self.service_account_mgr.update_service_account_by_vo(
-                {"secret_id": secret_info["secret_id"]}, service_account_vo
-            )
+            if secret_total_count > 0:
+                update_secret_params = {
+                    "secret_id": service_account_vo.secret_id,
+                    "data": secret_data,
+                    "schema_id": secret_schema_id,
+                    "domain_id": domain_id,
+                    "workspace_id": workspace_id,
+                }
+                secret_mgr.update_secret_data(
+                    update_secret_params, domain_id, workspace_id
+                )
+            else:
+
+                # Check secret_data by schema
+                schema_mgr = SchemaManager()
+                schema_mgr.validate_secret_data_by_schema_id(
+                    secret_schema_id,
+                    service_account_vo.domain_id,
+                    secret_data,
+                    "TRUSTING_SECRET",
+                )
+
+                create_secret_params = {
+                    "name": f"{service_account_vo.service_account_id}-secret",
+                    "data": secret_data,
+                    "resource_group": "PROJECT",
+                    "workspace_id": workspace_id,
+                    "project_id": project_id,
+                    "service_account_id": service_account_vo.service_account_id,
+                    "trusted_secret_id": trusted_secret_id,
+                    "schema_id": secret_schema_id,
+                }
+                secret_info = secret_mgr.create_secret(create_secret_params, domain_id)
+                service_account_vo = (
+                    self.service_account_mgr.update_service_account_by_vo(
+                        {"secret_id": secret_info["secret_id"]}, service_account_vo
+                    )
+                )
         return service_account_vo
 
     def _remove_old_reference_id_from_workspace(
