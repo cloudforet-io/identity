@@ -111,5 +111,10 @@ class SecretManager(BaseManager):
                 {"secret_id": secret_id},
             )
 
-    def list_secrets(self, params: dict) -> dict:
-        return self.secret_conn.dispatch("Secret.list", params)
+    def list_secrets(self, params: dict, domain_id: str = None) -> dict:
+        if self.token_type == "SYSTEM_TOKEN":
+            return self.secret_conn.dispatch(
+                "Secret.list", params, x_domain_id=domain_id
+            )
+        else:
+            return self.secret_conn.dispatch("Secret.list", params)

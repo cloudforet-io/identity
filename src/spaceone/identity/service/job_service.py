@@ -1,7 +1,7 @@
 import logging
 import random
 from datetime import datetime, timedelta
-from typing import Union, List, Tuple
+from typing import Union, List
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
@@ -860,6 +860,7 @@ class JobService(BaseService):
                     "data": data,
                     "trusted_account_id": trusted_account_id,
                     "tags": tags,
+                    "last_synced_at": datetime.utcnow(),
                 }
             )
             if secret_schema_id:
@@ -871,7 +872,7 @@ class JobService(BaseService):
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
             secret_id = service_account_vo.secret_id
 
-            response = secret_mgr.list_secrets({"secret_id": secret_id})
+            response = secret_mgr.list_secrets({"secret_id": secret_id}, domain_id)
             secret_total_count = response.get("total_count", 0)
 
             if secret_total_count > 0:
