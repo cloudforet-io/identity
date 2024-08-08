@@ -96,7 +96,7 @@ class SecretManager(BaseManager):
                 "Secret.update_data",
                 params,
                 x_domain_id=domain_id,
-                workspace_id=workspace_id,
+                x_workspace_id=workspace_id,
             )
         else:
             self.secret_conn.dispatch("Secret.update_data", params)
