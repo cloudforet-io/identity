@@ -880,7 +880,6 @@ class JobService(BaseService):
                     "secret_id": service_account_vo.secret_id,
                     "data": secret_data,
                     "schema_id": secret_schema_id,
-                    "domain_id": domain_id,
                     "workspace_id": workspace_id,
                 }
                 secret_mgr.update_secret_data(
