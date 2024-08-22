@@ -11,6 +11,7 @@ __all__ = ["CheckAppResponse", "AppResponse", "AppsResponse"]
 
 class CheckAppResponse(BaseModel):
     permissions: List[str]
+    projects: Union[List[str], None] = None
 
 
 class AppResponse(BaseModel):
@@ -24,6 +25,8 @@ class AppResponse(BaseModel):
     client_id: Union[str, None] = None
     role_id: Union[str, None] = None
     resource_group: Union[ResourceGroup, None] = None
+    project_id: Union[str, None] = None
+    project_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
