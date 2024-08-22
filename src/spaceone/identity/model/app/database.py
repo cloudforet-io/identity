@@ -12,14 +12,16 @@ class App(MongoModel):
     tags = DictField(default=None)
     role_type = StringField(
         max_length=20,
-        choices=(
-            "DOMAIN_ADMIN",
-            "WORKSPACE_OWNER",
-        ),
+        choices=("DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"),
     )
+
     client_id = StringField(max_length=40, default=None, null=True)
     role_id = StringField(max_length=40, required=True)
-    resource_group = StringField(max_length=40, choices=("DOMAIN", "WORKSPACE"))
+    resource_group = StringField(
+        max_length=40, choices=("DOMAIN", "WORKSPACE", "PROJECT")
+    )
+    project_id = StringField(max_length=40, default=None, null=True)
+    project_group_id = StringField(max_length=40, default=None, null=True)
     workspace_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
