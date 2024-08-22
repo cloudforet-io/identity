@@ -12,6 +12,7 @@ class RoleBinding(MongoModel):
     role_id = StringField(max_length=40)
     resource_group = StringField(max_length=40, choices=("DOMAIN", "WORKSPACE"))
     workspace_id = StringField(max_length=40)
+    workspace_group_id = StringField(max_length=40)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
 

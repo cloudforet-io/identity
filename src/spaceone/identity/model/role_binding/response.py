@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Union, List
+from typing import List, Union
+
 from pydantic import BaseModel
 from spaceone.core import utils
 
@@ -15,6 +16,7 @@ class RoleBindingResponse(BaseModel):
     role_type: Union[str, None] = None
     resource_group: Union[ResourceGroup, None] = None
     workspace_id: Union[str, None] = None
+    workspace_group_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
 

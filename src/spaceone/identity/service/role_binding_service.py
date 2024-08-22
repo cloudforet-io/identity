@@ -58,6 +58,7 @@ class RoleBindingService(BaseService):
         role_id = params["role_id"]
         resource_group = params["resource_group"]
         domain_id = params["domain_id"]
+        workspace_group_id = params.get("workspace_group_id")
         workspace_id = params.get("workspace_id")
 
         # Check user
@@ -92,7 +93,9 @@ class RoleBindingService(BaseService):
                     request_role_type=role_vo.role_type,
                     supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
                 )
-            self.check_duplicate_workspace_role(domain_id, workspace_id, user_id)
+            self.check_duplicate_workspace_role(
+                domain_id, workspace_group_id, workspace_id, user_id
+            )
 
         params["role_type"] = role_vo.role_type
 
@@ -346,11 +349,17 @@ class RoleBindingService(BaseService):
             raise ERROR_DUPLICATED_ROLE_BINDING(role_type=role_type)
 
     def check_duplicate_workspace_role(
-        self, domain_id: str, workspace_id: str, user_id: str
+        self, domain_id: str, workspace_group_id: str, workspace_id: str, user_id: str
     ) -> None:
-        rb_vos = self.role_binding_manager.filter_role_bindings(
-            domain_id=domain_id, workspace_id=workspace_id, user_id=user_id
-        )
+        conditions = {
+            "domain_id": domain_id,
+            "workspace_id": workspace_id,
+            "user_id": user_id,
+        }
+        if workspace_group_id:
+            conditions["workspace_group_id"] = workspace_group_id
+
+        rb_vos = self.role_binding_manager.filter_role_bindings(**conditions)
 
         if rb_vos.count() >= 1:
             raise ERROR_DUPLICATED_WORKSPACE_ROLE_BINDING(
