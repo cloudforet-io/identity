@@ -1,17 +1,18 @@
 import logging
 import re
-import pytz
 from typing import Tuple
-from mongoengine import QuerySet
 
+import pytz
+from mongoengine import QuerySet
 from spaceone.core.manager import BaseManager
 
-from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.error.error_user import *
-from spaceone.identity.model.user.database import User
+from spaceone.identity.lib.cipher import PasswordCipher
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_group_manager import UserGroupManager
-from spaceone.identity.manager.project_manager import ProjectManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -97,6 +98,7 @@ class UserManager(BaseManager):
         rb_mgr = RoleBindingManager()
         user_group_mgr = UserGroupManager()
         project_mgr = ProjectManager()
+        workspace_group_mgr = WorkspaceGroupManager()
 
         # Delete role bindings
         rb_vos = rb_mgr.filter_role_bindings(
@@ -124,6 +126,17 @@ class UserManager(BaseManager):
             users = project_vo.users
             users.remove(user_vo.user_id)
             project_mgr.update_project_by_vo({"users": users}, project_vo=project_vo)
+
+        # TODO: Delete Workspace Group
+        workspace_group_vos = workspace_group_mgr.filter_workspace_groups(
+            users=user_vo.user_id, domain_id=user_vo.domain_id
+        )
+        for workspace_group_vo in workspace_group_vos:
+            users = workspace_group_vo.users
+            users.remove(user_vo.user_id)
+            workspace_group_mgr.update_workspace_group_by_vo(
+                {"users": users}, workspace_group_vo=workspace_group_vo
+            )
 
         user_vo.delete()
 
