@@ -1,32 +1,31 @@
 import logging
+from typing import List, Tuple
 
-from typing import Tuple, List
 from spaceone.core import cache
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
-
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import ERROR_DOMAIN_STATE
-from spaceone.identity.error.error_workspace import ERROR_WORKSPACE_STATE
 from spaceone.identity.error.error_mfa import *
-from spaceone.identity.manager.system_manager import SystemManager
+from spaceone.identity.error.error_workspace import ERROR_WORKSPACE_STATE
+from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
-from spaceone.identity.manager.token_manager.base import TokenManager
-from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.app_manager import AppManager
+from spaceone.identity.manager.project_group_manager import ProjectGroupManager
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.project_manager import ProjectManager
-from spaceone.identity.manager.project_group_manager import ProjectGroupManager
+from spaceone.identity.manager.system_manager import SystemManager
+from spaceone.identity.manager.token_manager.base import TokenManager
+from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.model.app.database import App
 from spaceone.identity.model.token.request import *
 from spaceone.identity.model.token.response import *
 from spaceone.identity.model.user.database import User
-from spaceone.identity.model.app.database import App
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -206,6 +205,13 @@ class TokenService(BaseService):
         if params.grant_type == "SYSTEM_TOKEN" and params.scope == "WORKSPACE":
             # todo : remove
             permissions = params.permissions
+        # TODO: change name
+        elif role_id == "combined-role":
+            user_id = user_vo.user_id
+            permissions = self._get_combined_role_permissions(
+                role_type, user_id, domain_id
+            )
+
         elif role_id:
             permissions = self._get_role_permissions(role_id, domain_id)
         else:
@@ -341,8 +347,15 @@ class TokenService(BaseService):
                 workspace_id=workspace_id,
             )
 
-            if rb_vos.count() > 0:
+            # TODO: Check if this is correct
+            if rb_vos.count() == 1:
                 return rb_vos[0].role_type, rb_vos[0].role_id
+            else:
+                role_types = [rb.role_type for rb in rb_vos]
+                if "WORKSPACE_OWNER" in role_types:
+                    return "WORKSPACE_OWNER", "combined-role"
+                else:
+                    return "WORKSPACE_MEMBER", "combined-role"
 
         return "USER", None
 
@@ -385,3 +398,26 @@ class TokenService(BaseService):
             for required_action in required_actions:
                 if required_action == "UPDATE_PASSWORD":
                     raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
+
+    def _get_combined_role_permissions(
+        self, role_type: str, user_id: str, domain_id: str
+    ) -> Union[List[str], None]:
+        role_bindings = self.rb_mgr.filter_role_bindings(
+            role_type=role_type,
+            user_id=user_id,
+            domain_id=domain_id,
+        )
+        role_ids = [rb.role_id for rb in role_bindings]
+
+        role_infos = self.role_mgr.filter_roles(
+            role_type=role_type, role_id=role_ids, domain_id=domain_id
+        )
+
+        combined_permissions = []
+        for role_info in role_infos:
+            if not role_info["permissions"]:
+                return None
+
+            combined_permissions.extend(role_info["permissions"])
+
+        return list(set(combined_permissions))
