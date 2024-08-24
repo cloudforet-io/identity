@@ -4,4 +4,4 @@ bcrypt
 jinja2
 fakeredis
 pytz
-protobuf==3.19.5
+protobuf==3.20.3
