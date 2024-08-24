@@ -60,7 +60,6 @@ class WorkspaceGroupFindRequest(BaseModel):
     state: Union[State, None] = None
     page: Union[dict, None] = None
     workspace_group_id: str
-    # TODO: Check if workspace_id is needed
     workspace_id: Union[str, None] = None
     domain_id: str
 

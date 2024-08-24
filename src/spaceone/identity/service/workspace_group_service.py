@@ -60,9 +60,9 @@ class WorkspaceGroupService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace_group_mgr = WorkspaceGroupManager()
-        self.rb_svc = RoleBindingService()
         self.workspace_user_mgr = WorkspaceUserManager()
         self.user_mgr = UserManager()
+        self.rb_svc = RoleBindingService()
         self.rb_mgr = RoleBindingManager()
 
     @transaction(
@@ -74,7 +74,14 @@ class WorkspaceGroupService(BaseService):
     ) -> Union[WorkspaceGroupResponse, dict]:
         """Create workspace group
         Args:
-
+            params (WorkspaceGroupCreateRequest): {
+                'name': 'str',                  # required
+                'tags': 'dict',
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupResponse:
         """
         params_data = params.dict()
         params_data["created_by"] = self.transaction.get_meta("authorization.user_id")
@@ -94,7 +101,15 @@ class WorkspaceGroupService(BaseService):
     ) -> Union[WorkspaceGroupResponse, dict]:
         """Update workspace group
         Args:
-
+            params (WorkspaceGroupUpdateRequest): {
+                'workspace_group_id': 'str',    # required
+                'name': 'str',
+                'tags': 'dict',
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupResponse:
         """
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
@@ -117,7 +132,13 @@ class WorkspaceGroupService(BaseService):
     def delete(self, params: WorkspaceGroupDeleteRequest) -> None:
         """Delete workspace group
         Args:
-
+            params (WorkspaceGroupDeleteRequest): {
+                'workspace_group_id': 'str',    # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
+            }
+        Returns:
+            None
         """
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
@@ -134,7 +155,14 @@ class WorkspaceGroupService(BaseService):
     ) -> Union[WorkspaceGroupResponse, dict]:
         """Add workspaces to workspace group
         Args:
-
+            params (WorkspaceGroupAddWorkspacesRequest): {
+                'workspace_group_id': 'str',           # required
+                'workspaces': 'List[str]',             # required
+                'workspace_id': 'str',                 # injected from auth
+                'domain_id': 'str',                    # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupResponse:
         """
         workspace_mgr = WorkspaceManager()
         query = {"filter": [{"k": "domain_id", "v": params.domain_id, "o": "eq"}]}
@@ -195,7 +223,14 @@ class WorkspaceGroupService(BaseService):
     ) -> Union[WorkspaceGroupResponse, dict]:
         """Remove workspaces from workspace group
         Args:
-
+            params (WorkspaceGroupRemoveWorkspacesRequest): {
+                'workspace_group_id': 'str',              # required
+                'workspaces': 'List[str]',                # required
+                'workspace_id': 'str',                    # injected from auth
+                'domain_id': 'str',                       # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupResponse:
         """
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
@@ -229,24 +264,28 @@ class WorkspaceGroupService(BaseService):
     def find_users(
         self, params: WorkspaceGroupFindRequest
     ) -> Union[WorkspaceGroupUsersSummaryResponse, dict]:
-        """Find users in domain without users in injected workspace_group_id
+        """Find users in the domain except users in its workspace_group
         Args:
-
+            params (WorkspaceGroupFindRequest): {
+                'workspace_group_id': 'str',  # required
+                'keyword': 'str',
+                'state': 'State',
+                'page': 'dict',
+                'workspace_id': 'str',        # injected from auth
+                'domain_id': 'str',           # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupUsersSummaryResponse:
         """
         return self._find_users(params)
 
     def _find_users(
         self, params: WorkspaceGroupFindRequest
     ) -> Union[WorkspaceGroupUsersSummaryResponse, dict]:
-        user_mgr = UserManager()
-
         workspace_group = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
         )
         workspace_group_users = workspace_group.users or []
-
-        print(workspace_group_users)
-
         workspace_group_user_ids = list(set([user for user in workspace_group_users]))
 
         query = {
@@ -268,6 +307,7 @@ class WorkspaceGroupService(BaseService):
         if params.state:
             query["filter"].append({"k": "state", "v": params.state, "o": "eq"})
 
+        user_mgr = UserManager()
         user_vos, total_count = user_mgr.list_users(query)
 
         workspace_group_users_info = [user_vo.to_dict() for user_vo in user_vos]
@@ -286,11 +326,17 @@ class WorkspaceGroupService(BaseService):
     ) -> Union[WorkspaceGroupResponse, dict]:
         """Add users to workspace group
         Args:
-            params (WorkspaceGroupAddUsersRequest) {
-                'workspace_group_id': 'str',
-                'users': 'List[Dict[str, str]]',
+            params (WorkspaceGroupAddUsersRequest): {
+                'workspace_group_id': 'str',      # required
+                'users': [
+                    {
+                        'user_id': 'str',
+                        'role_id': 'str',
+                        'role_type': 'str'
+                    }
+                ],                                # required
                 'workspace_id': 'str',
-                'domain_id': 'str',
+                'domain_id': 'str',               # injected from auth (required)
             }
         Returns:
            WorkspaceGroupResponse:
@@ -374,7 +420,16 @@ class WorkspaceGroupService(BaseService):
     ) -> Union[WorkspaceGroupResponse, dict]:
         """Remove users from workspace group
         Args:
-
+            params (WorkspaceGroupRemoveUsersRequest): {
+                'workspace_group_id': 'str',         # required
+                'users': [
+                    'user_id': 'str'
+                ],                                   # required
+                'workspace_id': 'str',
+                'domain_id': 'str',                  # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupResponse:
         """
         role_type = self.transaction.get_meta("authorization.role_type")
         owner_type = self.transaction.get_meta("authorization.owner_type")
@@ -442,7 +497,13 @@ class WorkspaceGroupService(BaseService):
         """Get workspace group
 
         Args:
-
+            params (WorkspaceGroupGetRequest): {
+                'workspace_group_id': 'str', # required
+                'workspace_id': 'str',
+                'domain_id': 'str',          # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupResponse:
         """
         user_id = self.transaction.get_meta("authorization.user_id")
         role_type = self.transaction.get_meta("authorization.role_type")
@@ -471,7 +532,17 @@ class WorkspaceGroupService(BaseService):
     ) -> Union[WorkspaceGroupsResponse, dict]:
         """List workspace groups
         Args:
-
+            params (WorkspaceGroupSearchQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
+                'workspace_group_id': 'str',         # required
+                'name': 'str',
+                'created_by': 'str',
+                'updated_by': 'str',
+                'workspace_id': 'str',
+                'domain_id': 'str',                  # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupsResponse:
         """
         user_id = self.transaction.get_meta("authorization.user_id")
         role_type = self.transaction.get_meta("authorization.role_type")
@@ -511,6 +582,17 @@ class WorkspaceGroupService(BaseService):
     def stat(self, params: WorkspaceGroupStatQueryRequest) -> dict:
         """Stat workspace groups
         Args:
+            params (WorkspaceGroupStatQueryRequest): {
+                'query': 'dict',                   # required
+                'workspace_group_id': 'str',       # required
+                'workspace_id': 'str',
+                'domain_id': 'str',                # injected from auth (required)
+            }
+        Returns:
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
         """
         user_id = self.transaction.get_meta("authorization.user_id")
         role_type = self.transaction.get_meta("authorization.role_type")
