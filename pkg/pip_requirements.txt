@@ -4,4 +4,3 @@ bcrypt
 jinja2
 fakeredis
 pytz
-protobuf
