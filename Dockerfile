@@ -1,4 +1,4 @@
-FROM cloudforet/python-core:2.0
+FROM cloudforet/python-core:2.0.93
 ARG PACKAGE_VERSION
 ENV PYTHONUNBUFFERED 1
 ENV SPACEONE_PORT 50051
