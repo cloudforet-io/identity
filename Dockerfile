@@ -18,7 +18,7 @@ WORKDIR ${SRC_DIR}
 RUN python3 setup.py install && rm -rf /tmp/*
 
 RUN pip install --upgrade spaceone-api
-RUN pip install --upgrade protobuf
+#RUN pip install --upgrade protobuf
 
 EXPOSE ${SPACEONE_PORT}
 
