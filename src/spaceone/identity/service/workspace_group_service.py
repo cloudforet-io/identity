@@ -23,6 +23,7 @@ from spaceone.core.service.utils import (
 
 from spaceone.identity.error import ERROR_WORKSPACES_DO_NOT_EXIST
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
@@ -62,6 +63,7 @@ class WorkspaceGroupService(BaseService):
         self.workspace_group_mgr = WorkspaceGroupManager()
         self.workspace_user_mgr = WorkspaceUserManager()
         self.user_mgr = UserManager()
+        self.role_mgr = RoleManager()
         self.rb_svc = RoleBindingService()
         self.rb_mgr = RoleBindingManager()
 
@@ -332,7 +334,6 @@ class WorkspaceGroupService(BaseService):
                     {
                         'user_id': 'str',
                         'role_id': 'str',
-                        'role_type': 'str'
                     }
                 ],                                # required
                 'workspace_id': 'str',
@@ -355,10 +356,11 @@ class WorkspaceGroupService(BaseService):
             )
 
         new_users = list(set([user_info["user_id"] for user_info in params.users]))
-
-        old_users = (
-            list(set(workspace_group_vo.users)) if workspace_group_vo.users else []
-        )
+        old_users = []
+        if workspace_group_vo.users:
+            old_users = list(
+                set([user_info["user_id"] for user_info in workspace_group_vo.users])
+            )
 
         if set(new_users) & set(old_users):
             _LOGGER.error(
@@ -390,17 +392,41 @@ class WorkspaceGroupService(BaseService):
 
         users = params.users or []
         workspaces = workspace_group_vo.workspaces or []
+
+        role_ids = list(set([user["role_id"] for user in users]))
+        role_vos = self.role_mgr.filter_roles(
+            role_id=role_ids,
+            domain_id=params.domain_id,
+            role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        )
+
+        role_map = {role_vo.role_id: role_vo.role_type for role_vo in role_vos}
+
+        new_users = []
         for user in users:
+            role_type = role_map[user["role_id"]]
+
             for workspace_id in workspaces:
                 role_binding_params = {
                     "user_id": user["user_id"],
                     "role_id": user["role_id"],
+                    "role_type": role_type,
                     "resource_group": "WORKSPACE",
                     "domain_id": params.domain_id,
                     "workspace_group_id": params.workspace_group_id,
                     "workspace_id": workspace_id,
                 }
                 self.rb_svc.create_role_binding(role_binding_params)
+
+            new_users.append(
+                {
+                    "user_id": user["user_id"],
+                    "role_id": user["role_id"],
+                    "role_type": role_type,
+                }
+            )
+
+        old_users = workspace_group_vo.users or []
 
         params.users = old_users + new_users
 
@@ -460,7 +486,10 @@ class WorkspaceGroupService(BaseService):
                         user_id for user_id in workspace_group_vo["users"]
                     ]
 
-                    params.users = set(workspace_group_user_ids) - set(params.users)
+                    params_user_ids = [user["user_id"] for user in params.users]
+                    params.users = list(
+                        set(workspace_group_user_ids) - set(params_user_ids)
+                    )
                     workspace_group_vo = (
                         self.workspace_group_mgr.update_workspace_group_by_vo(
                             params.dict(exclude_unset=True), workspace_group_vo
@@ -478,8 +507,11 @@ class WorkspaceGroupService(BaseService):
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
         )
-        workspace_group_user_ids = [user_id for user_id in workspace_group_vo["users"]]
-        params.users = list(set(workspace_group_user_ids) - set(params.users))
+        workspace_group_user_ids = [
+            users["user_id"] for users in workspace_group_vo["users"]
+        ]
+        params_user_ids = [user["user_id"] for user in params.users]
+        params.users = list(set(workspace_group_user_ids) - set(params_user_ids))
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
             params.dict(exclude_unset=True), workspace_group_vo
         )
