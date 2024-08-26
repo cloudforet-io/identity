@@ -73,7 +73,7 @@ class WorkspaceGroupAddUsersRequest(BaseModel):
 
 class WorkspaceGroupRemoveUsersRequest(BaseModel):
     workspace_group_id: str
-    users: List[str]
+    users: List[Dict[str, str]]
     workspace_id: Union[str, None] = None
     domain_id: str
 

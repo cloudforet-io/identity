@@ -6,7 +6,7 @@ class WorkspaceGroup(MongoModel):
     workspace_group_id = StringField(max_length=40, generate_id="wg", unique=True)
     name = StringField(max_length=255, unique_with="domain_id")
     workspaces = ListField(StringField(max_length=40), default=None, null=True)
-    users = ListField(StringField(), default=None, null=True)
+    users = ListField(DictField(default=None), default=None, null=True)
     tags = DictField(default=None)
     created_by = StringField(max_length=255)
     updated_by = StringField(max_length=255)
