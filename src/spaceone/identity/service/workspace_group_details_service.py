@@ -10,9 +10,6 @@ from spaceone.core.service import (
 )
 from spaceone.core.service.utils import convert_model
 
-from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.model.workspace_group_details.request import (
     WorkspaceGroupDetailsAddUsersRequest,
     WorkspaceGroupDetailsAddWorkspacesRequest,
@@ -51,6 +48,7 @@ class WorkspaceGroupDetailsService(BaseService):
                 'workspace_group_id': 'str',           # required
                 'name': 'str',
                 'tags': 'dict',
+                'user_id': 'str'                       # injected from auth (required)
                 'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
@@ -65,6 +63,7 @@ class WorkspaceGroupDetailsService(BaseService):
         Args:
             params (dict): {
                 'workspace_group_id': 'str',           # required
+                'user_id': 'str'                       # injected from auth (required)
                 'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
@@ -82,6 +81,7 @@ class WorkspaceGroupDetailsService(BaseService):
             params (dict): {
                 'workspace_group_id': 'str',           # required
                 'workspaces': 'list',                  # required
+                'user_id': 'str'                       # injected from auth (required)
                 'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
@@ -99,6 +99,7 @@ class WorkspaceGroupDetailsService(BaseService):
             params (dict): {
                 'workspace_group_id': 'str',           # required
                 'workspaces': 'list',                  # required
+                'user_id': 'str'                       # injected from auth (required)
                 'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
@@ -118,6 +119,7 @@ class WorkspaceGroupDetailsService(BaseService):
                 'keyword': 'str',
                 'state': 'State',
                 'page': 'dict',
+                'user_id': 'str'                       # injected from auth (required)
                 'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
@@ -134,6 +136,7 @@ class WorkspaceGroupDetailsService(BaseService):
             params (dict): {
                 'workspace_group_id': 'str',           # required
                 'users': 'list',                       # required
+                'user_id': 'str'                       # injected from auth (required)
                 'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
@@ -151,6 +154,7 @@ class WorkspaceGroupDetailsService(BaseService):
             params (dict): {
                 'workspace_group_id': 'str',           # required
                 'users': 'list',                       # required
+                'user_id': 'str'                       # injected from auth (required)
                 'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
@@ -166,7 +170,7 @@ class WorkspaceGroupDetailsService(BaseService):
         """Get workspace groups
         Args:
             params (dict): {
-                'workspace_group_id': 'str',           # required
+                'user_id': 'str'                       # injected from auth (required)
                 'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
