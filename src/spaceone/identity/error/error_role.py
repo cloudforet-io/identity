@@ -14,6 +14,10 @@ class ERROR_NOT_ALLOWED_ROLE_TYPE(ERROR_INVALID_ARGUMENT):
     )
 
 
+class ERROR_NOT_ALLOWED_USER_STATE(ERROR_INVALID_ARGUMENT):
+    _message = "User state is not allowed. (user_id = {user_id}, state = {state})"
+
+
 class ERROR_DUPLICATED_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
     _message = (
         "Role type is duplicated. (role_type = {role_type}), "

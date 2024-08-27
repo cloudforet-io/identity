@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Union
 
 from spaceone.core.error import (
+    ERROR_EXIST_RESOURCE,
     ERROR_INVALID_PARAMETER,
     ERROR_NOT_FOUND,
     ERROR_PERMISSION_DENIED,
@@ -22,6 +23,10 @@ from spaceone.core.service.utils import (
 )
 
 from spaceone.identity.error import ERROR_WORKSPACES_DO_NOT_EXIST
+from spaceone.identity.error.error_role import (
+    ERROR_NOT_ALLOWED_ROLE_TYPE,
+    ERROR_NOT_ALLOWED_USER_STATE,
+)
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
@@ -33,18 +38,17 @@ from spaceone.identity.model.workspace_group.request import (
     WorkspaceGroupAddWorkspacesRequest,
     WorkspaceGroupCreateRequest,
     WorkspaceGroupDeleteRequest,
-    WorkspaceGroupFindRequest,
     WorkspaceGroupGetRequest,
     WorkspaceGroupRemoveUsersRequest,
     WorkspaceGroupRemoveWorkspacesRequest,
     WorkspaceGroupSearchQueryRequest,
     WorkspaceGroupStatQueryRequest,
     WorkspaceGroupUpdateRequest,
+    WorkspaceGroupUpdateRoleRequest,
 )
 from spaceone.identity.model.workspace_group.response import (
     WorkspaceGroupResponse,
     WorkspaceGroupsResponse,
-    WorkspaceGroupUsersSummaryResponse,
 )
 from spaceone.identity.service.role_binding_service import RoleBindingService
 
@@ -146,6 +150,9 @@ class WorkspaceGroupService(BaseService):
             params.workspace_group_id, params.domain_id
         )
 
+        if workspace_group_vo.users:
+            _LOGGER.error("Workspace Group has users. Please remove users first.")
+            raise ERROR_EXIST_RESOURCE(child="users", parent="workspace_group")
         self.workspace_group_mgr.delete_workspace_group_by_vo(workspace_group_vo)
 
     @transaction(
@@ -176,7 +183,8 @@ class WorkspaceGroupService(BaseService):
         )
 
         all_workspaces_exist = all(
-            workspace in workspace_id_list for workspace in params.workspaces
+            params_workspace_id in workspace_id_list
+            for params_workspace_id in params.workspaces
         )
 
         if not all_workspaces_exist:
@@ -191,22 +199,22 @@ class WorkspaceGroupService(BaseService):
             )
 
             role_binding_map = {}
-            role_bindings = self.rb_mgr.filter_role_bindings(
+            role_binding_vos = self.rb_mgr.filter_role_bindings(
                 domain_id=params.domain_id,
                 workspace_group_id=params.workspace_group_id,
                 user_id=workspace_group_vo.users,
             )
 
-            for role_binding in role_bindings:
-                role_binding_map[role_binding.user_id] = role_binding.role_id
+            for role_binding_vo in role_binding_vos:
+                role_binding_map[role_binding_vo.user_id] = role_binding_vo.role_id
 
             users = workspace_group_vo.users or []
             workspaces = workspace_group_vo.workspaces or []
-            for user_id in users:
+            for user_info in users:
                 for workspace_id in workspaces:
                     role_binding_params = {
-                        "user_id": user_id,
-                        "role_id": role_binding_map[user_id],
+                        "user_id": user_info["user_id"],
+                        "role_id": role_binding_map[user_info["user_id"]],
                         "resource_group": "WORKSPACE",
                         "domain_id": params.domain_id,
                         "workspace_group_id": params.workspace_group_id,
@@ -238,89 +246,27 @@ class WorkspaceGroupService(BaseService):
             params.workspace_group_id, params.domain_id
         )
 
-        if len(params.workspaces) > 0:
-            workspaces = workspace_group_vo.workspaces or []
-            params.workspaces = list(set(workspaces) - set(params.workspaces))
+        workspaces = workspace_group_vo.workspaces or []
+        params.workspaces = list(set(workspaces) - set(params.workspaces))
 
-            workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
-                params.dict(exclude_unset=True), workspace_group_vo
-            )
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            workspace_id=params.workspaces,
+            workspace_group_id=workspace_group_vo.workspace_group_id,
+            domain_id=params.domain_id,
+        )
+        _LOGGER.info(
+            f"[remove_workspaces] deleted role bindings count: {rb_vos.count()}"
+        )
+        rb_vos.delete()
 
-            rb_vos = self.rb_mgr.filter_role_bindings(
-                domain_id=params.domain_id,
-                workspace_group_id=workspace_group_vo.workspace_group_id,
-                workspace_id=params.workspaces,
-            )
-            _LOGGER.info(
-                f"[remove_workspaces] deleted role bindings count: {rb_vos.count()}"
-            )
-            rb_vos.delete()
+        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
+            params.dict(exclude_unset=True), workspace_group_vo
+        )
 
         return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
 
     @transaction(
-        permission="identity:WorkspaceGroup.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
-    )
-    @convert_model
-    def find_users(
-        self, params: WorkspaceGroupFindRequest
-    ) -> Union[WorkspaceGroupUsersSummaryResponse, dict]:
-        """Find users in the domain except users in its workspace_group
-        Args:
-            params (WorkspaceGroupFindRequest): {
-                'workspace_group_id': 'str',  # required
-                'keyword': 'str',
-                'state': 'State',
-                'page': 'dict',
-                'workspace_id': 'str',        # injected from auth
-                'domain_id': 'str',           # injected from auth (required)
-            }
-        Returns:
-            WorkspaceGroupUsersSummaryResponse:
-        """
-        return self._find_users(params)
-
-    def _find_users(
-        self, params: WorkspaceGroupFindRequest
-    ) -> Union[WorkspaceGroupUsersSummaryResponse, dict]:
-        workspace_group = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
-        )
-        workspace_group_users = workspace_group.users or []
-        workspace_group_user_ids = list(set([user for user in workspace_group_users]))
-
-        query = {
-            "filter": [
-                {"k": "domain_id", "v": params.domain_id, "o": "eq"},
-                {"k": "user_id", "v": workspace_group_user_ids, "o": "not_in"},
-            ],
-            "sort": [{"key": "user_id"}],
-            "page": params.page,
-            "only": ["user_id", "name", "state"],
-        }
-
-        if params.keyword:
-            query["filter_or"] = [
-                {"k": "user_id", "v": params.keyword, "o": "contain"},
-                {"k": "name", "v": params.keyword, "o": "contain"},
-            ]
-
-        if params.state:
-            query["filter"].append({"k": "state", "v": params.state, "o": "eq"})
-
-        user_mgr = UserManager()
-        user_vos, total_count = user_mgr.list_users(query)
-
-        workspace_group_users_info = [user_vo.to_dict() for user_vo in user_vos]
-
-        return WorkspaceGroupUsersSummaryResponse(
-            results=workspace_group_users_info, total_count=total_count
-        )
-
-    @transaction(
-        permission="identity:WorkspaceGroup.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        permission="identity:WorkspaceGroup.write", role_types=["DOMAIN_ADMIN"]
     )
     @convert_model
     def add_users(
@@ -402,6 +348,13 @@ class WorkspaceGroupService(BaseService):
 
         role_map = {role_vo.role_id: role_vo.role_type for role_vo in role_vos}
 
+        user_info = {user_vo["user_id"]: user_vo for user_vo in user_vos}
+        for user in users:
+            user_id = user["user_id"]
+            if user_id in user_info:
+                user["user_name"] = user_info[user_id]["name"]
+                user["state"] = user_info[user_id]["state"]
+
         new_users = []
         for user in users:
             role_type = role_map[user["role_id"]]
@@ -423,6 +376,8 @@ class WorkspaceGroupService(BaseService):
                     "user_id": user["user_id"],
                     "role_id": user["role_id"],
                     "role_type": role_type,
+                    "user_name": user["user_name"],
+                    "state": user["state"],
                 }
             )
 
@@ -437,8 +392,7 @@ class WorkspaceGroupService(BaseService):
         return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
 
     @transaction(
-        permission="identity:WorkspaceGroup.write",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+        permission="identity:WorkspaceGroup.write", role_types=["DOMAIN_ADMIN"]
     )
     @convert_model
     def remove_users(
@@ -460,6 +414,10 @@ class WorkspaceGroupService(BaseService):
         role_type = self.transaction.get_meta("authorization.role_type")
         owner_type = self.transaction.get_meta("authorization.owner_type")
 
+        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+            params.workspace_group_id, params.domain_id
+        )
+
         if role_type == "WORKSPACE_OWNER":
             if owner_type == "APP":
                 _LOGGER.error("Workspace Owner role type by app cannot remove users.")
@@ -470,8 +428,6 @@ class WorkspaceGroupService(BaseService):
                     params.workspace_group_id,
                     params.domain_id,
                     user_id=user_id,
-                    # TODO: Check if this is correct
-                    # role_type=workspace_group_gccuser_role_type,
                 )
                 if workspace_group_vo:
                     if not self.workspace_group_mgr.check_user_id_in_users(
@@ -481,22 +437,6 @@ class WorkspaceGroupService(BaseService):
                         ERROR_NOT_FOUND(
                             key="workspace_group_id", value=params.workspace_group_id
                         )
-
-                    workspace_group_user_ids = [
-                        user_id for user_id in workspace_group_vo["users"]
-                    ]
-
-                    params_user_ids = [user["user_id"] for user in params.users]
-                    params.users = list(
-                        set(workspace_group_user_ids) - set(params_user_ids)
-                    )
-                    workspace_group_vo = (
-                        self.workspace_group_mgr.update_workspace_group_by_vo(
-                            params.dict(exclude_unset=True), workspace_group_vo
-                        )
-                    )
-
-                    return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
                 else:
                     ERROR_NOT_FOUND(
                         key="workspace_group_id", value=params.workspace_group_id
@@ -504,14 +444,28 @@ class WorkspaceGroupService(BaseService):
         elif role_type != "DOMAIN_ADMIN":
             raise ERROR_PERMISSION_DENIED()
 
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
-        )
         workspace_group_user_ids = [
-            users["user_id"] for users in workspace_group_vo["users"]
+            user["user_id"] for user in workspace_group_vo.users
         ]
-        params_user_ids = [user["user_id"] for user in params.users]
-        params.users = list(set(workspace_group_user_ids) - set(params_user_ids))
+        params_user_ids = list(set([user["user_id"] for user in params.users]))
+
+        for params_user_id in params_user_ids:
+            if params_user_id not in workspace_group_user_ids:
+                raise ERROR_NOT_FOUND(key="params_user_id", value=params_user_id)
+
+        workspace_group_users = [users for users in workspace_group_vo["users"]]
+        role_binding_vos = self.rb_mgr.filter_role_bindings(
+            user_id=params_user_ids,
+            workspace_group_id=params.workspace_group_id,
+            domain_id=params.domain_id,
+        )
+        role_binding_vos.delete()
+
+        params.users = []
+        for user in workspace_group_users:
+            if user["user_id"] not in params_user_ids:
+                params.users.append(user)
+
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
             params.dict(exclude_unset=True), workspace_group_vo
         )
@@ -519,9 +473,67 @@ class WorkspaceGroupService(BaseService):
         return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
 
     @transaction(
-        permission="identity:WorkspaceGroup.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        permission="identity:WorkspaceGroup.write", role_types=["DOMAIN_ADMIN"]
     )
+    @convert_model
+    def update_role(
+        self, params: WorkspaceGroupUpdateRoleRequest
+    ) -> Union[WorkspaceGroupResponse, dict]:
+        """Update workspace group's user's role
+
+        Args:
+            params (WorkspaceGroupUpdateRoleRequest): {
+                'workspace_group_id': 'str',        # required
+                'user_id': 'str',                   # required
+                'role_id': 'str',                   # required
+                'workspace_id': 'str',              # injected from auth (required)
+                'domain_id': 'str',                 # injected from auth (required)
+            }
+        Returns:
+            WorkspaceGroupResponse:
+        """
+
+        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+            params.workspace_group_id, params.domain_id
+        )
+        user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+        if user_vo.state in ["DISABLED", "DELETED"]:
+            _LOGGER.error(f"User ID {user_vo.user_id}'s state is {user_vo.state}.")
+            raise ERROR_NOT_ALLOWED_USER_STATE(
+                user_id=user_vo.user_id, state=user_vo.state
+            )
+
+        role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
+        if role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
+            raise ERROR_NOT_ALLOWED_ROLE_TYPE()
+
+        role_binding_vos = self.rb_mgr.filter_role_bindings(
+            user_id=user_vo.user_id,
+            role_id=role_vo.role_id,
+            workspace_group_id=workspace_group_vo.workspace_group_id,
+            domain_id=params.domain_id,
+        )
+
+        for role_binding_vo in role_binding_vos:
+            role_binding_vo.update(
+                {"role_id": params.role_id, "role_type": role_vo.role_type}
+            )
+
+        update_workspace_group_params = {"users": workspace_group_vo.users or []}
+        for user_info in update_workspace_group_params.get("users", []):
+            if user_info["user_id"] == user_vo.user_id:
+                user_info["role_id"] = params.role_id
+                user_info["role_type"] = role_vo.role_type
+                break
+
+        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
+            update_workspace_group_params, workspace_group_vo
+        )
+
+        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
+
+    @convert_model
+    @transaction(permission="identity:WorkspaceGroup.read", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def get(
         self, params: WorkspaceGroupGetRequest
@@ -552,10 +564,7 @@ class WorkspaceGroupService(BaseService):
 
         return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
 
-    @transaction(
-        permission="identity:WorkspaceGroup.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
-    )
+    @transaction(permission="identity:WorkspaceGroup.read", role_types=["DOMAIN_ADMIN"])
     @append_query_filter(["workspace_group_id", "name", "domain_id"])
     @append_keyword_filter(["workspace_group_id", "name"])
     @convert_model
@@ -605,10 +614,7 @@ class WorkspaceGroupService(BaseService):
             results=workspace_groups_info, total_count=total_count
         )
 
-    @transaction(
-        permission="identity:WorkspaceGroup.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
-    )
+    @transaction(permission="identity:WorkspaceGroup.read", role_types=["DOMAIN_ADMIN"])
     @append_query_filter(["workspace_id", "workspace_group_id", "domain_id"])
     @convert_model
     def stat(self, params: WorkspaceGroupStatQueryRequest) -> dict:

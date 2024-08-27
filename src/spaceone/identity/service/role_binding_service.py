@@ -4,13 +4,13 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
-from spaceone.identity.model.role_binding.request import *
-from spaceone.identity.model.role_binding.response import *
+from spaceone.identity.error.error_role import *
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.error.error_role import *
+from spaceone.identity.model.role_binding.request import *
+from spaceone.identity.model.role_binding.response import *
 
 _LOGGER = logging.getLogger(__name__)
 

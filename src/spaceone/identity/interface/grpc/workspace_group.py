@@ -56,6 +56,12 @@ class WorkspaceGroup(BaseAPI, workspace_group_pb2_grpc.WorkspaceGroupServicer):
         response: dict = workspace_group_svc.remove_users(params)
         return self.dict_to_message(response)
 
+    def update_role(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        workspace_group_svc = WorkspaceGroupService(metadata)
+        response: dict = workspace_group_svc.update_role(params)
+        return self.dict_to_message(response)
+
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
         workspace_group_svc = WorkspaceGroupService(metadata)
