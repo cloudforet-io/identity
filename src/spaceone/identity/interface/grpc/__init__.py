@@ -21,9 +21,8 @@ from spaceone.identity.interface.grpc.user_group import UserGroup
 from spaceone.identity.interface.grpc.user_profile import UserProfile
 from spaceone.identity.interface.grpc.workspace import Workspace
 from spaceone.identity.interface.grpc.workspace_group import WorkspaceGroup
-from spaceone.identity.interface.grpc.workspace_group_details import (
-    WorkspaceGroupDetails,
-)
+from spaceone.identity.interface.grpc.workspace_group_user import \
+    WorkspaceGroupUser
 from spaceone.identity.interface.grpc.workspace_user import WorkspaceUser
 
 _all_ = ["app"]
@@ -51,4 +50,4 @@ app.add_service(App)
 app.add_service(Token)
 app.add_service(Agent)
 app.add_service(WorkspaceGroup)
-app.add_service(WorkspaceGroupDetails)
+app.add_service(WorkspaceGroupUser)
