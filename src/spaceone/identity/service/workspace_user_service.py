@@ -4,9 +4,9 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
-from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.model.workspace_user.request import *
 from spaceone.identity.model.workspace_user.response import *
 

@@ -1,17 +1,17 @@
 import logging
-from typing import Tuple, List
+from typing import List, Tuple
 
-from spaceone.core.manager import BaseManager
 from spaceone.core.error import *
+from spaceone.core.manager import BaseManager
 
-from spaceone.identity.service.user_service import UserService
-from spaceone.identity.service.role_binding_service import RoleBindingService
-from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.model.user.database import User
 from spaceone.identity.error.error_workspace_user import (
     ERROR_USER_NOT_EXIST_IN_WORKSPACE,
 )
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.model.user.database import User
+from spaceone.identity.service.role_binding_service import RoleBindingService
+from spaceone.identity.service.user_service import UserService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class WorkspaceUserManager(BaseManager):
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_info = user_vo.to_dict()
-        user_info["role_binding_info"] = user_rb_map[user_id]
+        user_info["role_bindings_info"] = user_rb_map[user_id]
 
         return user_info
 
@@ -90,7 +90,7 @@ class WorkspaceUserManager(BaseManager):
             user_info = user_vo.to_dict()
 
             if user_rb_map:
-                user_info["role_binding_info"] = user_rb_map[user_vo.user_id]
+                user_info["role_bindings_info"] = user_rb_map[user_vo.user_id]
 
             users_info.append(user_info)
 
@@ -99,9 +99,7 @@ class WorkspaceUserManager(BaseManager):
     def stat_workspace_users(
         self, query: dict, domain_id: str, workspace_id: str
     ) -> dict:
-        user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
-            workspace_id, domain_id
-        )
+        user_ids, _ = self._get_role_binding_map_in_workspace(workspace_id, domain_id)
         query["filter"] = query.get("filter", [])
         query["filter"].append({"k": "user_id", "v": user_ids, "o": "in"})
 
@@ -115,7 +113,7 @@ class WorkspaceUserManager(BaseManager):
 
         if role_type and role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             raise ERROR_INVALID_PARAMETER(
-                message=f"role_type must be one of [WORKSPACE_OWNER, WORKSPACE_MEMBER]"
+                message="role_type must be one of [WORKSPACE_OWNER, WORKSPACE_MEMBER]"
             )
 
         if role_type is None:
@@ -129,6 +127,9 @@ class WorkspaceUserManager(BaseManager):
 
         for rb_vo in rb_vos:
             user_ids.append(rb_vo.user_id)
-            user_rb_map[rb_vo.user_id] = rb_vo.to_dict()
+            if user_rb_map.get(rb_vo.user_id):
+                user_rb_map[rb_vo.user_id].append(rb_vo.to_dict())
+            else:
+                user_rb_map[rb_vo.user_id] = [rb_vo.to_dict()]
 
         return user_ids, user_rb_map

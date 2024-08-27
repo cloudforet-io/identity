@@ -1,24 +1,24 @@
 from datetime import datetime
-from typing import List, Union
+from typing import Dict, List, Union
 
 from pydantic.main import BaseModel
 from spaceone.core import utils
 
 __all__ = [
-    "WorkspaceGroupDetailsResponse",
-    "WorkspaceGroupsDetailsResponse",
-    "WorkspaceGroupDetailsUserSummaryResponse",
-    "WorkspaceGroupDetailsUsersSummaryResponse",
+    "WorkspaceGroupUserResponse",
+    "WorkspaceGroupUsersResponse",
+    "WorkspaceGroupUserSummaryResponse",
+    "WorkspaceGroupUsersSummaryResponse",
 ]
 
 from spaceone.identity.model.workspace_group.request import State
 
 
-class WorkspaceGroupDetailsResponse(BaseModel):
+class WorkspaceGroupUserResponse(BaseModel):
     workspace_group_id: Union[str, None] = None
     name: Union[str, None] = None
     workspaces: Union[list, None] = None
-    users: Union[list, None] = None
+    users: Union[List[Dict[str, str]], None] = None
     tags: Union[dict, None] = None
     created_by: Union[str, None] = None
     updated_by: Union[str, None] = None
@@ -33,17 +33,17 @@ class WorkspaceGroupDetailsResponse(BaseModel):
         return data
 
 
-class WorkspaceGroupsDetailsResponse(BaseModel):
-    results: List[WorkspaceGroupDetailsResponse]
+class WorkspaceGroupUsersResponse(BaseModel):
+    results: List[WorkspaceGroupUserResponse]
     total_count: int
 
 
-class WorkspaceGroupDetailsUserSummaryResponse(BaseModel):
+class WorkspaceGroupUserSummaryResponse(BaseModel):
     user_id: str
     name: str
     state: State
 
 
-class WorkspaceGroupDetailsUsersSummaryResponse(BaseModel):
-    results: List[WorkspaceGroupDetailsUserSummaryResponse]
+class WorkspaceGroupUsersSummaryResponse(BaseModel):
+    results: List[WorkspaceGroupUserSummaryResponse]
     total_count: int
