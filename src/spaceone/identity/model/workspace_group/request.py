@@ -10,7 +10,7 @@ __all__ = [
     "WorkspaceGroupRemoveWorkspacesRequest",
     "WorkspaceGroupAddUsersRequest",
     "WorkspaceGroupRemoveUsersRequest",
-    "WorkspaceGroupFindRequest",
+    "WorkspaceGroupUpdateRoleRequest",
     "WorkspaceGroupGetRequest",
     "WorkspaceGroupSearchQueryRequest",
     "WorkspaceGroupStatQueryRequest",
@@ -55,15 +55,6 @@ class WorkspaceGroupRemoveWorkspacesRequest(BaseModel):
     domain_id: str
 
 
-class WorkspaceGroupFindRequest(BaseModel):
-    keyword: Union[str, None] = None
-    state: Union[State, None] = None
-    page: Union[dict, None] = None
-    workspace_group_id: str
-    workspace_id: Union[str, None] = None
-    domain_id: str
-
-
 class WorkspaceGroupAddUsersRequest(BaseModel):
     workspace_group_id: str
     users: List[Dict[str, str]]
@@ -74,6 +65,14 @@ class WorkspaceGroupAddUsersRequest(BaseModel):
 class WorkspaceGroupRemoveUsersRequest(BaseModel):
     workspace_group_id: str
     users: List[Dict[str, str]]
+    workspace_id: Union[str, None] = None
+    domain_id: str
+
+
+class WorkspaceGroupUpdateRoleRequest(BaseModel):
+    workspace_group_id: str
+    user_id: str
+    role_id: str
     workspace_id: Union[str, None] = None
     domain_id: str
 

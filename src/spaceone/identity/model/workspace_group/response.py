@@ -4,14 +4,7 @@ from typing import Dict, List, Union
 from pydantic.main import BaseModel
 from spaceone.core import utils
 
-__all__ = [
-    "WorkspaceGroupResponse",
-    "WorkspaceGroupsResponse",
-    "WorkspaceGroupUserSummaryResponse",
-    "WorkspaceGroupUsersSummaryResponse",
-]
-
-from spaceone.identity.model.workspace_group.request import State
+__all__ = ["WorkspaceGroupResponse", "WorkspaceGroupsResponse"]
 
 
 class WorkspaceGroupResponse(BaseModel):
@@ -35,15 +28,4 @@ class WorkspaceGroupResponse(BaseModel):
 
 class WorkspaceGroupsResponse(BaseModel):
     results: List[WorkspaceGroupResponse]
-    total_count: int
-
-
-class WorkspaceGroupUserSummaryResponse(BaseModel):
-    user_id: str
-    name: str
-    state: State
-
-
-class WorkspaceGroupUsersSummaryResponse(BaseModel):
-    results: List[WorkspaceGroupUserSummaryResponse]
     total_count: int
