@@ -615,9 +615,8 @@ class WorkspaceGroupService(BaseService):
         """Stat workspace groups
         Args:
             params (WorkspaceGroupStatQueryRequest): {
-                'query': 'dict',                   # required
-                'workspace_group_id': 'str',       # required
-                'workspace_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
+                'workspace_id': 'str',             # injected from auth (required)
                 'domain_id': 'str',                # injected from auth (required)
             }
         Returns:
