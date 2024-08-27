@@ -14,9 +14,8 @@ from spaceone.core.service.utils import (
     convert_model,
 )
 
-from spaceone.identity.model.workspace_group.response import (
-    WorkspaceGroupUsersSummaryResponse,
-)
+from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.model.workspace_group_user.request import (
     WorkspaceGroupUserAddRequest,
     WorkspaceGroupUserFindRequest,
@@ -29,6 +28,7 @@ from spaceone.identity.model.workspace_group_user.request import (
 from spaceone.identity.model.workspace_group_user.response import (
     WorkspaceGroupUserResponse,
     WorkspaceGroupUsersResponse,
+    WorkspaceGroupUsersSummaryResponse,
 )
 
 
@@ -41,6 +41,7 @@ class WorkspaceGroupUserService(BaseService):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.workspace_group_mgr = WorkspaceGroupManager()
 
     @transaction(permission="identity:WorkspaceGroupUser:write", role_types=["USER"])
     @convert_model
@@ -123,6 +124,7 @@ class WorkspaceGroupUserService(BaseService):
         Returns:
             WorkspaceGroupUsersSummaryResponse:
         """
+        return self._find(params)
 
     @transaction(permission="identity:WorkspaceGroupUser:read", role_types=["USER"])
     @convert_model
@@ -182,3 +184,40 @@ class WorkspaceGroupUserService(BaseService):
             }
         """
         pass
+
+    def _find(
+        self, params: WorkspaceGroupUserFindRequest
+    ) -> Union[WorkspaceGroupUsersSummaryResponse, dict]:
+        workspace_group = self.workspace_group_mgr.get_workspace_group(
+            params.workspace_group_id, params.domain_id
+        )
+        workspace_group_users = workspace_group.users or []
+        workspace_group_user_ids = list(set([user for user in workspace_group_users]))
+
+        query = {
+            "filter": [
+                {"k": "domain_id", "v": params.domain_id, "o": "eq"},
+                {"k": "user_id", "v": workspace_group_user_ids, "o": "not_in"},
+            ],
+            "sort": [{"key": "user_id"}],
+            "page": params.page,
+            "only": ["user_id", "name", "state"],
+        }
+
+        if params.keyword:
+            query["filter_or"] = [
+                {"k": "user_id", "v": params.keyword, "o": "contain"},
+                {"k": "name", "v": params.keyword, "o": "contain"},
+            ]
+
+        if params.state:
+            query["filter"].append({"k": "state", "v": params.state, "o": "eq"})
+
+        user_mgr = UserManager()
+        user_vos, total_count = user_mgr.list_users(query)
+
+        workspace_group_users_info = [user_vo.to_dict() for user_vo in user_vos]
+
+        return WorkspaceGroupUsersSummaryResponse(
+            results=workspace_group_users_info, total_count=total_count
+        )
