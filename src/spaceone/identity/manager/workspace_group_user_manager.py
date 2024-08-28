@@ -50,20 +50,24 @@ class WorkspaceGroupUserManager(BaseManager):
         if user_id not in user_ids:
             raise ERROR_NOT_FOUND(key="user_id", value=user_id)
 
-        user_vo = self.user_mgr.get_user(user_id, domain_id)
-        updated_user_info = {
-            "users": [
-                {
-                    "user_id": user_rb_map[user_id][0]["user_id"],
-                    "role_id": user_rb_map[user_id][0]["role_id"],
-                    "role_type": user_rb_map[user_id][0]["role_type"],
-                    "user_name": user_vo.name,
-                    "state": user_vo.state,
-                }
-            ]
-        }
+        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+            workspace_group_id, domain_id
+        )
+        workspace_group_info = workspace_group_vo.to_dict()
+        print(workspace_group_vo.to_dict())
 
-        return updated_user_info
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        workspace_group_info["users"] = [
+            {
+                "user_id": user_rb_map[user_id][0]["user_id"],
+                "role_id": user_rb_map[user_id][0]["role_id"],
+                "role_type": user_rb_map[user_id][0]["role_type"],
+                "user_name": user_vo.name,
+                "state": user_vo.state,
+            }
+        ]
+
+        return workspace_group_info
 
     def list_workspace_group_users(
         self,

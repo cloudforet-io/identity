@@ -4,30 +4,31 @@ import re
 import string
 from typing import Union
 
+from spaceone.core import config
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-from spaceone.core import config
 
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_user import *
-from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
-from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.token_manager.local_token_manager import (
-    LocalTokenManager,
-)
+from spaceone.identity.manager.token_manager.local_token_manager import \
+    LocalTokenManager
 from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.model.user_profile.request import *
-from spaceone.identity.model.user.response import *
 from spaceone.identity.model.user.database import User
+from spaceone.identity.model.user.response import *
+from spaceone.identity.model.user_profile.request import *
+from spaceone.identity.model.user_profile.request import \
+    UserProfileGetWorkspaceGroupsRequest
 from spaceone.identity.model.user_profile.response import (
-    MyWorkspaceResponse,
-    MyWorkspacesResponse,
-)
+    MyWorkspaceGroupsResponse, MyWorkspacesResponse)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class UserProfileService(BaseService):
         self.user_mgr = UserManager()
         self.domain_mgr = DomainManager()
         self.domain_secret_mgr = DomainSecretManager()
+        self.workspace_group_mgr = WorkspaceGroupManager()
 
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
@@ -118,7 +120,7 @@ class UserProfileService(BaseService):
             params (UserProfileConfirmEmailRequest): {
                 'verify_code': 'str',       # required
                 'user_id': 'str',           # injected from auth (required)
-                'domain_id': 'str'          # injected from auth (required)
+                'd  'domain_id': 'str'          # injected from auth (required)
             }
 
 
@@ -335,6 +337,7 @@ class UserProfileService(BaseService):
         """Find user
         Args:
             params (UserWorkspacesRequest): {
+                'workspace_group_id': 'str'
                 'user_id': 'str',       # injected from auth (required)
                 'domain_id': 'str'      # injected from auth (required)
             }
@@ -352,11 +355,16 @@ class UserProfileService(BaseService):
         if user_vo.role_type == "DOMAIN_ADMIN":
             allow_all = True
 
-        rb_vos = rb_mgr.filter_role_bindings(
-            user_id=params.user_id,
-            domain_id=params.domain_id,
-            role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
-        )
+        conditions = {
+            "user_id": params.user_id,
+            "domain_id": params.domain_id,
+            "role_type": ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        }
+
+        if params.workspace_group_id:
+            conditions["workspace_group_id"] = params.workspace_group_id
+
+        rb_vos = rb_mgr.filter_role_bindings(**conditions)
 
         if allow_all:
             workspace_vos = workspace_mgr.filter_workspaces(
@@ -365,7 +373,9 @@ class UserProfileService(BaseService):
         else:
             workspace_ids = list(set([rb.workspace_id for rb in rb_vos]))
             workspace_vos = workspace_mgr.filter_workspaces(
-                workspace_id=workspace_ids, domain_id=params.domain_id, state="ENABLED"
+                workspace_id=workspace_ids,
+                domain_id=params.domain_id,
+                state="ENABLED",
             )
 
         role_vos = role_mgr.filter_roles(
@@ -386,6 +396,63 @@ class UserProfileService(BaseService):
         )
 
     # my_workspaces_info = self._get_my_workspaces_info(workspaces_info, role_bindings_info_map)
+
+    @transaction(permission="identity:UserProfile.read", role_types=["USER"])
+    @convert_model
+    def get_workspace_groups(
+        self, params: UserProfileGetWorkspaceGroupsRequest
+    ) -> Union[MyWorkspaceGroupsResponse, dict]:
+        """Find user
+        Args:
+            params (UserWorkspacesRequest): {
+                'user_id': 'str',       # injected from auth (required)
+                'domain_id': 'str'      # injected from auth (required)
+            }
+        Returns:
+            MyWorkspaceResponse:
+        """
+
+        rb_mgr = RoleBindingManager()
+        allow_all = False
+
+        user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+
+        if user_vo.role_type == "DOMAIN_ADMIN":
+            allow_all = True
+
+        if allow_all:
+            workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
+                domain_id=params.domain_id
+            )
+        else:
+            workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
+                users=params.user_id,
+                domain_id=params.domain_id,
+            )
+
+        workspace_group_ids = [
+            workspace_group_vo.workspace_group_id
+            for workspace_group_vo in workspace_group_vos
+        ]
+
+        rb_vos = rb_mgr.filter_role_bindings(
+            user_id=params.user_id,
+            domain_id=params.domain_id,
+            workspace_group_id=workspace_group_ids,
+            role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        )
+        role_bindings_info_map = {rb.workspace_group_id: rb.to_dict() for rb in rb_vos}
+
+        workspace_groups_info = [
+            workspace_group_vo.to_dict() for workspace_group_vo in workspace_group_vos
+        ]
+        my_workspace_groups_info = self._get_my_workspace_groups_info(
+            workspace_groups_info, role_bindings_info_map
+        )
+
+        return MyWorkspaceGroupsResponse(
+            results=my_workspace_groups_info, total_count=len(my_workspace_groups_info)
+        )
 
     def _get_domain_name(self, domain_id: str) -> str:
         domain_vo = self.domain_mgr.get_domain(domain_id)
@@ -466,3 +533,18 @@ class UserProfileService(BaseService):
                 )
             my_workspaces_info.append(workspace_info)
         return my_workspaces_info
+
+    @staticmethod
+    def _get_my_workspace_groups_info(
+        workspace_groups_info: list, role_bindings_info_map: dict = None
+    ) -> list:
+        my_workspace_groups_info = []
+
+        for workspace_group_info in workspace_groups_info:
+            if rb_info := role_bindings_info_map.get(
+                workspace_group_info["workspace_group_id"]
+            ):
+                workspace_group_info.update({"role_binding_info": rb_info})
+            my_workspace_groups_info.append(workspace_group_info)
+
+        return my_workspace_groups_info
