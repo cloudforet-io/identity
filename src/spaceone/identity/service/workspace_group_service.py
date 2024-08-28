@@ -2,35 +2,54 @@ import logging
 from datetime import datetime
 from typing import Union
 
-from spaceone.core.error import (ERROR_EXIST_RESOURCE, ERROR_INVALID_PARAMETER,
-                                 ERROR_NOT_FOUND, ERROR_PERMISSION_DENIED)
-from spaceone.core.service import (BaseService, authentication_handler,
-                                   authorization_handler, event_handler,
-                                   mutation_handler, transaction)
-from spaceone.core.service.utils import (append_keyword_filter,
-                                         append_query_filter, convert_model)
+from spaceone.core.error import (
+    ERROR_EXIST_RESOURCE,
+    ERROR_INVALID_PARAMETER,
+    ERROR_NOT_FOUND,
+    ERROR_PERMISSION_DENIED,
+)
+from spaceone.core.service import (
+    BaseService,
+    authentication_handler,
+    authorization_handler,
+    event_handler,
+    mutation_handler,
+    transaction,
+)
+from spaceone.core.service.utils import (
+    append_keyword_filter,
+    append_query_filter,
+    convert_model,
+)
 
-from spaceone.identity.error import (ERROR_ROLE_DOES_NOT_EXIST_OF_USER,
-                                     ERROR_WORKSPACES_DO_NOT_EXIST)
-from spaceone.identity.error.error_role import (ERROR_NOT_ALLOWED_ROLE_TYPE,
-                                                ERROR_NOT_ALLOWED_USER_STATE)
+from spaceone.identity.error import ERROR_ROLE_DOES_NOT_EXIST_OF_USER
+from spaceone.identity.error.error_role import (
+    ERROR_NOT_ALLOWED_ROLE_TYPE,
+    ERROR_NOT_ALLOWED_USER_STATE,
+)
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import \
-    WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.manager.workspace_user_manager import \
-    WorkspaceUserManager
+from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.model.workspace_group.request import (
-    WorkspaceGroupAddUsersRequest, WorkspaceGroupAddWorkspacesRequest,
-    WorkspaceGroupCreateRequest, WorkspaceGroupDeleteRequest,
-    WorkspaceGroupGetRequest, WorkspaceGroupRemoveUsersRequest,
-    WorkspaceGroupRemoveWorkspacesRequest, WorkspaceGroupSearchQueryRequest,
-    WorkspaceGroupStatQueryRequest, WorkspaceGroupUpdateRequest,
-    WorkspaceGroupUpdateRoleRequest)
+    WorkspaceGroupAddUsersRequest,
+    WorkspaceGroupAddWorkspacesRequest,
+    WorkspaceGroupCreateRequest,
+    WorkspaceGroupDeleteRequest,
+    WorkspaceGroupGetRequest,
+    WorkspaceGroupRemoveUsersRequest,
+    WorkspaceGroupRemoveWorkspacesRequest,
+    WorkspaceGroupSearchQueryRequest,
+    WorkspaceGroupStatQueryRequest,
+    WorkspaceGroupUpdateRequest,
+    WorkspaceGroupUpdateRoleRequest,
+)
 from spaceone.identity.model.workspace_group.response import (
-    WorkspaceGroupResponse, WorkspaceGroupsResponse)
+    WorkspaceGroupResponse,
+    WorkspaceGroupsResponse,
+)
 from spaceone.identity.service.role_binding_service import RoleBindingService
 
 _LOGGER = logging.getLogger(__name__)
@@ -165,19 +184,17 @@ class WorkspaceGroupService(BaseService):
             for params_workspace_id in params.workspaces
         )
 
-        user_role_ids = list(
-            set([user_info["role_id"] for user_info in workspace_group_vo.users])
-        )
+        users = workspace_group_vo.users or []
+        user_role_ids = list(set([user_info["role_id"] for user_info in users]))
         role_vos = self.role_mgr.filter_roles(
             role_id=user_role_ids, domain_id=params.domain_id
         )
         role_id_map = {
-            user_info["user_id"]: user_info["role_id"]
-            for user_info in workspace_group_vo.users
+            user_info["user_id"]: user_info["role_id"] for user_info in users
         }
 
         if len(user_role_ids) != len(role_vos):
-            for user_info in workspace_group_vo.users:
+            for user_info in users:
                 if user_info["user_id"] not in role_id_map:
                     raise ERROR_ROLE_DOES_NOT_EXIST_OF_USER(
                         role_id=user_info["role_id"], user_id=user_info["user_id"]
@@ -191,11 +208,9 @@ class WorkspaceGroupService(BaseService):
             params.workspaces = list(set(workspaces))
 
             role_id_map = {
-                user_info["user_id"]: user_info["role_id"]
-                for user_info in workspace_group_vo.users
+                user_info["user_id"]: user_info["role_id"] for user_info in users
             }
 
-            users = workspace_group_vo.users or []
             workspaces = workspace_group_vo.workspaces or []
             for user_info in users:
                 for workspace_id in workspaces:
@@ -285,12 +300,6 @@ class WorkspaceGroupService(BaseService):
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
         )
-
-        if not workspace_group_vo.workspaces:
-            raise ERROR_WORKSPACES_DO_NOT_EXIST(
-                key="workspaces",
-                reason=f"Workspace Group {params.workspace_group_id} does not have any workspaces.",
-            )
 
         new_users = list(set([user_info["user_id"] for user_info in params.users]))
         old_users = []
