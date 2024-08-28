@@ -1,12 +1,13 @@
 import logging
 from typing import Tuple
 
-from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
+from spaceone.core.error import ERROR_INVALID_PARAMETER
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.model.workspace_group.database import WorkspaceGroup
 from spaceone.identity.service.role_binding_service import RoleBindingService
 from spaceone.identity.service.user_service import UserService
 
@@ -21,6 +22,7 @@ class WorkspaceGroupUserManager(BaseManager):
         self.rb_mgr = RoleBindingManager()
         self.user_mgr = UserManager()
         self.workspace_group_mgr = WorkspaceGroupManager()
+        self.workspace_group_model = WorkspaceGroup()
 
     def get_workspace_group_user(
         self, user_id: str, workspace_group_id: str, domain_id: str
@@ -31,75 +33,36 @@ class WorkspaceGroupUserManager(BaseManager):
             'workspace_group_id': 'str',
             'domain_id': 'str'
         Returns:
-            {
-                'users': [
-                    {
-                        'user_id': 'str',
-                        'role_id': 'str',
-                        'role_type': 'str',
-                        'user_name': 'str',
-                        'state': 'str'
-                    }
-                ]
-            }
+             'workspace_group_user_info': 'dict'
         """
-        user_ids, user_rb_map = self._get_role_binding_map_in_workspace_group(
-            workspace_group_id, domain_id
+        workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
+            users__user_id=user_id,
+            workspace_group_id=workspace_group_id,
+            domain_id=domain_id,
         )
 
-        if user_id not in user_ids:
-            raise ERROR_NOT_FOUND(key="user_id", value=user_id)
+        workspace_group_user_info = {}
+        for workspace_group_vo in workspace_group_vos:
+            workspace_group_user_info = workspace_group_vo.to_dict()
 
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            workspace_group_id, domain_id
-        )
-        workspace_group_info = workspace_group_vo.to_dict()
-        print(workspace_group_vo.to_dict())
-
-        user_vo = self.user_mgr.get_user(user_id, domain_id)
-        workspace_group_info["users"] = [
-            {
-                "user_id": user_rb_map[user_id][0]["user_id"],
-                "role_id": user_rb_map[user_id][0]["role_id"],
-                "role_type": user_rb_map[user_id][0]["role_type"],
-                "user_name": user_vo.name,
-                "state": user_vo.state,
-            }
-        ]
-
-        return workspace_group_info
+        return workspace_group_user_info
 
     def list_workspace_group_users(
         self,
         query: dict,
+        user_id: str,
         domain_id: str,
-        workspace_group_id: str,
-        role_type: str = None,
     ) -> Tuple[list, int]:
-        user_ids, user_rb_map = self._get_role_binding_map_in_workspace_group(
-            workspace_group_id, domain_id, role_type
+        workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
+            users__user_id=user_id,
+            domain_id=domain_id,
         )
-        query["filter"] = query.get("filter", [])
-        query["filter"].append({"k": "user_id", "v": user_ids, "o": "in"})
+        workspace_group_users_info = []
+        for workspace_group_vo in workspace_group_vos:
+            workspace_group_users_info.append(workspace_group_vo.to_dict())
+        total_count = len(workspace_group_users_info)
 
-        user_vos, total_count = self.user_mgr.list_users(query)
-
-        users_info = []
-        for user_vo in user_vos:
-            user_info = {
-                "users": [
-                    {
-                        "user_id": user_vo.user_id,
-                        "role_id": user_vo.role_id,
-                        "role_type": user_vo.role_type,
-                        "user_name": user_vo.name,
-                        "state": user_vo.state,
-                    }
-                ]
-            }
-            users_info.append(user_info)
-
-        return users_info, total_count
+        return workspace_group_users_info, total_count
 
     def stat_workspace_group_users(
         self, query: dict, workspace_group_id: str, domain_id: str
@@ -113,7 +76,10 @@ class WorkspaceGroupUserManager(BaseManager):
         return self.user_mgr.stat_users(query)
 
     def _get_role_binding_map_in_workspace_group(
-        self, workspace_group_id: str, domain_id: str, role_type: str = None
+        self,
+        workspace_group_id: str,
+        domain_id: str,
+        role_type: str = None,
     ) -> Tuple[list, dict]:
         user_rb_map = {}
         user_ids = []

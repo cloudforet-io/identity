@@ -57,7 +57,7 @@ class WorkspaceGroupManager(BaseManager):
         }
 
         if user_id:
-            conditions["users"] = user_id
+            conditions["users__user_id"] = user_id
 
         # TODO: Check if this is correct
         # if role_type:
