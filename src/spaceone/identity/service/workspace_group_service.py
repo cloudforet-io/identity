@@ -2,54 +2,35 @@ import logging
 from datetime import datetime
 from typing import Union
 
-from spaceone.core.error import (
-    ERROR_EXIST_RESOURCE,
-    ERROR_INVALID_PARAMETER,
-    ERROR_NOT_FOUND,
-    ERROR_PERMISSION_DENIED,
-)
-from spaceone.core.service import (
-    BaseService,
-    authentication_handler,
-    authorization_handler,
-    event_handler,
-    mutation_handler,
-    transaction,
-)
-from spaceone.core.service.utils import (
-    append_keyword_filter,
-    append_query_filter,
-    convert_model,
-)
+from spaceone.core.error import (ERROR_EXIST_RESOURCE, ERROR_INVALID_PARAMETER,
+                                 ERROR_NOT_FOUND, ERROR_PERMISSION_DENIED)
+from spaceone.core.service import (BaseService, authentication_handler,
+                                   authorization_handler, event_handler,
+                                   mutation_handler, transaction)
+from spaceone.core.service.utils import (append_keyword_filter,
+                                         append_query_filter, convert_model)
 
-from spaceone.identity.error import ERROR_WORKSPACES_DO_NOT_EXIST
-from spaceone.identity.error.error_role import (
-    ERROR_NOT_ALLOWED_ROLE_TYPE,
-    ERROR_NOT_ALLOWED_USER_STATE,
-)
+from spaceone.identity.error import (ERROR_ROLE_DOES_NOT_EXIST_OF_USER,
+                                     ERROR_WORKSPACES_DO_NOT_EXIST)
+from spaceone.identity.error.error_role import (ERROR_NOT_ALLOWED_ROLE_TYPE,
+                                                ERROR_NOT_ALLOWED_USER_STATE)
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
+from spaceone.identity.manager.workspace_user_manager import \
+    WorkspaceUserManager
 from spaceone.identity.model.workspace_group.request import (
-    WorkspaceGroupAddUsersRequest,
-    WorkspaceGroupAddWorkspacesRequest,
-    WorkspaceGroupCreateRequest,
-    WorkspaceGroupDeleteRequest,
-    WorkspaceGroupGetRequest,
-    WorkspaceGroupRemoveUsersRequest,
-    WorkspaceGroupRemoveWorkspacesRequest,
-    WorkspaceGroupSearchQueryRequest,
-    WorkspaceGroupStatQueryRequest,
-    WorkspaceGroupUpdateRequest,
-    WorkspaceGroupUpdateRoleRequest,
-)
+    WorkspaceGroupAddUsersRequest, WorkspaceGroupAddWorkspacesRequest,
+    WorkspaceGroupCreateRequest, WorkspaceGroupDeleteRequest,
+    WorkspaceGroupGetRequest, WorkspaceGroupRemoveUsersRequest,
+    WorkspaceGroupRemoveWorkspacesRequest, WorkspaceGroupSearchQueryRequest,
+    WorkspaceGroupStatQueryRequest, WorkspaceGroupUpdateRequest,
+    WorkspaceGroupUpdateRoleRequest)
 from spaceone.identity.model.workspace_group.response import (
-    WorkspaceGroupResponse,
-    WorkspaceGroupsResponse,
-)
+    WorkspaceGroupResponse, WorkspaceGroupsResponse)
 from spaceone.identity.service.role_binding_service import RoleBindingService
 
 _LOGGER = logging.getLogger(__name__)
@@ -112,10 +93,7 @@ class WorkspaceGroupService(BaseService):
                 'name': 'str',
                 'tags': 'dict',
                 'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str',             # injected from auth (required)
-            }
-        Returns:
-            WorkspaceGroupResponse:
+                'domain_id': 'str',             # inje     WorkspaceGroupResponse:
         """
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
@@ -187,6 +165,24 @@ class WorkspaceGroupService(BaseService):
             for params_workspace_id in params.workspaces
         )
 
+        user_role_ids = list(
+            set([user_info["role_id"] for user_info in workspace_group_vo.users])
+        )
+        role_vos = self.role_mgr.filter_roles(
+            role_id=user_role_ids, domain_id=params.domain_id
+        )
+        role_id_map = {
+            user_info["user_id"]: user_info["role_id"]
+            for user_info in workspace_group_vo.users
+        }
+
+        if len(user_role_ids) != len(role_vos):
+            for user_info in workspace_group_vo.users:
+                if user_info["user_id"] not in role_id_map:
+                    raise ERROR_ROLE_DOES_NOT_EXIST_OF_USER(
+                        role_id=user_info["role_id"], user_id=user_info["user_id"]
+                    )
+
         if not all_workspaces_exist:
             raise ERROR_NOT_FOUND(key="workspaces", value=params.workspaces)
         elif (len(params.workspaces) > 0) and all_workspaces_exist:
@@ -194,19 +190,10 @@ class WorkspaceGroupService(BaseService):
             workspaces.extend(params.workspaces)
             params.workspaces = list(set(workspaces))
 
-            workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
-                params.dict(exclude_unset=True), workspace_group_vo
-            )
-
-            role_binding_map = {}
-            role_binding_vos = self.rb_mgr.filter_role_bindings(
-                domain_id=params.domain_id,
-                workspace_group_id=params.workspace_group_id,
-                user_id=workspace_group_vo.users,
-            )
-
-            for role_binding_vo in role_binding_vos:
-                role_binding_map[role_binding_vo.user_id] = role_binding_vo.role_id
+            role_id_map = {
+                user_info["user_id"]: user_info["role_id"]
+                for user_info in workspace_group_vo.users
+            }
 
             users = workspace_group_vo.users or []
             workspaces = workspace_group_vo.workspaces or []
@@ -214,13 +201,17 @@ class WorkspaceGroupService(BaseService):
                 for workspace_id in workspaces:
                     role_binding_params = {
                         "user_id": user_info["user_id"],
-                        "role_id": role_binding_map[user_info["user_id"]],
+                        "role_id": role_id_map[user_info["user_id"]],
                         "resource_group": "WORKSPACE",
                         "domain_id": params.domain_id,
                         "workspace_group_id": params.workspace_group_id,
                         "workspace_id": workspace_id,
                     }
                     self.rb_svc.create_role_binding(role_binding_params)
+
+        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
+            params.dict(exclude_unset=True), workspace_group_vo
+        )
 
         return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
 

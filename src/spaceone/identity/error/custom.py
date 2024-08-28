@@ -11,3 +11,7 @@ class ERROR_MANAGED_RESOURCE_CAN_NOT_BE_MODIFIED(ERROR_UNKNOWN):
 
 class ERROR_WORKSPACES_DO_NOT_EXIST(ERROR_UNKNOWN):
     _message = "Resource Not Found. (key = {key}, reason = {reason})"
+
+
+class ERROR_ROLE_DOES_NOT_EXIST_OF_USER(ERROR_NOT_FOUND):
+    _message = "Role does not exist of User. (role_id = {role_id}, user_id = {user_id})"

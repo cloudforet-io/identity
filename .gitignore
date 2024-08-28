@@ -16,3 +16,4 @@ test/_trial_temp
 /test/api/config.yml
 skaffold.yaml
 test/yaml
+test/workspace_group
