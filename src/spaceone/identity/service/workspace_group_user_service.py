@@ -16,6 +16,9 @@ from spaceone.core.service.utils import (
 
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_user_manager import (
+    WorkspaceGroupUserManager,
+)
 from spaceone.identity.model.workspace_group_user.request import (
     WorkspaceGroupUserAddRequest,
     WorkspaceGroupUserFindRequest,
@@ -42,6 +45,7 @@ class WorkspaceGroupUserService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace_group_mgr = WorkspaceGroupManager()
+        self.workspace_group_user_mgr = WorkspaceGroupUserManager()
 
     @transaction(permission="identity:WorkspaceGroupUser:write", role_types=["USER"])
     @convert_model
@@ -141,7 +145,10 @@ class WorkspaceGroupUserService(BaseService):
         Returns:
             WorkspaceGroupUserResponse:
         """
-        pass
+        user_info = self.workspace_group_user_mgr.get_workspace_group_user(
+            params.user_id, params.workspace_group_id, params.domain_id
+        )
+        return WorkspaceGroupUserResponse(**user_info)
 
     @transaction(permission="identity:WorkspaceGroupUser.read", role_types=["USER"])
     @append_query_filter(["user_id", "workspace_group_id", "name", "domain_id"])
@@ -164,7 +171,14 @@ class WorkspaceGroupUserService(BaseService):
         Returns:
             WorkspaceGroupUsersResponse:
         """
-        pass
+        query = params.query or {}
+        users_info, total_count = (
+            self.workspace_group_user_mgr.list_workspace_group_users(
+                query, params.domain_id, params.workspace_group_id
+            )
+        )
+
+        return WorkspaceGroupUsersResponse(results=users_info, total_count=total_count)
 
     @transaction(permission="identity:WorkspaceGroup.read", role_types=["USER"])
     @append_query_filter(["user_id", "workspace_group_id", "domain_id"])
@@ -174,8 +188,9 @@ class WorkspaceGroupUserService(BaseService):
         Args:
             params (WorkspaceGroupUserStatQueryRequest): {
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)', # required
-                'user_id': 'str'                         # injected from auth (required)
-                'domain_id': 'str',                      # injected from auth (required)
+                'workspace_group_id': 'str',           # required
+                'user_id': 'str'                       # injected from auth (required)
+                'domain_id': 'str',                    # injected from auth (required)
             }
         Returns:
             dict: {
@@ -183,7 +198,11 @@ class WorkspaceGroupUserService(BaseService):
                 'total_count': 'int'
             }
         """
-        pass
+        query = params.query or {}
+
+        return self.workspace_group_user_mgr.stat_workspace_group_users(
+            query, params.workspace_group_id, params.domain_id
+        )
 
     def _find(
         self, params: WorkspaceGroupUserFindRequest
@@ -192,7 +211,9 @@ class WorkspaceGroupUserService(BaseService):
             params.workspace_group_id, params.domain_id
         )
         workspace_group_users = workspace_group.users or []
-        workspace_group_user_ids = list(set([user for user in workspace_group_users]))
+        workspace_group_user_ids = list(
+            set([user["user_id"] for user in workspace_group_users])
+        )
 
         query = {
             "filter": [
