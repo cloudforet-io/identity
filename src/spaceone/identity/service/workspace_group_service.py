@@ -98,7 +98,7 @@ class WorkspaceGroupService(BaseService):
             params.workspace_group_id, params.domain_id
         )
 
-        params_daarams_data = params.dict()
+        params_data = params.dict()
         params_data["updated_by"] = self.transaction.get_meta("authorization.user_id")
         params_data["updated_at"] = datetime.utcnow()
 
