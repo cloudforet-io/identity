@@ -63,5 +63,6 @@ class WorkspaceGroupUserSearchQueryRequest(BaseModel):
 
 class WorkspaceGroupUserStatQueryRequest(BaseModel):
     query: dict
+    workspace_group_id: str
     user_id: str
     domain_id: str
