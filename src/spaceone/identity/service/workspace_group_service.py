@@ -346,7 +346,6 @@ class WorkspaceGroupService(BaseService):
 
         user_info = {user_vo["user_id"]: user_vo for user_vo in user_vos}
         for user in users:
-            print(f"user: {user}")
             user_id = user["user_id"]
             if user_id in user_info:
                 user["user_name"] = user_info[user_id]["name"]
