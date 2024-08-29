@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Union, List
-from pydantic import BaseModel
+from typing import List, Union
 
+from pydantic import BaseModel
 from spaceone.core import utils
+
 from spaceone.identity.model.workspace.request import State
 
 __all__ = ["WorkspaceResponse", "WorkspacesResponse"]
@@ -19,6 +20,7 @@ class WorkspaceResponse(BaseModel):
     is_dormant: Union[bool, None] = None
     dormant_ttl: Union[int, None] = None
     service_account_count: Union[int, None] = None
+    user_count: Union[int, None] = None
     cost_info: Union[dict, None] = None
     trusted_account_id: Union[str, None] = None
     domain_id: Union[str, None] = None

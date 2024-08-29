@@ -29,11 +29,23 @@ class RoleBinding(MongoModel):
             "workspace_id",
         ],
         "indexes": [
-            "role_type",
-            "user_id",
-            "role_id",
-            "resource_group",
-            "workspace_id",
-            "domain_id",
+            {
+                "fields": [
+                    "role_type",
+                    "user_id",
+                    "role_id",
+                    "resource_group",
+                    "workspace_id",
+                    "domain_id",
+                ],
+                "name": "COMPOUND_INDEX_FOR_SEARCH_1",
+            },
+            {
+                "fields": [
+                    "workspace_id",
+                    "domain_id",
+                ],
+                "name": "COMPOUND_INDEX_FOR_ROLE_BINDING_UPDATE",
+            },
         ],
     }
