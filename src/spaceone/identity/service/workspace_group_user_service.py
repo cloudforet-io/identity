@@ -260,7 +260,7 @@ class WorkspaceGroupUserService(BaseService):
             params (WorkspaceGroupUserUpdateRoleRequest): {
                 'workspace_group_id': 'str',            # required
                 'role_id': 'str',                       # required
-                'params_user_id': 'str',                # required
+                'target_user_id': 'str',                # required
                 'user_id': 'str',                       # injected from auth (required)
                 'domain_id': 'str',                     # injected from auth (required)
             }
@@ -287,7 +287,7 @@ class WorkspaceGroupUserService(BaseService):
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
         )
-        user_vo = self.user_mgr.get_user(params.params_user_id, params.domain_id)
+        user_vo = self.user_mgr.get_user(params.target_user_id, params.domain_id)
         if user_vo.state in ["DISABLED", "DELETED"]:
             _LOGGER.error(f"User ID {user_vo.user_id}'s state is {user_vo.state}.")
             raise ERROR_NOT_ALLOWED_USER_STATE(

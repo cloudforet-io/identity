@@ -32,7 +32,7 @@ class WorkspaceGroupUserRemoveRequest(BaseModel):
 class WorkspaceGroupUserUpdateRoleRequest(BaseModel):
     workspace_group_id: str
     role_id: str
-    params_user_id: str
+    target_user_id: str
     user_id: str
     domain_id: str
 
