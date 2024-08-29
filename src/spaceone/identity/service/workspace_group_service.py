@@ -498,6 +498,7 @@ class WorkspaceGroupService(BaseService):
             params.workspace_group_id, params.domain_id
         )
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+
         if user_vo.state in ["DISABLED", "DELETED"]:
             _LOGGER.error(f"User ID {user_vo.user_id}'s state is {user_vo.state}.")
             raise ERROR_NOT_ALLOWED_USER_STATE(
@@ -510,7 +511,6 @@ class WorkspaceGroupService(BaseService):
 
         role_binding_vos = self.rb_mgr.filter_role_bindings(
             user_id=user_vo.user_id,
-            role_id=role_vo.role_id,
             workspace_group_id=workspace_group_vo.workspace_group_id,
             domain_id=params.domain_id,
         )
@@ -525,6 +525,8 @@ class WorkspaceGroupService(BaseService):
             if user_info["user_id"] == user_vo.user_id:
                 user_info["role_id"] = params.role_id
                 user_info["role_type"] = role_vo.role_type
+                user_info["user_name"] = user_vo.name
+                user_info["state"] = user_vo.state
                 break
 
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
