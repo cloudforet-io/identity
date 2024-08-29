@@ -1,4 +1,5 @@
-from typing import Union, List, Literal
+from typing import List, Literal, Union
+
 from pydantic import BaseModel
 
 __all__ = [
@@ -57,6 +58,15 @@ class RoleGetRequest(BaseModel):
 
 
 class RoleSearchQueryRequest(BaseModel):
+    query: Union[dict, None] = None
+    role_id: Union[str, None] = None
+    name: Union[str, None] = None
+    state: Union[State, None] = None
+    role_type: Union[RoleType, None] = None
+    domain_id: str
+
+
+class BasicRoleSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     role_id: Union[str, None] = None
     name: Union[str, None] = None

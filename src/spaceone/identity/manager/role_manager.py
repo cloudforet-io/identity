@@ -1,14 +1,14 @@
 import logging
 from typing import Tuple
-from mongoengine import QuerySet
 
-from spaceone.core import utils, cache
+from mongoengine import QuerySet
+from spaceone.core import cache, utils
 from spaceone.core.manager import BaseManager
-from spaceone.core.connector.space_connector import SpaceConnector
-from spaceone.identity.model.role.database import Role
-from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.managed_resource_manager import ManagedResourceManager
+
 from spaceone.identity.error.error_role import ERROR_ROLE_IN_USED
+from spaceone.identity.manager.managed_resource_manager import ManagedResourceManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.model.role.database import Role
 
 _LOGGER = logging.getLogger(__name__)
 
