@@ -10,9 +10,13 @@ from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
-from spaceone.identity.manager.service_account_manager import ServiceAccountManager
-from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.service_account_manager import \
+    ServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import \
+    TrustedAccountManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
