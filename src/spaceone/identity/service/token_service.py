@@ -128,8 +128,8 @@ class TokenService(BaseService):
 
         # todo: remove
         if (
-            domain_id == SystemManager.get_root_domain_id()
-            and params.scope == "WORKSPACE"
+                domain_id == SystemManager.get_root_domain_id()
+                and params.scope == "WORKSPACE"
         ):
             public_jwk = self.domain_secret_mgr.get_domain_public_key(domain_id)
             domain_id = params.domain_id
@@ -205,39 +205,28 @@ class TokenService(BaseService):
         if params.grant_type == "SYSTEM_TOKEN" and params.scope == "WORKSPACE":
             # todo : remove
             permissions = params.permissions
+            page_access = []
         # TODO: change name
         elif role_id == "combined-role":
             user_id = user_vo.user_id
-            permissions = self._get_combined_role_permissions(
-                role_type, user_id, domain_id
+            permissions, page_access = (
+                self._get_combined_role_permissions_and_page_access(
+                    role_type, user_id, domain_id
+                )
             )
 
         elif role_id:
-            permissions = self._get_role_permissions(role_id, domain_id)
+            permissions, page_access = self._get_role_permissions_and_page_access(
+                role_id, domain_id
+            )
         else:
-            permissions = None
+            permissions = []
+            page_access = []
 
         if role_type == "WORKSPACE_MEMBER":
-            user_projects = []
-            project_groups = self.project_group_mgr.filter_project_groups(
-                domain_id=domain_id,
-                workspace_id=params.workspace_id,
-                users=user_vo.user_id,
+            user_projects = self._get_user_projects_in_project_group(
+                domain_id, params.workspace_id, user_vo.user_id
             )
-
-            for project_group in project_groups:
-                project_group_id = project_group.project_group_id
-                user_projects.extend(
-                    self.project_group_mgr.get_projects_in_project_groups(
-                        domain_id, project_group_id
-                    )
-                )
-
-            user_projects.extend(
-                self._get_user_projects(user_vo.user_id, params.workspace_id, domain_id)
-            )
-
-            user_projects = list(set(user_projects))
         else:
             user_projects = None
 
@@ -256,6 +245,7 @@ class TokenService(BaseService):
             "access_token": token_info["access_token"],
             "role_type": role_type,
             "role_id": role_id,
+            "page_access": page_access,
             "domain_id": domain_id,
             "workspace_id": params.workspace_id,
         }
@@ -327,7 +317,7 @@ class TokenService(BaseService):
         return token_info
 
     def _get_user_role_info(
-        self, user_vo: User, workspace_id: str = None
+            self, user_vo: User, workspace_id: str = None
     ) -> Tuple[str, Union[str, None]]:
         if user_vo.role_type == "DOMAIN_ADMIN":
             rb_vos = self.rb_mgr.filter_role_bindings(
@@ -363,13 +353,38 @@ class TokenService(BaseService):
     def _get_app_role_info(app_vo: App) -> Tuple[str, str]:
         return app_vo.role_type, app_vo.role_id
 
-    @cache.cacheable(key="identity:role-permissions:{domain_id}:{role_id}", expire=600)
-    def _get_role_permissions(self, role_id: str, domain_id: str) -> List[str]:
+    @cache.cacheable(
+        key="identity:role-permissions-page-access:{domain_id}:{role_id}", expire=600
+    )
+    def _get_role_permissions_and_page_access(
+            self, role_id: str, domain_id: str
+    ) -> Tuple[List[str], List[str]]:
         role_vo = self.role_mgr.get_role(role_id=role_id, domain_id=domain_id)
-        return role_vo.permissions
+        return role_vo.permissions, role_vo.page_access
+
+    def _get_user_projects_in_project_group(
+            self, domain_id: str, workspace_id: str, user_id: str
+    ) -> List[str]:
+        user_projects = []
+        project_groups = self.project_group_mgr.filter_project_groups(
+            domain_id=domain_id, workspace_id=workspace_id, users=user_id
+        )
+
+        for project_group in project_groups:
+            project_group_id = project_group.project_group_id
+            user_projects.extend(
+                self.project_group_mgr.get_projects_in_project_groups(
+                    domain_id, project_group_id
+                )
+            )
+
+        user_projects.extend(self._get_user_projects(user_id, workspace_id, domain_id))
+
+        user_projects = list(set(user_projects))
+        return user_projects
 
     def _get_user_projects(
-        self, user_id: str, workspace_id: str, domain_id: str
+            self, user_id: str, workspace_id: str, domain_id: str
     ) -> List[str]:
         user_projects = []
 
@@ -399,9 +414,13 @@ class TokenService(BaseService):
                 if required_action == "UPDATE_PASSWORD":
                     raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
 
-    def _get_combined_role_permissions(
-        self, role_type: str, user_id: str, domain_id: str
-    ) -> Union[List[str], None]:
+    @cache.cacheable(
+        key="identity:role-permissions-page-access:{domain_id}:{user_id}:{role_type}",
+        expire=600,
+    )
+    def _get_combined_role_permissions_and_page_access(
+            self, role_type: str, user_id: str, domain_id: str
+    ) -> Tuple[List[str], List[str]]:
         role_bindings = self.rb_mgr.filter_role_bindings(
             role_type=role_type,
             user_id=user_id,
@@ -414,10 +433,19 @@ class TokenService(BaseService):
         )
 
         combined_permissions = []
+        combined_page_access = []
         for role_info in role_infos:
-            if not role_info["permissions"]:
-                return None
+            if role_info["permissions"]:
+                combined_permissions.extend(role_info["permissions"])
+            else:
+                combined_permissions = []
+                break
 
-            combined_permissions.extend(role_info["permissions"])
+        for role_info in role_infos:
+            if role_info["page_access"]:
+                combined_page_access.extend(role_info["page_access"])
+            else:
+                combined_page_access = []
+                break
 
-        return list(set(combined_permissions))
+        return list(set(combined_permissions)), list(set(combined_page_access))
