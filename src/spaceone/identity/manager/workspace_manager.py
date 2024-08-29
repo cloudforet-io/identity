@@ -1,7 +1,7 @@
 import logging
 from typing import Tuple
-from mongoengine import QuerySet
 
+from mongoengine import QuerySet
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 
@@ -25,6 +25,7 @@ class WorkspaceManager(BaseManager):
 
         params["dormant_ttl"] = -1
         params["service_account_count"] = 0
+        params["user_count"] = 0
         params["cost_info"] = {
             "day": 0,
             "month": 0,

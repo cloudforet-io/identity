@@ -19,6 +19,7 @@ class Workspace(MongoModel):
     is_dormant = BooleanField(default=False)
     dormant_ttl = IntField(default=None, required=True)
     service_account_count = IntField(default=None)
+    user_count = IntField(default=None)
     cost_info = DictField(default=None)
 
     trusted_account_id = StringField(max_length=40, default=None, null=True)
@@ -37,6 +38,7 @@ class Workspace(MongoModel):
             "is_dormant",
             "dormant_ttl",
             "service_account_count",
+            "user_count",
             "cost_info",
             "trusted_account_id",
             "references",

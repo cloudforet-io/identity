@@ -26,6 +26,7 @@ class RoleBindingService(BaseService):
         super().__init__(*args, **kwargs)
         self.role_binding_manager = RoleBindingManager()
         self.user_mgr = UserManager()
+        self.workspace_mgr = WorkspaceManager()
 
     @transaction(
         permission="identity:RoleBinding.write",
@@ -64,10 +65,12 @@ class RoleBindingService(BaseService):
         # Check user
         user_vo = self.user_mgr.get_user(user_id, domain_id)
 
+        workspace_vo = None
+
         # Check workspace
         if resource_group == "WORKSPACE":
             workspace_mgr = WorkspaceManager()
-            workspace_mgr.get_workspace(workspace_id, domain_id)
+            workspace_vo = workspace_mgr.get_workspace(workspace_id, domain_id)
         else:
             params["workspace_id"] = "*"
             workspace_id = "*"
@@ -111,7 +114,24 @@ class RoleBindingService(BaseService):
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
 
         # Create role binding
-        return self.role_binding_manager.create_role_binding(params)
+        rb_vo = self.role_binding_manager.create_role_binding(params)
+
+        user_rb_ids = self.role_binding_manager.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+        user_rb_total_count = len(user_rb_ids)
+
+        self.workspace_mgr.update_workspace_by_vo(
+            {"user_count": user_rb_total_count}, workspace_vo
+        )
+
+        return rb_vo
 
     @transaction(
         permission="identity:RoleBinding.write",
@@ -242,6 +262,25 @@ class RoleBindingService(BaseService):
 
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
         self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
+
+        workspace_vo = self.workspace_mgr.get_workspace(
+            params.workspace_id, params.domain_id
+        )
+
+        user_rb_ids = self.role_binding_manager.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": params.workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": params.domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+        user_rb_total_count = len(user_rb_ids)
+
+        self.workspace_mgr.update_workspace_by_vo(
+            {"user_count": user_rb_total_count}, workspace_vo
+        )
 
     @transaction(
         permission="identity:RoleBinding.read",

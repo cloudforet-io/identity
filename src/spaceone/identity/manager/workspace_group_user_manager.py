@@ -6,10 +6,8 @@ from spaceone.core.manager import BaseManager
 
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
-from spaceone.identity.model.workspace_group.database import WorkspaceGroup
-from spaceone.identity.service.role_binding_service import RoleBindingService
-from spaceone.identity.service.user_service import UserService
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,12 +15,9 @@ _LOGGER = logging.getLogger(__name__)
 class WorkspaceGroupUserManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user_svc = UserService()
-        self.rb_svc = RoleBindingService()
         self.rb_mgr = RoleBindingManager()
         self.user_mgr = UserManager()
         self.workspace_group_mgr = WorkspaceGroupManager()
-        self.workspace_group_model = WorkspaceGroup()
 
     def get_workspace_group_user(
         self, user_id: str, workspace_group_id: str, domain_id: str
