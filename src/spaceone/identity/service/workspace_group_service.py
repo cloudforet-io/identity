@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Union
 
 from spaceone.core.error import (
-    ERROR_EXIST_RESOURCE,
     ERROR_INVALID_PARAMETER,
     ERROR_NOT_FOUND,
     ERROR_PERMISSION_DENIED,
@@ -147,9 +146,6 @@ class WorkspaceGroupService(BaseService):
             params.workspace_group_id, params.domain_id
         )
 
-        if workspace_group_vo.users:
-            _LOGGER.error("Workspace Group has users. Please remove users first.")
-            raise ERROR_EXIST_RESOURCE(child="users", parent="workspace_group")
         self.workspace_group_mgr.delete_workspace_group_by_vo(workspace_group_vo)
 
     @transaction(
@@ -454,12 +450,17 @@ class WorkspaceGroupService(BaseService):
                 raise ERROR_NOT_FOUND(key="params_user_id", value=params_user_id)
 
         workspace_group_users = [users for users in workspace_group_vo["users"]]
-        role_binding_vos = self.rb_mgr.filter_role_bindings(
+        rb_vos = self.rb_mgr.filter_role_bindings(
             user_id=params_user_ids,
             workspace_group_id=params.workspace_group_id,
             domain_id=params.domain_id,
         )
-        role_binding_vos.delete()
+
+        if rb_vos.count() > 0:
+            _LOGGER.debug(
+                f"[remove_users] Delete role bindings count with {workspace_group_vo.workspaces}: {rb_vos.count()}"
+            )
+            rb_vos.delete()
 
         params.users = []
         for user in workspace_group_users:
