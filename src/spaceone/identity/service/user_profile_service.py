@@ -426,7 +426,7 @@ class UserProfileService(BaseService):
             )
         else:
             workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
-                users=params.user_id,
+                users__user_id=params.user_id,
                 domain_id=params.domain_id,
             )
 
