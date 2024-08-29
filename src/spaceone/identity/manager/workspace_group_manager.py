@@ -4,6 +4,7 @@ from typing import Tuple
 from mongoengine import QuerySet
 from spaceone.core.manager import BaseManager
 
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.model.workspace_group.database import WorkspaceGroup
 
 _LOGGER = logging.getLogger(__name__)
@@ -13,6 +14,7 @@ class WorkspaceGroupManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace_group_model = WorkspaceGroup
+        self.rb_mgr = RoleBindingManager()
 
     def create_workspace_group(self, params: dict) -> WorkspaceGroup:
         def _rollback(vo: WorkspaceGroup):
@@ -39,8 +41,20 @@ class WorkspaceGroupManager(BaseManager):
 
         return workspace_group_vo.update(params)
 
-    @staticmethod
-    def delete_workspace_group_by_vo(workspace_group_vo: WorkspaceGroup) -> None:
+    def delete_workspace_group_by_vo(self, workspace_group_vo: WorkspaceGroup) -> None:
+        user_ids = [user["user_id"] for user in workspace_group_vo.users]
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            user_id=user_ids,
+            workspace_group_id=workspace_group_vo.workspace_group_id,
+            domain_id=workspace_group_vo.domain_id,
+        )
+
+        if rb_vos.count() > 0:
+            _LOGGER.debug(
+                f"[delete_workspace_group_by_vo] Delete role bindings count with {workspace_group_vo.workspaces}: {rb_vos.count()}"
+            )
+            rb_vos.delete()
+
         workspace_group_vo.delete()
 
     # TODO: When add_users and remove_users, are user_id and role_type required?
