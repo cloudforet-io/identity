@@ -4,6 +4,7 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
+from spaceone.identity.error import ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING
 from spaceone.identity.error.error_role import *
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
@@ -116,20 +117,21 @@ class RoleBindingService(BaseService):
         # Create role binding
         rb_vo = self.role_binding_manager.create_role_binding(params)
 
-        user_rb_ids = self.role_binding_manager.stat_role_bindings(
-            query={
-                "distinct": "user_id",
-                "filter": [
-                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
-                    {"k": "domain_id", "v": domain_id, "o": "eq"},
-                ],
-            }
-        ).get("results", [])
-        user_rb_total_count = len(user_rb_ids)
+        if workspace_vo:
+            user_rb_ids = self.role_binding_manager.stat_role_bindings(
+                query={
+                    "distinct": "user_id",
+                    "filter": [
+                        {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                        {"k": "domain_id", "v": domain_id, "o": "eq"},
+                    ],
+                }
+            ).get("results", [])
+            user_rb_total_count = len(user_rb_ids)
 
-        self.workspace_mgr.update_workspace_by_vo(
-            {"user_count": user_rb_total_count}, workspace_vo
-        )
+            self.workspace_mgr.update_workspace_by_vo(
+                {"user_count": user_rb_total_count}, workspace_vo
+            )
 
         return rb_vo
 
@@ -230,6 +232,12 @@ class RoleBindingService(BaseService):
         rb_vo = self.role_binding_manager.get_role_binding(
             params.role_binding_id, params.domain_id, params.workspace_id
         )
+
+        if rb_vo.workspace_group_id:
+            raise ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING(
+                workspace_group_id=rb_vo.workspace_group_id,
+                role_binding_id=rb_vo.role_binding_id,
+            )
 
         self.check_self_update_and_delete(request_user_id, rb_vo.user_id)
 
