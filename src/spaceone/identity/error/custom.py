@@ -14,4 +14,8 @@ class ERROR_WORKSPACES_DO_NOT_EXIST(ERROR_UNKNOWN):
 
 
 class ERROR_ROLE_DOES_NOT_EXIST_OF_USER(ERROR_NOT_FOUND):
-    _message = "Role does not exist of User. (role_id = {role_id}, user_id = {user_id})"
+    _message = "Role does not exist in User. (role_id = {role_id}, user_id = {user_id})"
+
+
+class ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
+    _message = "Not allowed to delete role binding. (workspace_group_id = {workspace_group_id}, role_binding_id = {role_binding_id})"
