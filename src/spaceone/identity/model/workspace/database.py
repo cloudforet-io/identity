@@ -23,6 +23,7 @@ class Workspace(MongoModel):
     cost_info = DictField(default=None)
 
     trusted_account_id = StringField(max_length=40, default=None, null=True)
+    workspace_group_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
@@ -41,6 +42,7 @@ class Workspace(MongoModel):
             "user_count",
             "cost_info",
             "trusted_account_id",
+            "workspace_group_id",
             "references",
             "deleted_at",
             "last_synced_at",
