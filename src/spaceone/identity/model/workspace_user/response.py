@@ -28,7 +28,7 @@ class WorkspaceUserResponse(BaseModel):
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
-    role_bindings_info: Union[List[RoleBindingResponse], None] = None
+    role_binding_info: Union[RoleBindingResponse, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
     last_accessed_at: Union[datetime, None] = None
