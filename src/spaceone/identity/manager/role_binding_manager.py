@@ -43,12 +43,14 @@ class RoleBindingManager(BaseManager):
 
     @staticmethod
     def delete_role_binding_by_vo(role_binding_vo: RoleBinding) -> None:
+        _LOGGER.debug(
+            f"[delete_role_binding_by_vo] Delete role binding info: {role_binding_vo.to_dict()}"
+        )
         role_binding_vo.delete()
 
     def get_role_binding(
         self, role_binding_id: str, domain_id: str, workspace_id: str = None
     ) -> RoleBinding:
-
         conditions = {
             "role_binding_id": role_binding_id,
             "domain_id": domain_id,
