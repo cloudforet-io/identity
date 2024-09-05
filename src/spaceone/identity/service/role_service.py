@@ -5,6 +5,8 @@ from spaceone.core.error import *
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
+from spaceone.identity.error.custom import ERROR_ROLE_IN_USED_AT_ROLE_BINDING
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.model.role.request import *
 from spaceone.identity.model.role.request import BasicRoleSearchQueryRequest
@@ -23,6 +25,7 @@ class RoleService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.role_mgr = RoleManager()
+        self.rb_mgr = RoleBindingManager()
 
     @transaction(permission="identity:Role.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -132,6 +135,13 @@ class RoleService(BaseService):
         role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
         if role_vo.is_managed:
             raise ERROR_PERMISSION_DENIED()
+
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            role_id=role_vo.role_id, domain_id=role_vo.domain_id
+        )
+
+        if rb_vos.count() > 0:
+            raise ERROR_ROLE_IN_USED_AT_ROLE_BINDING(role_id=role_vo.role_id)
 
         self.role_mgr.delete_role_by_vo(role_vo)
 
