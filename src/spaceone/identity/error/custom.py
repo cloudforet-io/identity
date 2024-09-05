@@ -19,3 +19,7 @@ class ERROR_ROLE_DOES_NOT_EXIST_OF_USER(ERROR_NOT_FOUND):
 
 class ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
     _message = "Not allowed to delete role binding. (workspace_group_id = {workspace_group_id}, role_binding_id = {role_binding_id})"
+
+
+class ERROR_ROLE_IN_USED_AT_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
+    _message = "Role is in used at RoleBinding. (role_id = {role_id})"
