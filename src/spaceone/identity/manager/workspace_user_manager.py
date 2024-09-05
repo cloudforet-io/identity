@@ -70,7 +70,7 @@ class WorkspaceUserManager(BaseManager):
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_info = user_vo.to_dict()
-        user_info["role_bindings_info"] = user_rb_map[user_id]
+        user_info["role_binding_info"] = user_rb_map[user_id]
 
         return user_info
 
@@ -90,7 +90,7 @@ class WorkspaceUserManager(BaseManager):
             user_info = user_vo.to_dict()
 
             if user_rb_map:
-                user_info["role_bindings_info"] = user_rb_map[user_vo.user_id]
+                user_info["role_binding_info"] = user_rb_map[user_vo.user_id]
 
             users_info.append(user_info)
 
@@ -127,9 +127,6 @@ class WorkspaceUserManager(BaseManager):
 
         for rb_vo in rb_vos:
             user_ids.append(rb_vo.user_id)
-            if user_rb_map.get(rb_vo.user_id):
-                user_rb_map[rb_vo.user_id].append(rb_vo.to_dict())
-            else:
-                user_rb_map[rb_vo.user_id] = [rb_vo.to_dict()]
+            user_rb_map[rb_vo.user_id] = rb_vo.to_dict()
 
         return user_ids, user_rb_map
