@@ -54,6 +54,8 @@ class Workspace(MongoModel):
             "workspace_id",
             "name",
             "state",
+            "service_account_count",
+            "user_count",
             "is_managed",
             "is_dormant",
         ],
