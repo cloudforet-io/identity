@@ -112,9 +112,7 @@ class WorkspaceService(BaseService):
         if workspace_group_id:
             self._add_workspace_to_group(workspace_id, workspace_group_id, domain_id)
         elif previous_workspace_group_id:
-            self._remove_workspace_from_group(
-                previous_workspace_group_id, workspace_group_id, domain_id
-            )
+            self._remove_workspace_from_group(previous_workspace_group_id, domain_id)
 
         if is_updatable:
             workspace_vo = self.workspace_mgr.update_workspace_by_vo(
@@ -411,7 +409,7 @@ class WorkspaceService(BaseService):
         return is_updatable
 
     def _remove_workspace_from_group(
-        self, previous_workspace_group_id: str, workspace_group_id: str, domain_id: str
+        self, previous_workspace_group_id: str, domain_id: str
     ) -> None:
         self._delete_role_bindings(previous_workspace_group_id, domain_id)
 
