@@ -120,7 +120,8 @@ class WorkspaceGroupUserManager(BaseManager):
 
     @staticmethod
     def check_user_role_type(
-        old_users_in_workspace_group: List[Dict[str, str]], user_id: str
+        old_users_in_workspace_group: List[Dict[str, str]],
+        user_id: str,
     ) -> None:
         user_role_type = ""
         for old_user in old_users_in_workspace_group:
@@ -129,7 +130,7 @@ class WorkspaceGroupUserManager(BaseManager):
 
         if user_role_type == "WORKSPACE_MEMBER":
             _LOGGER.error(
-                f"User ID {user_id} does not have permission to add users to workspace group."
+                f"User ID {user_id} does not have permission to add/remove users to workspace group."
             )
             raise ERROR_PERMISSION_DENIED()
 
@@ -240,6 +241,39 @@ class WorkspaceGroupUserManager(BaseManager):
         workspace_ids = [workspace_vo.workspace_id for workspace_vo in workspace_vos]
 
         return workspace_ids
+
+    @staticmethod
+    def check_user_ids_exist_in_workspace_group(
+        old_user_ids: List[str], user_ids: List[str]
+    ) -> None:
+        for user_id in user_ids:
+            if user_id not in old_user_ids:
+                _LOGGER.error(f"User ID {user_id} is not in workspace group.")
+                raise ERROR_PERMISSION_DENIED()
+
+    def remove_users_from_workspace_group(
+        self,
+        user_ids: List[str],
+        old_users: List[Dict[str, str]],
+        workspace_group_id: str,
+        domain_id: str,
+    ) -> List[Dict[str, str]]:
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            user_id=user_ids,
+            workspace_group_id=workspace_group_id,
+            domain_id=domain_id,
+        )
+
+        if rb_vos.count() > 0:
+            for rb_vo in rb_vos:
+                _LOGGER.debug(
+                    f"[remove_users] Delete role binding info: {rb_vo.to_dict()}"
+                )
+                rb_vo.delete()
+
+        updated_users = [user for user in old_users if user["user_id"] not in user_ids]
+
+        return updated_users
 
     def _get_role_binding_map_in_workspace_group(
         self,

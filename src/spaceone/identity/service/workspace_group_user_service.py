@@ -165,60 +165,38 @@ class WorkspaceGroupUserService(BaseService):
         Returns:
             WorkspaceGroupUserResponse:
         """
-        user_id = self.transaction.get_meta("authorization.user_id")
+        # user_id = self.transaction.get_meta("authorization.user_id")
+        workspace_group_id = params.workspace_group_id
+        users = params.users
+        user_id = params.user_id
+        domain_id = params.domain_id
 
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
-        )
-
-        user_role_type = ""
-        for user in workspace_group_vo.users:
-            if user["user_id"] == user_id:
-                user_role_type = user["role_type"]
-
-        if user_role_type == "WORKSPACE_MEMBER":
-            _LOGGER.error(
-                f"User ID {user_id} does not have permission to add users to workspace group."
+        old_user_ids, user_ids = (
+            self.workspace_group_user_mgr.get_old_users_and_new_users(
+                users, workspace_group_id, domain_id
             )
-            raise ERROR_PERMISSION_DENIED()
+        )
+        self.workspace_group_user_mgr.check_user_ids_exist_in_workspace_group(
+            old_user_ids, user_ids
+        )
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id,
-            params.domain_id,
-            user_id=user_id,
+            params.workspace_group_id, params.domain_id, user_id=user_id
         )
-        if workspace_group_vo:
-            if not self.workspace_group_mgr.check_user_id_in_users(
-                user_id, workspace_group_vo
-            ):
-                _LOGGER.error(f"User ID {user_id} is not in workspace group.")
-                ERROR_NOT_FOUND(
-                    key="workspace_group_id", value=params.workspace_group_id
-                )
-        else:
+        if not workspace_group_vo:
             ERROR_NOT_FOUND(key="workspace_group_id", value=params.workspace_group_id)
+        workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
 
-        workspace_group_user_ids = [
-            user["user_id"] for user in workspace_group_vo.users
-        ]
-        params_user_ids = list(set([user["user_id"] for user in params.users]))
-
-        for params_user_id in params_user_ids:
-            if params_user_id not in workspace_group_user_ids:
-                raise ERROR_NOT_FOUND(key="params_user_id", value=params_user_id)
-
-        workspace_group_users = [users for users in workspace_group_vo["users"]]
-        role_binding_vos = self.rb_mgr.filter_role_bindings(
-            user_id=params_user_ids,
-            workspace_group_id=params.workspace_group_id,
-            domain_id=params.domain_id,
+        workspace_group_users = workspace_group_vo.users
+        self.workspace_group_user_mgr.check_user_role_type(
+            workspace_group_users, user_id
         )
-        role_binding_vos.delete()
 
-        params.users = []
-        for user in workspace_group_users:
-            if user["user_id"] not in params_user_ids:
-                params.users.append(user)
+        old_users = workspace_group_dict["users"]
+        updated_users = self.workspace_group_user_mgr.remove_users_from_workspace_group(
+            user_ids, old_users, workspace_group_id, domain_id
+        )
+        params.users = updated_users
 
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
             params.dict(exclude_unset=True), workspace_group_vo
