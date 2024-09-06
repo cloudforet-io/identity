@@ -122,6 +122,7 @@ class WorkspaceGroupUserManager(BaseManager):
     def check_user_role_type(
         old_users_in_workspace_group: List[Dict[str, str]],
         user_id: str,
+        command: str,
     ) -> None:
         user_role_type = ""
         for old_user in old_users_in_workspace_group:
@@ -130,7 +131,7 @@ class WorkspaceGroupUserManager(BaseManager):
 
         if user_role_type == "WORKSPACE_MEMBER":
             _LOGGER.error(
-                f"User ID {user_id} does not have permission to add/remove users to workspace group."
+                f"User ID {user_id} does not have permission to {command} users to workspace group."
             )
             raise ERROR_PERMISSION_DENIED()
 

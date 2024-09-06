@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List, Union
 
-from spaceone.core.error import ERROR_NOT_FOUND, ERROR_PERMISSION_DENIED
+from spaceone.core.error import ERROR_NOT_FOUND
 from spaceone.core.service import (
     BaseService,
     authentication_handler,
@@ -111,7 +111,7 @@ class WorkspaceGroupUserService(BaseService):
         old_users_in_workspace_group = workspace_group_vo.users or []
         if old_users_in_workspace_group:
             self.workspace_group_user_mgr.check_user_role_type(
-                old_users_in_workspace_group, user_id
+                old_users_in_workspace_group, user_id, command="add"
             )
             self.workspace_group_user_mgr.check_user_in_workspace_group(
                 old_users_in_workspace_group, user_id
@@ -189,7 +189,7 @@ class WorkspaceGroupUserService(BaseService):
 
         workspace_group_users = workspace_group_vo.users
         self.workspace_group_user_mgr.check_user_role_type(
-            workspace_group_users, user_id
+            workspace_group_users, user_id, command="remove"
         )
 
         old_users = workspace_group_dict["users"]
@@ -227,16 +227,10 @@ class WorkspaceGroupUserService(BaseService):
             params.workspace_group_id, params.domain_id
         )
 
-        user_role_type = ""
-        for user in workspace_group_vo.users:
-            if user["user_id"] == user_id:
-                user_role_type = user["role_type"]
-
-        if user_role_type == "WORKSPACE_MEMBER":
-            _LOGGER.error(
-                f"User ID {user_id} does not have permission to add users to workspace group."
-            )
-            raise ERROR_PERMISSION_DENIED()
+        workspace_group_users = workspace_group_vo.users
+        self.workspace_group_user_mgr.check_user_role_type(
+            workspace_group_users, user_id, command="update_role"
+        )
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
