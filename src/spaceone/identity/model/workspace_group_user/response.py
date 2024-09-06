@@ -17,7 +17,6 @@ from spaceone.identity.model.workspace_group.request import State
 class WorkspaceGroupUserResponse(BaseModel):
     workspace_group_id: Union[str, None] = None
     name: Union[str, None] = None
-    workspaces: Union[list, None] = None
     users: Union[List[Dict[str, str]], None] = None
     tags: Union[dict, None] = None
     created_by: Union[str, None] = None

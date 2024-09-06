@@ -308,7 +308,7 @@ class WorkspaceGroupService(BaseService):
         update_workspace_group_params = {"users": workspace_group_vo.users or []}
         for user_info in update_workspace_group_params.get("users", []):
             if user_info["user_id"] == user_vo.user_id:
-                user_info["role_id"] = params.role_id
+                user_info["role_id"] = role_id
                 user_info["role_type"] = role_type
                 break
 
@@ -552,9 +552,7 @@ class WorkspaceGroupService(BaseService):
         return updated_users
 
     @staticmethod
-    def _check_user_state(
-        old_user_id: str, old_user_state: str, domain_id: str
-    ) -> None:
+    def _check_user_state(old_user_id: str, old_user_state: str) -> None:
         if old_user_state in ["DISABLED", "DELETED"]:
             _LOGGER.error(f"User ID {old_user_id}'s state is {old_user_state}.")
             raise ERROR_NOT_ALLOWED_USER_STATE(
@@ -562,7 +560,7 @@ class WorkspaceGroupService(BaseService):
             )
 
     @staticmethod
-    def _check_role_type(role_type: str):
+    def _check_role_type(role_type: str) -> None:
         if role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             raise ERROR_NOT_ALLOWED_ROLE_TYPE()
 
@@ -573,7 +571,7 @@ class WorkspaceGroupService(BaseService):
         user_id: str,
         workspace_group_id: str,
         domain_id: str,
-    ):
+    ) -> None:
         role_binding_vos = self.rb_mgr.filter_role_bindings(
             user_id=user_id,
             workspace_group_id=workspace_group_id,
