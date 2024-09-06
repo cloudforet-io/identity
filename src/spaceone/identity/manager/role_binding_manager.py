@@ -1,8 +1,9 @@
 import logging
 from typing import Tuple
-from mongoengine import QuerySet
 
+from mongoengine import QuerySet
 from spaceone.core.manager import BaseManager
+
 from spaceone.identity.model.role_binding.database import RoleBinding
 
 _LOGGER = logging.getLogger(__name__)

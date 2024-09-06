@@ -26,24 +26,6 @@ class WorkspaceGroup(BaseAPI, workspace_group_pb2_grpc.WorkspaceGroupServicer):
         workspace_group_svc.delete(params)
         return self.empty()
 
-    def add_workspaces(self, request, context):
-        params, metadata = self.parse_request(request, context)
-        workspace_group_svc = WorkspaceGroupService(metadata)
-        response: dict = workspace_group_svc.add_workspaces(params)
-        return self.dict_to_message(response)
-
-    def remove_workspaces(self, request, context):
-        params, metadata = self.parse_request(request, context)
-        workspace_group_svc = WorkspaceGroupService(metadata)
-        response: dict = workspace_group_svc.remove_workspaces(params)
-        return self.dict_to_message(response)
-
-    def find_users(self, request, context):
-        params, metadata = self.parse_request(request, context)
-        workspace_group_svc = WorkspaceGroupService(metadata)
-        response: dict = workspace_group_svc.find_users(params)
-        return self.dict_to_message(response)
-
     def add_users(self, request, context):
         params, metadata = self.parse_request(request, context)
         workspace_group_svc = WorkspaceGroupService(metadata)

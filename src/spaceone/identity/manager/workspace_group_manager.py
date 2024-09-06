@@ -1,7 +1,8 @@
 import logging
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 from mongoengine import QuerySet
+from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
@@ -51,19 +52,21 @@ class WorkspaceGroupManager(BaseManager):
 
         if rb_vos.count() > 0:
             _LOGGER.debug(
-                f"[delete_workspace_group_by_vo] Delete role bindings count with {workspace_group_vo.workspaces}: {rb_vos.count()}"
+                f"[delete_workspace_group_by_vo] Delete role bindings count with {workspace_group_vo.users}: {rb_vos.count()}"
             )
-            rb_vos.delete()
+            for rb_vo in rb_vos:
+                _LOGGER.debug(
+                    f"[delete_workspace_group_by_vo] Delete role binding info: {rb_vo.to_dict()}"
+                )
+                rb_vo.delete()
 
         workspace_group_vo.delete()
 
-    # TODO: When add_users and remove_users, are user_id and role_type required?
     def get_workspace_group(
         self,
         workspace_group_id: str,
         domain_id: str,
         user_id: str = None,
-        role_type: str = None,
     ) -> WorkspaceGroup:
         conditions = {
             "workspace_group_id": workspace_group_id,
@@ -72,10 +75,6 @@ class WorkspaceGroupManager(BaseManager):
 
         if user_id:
             conditions["users__user_id"] = user_id
-
-        # TODO: Check if this is correct
-        # if role_type:
-        #     conditions["users__role_type"] = role_type
 
         return self.workspace_group_model.get(**conditions)
 
@@ -94,3 +93,41 @@ class WorkspaceGroupManager(BaseManager):
             workspace_group_user_id == user_id
             for workspace_group_user_id in workspace_group_vo["users"]
         )
+
+    def get_old_users_and_new_users(
+        self, users: List[Dict[str, str]], workspace_group_id: str, domain_id: str
+    ) -> Tuple[List[str], List[str]]:
+        workspace_group_vo = self.get_workspace_group(workspace_group_id, domain_id)
+
+        old_users = list(
+            set(
+                [user_info["user_id"] for user_info in workspace_group_vo.users]
+                if workspace_group_vo.users
+                else []
+            )
+        )
+        new_users = list(set([user_info["user_id"] for user_info in users]))
+
+        return old_users, new_users
+
+    @staticmethod
+    def check_new_users_already_in_workspace_group(
+        old_users: List[str], new_users: List[str]
+    ) -> None:
+        if set(old_users) & set(new_users):
+            _LOGGER.error(
+                f"Users {new_users} is already in workspace group or not registered."
+            )
+            raise ERROR_INVALID_PARAMETER(
+                key="users",
+                reason=f"User {new_users} is already in the workspace group or not registered.",
+            )
+
+    @staticmethod
+    def check_user_ids_exist_in_workspace_group(
+        old_user_ids: List[str], user_ids: List[str]
+    ) -> None:
+        for user_id in user_ids:
+            if user_id not in old_user_ids:
+                _LOGGER.error(f"User ID {user_id} is not in workspace group.")
+                raise ERROR_NOT_FOUND(key="user_id", value=user_id)

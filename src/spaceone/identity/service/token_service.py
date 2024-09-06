@@ -128,8 +128,8 @@ class TokenService(BaseService):
 
         # todo: remove
         if (
-                domain_id == SystemManager.get_root_domain_id()
-                and params.scope == "WORKSPACE"
+            domain_id == SystemManager.get_root_domain_id()
+            and params.scope == "WORKSPACE"
         ):
             public_jwk = self.domain_secret_mgr.get_domain_public_key(domain_id)
             domain_id = params.domain_id
@@ -317,7 +317,7 @@ class TokenService(BaseService):
         return token_info
 
     def _get_user_role_info(
-            self, user_vo: User, workspace_id: str = None
+        self, user_vo: User, workspace_id: str = None
     ) -> Tuple[str, Union[str, None]]:
         if user_vo.role_type == "DOMAIN_ADMIN":
             rb_vos = self.rb_mgr.filter_role_bindings(
@@ -357,13 +357,13 @@ class TokenService(BaseService):
         key="identity:role-permissions-page-access:{domain_id}:{role_id}", expire=600
     )
     def _get_role_permissions_and_page_access(
-            self, role_id: str, domain_id: str
+        self, role_id: str, domain_id: str
     ) -> Tuple[List[str], List[str]]:
         role_vo = self.role_mgr.get_role(role_id=role_id, domain_id=domain_id)
         return role_vo.permissions, role_vo.page_access
 
     def _get_user_projects_in_project_group(
-            self, domain_id: str, workspace_id: str, user_id: str
+        self, domain_id: str, workspace_id: str, user_id: str
     ) -> List[str]:
         user_projects = []
         project_groups = self.project_group_mgr.filter_project_groups(
@@ -384,7 +384,7 @@ class TokenService(BaseService):
         return user_projects
 
     def _get_user_projects(
-            self, user_id: str, workspace_id: str, domain_id: str
+        self, user_id: str, workspace_id: str, domain_id: str
     ) -> List[str]:
         user_projects = []
 
@@ -419,7 +419,7 @@ class TokenService(BaseService):
         expire=600,
     )
     def _get_combined_role_permissions_and_page_access(
-            self, role_type: str, user_id: str, domain_id: str
+        self, role_type: str, user_id: str, domain_id: str
     ) -> Tuple[List[str], List[str]]:
         role_bindings = self.rb_mgr.filter_role_bindings(
             role_type=role_type,

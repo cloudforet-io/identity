@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import List, Union
 
 from pydantic.main import BaseModel
 from spaceone.core import utils
@@ -7,11 +7,18 @@ from spaceone.core import utils
 __all__ = ["WorkspaceGroupResponse", "WorkspaceGroupsResponse"]
 
 
+class WorkspaceGroupUser(BaseModel):
+    user_id: str
+    role_id: str
+    role_type: str
+    user_name: Union[str, None] = None
+    state: Union[str, None] = None
+
+
 class WorkspaceGroupResponse(BaseModel):
     workspace_group_id: Union[str, None] = None
     name: Union[str, None] = None
-    workspaces: Union[list, None] = None
-    users: Union[List[Dict[str, str]], None] = None
+    users: Union[List[WorkspaceGroupUser], None] = None
     tags: Union[dict, None] = None
     created_by: Union[str, None] = None
     updated_by: Union[str, None] = None

@@ -10,6 +10,7 @@ from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.model import RoleBinding
 from spaceone.identity.model.role_binding.request import *
 from spaceone.identity.model.role_binding.response import *
 
@@ -269,26 +270,7 @@ class RoleBindingService(BaseService):
         user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
 
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
-        self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
-
-        workspace_vo = self.workspace_mgr.get_workspace(
-            params.workspace_id, params.domain_id
-        )
-
-        user_rb_ids = self.role_binding_manager.stat_role_bindings(
-            query={
-                "distinct": "user_id",
-                "filter": [
-                    {"k": "workspace_id", "v": params.workspace_id, "o": "eq"},
-                    {"k": "domain_id", "v": params.domain_id, "o": "eq"},
-                ],
-            }
-        ).get("results", [])
-        user_rb_total_count = len(user_rb_ids)
-
-        self.workspace_mgr.update_workspace_by_vo(
-            {"user_count": user_rb_total_count}, workspace_vo
-        )
+        self.delete_role_binding_by_vo(rb_vo, params.domain_id, params.workspace_id)
 
     @transaction(
         permission="identity:RoleBinding.read",
@@ -474,3 +456,26 @@ class RoleBindingService(BaseService):
                 return "USER"
 
             return after
+
+    def delete_role_binding_by_vo(
+        self, rb_vo: RoleBinding, domain_id: str, workspace_id: str = None
+    ):
+        self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
+
+        if workspace_id:
+            workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
+
+            user_rb_ids = self.role_binding_manager.stat_role_bindings(
+                query={
+                    "distinct": "user_id",
+                    "filter": [
+                        {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                        {"k": "domain_id", "v": domain_id, "o": "eq"},
+                    ],
+                }
+            ).get("results", [])
+            user_rb_total_count = len(user_rb_ids)
+
+            self.workspace_mgr.update_workspace_by_vo(
+                {"user_count": user_rb_total_count}, workspace_vo
+            )
