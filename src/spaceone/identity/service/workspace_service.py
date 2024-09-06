@@ -1,5 +1,5 @@
 import logging
-from typing import Union
+from typing import Dict, List, Union
 
 from spaceone.core.error import *
 from spaceone.core.service import *
@@ -11,16 +11,14 @@ from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.service_account_manager import \
-    ServiceAccountManager
-from spaceone.identity.manager.trusted_account_manager import \
-    TrustedAccountManager
-from spaceone.identity.manager.workspace_group_manager import \
-    WorkspaceGroupManager
+from spaceone.identity.manager.service_account_manager import ServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
 from spaceone.identity.model.workspace.response import *
+from spaceone.identity.service.role_binding_service import RoleBindingService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,6 +82,45 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.update_workspace_by_vo(
             params.dict(exclude_unset=True), workspace_vo
         )
+        return WorkspaceResponse(**workspace_vo.to_dict())
+
+    @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
+    @convert_model
+    def change_workspace_group(
+        self, params: WorkspaceChangeWorkspaceGroupRequest
+    ) -> Union[WorkspaceResponse, dict]:
+        """Change workspace group
+        Args:
+            params (WorkspaceChangeWorkspaceGroupRequest): {
+                'workspace_id': 'str',                   # required
+                'workspace_group_id': 'str',
+                'domain_id': 'str'                       # injected from auth (required)
+            }
+        Returns:
+            WorkspaceResponse:
+        """
+        workspace_id = params.workspace_id
+        workspace_group_id = params.workspace_group_id
+        domain_id = params.domain_id
+
+        workspace_vo = self.workspace_mgr.get_workspace(
+            workspace_id=params.workspace_id, domain_id=domain_id
+        )
+
+        previous_workspace_group_id = workspace_vo.workspace_group_id
+        is_updatable = True
+        if workspace_group_id:
+            self._add_workspace_to_group(workspace_id, workspace_group_id, domain_id)
+        elif previous_workspace_group_id:
+            self._remove_workspace_from_group(
+                previous_workspace_group_id, workspace_group_id, domain_id
+            )
+
+        if is_updatable:
+            workspace_vo = self.workspace_mgr.update_workspace_by_vo(
+                params.dict(exclude_unset=False), workspace_vo
+            )
+
         return WorkspaceResponse(**workspace_vo.to_dict())
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
@@ -230,6 +267,7 @@ class WorkspaceService(BaseService):
                 'created_by': 'str',
                 'is_managed': 'bool',
                 'is_dormant': 'bool',
+                'workspace_group_id': 'str',
                 'domain_id': 'str',         # injected from auth (required)
             }
         Returns:
@@ -334,4 +372,78 @@ class WorkspaceService(BaseService):
             )
             _LOGGER.debug(
                 f"[_delete_related_resources_in_workspace] Delete workspace group: {workspace_group_vo.name} ({workspace_group_vo.workspace_group_id})"
+            )
+
+    def _add_workspace_to_group(
+        self, workspace_id: str, workspace_group_id: str, domain_id: str
+    ) -> bool:
+        workspace_vo = self.workspace_mgr.get_workspace(
+            workspace_id=workspace_id, domain_id=domain_id
+        )
+        workspace_group_mgr = WorkspaceGroupManager()
+        existing_workspace_group_id = workspace_vo.workspace_group_id
+        is_updatable = True
+
+        workspace_group_vo = workspace_group_mgr.get_workspace_group(
+            workspace_group_id=workspace_group_id, domain_id=domain_id
+        )
+
+        if existing_workspace_group_id:
+            if existing_workspace_group_id != workspace_group_id:
+                self._delete_role_bindings(existing_workspace_group_id, domain_id)
+
+                self._create_role_bindings(
+                    workspace_group_vo.users,
+                    workspace_id,
+                    workspace_group_id,
+                    domain_id,
+                )
+            else:
+                is_updatable = False
+        else:
+            self._create_role_bindings(
+                workspace_group_vo.users,
+                workspace_id,
+                workspace_group_id,
+                domain_id,
+            )
+
+        return is_updatable
+
+    def _remove_workspace_from_group(
+        self, previous_workspace_group_id: str, workspace_group_id: str, domain_id: str
+    ) -> None:
+        self._delete_role_bindings(previous_workspace_group_id, domain_id)
+
+    @staticmethod
+    def _delete_role_bindings(existing_workspace_group_id: str, domain_id: str):
+        rb_mgr = RoleBindingManager()
+        rb_vos = rb_mgr.filter_role_bindings(
+            workspace_group_id=existing_workspace_group_id,
+            domain_id=domain_id,
+        )
+        for rb_vo in rb_vos:
+            _LOGGER.debug(
+                f"[_delete_role_bindings] Delete role binding info: {rb_vo.to_dict()}"
+            )
+            rb_vo.delete()
+
+    @staticmethod
+    def _create_role_bindings(
+        workspace_group_users: List[Dict[str, str]],
+        workspace_id: str,
+        workspace_group_id: str,
+        domain_id: str,
+    ):
+        rb_svc = RoleBindingService()
+        for user_info in workspace_group_users or []:
+            rb_svc.create_role_binding(
+                {
+                    "user_id": user_info["user_id"],
+                    "role_id": user_info["role_id"],
+                    "resource_group": "WORKSPACE",
+                    "domain_id": domain_id,
+                    "workspace_group_id": workspace_group_id,
+                    "workspace_id": workspace_id,
+                }
             )

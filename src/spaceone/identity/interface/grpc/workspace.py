@@ -1,5 +1,6 @@
-from spaceone.core.pygrpc import BaseAPI
 from spaceone.api.identity.v2 import workspace_pb2, workspace_pb2_grpc
+from spaceone.core.pygrpc import BaseAPI
+
 from spaceone.identity.service.workspace_service import WorkspaceService
 
 
@@ -17,6 +18,12 @@ class Workspace(BaseAPI, workspace_pb2_grpc.WorkspaceServicer):
         params, metadata = self.parse_request(request, context)
         workspace_svc = WorkspaceService(metadata)
         response: dict = workspace_svc.update(params)
+        return self.dict_to_message(response)
+
+    def change_workspace_group(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        workspace_svc = WorkspaceService(metadata)
+        response: dict = workspace_svc.change_workspace_group(params)
         return self.dict_to_message(response)
 
     def delete(self, request, context):

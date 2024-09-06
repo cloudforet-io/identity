@@ -23,6 +23,7 @@ class WorkspaceResponse(BaseModel):
     user_count: Union[int, None] = None
     cost_info: Union[dict, None] = None
     trusted_account_id: Union[str, None] = None
+    workspace_group_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
     last_synced_at: Union[datetime, None] = None

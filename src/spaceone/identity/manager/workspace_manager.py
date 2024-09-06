@@ -60,7 +60,11 @@ class WorkspaceManager(BaseManager):
             _LOGGER.debug(
                 f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}"
             )
-            rb_vos.delete()
+            for rb_vo in rb_vos:
+                _LOGGER.debug(
+                    f"[delete_role_binding_by_vo] Delete role binding info: {rb_vo.to_dict()}"
+                )
+                rb_vo.delete()
 
         workspace_vo.delete()
 
