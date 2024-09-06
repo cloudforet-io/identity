@@ -2,7 +2,7 @@ import logging
 import random
 import re
 import string
-from typing import Union
+from typing import Dict, List, Union
 
 from spaceone.core import config
 from spaceone.core.service import *
@@ -16,19 +16,23 @@ from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.token_manager.local_token_manager import \
-    LocalTokenManager
+from spaceone.identity.manager.token_manager.local_token_manager import (
+    LocalTokenManager,
+)
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import \
-    WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.user.database import User
 from spaceone.identity.model.user.response import *
 from spaceone.identity.model.user_profile.request import *
-from spaceone.identity.model.user_profile.request import \
-    UserProfileGetWorkspaceGroupsRequest
+from spaceone.identity.model.user_profile.request import (
+    UserProfileGetWorkspaceGroupsRequest,
+)
 from spaceone.identity.model.user_profile.response import (
-    MyWorkspaceGroupsResponse, MyWorkspacesResponse)
+    MyWorkspaceGroupsResponse,
+    MyWorkspacesResponse,
+)
+from spaceone.identity.service.workspace_group_service import WorkspaceGroupService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -425,6 +429,7 @@ class UserProfileService(BaseService):
                 domain_id=params.domain_id
             )
         else:
+            # TODO: Need to check users__user_id is correct
             workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
                 users__user_id=params.user_id,
                 domain_id=params.domain_id,
@@ -443,9 +448,20 @@ class UserProfileService(BaseService):
         )
         role_bindings_info_map = {rb.workspace_group_id: rb.to_dict() for rb in rb_vos}
 
-        workspace_groups_info = [
-            workspace_group_vo.to_dict() for workspace_group_vo in workspace_group_vos
+        workspace_group_user_ids = [
+            user["user_id"]
+            for workspace_group in workspace_group_vos
+            for user in workspace_group["users"]
         ]
+
+        workspace_group_svc = WorkspaceGroupService()
+        workspace_groups_info = []
+        for workspace_group_vo in workspace_group_vos:
+            workspace_group_dict = workspace_group_svc.add_user_name_and_state_to_users(
+                workspace_group_user_ids, workspace_group_vo, params.domain_id
+            )
+            workspace_groups_info.append(workspace_group_dict)
+
         my_workspace_groups_info = self._get_my_workspace_groups_info(
             workspace_groups_info, role_bindings_info_map
         )
@@ -537,7 +553,7 @@ class UserProfileService(BaseService):
     @staticmethod
     def _get_my_workspace_groups_info(
         workspace_groups_info: list, role_bindings_info_map: dict = None
-    ) -> list:
+    ) -> List[Dict[str, str]]:
         my_workspace_groups_info = []
 
         for workspace_group_info in workspace_groups_info:

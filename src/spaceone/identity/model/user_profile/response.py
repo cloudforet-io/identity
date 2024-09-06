@@ -45,7 +45,6 @@ class MyWorkspacesResponse(BaseModel):
 class MyWorkspaceGroupResponse(BaseModel):
     workspace_group_id: Union[str, None] = None
     name: Union[str, None] = None
-    workspaces: Union[List[str], None] = None
     users: Union[List[dict], None] = None
     tags: Union[dict, None] = None
     role_binding_info: Union[RoleBindingResponse, None] = None
