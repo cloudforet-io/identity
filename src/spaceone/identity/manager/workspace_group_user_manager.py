@@ -285,6 +285,23 @@ class WorkspaceGroupUserManager(BaseManager):
                 user_id=old_user_id, state=old_user_state
             )
 
+    def update_user_role_of_workspace_group(
+        self,
+        role_id: str,
+        role_type: str,
+        user_id: str,
+        workspace_group_id: str,
+        domain_id: str,
+    ) -> None:
+        role_binding_vos = self.rb_mgr.filter_role_bindings(
+            user_id=user_id,
+            workspace_group_id=workspace_group_id,
+            domain_id=domain_id,
+        )
+
+        for role_binding_vo in role_binding_vos:
+            role_binding_vo.update({"role_id": role_id, "role_type": role_type})
+
     def _get_role_binding_map_in_workspace_group(
         self,
         workspace_group_id: str,

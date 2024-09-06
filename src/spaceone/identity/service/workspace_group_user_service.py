@@ -239,19 +239,13 @@ class WorkspaceGroupUserService(BaseService):
         self.workspace_group_user_mgr.check_user_state(old_user_id, old_user_state)
 
         role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
-        if role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
+        role_type = role_vo.role_type
+        if role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             raise ERROR_NOT_ALLOWED_ROLE_TYPE()
 
-        role_binding_vos = self.rb_mgr.filter_role_bindings(
-            user_id=user_vo.user_id,
-            workspace_group_id=workspace_group_vo.workspace_group_id,
-            domain_id=params.domain_id,
+        self.workspace_group_user_mgr.update_user_role_of_workspace_group(
+            role_id, role_type, user_id, workspace_group_id, domain_id
         )
-
-        for role_binding_vo in role_binding_vos:
-            role_binding_vo.update(
-                {"role_id": params.role_id, "role_type": role_vo.role_type}
-            )
 
         update_workspace_group_params = {"users": workspace_group_vo.users or []}
         for user_info in update_workspace_group_params.get("users", []):

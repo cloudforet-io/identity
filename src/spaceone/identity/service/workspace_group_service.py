@@ -2,50 +2,31 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Union
 
-from spaceone.core.error import (
-    ERROR_INVALID_PARAMETER,
-    ERROR_NOT_FOUND,
-    ERROR_PERMISSION_DENIED,
-)
-from spaceone.core.service import (
-    BaseService,
-    authentication_handler,
-    authorization_handler,
-    event_handler,
-    mutation_handler,
-    transaction,
-)
-from spaceone.core.service.utils import (
-    append_keyword_filter,
-    append_query_filter,
-    convert_model,
-)
+from spaceone.core.error import (ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND,
+                                 ERROR_PERMISSION_DENIED)
+from spaceone.core.service import (BaseService, authentication_handler,
+                                   authorization_handler, event_handler,
+                                   mutation_handler, transaction)
+from spaceone.core.service.utils import (append_keyword_filter,
+                                         append_query_filter, convert_model)
 
-from spaceone.identity.error.error_role import (
-    ERROR_NOT_ALLOWED_ROLE_TYPE,
-    ERROR_NOT_ALLOWED_USER_STATE,
-)
+from spaceone.identity.error.error_role import (ERROR_NOT_ALLOWED_ROLE_TYPE,
+                                                ERROR_NOT_ALLOWED_USER_STATE)
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model import WorkspaceGroup
 from spaceone.identity.model.workspace_group.request import (
-    WorkspaceGroupAddUsersRequest,
-    WorkspaceGroupCreateRequest,
-    WorkspaceGroupDeleteRequest,
-    WorkspaceGroupGetRequest,
-    WorkspaceGroupRemoveUsersRequest,
-    WorkspaceGroupSearchQueryRequest,
-    WorkspaceGroupStatQueryRequest,
-    WorkspaceGroupUpdateRequest,
-    WorkspaceGroupUpdateRoleRequest,
-)
+    WorkspaceGroupAddUsersRequest, WorkspaceGroupCreateRequest,
+    WorkspaceGroupDeleteRequest, WorkspaceGroupGetRequest,
+    WorkspaceGroupRemoveUsersRequest, WorkspaceGroupSearchQueryRequest,
+    WorkspaceGroupStatQueryRequest, WorkspaceGroupUpdateRequest,
+    WorkspaceGroupUpdateRoleRequest)
 from spaceone.identity.model.workspace_group.response import (
-    WorkspaceGroupResponse,
-    WorkspaceGroupsResponse,
-)
+    WorkspaceGroupResponse, WorkspaceGroupsResponse)
 from spaceone.identity.service.role_binding_service import RoleBindingService
 
 _LOGGER = logging.getLogger(__name__)
@@ -560,7 +541,7 @@ class WorkspaceGroupService(BaseService):
             )
 
     @staticmethod
-    def _check_role_type(role_type: str):
+    def _check_role_type(role_type: str) -> None:
         if role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             raise ERROR_NOT_ALLOWED_ROLE_TYPE()
 
@@ -571,7 +552,7 @@ class WorkspaceGroupService(BaseService):
         user_id: str,
         workspace_group_id: str,
         domain_id: str,
-    ):
+    ) -> None:
         role_binding_vos = self.rb_mgr.filter_role_bindings(
             user_id=user_id,
             workspace_group_id=workspace_group_id,
