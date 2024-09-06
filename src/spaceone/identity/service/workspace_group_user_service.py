@@ -16,7 +16,6 @@ from spaceone.core.service.utils import (
     convert_model,
 )
 
-from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_ROLE_TYPE
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
@@ -24,7 +23,6 @@ from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupMana
 from spaceone.identity.manager.workspace_group_user_manager import (
     WorkspaceGroupUserManager,
 )
-from spaceone.identity.model.workspace_group.response import WorkspaceGroupResponse
 from spaceone.identity.model.workspace_group_user.request import (
     WorkspaceGroupUserAddRequest,
     WorkspaceGroupUserFindRequest,
@@ -233,15 +231,15 @@ class WorkspaceGroupUserService(BaseService):
             workspace_group_users, user_id, command="update_role"
         )
 
-        user_vo = self.user_mgr.get_user(params.target_user_id, params.domain_id)
-        old_user_id = user_vo.user_id
-        old_user_state = user_vo.state
-        self.workspace_group_user_mgr.check_user_state(old_user_id, old_user_state)
+        target_user_vo = self.user_mgr.get_user(target_user_id, domain_id)
+        target_user_state = target_user_vo.state
+        self.workspace_group_user_mgr.check_user_state(
+            target_user_id, target_user_state
+        )
 
-        role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
+        role_vo = self.role_mgr.get_role(role_id, domain_id)
         role_type = role_vo.role_type
-        if role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
-            raise ERROR_NOT_ALLOWED_ROLE_TYPE()
+        self.workspace_group_user_mgr.check_role_type(role_type)
 
         self.workspace_group_user_mgr.update_user_role_of_workspace_group(
             role_id, role_type, user_id, workspace_group_id, domain_id
@@ -249,18 +247,16 @@ class WorkspaceGroupUserService(BaseService):
 
         update_workspace_group_params = {"users": workspace_group_vo.users or []}
         for user_info in update_workspace_group_params.get("users", []):
-            if user_info["user_id"] == user_vo.user_id:
-                user_info["role_id"] = params.role_id
-                user_info["role_type"] = role_vo.role_type
-                user_info["user_name"] = user_vo.name
-                user_info["state"] = user_vo.state
+            if user_info["user_id"] == target_user_id:
+                user_info["role_id"] = role_id
+                user_info["role_type"] = role_type
                 break
 
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
             update_workspace_group_params, workspace_group_vo
         )
 
-        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
+        return WorkspaceGroupUserResponse(**workspace_group_vo.to_dict())
 
     @transaction(permission="identity:WorkspaceGroupUser:read", role_types=["USER"])
     @convert_model

@@ -8,7 +8,10 @@ from spaceone.core.error import (
 )
 from spaceone.core.manager import BaseManager
 
-from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_USER_STATE
+from spaceone.identity.error.error_role import (
+    ERROR_NOT_ALLOWED_ROLE_TYPE,
+    ERROR_NOT_ALLOWED_USER_STATE,
+)
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
@@ -278,11 +281,11 @@ class WorkspaceGroupUserManager(BaseManager):
         return updated_users
 
     @staticmethod
-    def check_user_state(old_user_id: str, old_user_state: str) -> None:
-        if old_user_state in ["DISABLED", "DELETED"]:
-            _LOGGER.error(f"User ID {old_user_id}'s state is {old_user_state}.")
+    def check_user_state(target_user_id: str, target_user_state: str) -> None:
+        if target_user_id in ["DISABLED", "DELETED"]:
+            _LOGGER.error(f"User ID {target_user_id}'s state is {target_user_state}.")
             raise ERROR_NOT_ALLOWED_USER_STATE(
-                user_id=old_user_id, state=old_user_state
+                user_id=target_user_id, state=target_user_state
             )
 
     def update_user_role_of_workspace_group(
@@ -301,6 +304,11 @@ class WorkspaceGroupUserManager(BaseManager):
 
         for role_binding_vo in role_binding_vos:
             role_binding_vo.update({"role_id": role_id, "role_type": role_type})
+
+    @staticmethod
+    def check_role_type(role_type: str) -> None:
+        if role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
+            raise ERROR_NOT_ALLOWED_ROLE_TYPE()
 
     def _get_role_binding_map_in_workspace_group(
         self,
