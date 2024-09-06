@@ -203,7 +203,7 @@ class WorkspaceGroupService(BaseService):
             params.dict(exclude_unset=True), workspace_group_vo
         )
 
-        workspace_group_dict = self._add_user_name_and_state_to_users(
+        workspace_group_dict = self.add_user_name_and_state_to_users(
             workspace_group_user_ids, workspace_group_vo, domain_id
         )
 
@@ -488,7 +488,7 @@ class WorkspaceGroupService(BaseService):
 
         return new_users_in_workspace_group
 
-    def _add_user_name_and_state_to_users(
+    def add_user_name_and_state_to_users(
         self,
         workspace_group_user_ids: List[str],
         workspace_group_vo: WorkspaceGroup,
