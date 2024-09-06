@@ -8,6 +8,7 @@ from spaceone.core.error import (
 )
 from spaceone.core.manager import BaseManager
 
+from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_USER_STATE
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
@@ -275,6 +276,14 @@ class WorkspaceGroupUserManager(BaseManager):
         updated_users = [user for user in old_users if user["user_id"] not in user_ids]
 
         return updated_users
+
+    @staticmethod
+    def check_user_state(old_user_id: str, old_user_state: str) -> None:
+        if old_user_state in ["DISABLED", "DELETED"]:
+            _LOGGER.error(f"User ID {old_user_id}'s state is {old_user_state}.")
+            raise ERROR_NOT_ALLOWED_USER_STATE(
+                user_id=old_user_id, state=old_user_state
+            )
 
     def _get_role_binding_map_in_workspace_group(
         self,

@@ -16,10 +16,7 @@ from spaceone.core.service.utils import (
     convert_model,
 )
 
-from spaceone.identity.error.error_role import (
-    ERROR_NOT_ALLOWED_ROLE_TYPE,
-    ERROR_NOT_ALLOWED_USER_STATE,
-)
+from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_ROLE_TYPE
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
@@ -221,7 +218,11 @@ class WorkspaceGroupUserService(BaseService):
         Returns:
             WorkspaceGroupUserResponse:
         """
-        user_id = self.transaction.get_meta("authorization.user_id")
+        workspace_group_id = params.workspace_group_id
+        role_id = params.role_id
+        target_user_id = params.target_user_id
+        user_id = params.user_id
+        domain_id = params.domain_id
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             params.workspace_group_id, params.domain_id
@@ -232,15 +233,10 @@ class WorkspaceGroupUserService(BaseService):
             workspace_group_users, user_id, command="update_role"
         )
 
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
-        )
         user_vo = self.user_mgr.get_user(params.target_user_id, params.domain_id)
-        if user_vo.state in ["DISABLED", "DELETED"]:
-            _LOGGER.error(f"User ID {user_vo.user_id}'s state is {user_vo.state}.")
-            raise ERROR_NOT_ALLOWED_USER_STATE(
-                user_id=user_vo.user_id, state=user_vo.state
-            )
+        old_user_id = user_vo.user_id
+        old_user_state = user_vo.state
+        self.workspace_group_user_mgr.check_user_state(old_user_id, old_user_state)
 
         role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
         if role_vo.role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:

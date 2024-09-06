@@ -552,9 +552,7 @@ class WorkspaceGroupService(BaseService):
         return updated_users
 
     @staticmethod
-    def _check_user_state(
-        old_user_id: str, old_user_state: str, domain_id: str
-    ) -> None:
+    def _check_user_state(old_user_id: str, old_user_state: str) -> None:
         if old_user_state in ["DISABLED", "DELETED"]:
             _LOGGER.error(f"User ID {old_user_id}'s state is {old_user_state}.")
             raise ERROR_NOT_ALLOWED_USER_STATE(
