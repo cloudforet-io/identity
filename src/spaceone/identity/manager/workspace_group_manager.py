@@ -5,6 +5,7 @@ from mongoengine import QuerySet
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.manager import BaseManager
 
+from spaceone.identity.error import ERROR_WORKSPACE_EXIST_IN_WORKSPACE_GROUP
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.workspace_group.database import WorkspaceGroup
@@ -15,6 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class WorkspaceGroupManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.workspace_manager = WorkspaceManager()
         self.workspace_group_model = WorkspaceGroup
         self.rb_mgr = RoleBindingManager()
 
@@ -44,6 +46,21 @@ class WorkspaceGroupManager(BaseManager):
         return workspace_group_vo.update(params)
 
     def delete_workspace_group_by_vo(self, workspace_group_vo: WorkspaceGroup) -> None:
+        workspace_vos = self.workspace_manager.filter_workspaces(
+            workspace_group_id=workspace_group_vo.workspace_group_id,
+            domain_id=workspace_group_vo.domain_id,
+        )
+        for workspace_vo in workspace_vos:
+            if workspace_vo:
+                _LOGGER.error(
+                    f"Workspace exists in WorkspaceGroup. ({workspace_vo.workspace_id}, {workspace_group_vo.workspace_group_id})"
+                    "Remove the workspace from the workspace group before deleting the workspace group."
+                )
+                raise ERROR_WORKSPACE_EXIST_IN_WORKSPACE_GROUP(
+                    workspace_id=workspace_vo.workspace_id,
+                    workspace_group_id=workspace_group_vo.workspace_group_id,
+                )
+
         if workspace_group_vo.users:
             user_ids = [user["user_id"] for user in workspace_group_vo.users]
             rb_vos = self.rb_mgr.filter_role_bindings(
