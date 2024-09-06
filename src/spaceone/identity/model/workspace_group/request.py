@@ -6,8 +6,6 @@ __all__ = [
     "WorkspaceGroupCreateRequest",
     "WorkspaceGroupUpdateRequest",
     "WorkspaceGroupDeleteRequest",
-    "WorkspaceGroupAddWorkspacesRequest",
-    "WorkspaceGroupRemoveWorkspacesRequest",
     "WorkspaceGroupAddUsersRequest",
     "WorkspaceGroupRemoveUsersRequest",
     "WorkspaceGroupUpdateRoleRequest",
@@ -37,20 +35,6 @@ class WorkspaceGroupUpdateRequest(BaseModel):
 
 class WorkspaceGroupDeleteRequest(BaseModel):
     workspace_group_id: str
-    workspace_id: Union[str, None] = None
-    domain_id: str
-
-
-class WorkspaceGroupAddWorkspacesRequest(BaseModel):
-    workspace_group_id: str
-    workspaces: List[str]
-    workspace_id: Union[str, None] = None
-    domain_id: str
-
-
-class WorkspaceGroupRemoveWorkspacesRequest(BaseModel):
-    workspace_group_id: str
-    workspaces: List[str]
     workspace_id: Union[str, None] = None
     domain_id: str
 

@@ -1,12 +1,28 @@
-from mongoengine import DateTimeField, DictField, ListField, StringField
+from mongoengine import (
+    DateTimeField,
+    DictField,
+    EmbeddedDocument,
+    EmbeddedDocumentField,
+    ListField,
+    StringField,
+)
 from spaceone.core.model.mongo_model import MongoModel
+
+
+class WorkspaceGroupUser(EmbeddedDocument):
+    user_id = StringField(max_length=40, required=True)
+    role_id = StringField(max_length=40, required=True)
+    role_type = StringField(
+        max_length=20, choices=("WORKSPACE_OWNER", "WORKSPACE_MEMBER")
+    )
 
 
 class WorkspaceGroup(MongoModel):
     workspace_group_id = StringField(max_length=40, generate_id="wg", unique=True)
     name = StringField(max_length=255, unique_with="domain_id")
-    workspaces = ListField(StringField(max_length=40), default=None, null=True)
-    users = ListField(DictField(default=None), default=None, null=True)
+    users = ListField(
+        EmbeddedDocumentField(WorkspaceGroupUser), default=None, null=True
+    )
     tags = DictField(default=None)
     created_by = StringField(max_length=255)
     updated_by = StringField(max_length=255)
@@ -17,7 +33,6 @@ class WorkspaceGroup(MongoModel):
     meta = {
         "updatable_fields": [
             "name",
-            "workspaces",
             "users",
             "tags",
             "updated_by",
@@ -27,9 +42,7 @@ class WorkspaceGroup(MongoModel):
             "workspace_group_id",
             "name",
         ],
-        "change_query_keys": {
-            "workspace_id": "workspaces",
-        },
+        "change_query_keys": {},
         "ordering": ["name"],
         "indexes": [
             "workspace_group_id",
