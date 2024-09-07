@@ -387,9 +387,25 @@ class WorkspaceGroupService(BaseService):
             self.workspace_group_mgr.list_workspace_groups(query)
         )
 
-        workspace_groups_info = [
-            workspace_group_vo.to_dict() for workspace_group_vo in workspace_group_vos
-        ]
+        workspace_groups_info = []
+        for workspace_group_vo in workspace_group_vos:
+            old_users = list(
+                set(
+                    [user_info["user_id"] for user_info in workspace_group_vo.users]
+                    if workspace_group_vo.users
+                    else []
+                )
+            )
+            new_users = list(
+                set([user_info["user_id"] for user_info in workspace_group_vo.users])
+            )
+
+            workspace_group_user_ids: List[str] = old_users + new_users
+
+            workspace_group_dict = self.add_user_name_and_state_to_users(
+                workspace_group_user_ids, workspace_group_vo, params.domain_id
+            )
+            workspace_groups_info.append(workspace_group_dict)
 
         return WorkspaceGroupsResponse(
             results=workspace_groups_info, total_count=total_count
