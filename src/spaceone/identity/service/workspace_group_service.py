@@ -189,12 +189,12 @@ class WorkspaceGroupService(BaseService):
         )
         workspace_group_user_ids: List[str] = old_users + new_users
 
-        self._check_new_users_exist_in_domain(new_users, domain_id)
+        self.check_new_users_exist_in_domain(new_users, domain_id)
 
-        role_map = self._get_role_map(users, domain_id)
-        workspace_ids = self._get_workspace_ids(workspace_group_id, domain_id)
+        role_map = self.get_role_map(users, domain_id)
+        workspace_ids = self.get_workspace_ids(workspace_group_id, domain_id)
         old_users_in_workspace_group = workspace_group_vo.users or []
-        new_users_in_workspace_group = self._add_users_to_workspace_group(
+        new_users_in_workspace_group = self.add_users_to_workspace_group(
             users, role_map, workspace_ids, workspace_group_id, domain_id
         )
         params.users = old_users_in_workspace_group + new_users_in_workspace_group
@@ -250,7 +250,7 @@ class WorkspaceGroupService(BaseService):
         )
         workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
         old_users = workspace_group_dict["users"]
-        updated_users = self._remove_users_from_workspace_group(
+        updated_users = self.remove_users_from_workspace_group(
             user_ids, old_users, workspace_group_id, domain_id
         )
         params.users = updated_users
@@ -296,12 +296,12 @@ class WorkspaceGroupService(BaseService):
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         old_user_id = user_vo.user_id
         old_user_state = user_vo.state
-        self._check_user_state(old_user_id, old_user_state, domain_id)
+        self.check_user_state(old_user_id, old_user_state)
 
         role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
         role_type = role_vo.role_type
-        self._check_role_type(role_type)
-        self._update_user_role_of_workspace_group(
+        self.check_role_type(role_type)
+        self.update_user_role_of_workspace_group(
             role_id, role_type, user_id, workspace_group_id, domain_id
         )
 
@@ -437,12 +437,12 @@ class WorkspaceGroupService(BaseService):
 
         return self.workspace_group_mgr.stat_workspace_group(query)
 
-    def _check_new_users_exist_in_domain(self, new_users: List[str], domain_id: str):
+    def check_new_users_exist_in_domain(self, new_users: List[str], domain_id: str):
         user_vos = self.user_mgr.filter_users(user_id=new_users, domain_id=domain_id)
         if not user_vos.count() == len(new_users):
             raise ERROR_NOT_FOUND(key="user_id", value=new_users)
 
-    def _get_role_map(
+    def get_role_map(
         self, users: List[Dict[str, str]], domain_id: str
     ) -> Dict[str, str]:
         role_ids = list(set([user["role_id"] for user in users]))
@@ -462,7 +462,7 @@ class WorkspaceGroupService(BaseService):
         return role_map
 
     @staticmethod
-    def _get_workspace_ids(workspace_group_id: str, domain_id: str) -> List[str]:
+    def get_workspace_ids(workspace_group_id: str, domain_id: str) -> List[str]:
         workspace_mgr = WorkspaceManager()
         workspace_vos = workspace_mgr.filter_workspaces(
             workspace_group_id=workspace_group_id, domain_id=domain_id
@@ -471,7 +471,7 @@ class WorkspaceGroupService(BaseService):
 
         return workspace_ids
 
-    def _add_users_to_workspace_group(
+    def add_users_to_workspace_group(
         self,
         users: List[Dict[str, str]],
         role_map: Dict[str, str],
@@ -555,7 +555,7 @@ class WorkspaceGroupService(BaseService):
 
         return workspace_group_dict
 
-    def _remove_users_from_workspace_group(
+    def remove_users_from_workspace_group(
         self,
         user_ids: List[str],
         old_users: List[Dict[str, str]],
@@ -580,7 +580,7 @@ class WorkspaceGroupService(BaseService):
         return updated_users
 
     @staticmethod
-    def _check_user_state(old_user_id: str, old_user_state: str) -> None:
+    def check_user_state(old_user_id: str, old_user_state: str) -> None:
         if old_user_state in ["DISABLED", "DELETED"]:
             _LOGGER.error(f"User ID {old_user_id}'s state is {old_user_state}.")
             raise ERROR_NOT_ALLOWED_USER_STATE(
@@ -588,11 +588,11 @@ class WorkspaceGroupService(BaseService):
             )
 
     @staticmethod
-    def _check_role_type(role_type: str) -> None:
+    def check_role_type(role_type: str) -> None:
         if role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             raise ERROR_NOT_ALLOWED_ROLE_TYPE()
 
-    def _update_user_role_of_workspace_group(
+    def update_user_role_of_workspace_group(
         self,
         role_id: str,
         role_type: str,
