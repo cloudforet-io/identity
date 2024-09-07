@@ -338,11 +338,23 @@ class WorkspaceGroupService(BaseService):
         if role_type != "DOMAIN_ADMIN":
             raise ERROR_PERMISSION_DENIED()
 
+        workspace_group_id = params.workspace_group_id
+        domain_id = params.domain_id
+
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
+            workspace_group_id, domain_id
         )
 
-        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
+        old_users, new_users = self.workspace_group_mgr.get_old_users_and_new_users(
+            workspace_group_vo.users, workspace_group_id, domain_id
+        )
+
+        workspace_group_user_ids: List[str] = old_users + new_users
+
+        workspace_group_dict = self.add_user_name_and_state_to_users(
+            workspace_group_user_ids, workspace_group_vo, domain_id
+        )
+        return WorkspaceGroupResponse(**workspace_group_dict)
 
     @transaction(permission="identity:WorkspaceGroup.read", role_types=["DOMAIN_ADMIN"])
     @append_query_filter(["workspace_group_id", "name", "domain_id"])
