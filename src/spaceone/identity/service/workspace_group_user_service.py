@@ -333,15 +333,16 @@ class WorkspaceGroupUserService(BaseService):
 
         workspace_groups_info = []
         for workspace_group_vo in workspace_group_vos:
+            workspace_group_users = workspace_group_vo.users or []
             old_users = list(
                 set(
-                    [user_info["user_id"] for user_info in workspace_group_vo.users]
-                    if workspace_group_vo.users
+                    [user_info["user_id"] for user_info in workspace_group_users]
+                    if workspace_group_users
                     else []
                 )
             )
             new_users = list(
-                set([user_info["user_id"] for user_info in workspace_group_vo.users])
+                set([user_info["user_id"] for user_info in workspace_group_users])
             )
 
             workspace_group_user_ids: List[str] = old_users + new_users
