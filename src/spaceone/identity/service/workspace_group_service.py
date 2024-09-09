@@ -85,7 +85,7 @@ class WorkspaceGroupService(BaseService):
             WorkspaceGroupResponse:
         """
         params_data = params.dict()
-        params_data["created_by"] = self.transaction.get_meta("authorization.user_id")
+        params_data["created_by"] = self.transaction.get_meta("authorization.audience")
 
         workspace_group_vo = self.workspace_group_mgr.create_workspace_group(
             params_data
@@ -116,7 +116,7 @@ class WorkspaceGroupService(BaseService):
         )
 
         params_data = params.dict()
-        params_data["updated_by"] = self.transaction.get_meta("authorization.user_id")
+        params_data["updated_by"] = self.transaction.get_meta("authorization.audience")
         params_data["updated_at"] = datetime.utcnow()
 
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
