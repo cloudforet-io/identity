@@ -23,6 +23,10 @@ from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupMana
 from spaceone.identity.manager.workspace_group_user_manager import (
     WorkspaceGroupUserManager,
 )
+from spaceone.identity.model.workspace_group.response import (
+    WorkspaceGroupResponse,
+    WorkspaceGroupsResponse,
+)
 from spaceone.identity.model.workspace_group_user.request import (
     WorkspaceGroupUserAddRequest,
     WorkspaceGroupUserFindRequest,
@@ -33,8 +37,6 @@ from spaceone.identity.model.workspace_group_user.request import (
     WorkspaceGroupUserUpdateRoleRequest,
 )
 from spaceone.identity.model.workspace_group_user.response import (
-    WorkspaceGroupUserResponse,
-    WorkspaceGroupUsersResponse,
     WorkspaceGroupUsersSummaryResponse,
 )
 from spaceone.identity.service.role_binding_service import RoleBindingService
@@ -64,7 +66,7 @@ class WorkspaceGroupUserService(BaseService):
     @convert_model
     def add(
         self, params: WorkspaceGroupUserAddRequest
-    ) -> Union[WorkspaceGroupUserResponse, dict]:
+    ) -> Union[WorkspaceGroupResponse, dict]:
         """Add workspace group user
         Args:
             params (WorkspaceGroupUserAddRequest): {
@@ -79,7 +81,7 @@ class WorkspaceGroupUserService(BaseService):
                 'domain_id': 'str',              # injected from auth (required)
             }
         Returns:
-           WorkspaceGroupUserResponse:
+           WorkspaceGroupResponse:
         """
         workspace_group_id = params.workspace_group_id
         users: List[Dict[str, str]] = params.users
@@ -133,13 +135,13 @@ class WorkspaceGroupUserService(BaseService):
             )
         )
 
-        return WorkspaceGroupUserResponse(**workspace_group_user_dict)
+        return WorkspaceGroupResponse(**workspace_group_user_dict)
 
     @transaction(permission="identity:WorkspaceGroupUser:write", role_types=["USER"])
     @convert_model
     def remove(
         self, params: WorkspaceGroupUserRemoveRequest
-    ) -> Union[WorkspaceGroupUserResponse, dict]:
+    ) -> Union[WorkspaceGroupResponse, dict]:
         """Remove workspace group user
         Args:
             params (WorkspaceGroupUserRemoveRequest): {
@@ -153,7 +155,7 @@ class WorkspaceGroupUserService(BaseService):
                 'domain_id': 'str',                 # injected from auth (required)
             }
         Returns:
-            WorkspaceGroupUserResponse:
+            WorkspaceGroupResponse:
         """
         # user_id = self.transaction.get_meta("authorization.user_id")
         workspace_group_id = params.workspace_group_id
@@ -190,13 +192,13 @@ class WorkspaceGroupUserService(BaseService):
             params.dict(exclude_unset=True), workspace_group_vo
         )
 
-        return WorkspaceGroupUserResponse(**workspace_group_vo.to_dict())
+        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
 
     @transaction(permission="identity:WorkspaceGroupUser:write", role_types=["USER"])
     @convert_model
     def update_role(
         self, params: WorkspaceGroupUserUpdateRoleRequest
-    ) -> Union[WorkspaceGroupUserResponse, dict]:
+    ) -> Union[WorkspaceGroupResponse, dict]:
         """Update workspace group user role
         Args:
             params (WorkspaceGroupUserUpdateRoleRequest): {
@@ -207,7 +209,7 @@ class WorkspaceGroupUserService(BaseService):
                 'domain_id': 'str',                     # injected from auth (required)
             }
         Returns:
-            WorkspaceGroupUserResponse:
+            WorkspaceGroupResponse:
         """
         workspace_group_id = params.workspace_group_id
         role_id = params.role_id
@@ -247,7 +249,7 @@ class WorkspaceGroupUserService(BaseService):
             update_workspace_group_params, workspace_group_vo
         )
 
-        return WorkspaceGroupUserResponse(**workspace_group_vo.to_dict())
+        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
 
     @transaction(permission="identity:WorkspaceGroupUser:read", role_types=["USER"])
     @convert_model
@@ -273,7 +275,7 @@ class WorkspaceGroupUserService(BaseService):
     @convert_model
     def get(
         self, params: WorkspaceGroupUserGetRequest
-    ) -> Union[WorkspaceGroupUserResponse, dict]:
+    ) -> Union[WorkspaceGroupResponse, dict]:
         """Get workspace groups
         Args:
             params (WorkspaceGroupUserGetRequest): {
@@ -282,7 +284,7 @@ class WorkspaceGroupUserService(BaseService):
                 'domain_id': 'str',              # injected from auth (required)
             }
         Returns:
-            WorkspaceGroupUserResponse:
+            WorkspaceGroupResponse:
         """
         workspace_group_id = params.workspace_group_id
         domain_id = params.domain_id
@@ -302,7 +304,7 @@ class WorkspaceGroupUserService(BaseService):
                 workspace_group_user_ids, workspace_group_vo, domain_id
             )
         )
-        return WorkspaceGroupUserResponse(**workspace_group_dict)
+        return WorkspaceGroupResponse(**workspace_group_dict)
 
     @transaction(permission="identity:WorkspaceGroupUser.read", role_types=["USER"])
     @append_query_filter(["workspace_group_id", "name", "domain_id"])
@@ -310,7 +312,7 @@ class WorkspaceGroupUserService(BaseService):
     @convert_model
     def list(
         self, params: WorkspaceGroupUserSearchQueryRequest
-    ) -> Union[WorkspaceGroupUsersResponse, dict]:
+    ) -> Union[WorkspaceGroupsResponse, dict]:
         """List workspace group users
         Args:
             params (WorkspaceGroupUserSearchQueryRequest): {
@@ -323,7 +325,7 @@ class WorkspaceGroupUserService(BaseService):
                 'domain_id': 'str',                      # injected from auth (required)
             }
         Returns:
-            WorkspaceGroupUsersResponse:
+            WorkspaceGroupsResponse:
         """
         query = params.query
 
@@ -354,7 +356,7 @@ class WorkspaceGroupUserService(BaseService):
             )
             workspace_groups_info.append(workspace_group_dict)
 
-        return WorkspaceGroupUsersResponse(
+        return WorkspaceGroupsResponse(
             results=workspace_groups_info, total_count=total_count
         )
 
