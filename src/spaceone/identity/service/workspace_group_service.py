@@ -389,15 +389,16 @@ class WorkspaceGroupService(BaseService):
 
         workspace_groups_info = []
         for workspace_group_vo in workspace_group_vos:
+            workspace_group_users = workspace_group_vo.users or []
             old_users = list(
                 set(
-                    [user_info["user_id"] for user_info in workspace_group_vo.users]
-                    if workspace_group_vo.users
+                    [user_info["user_id"] for user_info in workspace_group_users]
+                    if workspace_group_users
                     else []
                 )
             )
             new_users = list(
-                set([user_info["user_id"] for user_info in workspace_group_vo.users])
+                set([user_info["user_id"] for user_info in workspace_group_users])
             )
 
             workspace_group_user_ids: List[str] = old_users + new_users
@@ -544,14 +545,16 @@ class WorkspaceGroupService(BaseService):
             }
 
         workspace_group_dict = workspace_group_vo.to_dict()
-        users = []
-        for user in workspace_group_dict["users"]:
-            user_id = user["user_id"]
-            user["user_name"] = user_info_map[user_id]["name"]
-            user["state"] = user_info_map[user_id]["state"]
-            users.append(user)
 
-        workspace_group_dict["users"] = users
+        if workspace_group_dict.get("users", []) is not None:
+            users = []
+            for user in workspace_group_dict["users"]:
+                user_id = user["user_id"]
+                user["user_name"] = user_info_map[user_id]["name"]
+                user["state"] = user_info_map[user_id]["state"]
+                users.append(user)
+
+            workspace_group_dict["users"] = users
 
         return workspace_group_dict
 
