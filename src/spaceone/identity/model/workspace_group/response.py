@@ -18,6 +18,7 @@ class WorkspaceGroupUser(BaseModel):
 class WorkspaceGroupResponse(BaseModel):
     workspace_group_id: Union[str, None] = None
     name: Union[str, None] = None
+    workspace_count: Union[int, None] = None
     users: Union[List[WorkspaceGroupUser], None] = None
     tags: Union[dict, None] = None
     created_by: Union[str, None] = None

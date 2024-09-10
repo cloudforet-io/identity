@@ -3,6 +3,7 @@ from mongoengine import (
     DictField,
     EmbeddedDocument,
     EmbeddedDocumentField,
+    IntField,
     ListField,
     StringField,
 )
@@ -20,6 +21,7 @@ class WorkspaceGroupUser(EmbeddedDocument):
 class WorkspaceGroup(MongoModel):
     workspace_group_id = StringField(max_length=40, generate_id="wg", unique=True)
     name = StringField(max_length=255, unique_with="domain_id")
+    workspace_count = IntField(default=None)
     users = ListField(
         EmbeddedDocumentField(WorkspaceGroupUser), default=None, null=True
     )
@@ -33,6 +35,7 @@ class WorkspaceGroup(MongoModel):
     meta = {
         "updatable_fields": [
             "name",
+            "workspace_count",
             "users",
             "tags",
             "updated_by",
