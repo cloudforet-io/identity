@@ -181,8 +181,10 @@ class WorkspaceGroupService(BaseService):
             workspace_group_id, domain_id
         )
 
-        old_users, new_users = self.workspace_group_mgr.get_old_users_and_new_users(
-            new_users_info_list, workspace_group_id, domain_id
+        old_users, new_users = (
+            self.workspace_group_mgr.get_unique_old_users_and_new_users(
+                new_users_info_list, workspace_group_id, domain_id
+            )
         )
 
         self.workspace_group_mgr.check_new_users_already_in_workspace_group(
@@ -244,8 +246,10 @@ class WorkspaceGroupService(BaseService):
         users = params.users
         domain_id = params.domain_id
 
-        old_user_ids, user_ids = self.workspace_group_mgr.get_old_users_and_new_users(
-            users, workspace_group_id, domain_id
+        old_user_ids, user_ids = (
+            self.workspace_group_mgr.get_unique_old_users_and_new_users(
+                users, workspace_group_id, domain_id
+            )
         )
 
         self.workspace_group_mgr.check_user_ids_exist_in_workspace_group(
@@ -352,8 +356,10 @@ class WorkspaceGroupService(BaseService):
             workspace_group_id, domain_id
         )
 
-        old_users, new_users = self.workspace_group_mgr.get_old_users_and_new_users(
-            workspace_group_vo.users, workspace_group_id, domain_id
+        old_users, new_users = (
+            self.workspace_group_mgr.get_unique_old_users_and_new_users(
+                workspace_group_vo.users, workspace_group_id, domain_id
+            )
         )
 
         workspace_group_user_ids: List[str] = old_users + new_users
@@ -580,10 +586,7 @@ class WorkspaceGroupService(BaseService):
 
         if rb_vos.count() > 0:
             for rb_vo in rb_vos:
-                _LOGGER.debug(
-                    f"[remove_users] Delete role binding info: {rb_vo.to_dict()}"
-                )
-                rb_vo.delete()
+                self.rb_mgr.delete_role_binding_by_vo(rb_vo)
 
         updated_users = [user for user in old_users if user["user_id"] not in user_ids]
 

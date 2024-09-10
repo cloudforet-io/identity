@@ -15,6 +15,7 @@ class WorkspaceManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace_model = Workspace
+        self.rb_mgr = RoleBindingManager()
 
     def create_workspace(self, params: dict) -> Workspace:
         def _rollback(vo: Workspace):
@@ -49,10 +50,8 @@ class WorkspaceManager(BaseManager):
 
         return workspace_vo.update(params)
 
-    @staticmethod
-    def delete_workspace_by_vo(workspace_vo: Workspace) -> None:
-        rb_mgr = RoleBindingManager()
-        rb_vos = rb_mgr.filter_role_bindings(
+    def delete_workspace_by_vo(self, workspace_vo: Workspace) -> None:
+        rb_vos = self.rb_mgr.filter_role_bindings(
             workspace_id=workspace_vo.workspace_id, domain_id=workspace_vo.domain_id
         )
 
@@ -61,11 +60,7 @@ class WorkspaceManager(BaseManager):
                 f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}"
             )
             for rb_vo in rb_vos:
-                _LOGGER.debug(
-                    f"[delete_role_binding_by_vo] Delete role binding info: {rb_vo.to_dict()}"
-                )
-                rb_vo.delete()
-
+                self.rb_mgr.delete_role_binding_by_vo(rb_vo)
         workspace_vo.delete()
 
         cache.delete_pattern(
