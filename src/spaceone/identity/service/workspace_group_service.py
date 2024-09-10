@@ -60,6 +60,7 @@ class WorkspaceGroupService(BaseService):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.workspace_mgr = WorkspaceManager()
         self.workspace_group_mgr = WorkspaceGroupManager()
         self.user_mgr = UserManager()
         self.role_mgr = RoleManager()
@@ -100,14 +101,14 @@ class WorkspaceGroupService(BaseService):
     def update(
         self, params: WorkspaceGroupUpdateRequest
     ) -> Union[WorkspaceGroupResponse, dict]:
-        """Update workspace group
+        """Update workspace group name and tags
         Args:
             params (WorkspaceGroupUpdateRequest): {
                 'workspace_group_id': 'str',    # required
                 'name': 'str',
                 'tags': 'dict',
                 'workspace_id': 'str',          # injected from auth
-                'domain_id': 'str',             # injected from auth
+                'domain_id': 'str',             # injected from auth (required)
         Returns:
             WorkspaceGroupResponse:
         """
@@ -159,8 +160,8 @@ class WorkspaceGroupService(BaseService):
                 'workspace_group_id': 'str',      # required
                 'users': [                        # required
                     {
-                        'user_id': 'str',
-                        'role_id': 'str',
+                        'user_id': 'str',         # required
+                        'role_id': 'str',         # required
                     }
                 ],
                 'workspace_id': 'str',            # injected from auth
@@ -173,7 +174,7 @@ class WorkspaceGroupService(BaseService):
         if role_type != "DOMAIN_ADMIN":
             raise ERROR_PERMISSION_DENIED()
 
-        users: List[Dict[str, str]] = params.users
+        new_users_info_list: List[Dict[str, str]] = params.users
         workspace_group_id = params.workspace_group_id
         domain_id = params.domain_id
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
@@ -181,7 +182,7 @@ class WorkspaceGroupService(BaseService):
         )
 
         old_users, new_users = self.workspace_group_mgr.get_old_users_and_new_users(
-            users, workspace_group_id, domain_id
+            new_users_info_list, workspace_group_id, domain_id
         )
 
         self.workspace_group_mgr.check_new_users_already_in_workspace_group(
@@ -191,11 +192,17 @@ class WorkspaceGroupService(BaseService):
 
         self.check_new_users_exist_in_domain(new_users, domain_id)
 
-        role_map = self.get_role_map(users, domain_id)
-        workspace_ids = self.get_workspace_ids(workspace_group_id, domain_id)
+        role_map = self.get_role_map(new_users_info_list, domain_id)
+        workspace_ids_in_workspace_group = self.get_workspace_ids(
+            workspace_group_id, domain_id
+        )
         old_users_in_workspace_group = workspace_group_vo.users or []
         new_users_in_workspace_group = self.add_users_to_workspace_group(
-            users, role_map, workspace_ids, workspace_group_id, domain_id
+            new_users_info_list,
+            role_map,
+            workspace_ids_in_workspace_group,
+            workspace_group_id,
+            domain_id,
         )
         params.users = old_users_in_workspace_group + new_users_in_workspace_group
 
@@ -203,11 +210,11 @@ class WorkspaceGroupService(BaseService):
             params.dict(exclude_unset=True), workspace_group_vo
         )
 
-        workspace_group_dict = self.add_user_name_and_state_to_users(
+        workspace_group_info = self.add_user_name_and_state_to_users(
             workspace_group_user_ids, workspace_group_vo, domain_id
         )
 
-        return WorkspaceGroupResponse(**workspace_group_dict)
+        return WorkspaceGroupResponse(**workspace_group_info)
 
     @transaction(
         permission="identity:WorkspaceGroup.write", role_types=["DOMAIN_ADMIN"]
@@ -438,7 +445,9 @@ class WorkspaceGroupService(BaseService):
 
         return self.workspace_group_mgr.stat_workspace_group(query)
 
-    def check_new_users_exist_in_domain(self, new_users: List[str], domain_id: str):
+    def check_new_users_exist_in_domain(
+        self, new_users: List[str], domain_id: str
+    ) -> None:
         user_vos = self.user_mgr.filter_users(user_id=new_users, domain_id=domain_id)
         if not user_vos.count() == len(new_users):
             raise ERROR_NOT_FOUND(key="user_id", value=new_users)
@@ -462,10 +471,8 @@ class WorkspaceGroupService(BaseService):
 
         return role_map
 
-    @staticmethod
-    def get_workspace_ids(workspace_group_id: str, domain_id: str) -> List[str]:
-        workspace_mgr = WorkspaceManager()
-        workspace_vos = workspace_mgr.filter_workspaces(
+    def get_workspace_ids(self, workspace_group_id: str, domain_id: str) -> List[str]:
+        workspace_vos = self.workspace_mgr.filter_workspaces(
             workspace_group_id=workspace_group_id, domain_id=domain_id
         )
         workspace_ids = [workspace_vo.workspace_id for workspace_vo in workspace_vos]
@@ -544,19 +551,19 @@ class WorkspaceGroupService(BaseService):
                 "state": user_vo.state,
             }
 
-        workspace_group_dict = workspace_group_vo.to_dict()
+        workspace_group_info = workspace_group_vo.to_dict()
 
-        if workspace_group_dict.get("users", []) is not None:
+        if workspace_group_info.get("users", []) is not None:
             users = []
-            for user in workspace_group_dict["users"]:
+            for user in workspace_group_info["users"]:
                 user_id = user["user_id"]
                 user["user_name"] = user_info_map[user_id]["name"]
                 user["state"] = user_info_map[user_id]["state"]
                 users.append(user)
 
-            workspace_group_dict["users"] = users
+            workspace_group_info["users"] = users
 
-        return workspace_group_dict
+        return workspace_group_info
 
     def remove_users_from_workspace_group(
         self,

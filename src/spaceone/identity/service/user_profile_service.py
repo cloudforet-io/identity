@@ -50,6 +50,7 @@ class UserProfileService(BaseService):
         self.domain_mgr = DomainManager()
         self.domain_secret_mgr = DomainSecretManager()
         self.workspace_group_mgr = WorkspaceGroupManager()
+        self.workspace_group_svc = WorkspaceGroupService()
 
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
@@ -448,17 +449,18 @@ class UserProfileService(BaseService):
         )
         role_bindings_info_map = {rb.workspace_group_id: rb.to_dict() for rb in rb_vos}
 
-        workspace_group_user_ids = [
-            user["user_id"]
-            for workspace_group in workspace_group_vos
-            for user in workspace_group["users"]
-        ]
+        workspace_group_user_ids = []
+        for workspace_group in workspace_group_vos:
+            if workspace_group.users:
+                for user in workspace_group.users:
+                    workspace_group_user_ids.append(user.user_id)
 
-        workspace_group_svc = WorkspaceGroupService()
         workspace_groups_info = []
         for workspace_group_vo in workspace_group_vos:
-            workspace_group_dict = workspace_group_svc.add_user_name_and_state_to_users(
-                workspace_group_user_ids, workspace_group_vo, params.domain_id
+            workspace_group_dict = (
+                self.workspace_group_svc.add_user_name_and_state_to_users(
+                    workspace_group_user_ids, workspace_group_vo, params.domain_id
+                )
             )
             workspace_groups_info.append(workspace_group_dict)
 

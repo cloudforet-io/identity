@@ -125,18 +125,23 @@ class WorkspaceGroupManager(BaseManager):
         )
 
     def get_old_users_and_new_users(
-        self, users: List[Dict[str, str]], workspace_group_id: str, domain_id: str
+        self,
+        new_users_info_list: List[Dict[str, str]],
+        workspace_group_id: str,
+        domain_id: str,
     ) -> Tuple[List[str], List[str]]:
         workspace_group_vo = self.get_workspace_group(workspace_group_id, domain_id)
 
         old_users = list(
             set(
-                [user_info["user_id"] for user_info in workspace_group_vo.users]
+                [old_user_info["user_id"] for old_user_info in workspace_group_vo.users]
                 if workspace_group_vo.users
                 else []
             )
         )
-        new_users = list(set([user_info["user_id"] for user_info in users]))
+        new_users = list(
+            set([new_user_info["user_id"] for new_user_info in new_users_info_list])
+        )
 
         return old_users, new_users
 
