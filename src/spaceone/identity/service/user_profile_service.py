@@ -16,23 +16,21 @@ from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.token_manager.local_token_manager import (
-    LocalTokenManager,
-)
+from spaceone.identity.manager.token_manager.local_token_manager import \
+    LocalTokenManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.user.database import User
 from spaceone.identity.model.user.response import *
 from spaceone.identity.model.user_profile.request import *
-from spaceone.identity.model.user_profile.request import (
-    UserProfileGetWorkspaceGroupsRequest,
-)
+from spaceone.identity.model.user_profile.request import \
+    UserProfileGetWorkspaceGroupsRequest
 from spaceone.identity.model.user_profile.response import (
-    MyWorkspaceGroupsResponse,
-    MyWorkspacesResponse,
-)
-from spaceone.identity.service.workspace_group_service import WorkspaceGroupService
+    MyWorkspaceGroupsResponse, MyWorkspacesResponse)
+from spaceone.identity.service.workspace_group_service import \
+    WorkspaceGroupService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -350,41 +348,48 @@ class UserProfileService(BaseService):
             MyWorkspaceResponse:
         """
 
+        workspace_group_id = params.workspace_group_id
+        user_id = params.user_id
+        domain_id = params.domain_id
+
         role_mgr = RoleManager()
         rb_mgr = RoleBindingManager()
         workspace_mgr = WorkspaceManager()
         allow_all = False
 
-        user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
 
         if user_vo.role_type == "DOMAIN_ADMIN":
             allow_all = True
 
         conditions = {
-            "user_id": params.user_id,
-            "domain_id": params.domain_id,
+            "user_id": user_id,
+            "domain_id": domain_id,
             "role_type": ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
         }
 
-        if params.workspace_group_id:
-            conditions["workspace_group_id"] = params.workspace_group_id
+        if workspace_group_id:
+            conditions["workspace_group_id"] = workspace_group_id
 
         rb_vos = rb_mgr.filter_role_bindings(**conditions)
 
+        workspace_filter_conditions = {"domain_id": domain_id, "state": "ENABLED"}
         if allow_all:
+            if workspace_group_id:
+                workspace_filter_conditions["workspace_group_id"] = workspace_group_id
+
             workspace_vos = workspace_mgr.filter_workspaces(
-                domain_id=params.domain_id, state="ENABLED"
+                **workspace_filter_conditions
             )
         else:
             workspace_ids = list(set([rb.workspace_id for rb in rb_vos]))
+            workspace_filter_conditions["workspace_id"] = workspace_ids
             workspace_vos = workspace_mgr.filter_workspaces(
-                workspace_id=workspace_ids,
-                domain_id=params.domain_id,
-                state="ENABLED",
+                **workspace_filter_conditions
             )
 
         role_vos = role_mgr.filter_roles(
-            domain_id=params.domain_id,
+            domain_id=domain_id,
             role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
         )
 
