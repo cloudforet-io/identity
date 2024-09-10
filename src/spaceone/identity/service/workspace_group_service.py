@@ -60,11 +60,9 @@ class WorkspaceGroupService(BaseService):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.workspace_mgr = WorkspaceManager()
         self.workspace_group_mgr = WorkspaceGroupManager()
         self.user_mgr = UserManager()
         self.role_mgr = RoleManager()
-        self.rb_svc = RoleBindingService()
         self.rb_mgr = RoleBindingManager()
 
     @transaction(
@@ -195,14 +193,14 @@ class WorkspaceGroupService(BaseService):
         self.check_new_users_exist_in_domain(new_users, domain_id)
 
         role_map = self.get_role_map(new_users_info_list, domain_id)
-        workspace_ids_in_workspace_group = self.get_workspace_ids(
+        workspace_group_workspace_ids = self.get_workspace_ids(
             workspace_group_id, domain_id
         )
         old_users_in_workspace_group = workspace_group_vo.users or []
         new_users_in_workspace_group = self.add_users_to_workspace_group(
             new_users_info_list,
             role_map,
-            workspace_ids_in_workspace_group,
+            workspace_group_workspace_ids,
             workspace_group_id,
             domain_id,
         )
@@ -356,13 +354,15 @@ class WorkspaceGroupService(BaseService):
             workspace_group_id, domain_id
         )
 
-        old_users, new_users = (
-            self.workspace_group_mgr.get_unique_old_users_and_new_users(
-                workspace_group_vo.users, workspace_group_id, domain_id
+        workspace_group_user_ids = []
+        if workspace_group_vo.users:
+            old_users, new_users = (
+                self.workspace_group_mgr.get_unique_old_users_and_new_users(
+                    workspace_group_vo.users, workspace_group_id, domain_id
+                )
             )
-        )
 
-        workspace_group_user_ids: List[str] = old_users + new_users
+            workspace_group_user_ids: List[str] = old_users + new_users
 
         workspace_group_dict = self.add_user_name_and_state_to_users(
             workspace_group_user_ids, workspace_group_vo, domain_id
@@ -477,53 +477,56 @@ class WorkspaceGroupService(BaseService):
 
         return role_map
 
-    def get_workspace_ids(self, workspace_group_id: str, domain_id: str) -> List[str]:
-        workspace_vos = self.workspace_mgr.filter_workspaces(
+    @staticmethod
+    def get_workspace_ids(workspace_group_id: str, domain_id: str) -> List[str]:
+        workspace_mgr = WorkspaceManager()
+        workspace_vos = workspace_mgr.filter_workspaces(
             workspace_group_id=workspace_group_id, domain_id=domain_id
         )
         workspace_ids = [workspace_vo.workspace_id for workspace_vo in workspace_vos]
 
         return workspace_ids
 
+    @staticmethod
     def add_users_to_workspace_group(
-        self,
-        users: List[Dict[str, str]],
+        new_users_info_list: List[Dict[str, str]],
         role_map: Dict[str, str],
-        workspace_ids: List[str],
+        workspace_group_workspace_ids: List[str],
         workspace_group_id: str,
         domain_id: str,
-    ):
+    ) -> List[Dict[str, str]]:
         new_users_in_workspace_group = []
-        if workspace_ids:
-            for workspace_id in workspace_ids:
-                for user_info in users:
-                    role_type = role_map[user_info["role_id"]]
+        rb_svc = RoleBindingService()
+        if workspace_group_workspace_ids:
+            for workspace_id in workspace_group_workspace_ids:
+                for new_user_info in new_users_info_list:
+                    role_type = role_map[new_user_info["role_id"]]
 
                     role_binding_params = {
-                        "user_id": user_info["user_id"],
-                        "role_id": user_info["role_id"],
+                        "user_id": new_user_info["user_id"],
+                        "role_id": new_user_info["role_id"],
                         "role_type": role_type,
                         "resource_group": "WORKSPACE",
                         "domain_id": domain_id,
                         "workspace_group_id": workspace_group_id,
                         "workspace_id": workspace_id,
                     }
-                    new_rb_vo = self.rb_svc.create_role_binding(role_binding_params)
+                    new_user_rb_vo = rb_svc.create_role_binding(role_binding_params)
                     new_users_in_workspace_group.append(
                         {
-                            "user_id": new_rb_vo.user_id,
-                            "role_id": new_rb_vo.role_id,
-                            "role_type": new_rb_vo.role_type,
+                            "user_id": new_user_rb_vo.user_id,
+                            "role_id": new_user_rb_vo.role_id,
+                            "role_type": new_user_rb_vo.role_type,
                         }
                     )
         else:
-            for user_info in users:
-                role_type = role_map[user_info["role_id"]]
+            for new_user_info in new_users_info_list:
+                role_type = role_map[new_user_info["role_id"]]
 
                 new_users_in_workspace_group.append(
                     {
-                        "user_id": user_info["user_id"],
-                        "role_id": user_info["role_id"],
+                        "user_id": new_user_info["user_id"],
+                        "role_id": new_user_info["role_id"],
                         "role_type": role_type,
                     }
                 )
@@ -559,7 +562,7 @@ class WorkspaceGroupService(BaseService):
 
         workspace_group_info = workspace_group_vo.to_dict()
 
-        if workspace_group_info.get("users", []) is not None:
+        if workspace_group_info.get("users", []):
             users = []
             for user in workspace_group_info["users"]:
                 user_id = user["user_id"]

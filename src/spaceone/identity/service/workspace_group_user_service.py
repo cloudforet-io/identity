@@ -84,7 +84,7 @@ class WorkspaceGroupUserService(BaseService):
            WorkspaceGroupResponse:
         """
         workspace_group_id = params.workspace_group_id
-        users: List[Dict[str, str]] = params.users
+        new_users_info_list: List[Dict[str, str]] = params.users
         user_id = params.user_id
         domain_id = params.domain_id
 
@@ -92,8 +92,10 @@ class WorkspaceGroupUserService(BaseService):
             workspace_group_id, domain_id
         )
 
-        old_users, new_users = self.workspace_group_mgr.get_old_users_and_new_users(
-            users, workspace_group_id, domain_id
+        old_users, new_users = (
+            self.workspace_group_mgr.get_unique_old_users_and_new_users(
+                new_users_info_list, workspace_group_id, domain_id
+            )
         )
         self.workspace_group_mgr.check_new_users_already_in_workspace_group(
             old_users, new_users
@@ -103,27 +105,27 @@ class WorkspaceGroupUserService(BaseService):
 
         self.workspace_group_svc.check_new_users_exist_in_domain(new_users, domain_id)
 
-        old_users_in_workspace_group = workspace_group_vo.users or []
-        if old_users_in_workspace_group:
+        workspace_group_old_users_info = workspace_group_vo.users or []
+        if workspace_group_old_users_info:
             self.workspace_group_user_mgr.check_user_role_type(
-                old_users_in_workspace_group, user_id, command="add"
+                workspace_group_old_users_info, user_id, command="add"
             )
 
-        role_map = self.workspace_group_svc.get_role_map(users, domain_id)
+        role_map = self.workspace_group_svc.get_role_map(new_users_info_list, domain_id)
 
-        workspace_ids = self.workspace_group_svc.get_workspace_ids(
+        workspace_group_workspace_ids = self.workspace_group_svc.get_workspace_ids(
             workspace_group_id, domain_id
         )
-        new_users_in_workspace_group = (
+        workspace_group_new_users_info = (
             self.workspace_group_svc.add_users_to_workspace_group(
-                users,
+                new_users_info_list,
                 role_map,
-                workspace_ids,
+                workspace_group_workspace_ids,
                 workspace_group_id,
                 domain_id,
             )
         )
-        params.users = old_users_in_workspace_group + new_users_in_workspace_group
+        params.users = workspace_group_old_users_info + workspace_group_new_users_info
 
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
             params.dict(exclude_unset=True), workspace_group_vo
@@ -163,8 +165,10 @@ class WorkspaceGroupUserService(BaseService):
         user_id = params.user_id
         domain_id = params.domain_id
 
-        old_user_ids, user_ids = self.workspace_group_mgr.get_old_users_and_new_users(
-            users, workspace_group_id, domain_id
+        old_user_ids, user_ids = (
+            self.workspace_group_mgr.get_unique_old_users_and_new_users(
+                users, workspace_group_id, domain_id
+            )
         )
         self.workspace_group_mgr.check_user_ids_exist_in_workspace_group(
             old_user_ids, user_ids
@@ -327,11 +331,15 @@ class WorkspaceGroupUserService(BaseService):
             workspace_group_id, domain_id
         )
 
-        old_users, new_users = self.workspace_group_mgr.get_old_users_and_new_users(
-            workspace_group_vo.users, workspace_group_id, domain_id
-        )
+        workspace_group_user_ids = []
+        if workspace_group_vo.users:
+            old_users, new_users = (
+                self.workspace_group_mgr.get_unique_old_users_and_new_users(
+                    workspace_group_vo.users, workspace_group_id, domain_id
+                )
+            )
 
-        workspace_group_user_ids: List[str] = old_users + new_users
+            workspace_group_user_ids: List[str] = old_users + new_users
 
         workspace_group_dict = (
             self.workspace_group_svc.add_user_name_and_state_to_users(

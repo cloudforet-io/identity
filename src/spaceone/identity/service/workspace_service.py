@@ -11,9 +11,12 @@ from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.service_account_manager import ServiceAccountManager
-from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.service_account_manager import \
+    ServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import \
+    TrustedAccountManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
@@ -36,6 +39,7 @@ class WorkspaceService(BaseService):
         self.resource_mgr = ResourceManager()
         self.workspace_mgr = WorkspaceManager()
         self.service_account_mgr = ServiceAccountManager()
+        self.workspace_group_mgr = WorkspaceGroupManager()
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -107,16 +111,38 @@ class WorkspaceService(BaseService):
             workspace_id=params.workspace_id, domain_id=domain_id
         )
 
-        previous_workspace_group_id = workspace_vo.workspace_group_id
+        old_workspace_group_id = workspace_vo.workspace_group_id
         is_updatable = True
+        workspace_group_vo = None
         if workspace_group_id:
-            self._add_workspace_to_group(workspace_id, workspace_group_id, domain_id)
-        elif previous_workspace_group_id:
-            self._remove_workspace_from_group(previous_workspace_group_id, domain_id)
+            workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+                workspace_group_id, domain_id
+            )
+            is_updatable = self._add_workspace_to_group(
+                workspace_id, workspace_group_id, domain_id
+            )
+        elif old_workspace_group_id:
+            workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+                old_workspace_group_id, domain_id
+            )
+            self._remove_workspace_from_group(old_workspace_group_id, domain_id)
 
         if is_updatable:
             workspace_vo = self.workspace_mgr.update_workspace_by_vo(
                 params.dict(exclude_unset=False), workspace_vo
+            )
+
+            workspace_vos = None
+            if workspace_group_id:
+                workspace_vos = self.workspace_mgr.filter_workspaces(
+                    workspace_group_id=workspace_group_id, domain_id=domain_id
+                )
+            elif old_workspace_group_id:
+                workspace_vos = self.workspace_mgr.filter_workspaces(
+                    workspace_group_id=old_workspace_group_id, domain_id=domain_id
+                )
+            self.workspace_group_mgr.update_workspace_group_by_vo(
+                {"workspace_count": len(workspace_vos)}, workspace_group_vo
             )
 
         return WorkspaceResponse(**workspace_vo.to_dict())
@@ -378,17 +404,16 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.get_workspace(
             workspace_id=workspace_id, domain_id=domain_id
         )
-        workspace_group_mgr = WorkspaceGroupManager()
-        existing_workspace_group_id = workspace_vo.workspace_group_id
+        old_workspace_group_id = workspace_vo.workspace_group_id
         is_updatable = True
 
-        workspace_group_vo = workspace_group_mgr.get_workspace_group(
+        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
             workspace_group_id=workspace_group_id, domain_id=domain_id
         )
 
-        if existing_workspace_group_id:
-            if existing_workspace_group_id != workspace_group_id:
-                self._delete_role_bindings(existing_workspace_group_id, domain_id)
+        if old_workspace_group_id:
+            if old_workspace_group_id != workspace_group_id:
+                self._delete_role_bindings(old_workspace_group_id, domain_id)
 
                 self._create_role_bindings(
                     workspace_group_vo.users,
@@ -409,9 +434,9 @@ class WorkspaceService(BaseService):
         return is_updatable
 
     def _remove_workspace_from_group(
-        self, previous_workspace_group_id: str, domain_id: str
+        self, old_workspace_group_id: str, domain_id: str
     ) -> None:
-        self._delete_role_bindings(previous_workspace_group_id, domain_id)
+        self._delete_role_bindings(old_workspace_group_id, domain_id)
 
     @staticmethod
     def _delete_role_bindings(existing_workspace_group_id: str, domain_id: str):
