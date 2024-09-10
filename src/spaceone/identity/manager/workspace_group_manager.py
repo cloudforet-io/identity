@@ -74,10 +74,7 @@ class WorkspaceGroupManager(BaseManager):
                     f"[delete_workspace_group_by_vo] Delete role bindings count with {workspace_group_vo.users}: {rb_vos.count()}"
                 )
                 for rb_vo in rb_vos:
-                    _LOGGER.debug(
-                        f"[delete_workspace_group_by_vo] Delete role binding info: {rb_vo.to_dict()}"
-                    )
-                    rb_vo.delete()
+                    self.rb_mgr.delete_role_binding_by_vo(rb_vo)
 
         workspace_mgr = WorkspaceManager()
         workspace_vos = workspace_mgr.filter_workspaces(
@@ -124,7 +121,7 @@ class WorkspaceGroupManager(BaseManager):
             for workspace_group_user_id in workspace_group_vo["users"]
         )
 
-    def get_old_users_and_new_users(
+    def get_unique_old_users_and_new_users(
         self,
         new_users_info_list: List[Dict[str, str]],
         workspace_group_id: str,

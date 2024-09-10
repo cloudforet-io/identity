@@ -421,10 +421,7 @@ class WorkspaceService(BaseService):
             domain_id=domain_id,
         )
         for rb_vo in rb_vos:
-            _LOGGER.debug(
-                f"[_delete_role_bindings] Delete role binding info: {rb_vo.to_dict()}"
-            )
-            rb_vo.delete()
+            rb_mgr.delete_role_binding_by_vo(rb_vo)
 
     @staticmethod
     def _create_role_bindings(
