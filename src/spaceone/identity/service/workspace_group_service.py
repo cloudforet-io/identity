@@ -64,6 +64,7 @@ class WorkspaceGroupService(BaseService):
         self.user_mgr = UserManager()
         self.role_mgr = RoleManager()
         self.rb_mgr = RoleBindingManager()
+        self.rb_svc = RoleBindingService()
 
     @transaction(
         permission="identity:WorkspaceGroup.write", role_types=["DOMAIN_ADMIN"]
@@ -487,8 +488,8 @@ class WorkspaceGroupService(BaseService):
 
         return workspace_ids
 
-    @staticmethod
     def add_users_to_workspace_group(
+        self,
         new_users_info_list: List[Dict[str, str]],
         role_map: Dict[str, str],
         workspace_group_workspace_ids: List[str],
@@ -496,7 +497,8 @@ class WorkspaceGroupService(BaseService):
         domain_id: str,
     ) -> List[Dict[str, str]]:
         new_users_in_workspace_group = []
-        rb_svc = RoleBindingService()
+        added_user_ids = set()
+
         if workspace_group_workspace_ids:
             for workspace_id in workspace_group_workspace_ids:
                 for new_user_info in new_users_info_list:
@@ -511,25 +513,33 @@ class WorkspaceGroupService(BaseService):
                         "workspace_group_id": workspace_group_id,
                         "workspace_id": workspace_id,
                     }
-                    new_user_rb_vo = rb_svc.create_role_binding(role_binding_params)
-                    new_users_in_workspace_group.append(
-                        {
-                            "user_id": new_user_rb_vo.user_id,
-                            "role_id": new_user_rb_vo.role_id,
-                            "role_type": new_user_rb_vo.role_type,
-                        }
+                    new_user_rb_vo = self.rb_svc.create_role_binding(
+                        role_binding_params
                     )
+
+                    # Prevent duplicate user_id in workspace group
+                    if new_user_rb_vo.user_id not in added_user_ids:
+                        new_users_in_workspace_group.append(
+                            {
+                                "user_id": new_user_rb_vo.user_id,
+                                "role_id": new_user_rb_vo.role_id,
+                                "role_type": new_user_rb_vo.role_type,
+                            }
+                        )
+                        added_user_ids.add(new_user_rb_vo.user_id)
         else:
             for new_user_info in new_users_info_list:
-                role_type = role_map[new_user_info["role_id"]]
+                if new_user_info["user_id"] not in added_user_ids:
+                    role_type = role_map[new_user_info["role_id"]]
 
-                new_users_in_workspace_group.append(
-                    {
-                        "user_id": new_user_info["user_id"],
-                        "role_id": new_user_info["role_id"],
-                        "role_type": role_type,
-                    }
-                )
+                    new_users_in_workspace_group.append(
+                        {
+                            "user_id": new_user_info["user_id"],
+                            "role_id": new_user_info["role_id"],
+                            "role_type": role_type,
+                        }
+                    )
+                    added_user_ids.add(new_user_info["user_id"])
 
         return new_users_in_workspace_group
 
