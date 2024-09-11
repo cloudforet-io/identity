@@ -28,6 +28,7 @@ class WorkspaceResponse(BaseModel):
     created_at: Union[datetime, None] = None
     last_synced_at: Union[datetime, None] = None
     dormant_updated_at: Union[datetime, None] = None
+    changed_at: Union[datetime, None] = None
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
@@ -36,6 +37,7 @@ class WorkspaceResponse(BaseModel):
         data["dormant_updated_at"] = utils.datetime_to_iso8601(
             data.get("dormant_updated_at")
         )
+        data["changed_at"] = utils.datetime_to_iso8601(data.get("changed_at"))
         return data
 
 

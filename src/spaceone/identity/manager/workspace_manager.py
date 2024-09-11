@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 from mongoengine import QuerySet
 from spaceone.core import cache
@@ -91,6 +91,21 @@ class WorkspaceManager(BaseManager):
 
     def list_workspaces(self, query: dict) -> Tuple[QuerySet, int]:
         return self.workspace_model.query(**query)
+
+    def list_workspace_group_workspaces(
+        self, workspace_group_id: str, domain_id: str
+    ) -> Tuple[List[Dict[str, str]], int]:
+        workspace_vos = self.filter_workspaces(
+            workspace_group_id=workspace_group_id,
+            domain_id=domain_id,
+        )
+
+        workspace_group_workspaces = [
+            workspace_vo.to_dict() for workspace_vo in workspace_vos
+        ]
+        total_count = len(workspace_group_workspaces)
+
+        return workspace_group_workspaces, total_count
 
     def stat_workspaces(self, query: dict) -> dict:
         return self.workspace_model.stat(**query)
