@@ -29,6 +29,7 @@ class Workspace(MongoModel):
     deleted_at = DateTimeField(default=None, null=True)
     last_synced_at = DateTimeField(default=None, null=True)
     dormant_updated_at = DateTimeField(default=None, null=True)
+    changed_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
@@ -47,6 +48,7 @@ class Workspace(MongoModel):
             "deleted_at",
             "last_synced_at",
             "dormant_updated_at",
+            "changed_at",
         ],
         "minimal_fields": [
             "workspace_id",
