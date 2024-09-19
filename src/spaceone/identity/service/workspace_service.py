@@ -345,7 +345,6 @@ class WorkspaceService(BaseService):
         trusted_account_mgr = TrustedAccountManager()
         service_account_mgr = ServiceAccountManager()
         secret_mgr = SecretManager()
-        workspace_group_mgr = WorkspaceGroupManager()
 
         project_group_vos = project_group_mgr.filter_project_groups(
             domain_id=workspace_vo.domain_id, workspace_id=workspace_vo.workspace_id
@@ -361,10 +360,6 @@ class WorkspaceService(BaseService):
 
         service_account_vos = service_account_mgr.filter_service_accounts(
             domain_id=workspace_vo.domain_id, workspace_id=workspace_vo.workspace_id
-        )
-
-        workspace_group_vos = workspace_group_mgr.filter_workspace_groups(
-            domain_id=workspace_vo.domain_id, workspaces=workspace_vo.workspace_id
         )
 
         _LOGGER.debug(
@@ -398,18 +393,6 @@ class WorkspaceService(BaseService):
                 f"[_delete_related_resources_in_workspace] Delete trusted account: {trusted_account_vo.name} ({trusted_account_vo.trusted_account_id})"
             )
             trusted_account_mgr.delete_trusted_account_by_vo(trusted_account_vo)
-
-        for workspace_group_vo in workspace_group_vos:
-            workspaces: list = workspace_group_vo.workspaces
-
-            workspaces.remove(workspace_vo.workspace_id)
-            workspace_group_mgr.update_workspace_group_by_vo(
-                params={"workspaces": workspaces},
-                workspace_group_vo=workspace_group_vo,
-            )
-            _LOGGER.debug(
-                f"[_delete_related_resources_in_workspace] Delete workspace group: {workspace_group_vo.name} ({workspace_group_vo.workspace_group_id})"
-            )
 
     def _add_workspace_to_group(
         self, workspace_id: str, workspace_group_id: str, domain_id: str
