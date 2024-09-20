@@ -205,23 +205,10 @@ class TokenService(BaseService):
         if params.grant_type == "SYSTEM_TOKEN" and params.scope == "WORKSPACE":
             # todo : remove
             permissions = params.permissions
-            page_access = []
-        # TODO: change name
-        elif role_id == "combined-role":
-            user_id = user_vo.user_id
-            permissions, page_access = (
-                self._get_combined_role_permissions_and_page_access(
-                    role_type, user_id, domain_id
-                )
-            )
-
         elif role_id:
-            permissions, page_access = self._get_role_permissions_and_page_access(
-                role_id, domain_id
-            )
+            permissions = self._get_role_permissions(role_id, domain_id)
         else:
             permissions = []
-            page_access = []
 
         if role_type == "WORKSPACE_MEMBER":
             user_projects = self._get_user_projects_in_project_group(
@@ -245,7 +232,6 @@ class TokenService(BaseService):
             "access_token": token_info["access_token"],
             "role_type": role_type,
             "role_id": role_id,
-            "page_access": page_access,
             "domain_id": domain_id,
             "workspace_id": params.workspace_id,
         }
@@ -326,9 +312,6 @@ class TokenService(BaseService):
                 role_type=user_vo.role_type,
             )
 
-            if rb_vos.count() > 0:
-                return rb_vos[0].role_type, rb_vos[0].role_id
-
         else:
             rb_vos = self.rb_mgr.filter_role_bindings(
                 user_id=user_vo.user_id,
@@ -337,15 +320,8 @@ class TokenService(BaseService):
                 workspace_id=workspace_id,
             )
 
-            # TODO: Check if this is correct
-            if rb_vos.count() == 1:
-                return rb_vos[0].role_type, rb_vos[0].role_id
-            else:
-                role_types = [rb.role_type for rb in rb_vos]
-                if "WORKSPACE_OWNER" in role_types:
-                    return "WORKSPACE_OWNER", "combined-role"
-                else:
-                    return "WORKSPACE_MEMBER", "combined-role"
+        if rb_vos.count() > 0:
+            return rb_vos[0].role_type, rb_vos[0].role_id
 
         return "USER", None
 
@@ -353,14 +329,10 @@ class TokenService(BaseService):
     def _get_app_role_info(app_vo: App) -> Tuple[str, str]:
         return app_vo.role_type, app_vo.role_id
 
-    @cache.cacheable(
-        key="identity:role-permissions-page-access:{domain_id}:{role_id}", expire=600
-    )
-    def _get_role_permissions_and_page_access(
-        self, role_id: str, domain_id: str
-    ) -> Tuple[List[str], List[str]]:
+    @cache.cacheable(key="identity:role-permissions:{domain_id}:{role_id}", expire=600)
+    def _get_role_permissions(self, role_id: str, domain_id: str) -> list:
         role_vo = self.role_mgr.get_role(role_id=role_id, domain_id=domain_id)
-        return role_vo.permissions, role_vo.page_access
+        return role_vo.permissions
 
     def _get_user_projects_in_project_group(
         self, domain_id: str, workspace_id: str, user_id: str
@@ -413,39 +385,3 @@ class TokenService(BaseService):
             for required_action in required_actions:
                 if required_action == "UPDATE_PASSWORD":
                     raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
-
-    @cache.cacheable(
-        key="identity:role-permissions-page-access:{domain_id}:{user_id}:{role_type}",
-        expire=600,
-    )
-    def _get_combined_role_permissions_and_page_access(
-        self, role_type: str, user_id: str, domain_id: str
-    ) -> Tuple[List[str], List[str]]:
-        role_bindings = self.rb_mgr.filter_role_bindings(
-            role_type=role_type,
-            user_id=user_id,
-            domain_id=domain_id,
-        )
-        role_ids = [rb.role_id for rb in role_bindings]
-
-        role_infos = self.role_mgr.filter_roles(
-            role_type=role_type, role_id=role_ids, domain_id=domain_id
-        )
-
-        combined_permissions = []
-        combined_page_access = []
-        for role_info in role_infos:
-            if role_info["permissions"]:
-                combined_permissions.extend(role_info["permissions"])
-            else:
-                combined_permissions = []
-                break
-
-        for role_info in role_infos:
-            if role_info["page_access"]:
-                combined_page_access.extend(role_info["page_access"])
-            else:
-                combined_page_access = []
-                break
-
-        return list(set(combined_permissions)), list(set(combined_page_access))
