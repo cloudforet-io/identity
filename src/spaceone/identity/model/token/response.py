@@ -15,6 +15,5 @@ class GrantTokenResponse(BaseModel):
     access_token: str
     role_type: RoleType
     role_id: Union[str, None] = None
-    page_access: Union[List[str], None] = None
     domain_id: str
     workspace_id: Union[str, None] = None
