@@ -12,9 +12,12 @@ from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.service_account_manager import ServiceAccountManager
-from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.service_account_manager import \
+    ServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import \
+    TrustedAccountManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
@@ -37,6 +40,7 @@ class WorkspaceService(BaseService):
         self.resource_mgr = ResourceManager()
         self.workspace_mgr = WorkspaceManager()
         self.service_account_mgr = ServiceAccountManager()
+        self.rb_mgr = RoleBindingManager()
         self.workspace_group_mgr = WorkspaceGroupManager()
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
@@ -450,22 +454,37 @@ class WorkspaceService(BaseService):
             workspace_vo = self.workspace_mgr.get_workspace(
                 workspace_id=workspace_id, domain_id=domain_id
             )
-            workspace_vo.changed_at = datetime.utcnow()
-            workspace_vo.workspace_group_id = None
-            self.workspace_mgr.update_workspace_by_vo(
-                {"changed_at": workspace_vo.changed_at, "workspace_group_id": None},
-                workspace_vo,
-            )
+            if workspace_vo:
+                workspace_vo.changed_at = datetime.utcnow()
+                workspace_vo.workspace_group_id = None
 
-    @staticmethod
-    def _delete_role_bindings(existing_workspace_group_id: str, domain_id: str):
-        rb_mgr = RoleBindingManager()
-        rb_vos = rb_mgr.filter_role_bindings(
+                user_rb_ids = self.rb_mgr.stat_role_bindings(
+                    query={
+                        "distinct": "user_id",
+                        "filter": [
+                            {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                            {"k": "domain_id", "v": domain_id, "o": "eq"},
+                        ],
+                    }
+                ).get("results", [])
+                user_rb_total_count = len(user_rb_ids)
+
+                self.workspace_mgr.update_workspace_by_vo(
+                    {
+                        "user_count": user_rb_total_count,
+                        "changed_at": workspace_vo.changed_at,
+                        "workspace_group_id": None,
+                    },
+                    workspace_vo,
+                )
+
+    def _delete_role_bindings(self, existing_workspace_group_id: str, domain_id: str):
+        rb_vos = self.rb_mgr.filter_role_bindings(
             workspace_group_id=existing_workspace_group_id,
             domain_id=domain_id,
         )
         for rb_vo in rb_vos:
-            rb_mgr.delete_role_binding_by_vo(rb_vo)
+            self.rb_mgr.delete_role_binding_by_vo(rb_vo)
 
     @staticmethod
     def _create_role_bindings(
