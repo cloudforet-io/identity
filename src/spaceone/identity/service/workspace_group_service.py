@@ -198,6 +198,10 @@ class WorkspaceGroupService(BaseService):
             workspace_group_id, domain_id
         )
         old_users_in_workspace_group = workspace_group_vo.users or []
+
+        self.delete_workspace_users_role_binding(
+            new_users, workspace_group_workspace_ids, domain_id
+        )
         new_users_in_workspace_group = self.add_users_to_workspace_group(
             new_users_info_list,
             role_map,
@@ -487,6 +491,19 @@ class WorkspaceGroupService(BaseService):
         workspace_ids = [workspace_vo.workspace_id for workspace_vo in workspace_vos]
 
         return workspace_ids
+
+    def delete_workspace_users_role_binding(
+        self,
+        new_users: List[str],
+        workspace_group_workspace_ids: List[str],
+        domain_id: str,
+    ) -> None:
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            user_id=new_users,
+            workspace_id=workspace_group_workspace_ids,
+            domain_id=domain_id,
+        )
+        rb_vos.delete()
 
     def add_users_to_workspace_group(
         self,

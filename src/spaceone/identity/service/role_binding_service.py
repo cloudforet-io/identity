@@ -166,6 +166,11 @@ class RoleBindingService(BaseService):
 
         self.check_self_update_and_delete(request_user_id, rb_vo.user_id)
 
+        if rb_vo.workspace_group_id:
+            raise ERROR_PERMISSION_DENIED(
+                key="role_binding_id", value=params.role_binding_id
+            )
+
         # Check role
         role_mgr = RoleManager()
         new_role_vo = role_mgr.get_role(params.role_id, params.domain_id)
