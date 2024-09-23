@@ -2,11 +2,7 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Union
 
-from spaceone.core.error import (
-    ERROR_INVALID_PARAMETER,
-    ERROR_NOT_FOUND,
-    ERROR_PERMISSION_DENIED,
-)
+from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.service import (
     BaseService,
     authentication_handler,
@@ -169,10 +165,6 @@ class WorkspaceGroupService(BaseService):
         Returns:
            WorkspaceGroupResponse:
         """
-        role_type = self.transaction.get_meta("authorization.role_type")
-        if role_type != "DOMAIN_ADMIN":
-            raise ERROR_PERMISSION_DENIED()
-
         new_users_info_list: List[Dict[str, str]] = params.users
         workspace_group_id = params.workspace_group_id
         domain_id = params.domain_id
@@ -241,10 +233,6 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        role_type = self.transaction.get_meta("authorization.role_type")
-        if role_type != "DOMAIN_ADMIN":
-            raise ERROR_PERMISSION_DENIED()
-
         workspace_group_id = params.workspace_group_id
         users = params.users
         domain_id = params.domain_id
@@ -295,10 +283,6 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        role_type = self.transaction.get_meta("authorization.role_type")
-        if role_type != "DOMAIN_ADMIN":
-            raise ERROR_PERMISSION_DENIED()
-
         workspace_group_id = params.workspace_group_id
         user_id = params.user_id
         role_id = params.role_id
@@ -348,10 +332,6 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        role_type = self.transaction.get_meta("authorization.role_type")
-        if role_type != "DOMAIN_ADMIN":
-            raise ERROR_PERMISSION_DENIED()
-
         workspace_group_id = params.workspace_group_id
         domain_id = params.domain_id
 
@@ -395,10 +375,6 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupsResponse:
         """
-        role_type = self.transaction.get_meta("authorization.role_type")
-        if role_type != "DOMAIN_ADMIN":
-            raise ERROR_PERMISSION_DENIED()
-
         query = params.query
 
         workspace_group_vos, total_count = (
@@ -447,11 +423,6 @@ class WorkspaceGroupService(BaseService):
                 'total_count': 'int'
             }
         """
-
-        role_type = self.transaction.get_meta("authorization.role_type")
-        if role_type != "DOMAIN_ADMIN":
-            raise ERROR_PERMISSION_DENIED()
-
         query = params.query
 
         return self.workspace_group_mgr.stat_workspace_group(query)
