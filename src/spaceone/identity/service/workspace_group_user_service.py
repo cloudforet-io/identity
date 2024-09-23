@@ -116,6 +116,10 @@ class WorkspaceGroupUserService(BaseService):
         workspace_group_workspace_ids = self.workspace_group_svc.get_workspace_ids(
             workspace_group_id, domain_id
         )
+
+        self.workspace_group_svc.delete_workspace_users_role_binding(
+            new_users, workspace_group_workspace_ids, domain_id
+        )
         workspace_group_new_users_info = (
             self.workspace_group_svc.add_users_to_workspace_group(
                 new_users_info_list,
