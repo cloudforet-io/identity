@@ -102,7 +102,7 @@ class WorkspaceService(BaseService):
             WorkspaceResponse:
         """
         workspace_id = params.workspace_id
-        workspace_group_id = params.workspace_group_id
+        new_workspace_group_id = params.workspace_group_id
         domain_id = params.domain_id
 
         workspace_vo = self.workspace_mgr.get_workspace(
@@ -112,12 +112,12 @@ class WorkspaceService(BaseService):
         old_workspace_group_id = workspace_vo.workspace_group_id
         is_updatable = True
         workspace_group_vo = None
-        if workspace_group_id:
+        if new_workspace_group_id:
             workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-                workspace_group_id, domain_id
+                new_workspace_group_id, domain_id
             )
             is_updatable = self._add_workspace_to_group(
-                workspace_id, workspace_group_id, domain_id
+                workspace_id, new_workspace_group_id, domain_id
             )
         elif old_workspace_group_id:
             workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
@@ -132,17 +132,23 @@ class WorkspaceService(BaseService):
                 params.dict(exclude_unset=False), workspace_vo
             )
 
-            workspace_vos = None
-            if workspace_group_id:
+            if new_workspace_group_id:
                 workspace_vos = self.workspace_mgr.filter_workspaces(
-                    workspace_group_id=workspace_group_id, domain_id=domain_id
+                    workspace_group_id=new_workspace_group_id, domain_id=domain_id
                 )
-            elif old_workspace_group_id:
+
+                self.workspace_group_mgr.update_workspace_group_by_vo(
+                    {"workspace_count": len(workspace_vos)}, workspace_group_vo
+                )
+            if old_workspace_group_id:
                 workspace_vos = self.workspace_mgr.filter_workspaces(
                     workspace_group_id=old_workspace_group_id, domain_id=domain_id
                 )
 
-            if workspace_vos:
+                workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+                    old_workspace_group_id, domain_id
+                )
+
                 self.workspace_group_mgr.update_workspace_group_by_vo(
                     {"workspace_count": len(workspace_vos)}, workspace_group_vo
                 )
@@ -445,8 +451,10 @@ class WorkspaceService(BaseService):
                 workspace_id=workspace_id, domain_id=domain_id
             )
             workspace_vo.changed_at = datetime.utcnow()
+            workspace_vo.workspace_group_id = None
             self.workspace_mgr.update_workspace_by_vo(
-                {"changed_at": workspace_vo.changed_at}, workspace_vo
+                {"changed_at": workspace_vo.changed_at, "workspace_group_id": None},
+                workspace_vo,
             )
 
     @staticmethod
