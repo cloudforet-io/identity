@@ -57,6 +57,7 @@ class WorkspaceGroupService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.workspace_group_mgr = WorkspaceGroupManager()
+        self.workspace_mgr = WorkspaceManager()
         self.user_mgr = UserManager()
         self.role_mgr = RoleManager()
         self.rb_mgr = RoleBindingManager()
@@ -233,6 +234,7 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
+        workspace_id = params.workspace_id
         workspace_group_id = params.workspace_group_id
         users = params.users
         domain_id = params.domain_id
@@ -253,7 +255,7 @@ class WorkspaceGroupService(BaseService):
         workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
         old_users = workspace_group_dict["users"]
         updated_users = self.remove_users_from_workspace_group(
-            user_ids, old_users, workspace_group_id, domain_id
+            user_ids, old_users, workspace_group_id, domain_id, workspace_id
         )
         params.users = updated_users
 
@@ -453,10 +455,8 @@ class WorkspaceGroupService(BaseService):
 
         return role_map
 
-    @staticmethod
-    def get_workspace_ids(workspace_group_id: str, domain_id: str) -> List[str]:
-        workspace_mgr = WorkspaceManager()
-        workspace_vos = workspace_mgr.filter_workspaces(
+    def get_workspace_ids(self, workspace_group_id: str, domain_id: str) -> List[str]:
+        workspace_vos = self.workspace_mgr.filter_workspaces(
             workspace_group_id=workspace_group_id, domain_id=domain_id
         )
         workspace_ids = [workspace_vo.workspace_id for workspace_vo in workspace_vos]
@@ -578,6 +578,7 @@ class WorkspaceGroupService(BaseService):
         old_users: List[Dict[str, str]],
         workspace_group_id: str,
         domain_id: str,
+        workspace_id: str = None,
     ) -> List[Dict[str, str]]:
         rb_vos = self.rb_mgr.filter_role_bindings(
             user_id=user_ids,
@@ -590,6 +591,47 @@ class WorkspaceGroupService(BaseService):
                 self.rb_mgr.delete_role_binding_by_vo(rb_vo)
 
         updated_users = [user for user in old_users if user["user_id"] not in user_ids]
+
+        if not workspace_id:
+            workspace_vos = self.workspace_mgr.filter_workspaces(
+                workspace_group_id=workspace_group_id, domain_id=domain_id
+            )
+            for workspace_vo in workspace_vos:
+                user_rb_ids = self.rb_mgr.stat_role_bindings(
+                    query={
+                        "distinct": "user_id",
+                        "filter": [
+                            {
+                                "k": "workspace_id",
+                                "v": workspace_vo.workspace_id,
+                                "o": "eq",
+                            },
+                            {"k": "domain_id", "v": domain_id, "o": "eq"},
+                        ],
+                    }
+                ).get("results", [])
+                user_rb_total_count = len(user_rb_ids)
+
+                self.workspace_mgr.update_workspace_by_vo(
+                    {"user_count": user_rb_total_count}, workspace_vo
+                )
+        else:
+            workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
+            if workspace_vo:
+                user_rb_ids = self.rb_mgr.stat_role_bindings(
+                    query={
+                        "distinct": "user_id",
+                        "filter": [
+                            {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                            {"k": "domain_id", "v": domain_id, "o": "eq"},
+                        ],
+                    }
+                ).get("results", [])
+                user_rb_total_count = len(user_rb_ids)
+
+                self.workspace_mgr.update_workspace_by_vo(
+                    {"user_count": user_rb_total_count}, workspace_vo
+                )
 
         return updated_users
 
