@@ -205,7 +205,7 @@ class WorkspaceGroupService(BaseService):
         params.users = old_users_in_workspace_group + new_users_in_workspace_group
 
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
-            params.dict(exclude_unset=True), workspace_group_vo
+            params.dict(exclude_unset=False), workspace_group_vo
         )
 
         workspace_group_info = self.add_user_name_and_state_to_users(
