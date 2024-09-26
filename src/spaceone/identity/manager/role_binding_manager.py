@@ -17,10 +17,7 @@ class RoleBindingManager(BaseManager):
 
     def create_role_binding(self, params: dict) -> RoleBinding:
         def _rollback(vo: RoleBinding):
-            _LOGGER.info(
-                f"[create_role_binding._rollback] "
-                f"Delete trusted service account: {vo.role_binding_id}"
-            )
+            _LOGGER.info(f"[create_role_binding._rollback]: {vo.role_binding_id}")
             vo.delete()
 
         role_binding_vo = self.role_binding_model.create(params)

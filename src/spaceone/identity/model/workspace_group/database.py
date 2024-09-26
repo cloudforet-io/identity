@@ -48,6 +48,6 @@ class WorkspaceGroup(MongoModel):
         "change_query_keys": {},
         "ordering": ["name"],
         "indexes": [
-            "workspace_group_id",
+            "name",
         ],
     }
