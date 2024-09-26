@@ -229,10 +229,12 @@ class WorkspaceGroupUserService(BaseService):
             params.workspace_group_id, params.domain_id
         )
 
-        workspace_group_users = workspace_group_vo.users
-        self.workspace_group_user_mgr.check_user_role_type(
-            workspace_group_users, user_id, command="update_role"
-        )
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+        if user_vo.role_type == "USER":
+            workspace_group_users = workspace_group_vo.users
+            self.workspace_group_user_mgr.check_user_role_type(
+                workspace_group_users, user_id, command="update_role"
+            )
 
         target_user_vo = self.user_mgr.get_user(target_user_id, domain_id)
         target_user_state = target_user_vo.state
