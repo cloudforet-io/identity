@@ -16,21 +16,23 @@ from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.token_manager.local_token_manager import \
-    LocalTokenManager
+from spaceone.identity.manager.token_manager.local_token_manager import (
+    LocalTokenManager,
+)
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import \
-    WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.user.database import User
 from spaceone.identity.model.user.response import *
 from spaceone.identity.model.user_profile.request import *
-from spaceone.identity.model.user_profile.request import \
-    UserProfileGetWorkspaceGroupsRequest
+from spaceone.identity.model.user_profile.request import (
+    UserProfileGetWorkspaceGroupsRequest,
+)
 from spaceone.identity.model.user_profile.response import (
-    MyWorkspaceGroupsResponse, MyWorkspacesResponse)
-from spaceone.identity.service.workspace_group_service import \
-    WorkspaceGroupService
+    MyWorkspaceGroupsResponse,
+    MyWorkspacesResponse,
+)
+from spaceone.identity.service.workspace_group_service import WorkspaceGroupService
 
 _LOGGER = logging.getLogger(__name__)
 
