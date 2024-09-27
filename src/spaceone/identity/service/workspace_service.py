@@ -475,7 +475,7 @@ class WorkspaceService(BaseService):
     def _remove_workspace_from_group(
         self, workspace_id: str, old_workspace_group_id: str, domain_id: str
     ) -> None:
-        self._delete_role_bindings(old_workspace_group_id, domain_id)
+        self._delete_role_bindings(workspace_id, old_workspace_group_id, domain_id)
 
         if old_workspace_group_id:
             workspace_vo = self.workspace_mgr.get_workspace(
@@ -505,8 +505,11 @@ class WorkspaceService(BaseService):
                     workspace_vo,
                 )
 
-    def _delete_role_bindings(self, existing_workspace_group_id: str, domain_id: str):
+    def _delete_role_bindings(
+        self, workspace_id: str, existing_workspace_group_id: str, domain_id: str
+    ):
         rb_vos = self.rb_mgr.filter_role_bindings(
+            workspace_id=workspace_id,
             workspace_group_id=existing_workspace_group_id,
             domain_id=domain_id,
         )
