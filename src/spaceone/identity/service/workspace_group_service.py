@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.service import (
@@ -26,7 +26,6 @@ from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.model import WorkspaceGroup
 from spaceone.identity.model.workspace_group.request import (
     WorkspaceGroupAddUsersRequest,
     WorkspaceGroupCreateRequest,
@@ -474,7 +473,8 @@ class WorkspaceGroupService(BaseService):
             workspace_id=workspace_group_workspace_ids,
             domain_id=domain_id,
         )
-        rb_vos.delete()
+        for rb_vo in rb_vos:
+            self.rb_mgr.delete_role_binding_by_vo(rb_vo)
 
     def add_users_to_workspace_group(
         self,
@@ -534,7 +534,7 @@ class WorkspaceGroupService(BaseService):
     def add_user_name_and_state_to_users(
         self,
         workspace_group_user_ids: List[str],
-        workspace_group_vo: WorkspaceGroup,
+        workspace_group_info: Dict[str, Any],
         domain_id: str,
     ) -> Dict[str, str]:
         """Add user's name and state to users in workspace group.
@@ -542,7 +542,7 @@ class WorkspaceGroupService(BaseService):
         we need to add user's name and state to users in the Application layer.
         Args:
             workspace_group_user_ids: 'List[str]'
-            workspace_group_vo: 'WorkspaceGroup'
+            workspace_group_info: 'Dict[str, str]'
             domain_id: 'str'
         Returns:
             workspace_group_dict:
@@ -558,17 +558,16 @@ class WorkspaceGroupService(BaseService):
                 "state": user_vo.state,
             }
 
-        workspace_group_info = workspace_group_vo.to_dict()
+        wg_users = workspace_group_info.get("users", []) or []
+        users = []
 
-        if workspace_group_info.get("users", []):
-            users = []
-            for user in workspace_group_info["users"]:
-                user_id = user["user_id"]
-                user["user_name"] = user_info_map[user_id]["name"]
-                user["state"] = user_info_map[user_id]["state"]
-                users.append(user)
+        for user in wg_users:
+            user_id = user.get("user_id", "")
+            user["user_name"] = user_info_map.get(user_id, {}).get("name", "")
+            user["state"] = user_info_map.get(user_id, {}).get("state", "")
+            users.append(user)
 
-            workspace_group_info["users"] = users
+        workspace_group_info["users"] = users
 
         return workspace_group_info
 

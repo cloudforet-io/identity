@@ -124,8 +124,8 @@ class WorkspaceService(BaseService):
             workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
                 old_workspace_group_id, domain_id
             )
-            self._remove_workspace_from_group(
-                workspace_id, old_workspace_group_id, domain_id
+            self._remove_workspace_from_group_with_workspace_vo(
+                workspace_vo, old_workspace_group_id, domain_id
             )
 
         if is_updatable:
@@ -416,7 +416,9 @@ class WorkspaceService(BaseService):
 
         if old_workspace_group_id:
             if old_workspace_group_id != workspace_group_id:
-                self._delete_role_bindings(old_workspace_group_id, domain_id)
+                self._delete_role_bindings(
+                    workspace_id, old_workspace_group_id, domain_id
+                )
 
                 self._create_role_bindings(
                     workspace_group_vo.users,
@@ -472,38 +474,34 @@ class WorkspaceService(BaseService):
 
         return is_updatable
 
-    def _remove_workspace_from_group(
-        self, workspace_id: str, old_workspace_group_id: str, domain_id: str
+    def _remove_workspace_from_group_with_workspace_vo(
+        self, workspace_vo: Workspace, old_workspace_group_id: str, domain_id: str
     ) -> None:
+        workspace_id = workspace_vo.workspace_id
         self._delete_role_bindings(workspace_id, old_workspace_group_id, domain_id)
 
-        if old_workspace_group_id:
-            workspace_vo = self.workspace_mgr.get_workspace(
-                workspace_id=workspace_id, domain_id=domain_id
-            )
-            if workspace_vo:
-                workspace_vo.changed_at = datetime.utcnow()
-                workspace_vo.workspace_group_id = None
+        workspace_vo.changed_at = datetime.utcnow()
+        workspace_vo.workspace_group_id = None
 
-                user_rb_ids = self.rb_mgr.stat_role_bindings(
-                    query={
-                        "distinct": "user_id",
-                        "filter": [
-                            {"k": "workspace_id", "v": workspace_id, "o": "eq"},
-                            {"k": "domain_id", "v": domain_id, "o": "eq"},
-                        ],
-                    }
-                ).get("results", [])
-                user_rb_total_count = len(user_rb_ids)
+        user_rb_ids = self.rb_mgr.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+        user_rb_total_count = len(user_rb_ids)
 
-                self.workspace_mgr.update_workspace_by_vo(
-                    {
-                        "user_count": user_rb_total_count,
-                        "changed_at": workspace_vo.changed_at,
-                        "workspace_group_id": None,
-                    },
-                    workspace_vo,
-                )
+        self.workspace_mgr.update_workspace_by_vo(
+            {
+                "user_count": user_rb_total_count,
+                "changed_at": workspace_vo.changed_at,
+                "workspace_group_id": None,
+            },
+            workspace_vo,
+        )
 
     def _delete_role_bindings(
         self, workspace_id: str, existing_workspace_group_id: str, domain_id: str
