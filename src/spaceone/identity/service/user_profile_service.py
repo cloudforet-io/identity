@@ -436,16 +436,24 @@ class UserProfileService(BaseService):
             workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
                 domain_id=params.domain_id
             )
+            workspace_group_infos = [
+                workspace_group_vo.to_dict()
+                for workspace_group_vo in workspace_group_vos
+            ]
         else:
-            # TODO: Need to check users__user_id is correct
-            workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
-                users__user_id=params.user_id,
-                domain_id=params.domain_id,
+            query_filter = {
+                "filter": [
+                    {"key": "users.user_id", "value": params.user_id, "operator": "eq"},
+                    {"key": "domain_id", "value": params.domain_id, "operator": "eq"},
+                ]
+            }
+            workspace_group_infos, _ = self.workspace_group_mgr.list_workspace_groups(
+                query_filter
             )
 
         workspace_group_ids = [
-            workspace_group_vo.workspace_group_id
-            for workspace_group_vo in workspace_group_vos
+            workspace_group_info["workspace_group_id"]
+            for workspace_group_info in workspace_group_infos
         ]
 
         rb_vos = rb_mgr.filter_role_bindings(
@@ -457,16 +465,18 @@ class UserProfileService(BaseService):
         role_bindings_info_map = {rb.workspace_group_id: rb.to_dict() for rb in rb_vos}
 
         workspace_group_user_ids = []
-        for workspace_group in workspace_group_vos:
-            if workspace_group.users:
-                for user in workspace_group.users:
+        for workspace_group_info in workspace_group_infos:
+            if workspace_group_info["users"]:
+                for user in workspace_group_info["users"]:
                     workspace_group_user_ids.append(user.user_id)
 
         workspace_groups_info = []
-        for workspace_group_vo in workspace_group_vos:
+        for workspace_group_info in workspace_group_infos:
             workspace_group_dict = (
                 self.workspace_group_svc.add_user_name_and_state_to_users(
-                    workspace_group_user_ids, workspace_group_vo, params.domain_id
+                    workspace_group_user_ids,
+                    workspace_group_info.to_dict(),
+                    params.domain_id,
                 )
             )
             workspace_groups_info.append(workspace_group_dict)

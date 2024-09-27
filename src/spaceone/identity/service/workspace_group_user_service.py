@@ -108,7 +108,7 @@ class WorkspaceGroupUserService(BaseService):
         workspace_group_old_users_info = workspace_group_vo.users or []
         if workspace_group_old_users_info:
             self.workspace_group_user_mgr.check_user_role_type(
-                workspace_group_old_users_info, user_id, command="add"
+                workspace_group_old_users_info, user_id
             )
 
         role_map = self.workspace_group_svc.get_role_map(new_users_info_list, domain_id)
@@ -187,7 +187,7 @@ class WorkspaceGroupUserService(BaseService):
 
         workspace_group_users = workspace_group_vo.users
         self.workspace_group_user_mgr.check_user_role_type(
-            workspace_group_users, user_id, command="remove"
+            workspace_group_users, user_id
         )
 
         old_users = workspace_group_dict["users"]
@@ -233,7 +233,7 @@ class WorkspaceGroupUserService(BaseService):
         if user_vo.role_type == "USER":
             workspace_group_users = workspace_group_vo.users
             self.workspace_group_user_mgr.check_user_role_type(
-                workspace_group_users, user_id, command="update_role"
+                workspace_group_users, user_id
             )
 
         target_user_vo = self.user_mgr.get_user(target_user_id, domain_id)
