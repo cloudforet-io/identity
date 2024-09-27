@@ -4,7 +4,7 @@ from typing import List, Literal, Union
 from pydantic import BaseModel
 from spaceone.core import utils
 
-__all__ = ["MyWorkspaceResponse", "MyWorkspacesResponse"]
+__all__ = ["MyWorkspaceResponse", "MyWorkspacesResponse", "MyWorkspaceGroupsResponse"]
 
 from spaceone.identity.model.role_binding.response import RoleBindingResponse
 

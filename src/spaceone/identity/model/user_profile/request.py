@@ -12,6 +12,7 @@ __all__ = [
     "UserProfileConfirmMFARequest",
     "UserProfileGetRequest",
     "UserProfileGetWorkspacesRequest",
+    "UserProfileGetWorkspaceGroupsRequest",
 ]
 
 

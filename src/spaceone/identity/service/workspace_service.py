@@ -12,12 +12,9 @@ from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.service_account_manager import \
-    ServiceAccountManager
-from spaceone.identity.manager.trusted_account_manager import \
-    TrustedAccountManager
-from spaceone.identity.manager.workspace_group_manager import \
-    WorkspaceGroupManager
+from spaceone.identity.manager.service_account_manager import ServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
@@ -427,6 +424,36 @@ class WorkspaceService(BaseService):
                     workspace_group_id,
                     domain_id,
                 )
+
+                workspaces_info, total_count = (
+                    self.workspace_mgr.list_workspace_group_workspaces(
+                        old_workspace_group_id,
+                        domain_id,
+                    )
+                )
+                for workspace_info in workspaces_info:
+                    workspace_vo = self.workspace_mgr.get_workspace(
+                        workspace_info["workspace_id"], domain_id
+                    )
+                    user_rb_ids = self.rb_mgr.stat_role_bindings(
+                        query={
+                            "distinct": "user_id",
+                            "filter": [
+                                {
+                                    "k": "workspace_id",
+                                    "v": workspace_info["workspace_id"],
+                                    "o": "eq",
+                                },
+                                {"k": "domain_id", "v": domain_id, "o": "eq"},
+                            ],
+                        }
+                    ).get("results", [])
+                    user_rb_total_count = len(user_rb_ids)
+
+                    workspace_vo = self.workspace_mgr.update_workspace_by_vo(
+                        {"user_count": user_rb_total_count}, workspace_vo
+                    )
+                    workspace_info.update({"user_count": workspace_vo.user_count})
             else:
                 is_updatable = False
         else:
