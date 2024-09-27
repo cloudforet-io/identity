@@ -137,7 +137,7 @@ class WorkspaceGroupUserService(BaseService):
 
         workspace_group_user_dict = (
             self.workspace_group_svc.add_user_name_and_state_to_users(
-                workspace_group_user_ids, workspace_group_vo, domain_id
+                workspace_group_user_ids, workspace_group_vo.to_dict(), domain_id
             )
         )
 
@@ -349,7 +349,7 @@ class WorkspaceGroupUserService(BaseService):
 
         workspace_group_dict = (
             self.workspace_group_svc.add_user_name_and_state_to_users(
-                workspace_group_user_ids, workspace_group_vo, domain_id
+                workspace_group_user_ids, workspace_group_vo.to_dict(), domain_id
             )
         )
         return WorkspaceGroupResponse(**workspace_group_dict)
@@ -399,7 +399,9 @@ class WorkspaceGroupUserService(BaseService):
 
             workspace_group_dict = (
                 self.workspace_group_svc.add_user_name_and_state_to_users(
-                    workspace_group_user_ids, workspace_group_vo, params.domain_id
+                    workspace_group_user_ids,
+                    workspace_group_vo.to_dict(),
+                    params.domain_id,
                 )
             )
             workspace_groups_info.append(workspace_group_dict)
