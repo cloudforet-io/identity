@@ -465,6 +465,7 @@ class UserProfileService(BaseService):
 
         workspace_group_user_ids = []
         for workspace_group_info in workspace_group_infos:
+            workspace_group_info = workspace_group_info.to_dict()
             if users := workspace_group_info.get("users", []) or []:
                 for user in users:
                     if isinstance(user, dict):
