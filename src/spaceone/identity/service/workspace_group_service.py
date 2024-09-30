@@ -564,6 +564,8 @@ class WorkspaceGroupService(BaseService):
                 "state": user_vo.state,
             }
 
+        if wg_users is None:
+            wg_users = []
         users = []
         for user in wg_users:
             if isinstance(user, dict):
