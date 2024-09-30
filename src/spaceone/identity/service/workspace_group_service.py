@@ -563,27 +563,25 @@ class WorkspaceGroupService(BaseService):
                 "name": user_vo.name,
                 "state": user_vo.state,
             }
-
         if wg_users is None:
             wg_users = []
         users = []
         for user in wg_users:
             if isinstance(user, dict):
                 user_id = user.get("user_id", "")
-            else:
-                user_id = getattr(user, "user_id", "") or ""
-
-            user_name = user_info_map.get(user_id, {}).get("name", "")
-            user_state = user_info_map.get(user_id, {}).get("state", "")
-
-            if isinstance(user, dict):
+                user_name = user_info_map.get(user_id, {}).get("name", "")
+                user_state = user_info_map.get(user_id, {}).get("state", "")
                 user["user_name"] = user_name
                 user["state"] = user_state
+                users.append(user)
             else:
-                setattr(user, "user_name", user_name)
-                setattr(user, "state", user_state)
-
-            users.append(user)
+                user_id = getattr(user, "user_id", "") or ""
+                user_name = user_info_map.get(user_id, {}).get("name", "")
+                user_state = user_info_map.get(user_id, {}).get("state", "")
+                user_dict = user.to_mongo().to_dict()
+                user_dict["user_name"] = user_name
+                user_dict["state"] = user_state
+                users.append(user_dict)
 
         if isinstance(workspace_group_info, dict):
             workspace_group_info["users"] = users
