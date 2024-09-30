@@ -459,7 +459,10 @@ class WorkspaceService(BaseService):
             else:
                 is_updatable = False
         else:
-            self._delete_role_bindings(workspace_id, domain_id)
+            workspace_group_dict = workspace_group_vo.to_dict()
+            users = workspace_group_dict.get("users", [])
+            user_ids = [user.get("user_id") for user in users]
+            self._delete_role_bindings(workspace_id, domain_id, user_ids=user_ids)
             self._create_role_bindings(
                 workspace_group_vo.users,
                 workspace_id,
@@ -505,12 +508,17 @@ class WorkspaceService(BaseService):
         )
 
     def _delete_role_bindings(
-        self, workspace_id: str, domain_id: str, existing_workspace_group_id: str = None
+        self,
+        workspace_id: str,
+        domain_id: str,
+        existing_workspace_group_id: str = None,
+        user_ids: List[str] = None,
     ):
         rb_vos = self.rb_mgr.filter_role_bindings(
             workspace_id=workspace_id,
             domain_id=domain_id,
             workspace_group_id=existing_workspace_group_id,
+            user_id=user_ids,
         )
         for rb_vo in rb_vos:
             self.rb_mgr.delete_role_binding_by_vo(rb_vo)
