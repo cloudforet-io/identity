@@ -17,3 +17,4 @@ test/_trial_temp
 skaffold.yaml
 test/yaml
 test/workspace_group
+test/workspace_group_user
