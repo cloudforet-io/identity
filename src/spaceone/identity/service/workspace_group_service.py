@@ -535,7 +535,7 @@ class WorkspaceGroupService(BaseService):
     def add_user_name_and_state_to_users(
         self,
         workspace_group_user_ids: List[str],
-        workspace_group_info: WorkspaceGroup,
+        workspace_group_info: Union[WorkspaceGroup, Dict[str, str]],
         domain_id: str,
     ) -> Dict[str, str]:
         """Add user's name and state to users in workspace group.
@@ -543,11 +543,16 @@ class WorkspaceGroupService(BaseService):
         we need to add user's name and state to users in the Application layer.
         Args:
             workspace_group_user_ids: 'List[str]'
-            workspace_group_info: 'WorkspaceGroup'
+            workspace_group_info: 'Union[WorkspaceGroup, Dict[str, str]]'
             domain_id: 'str'
         Returns:
             workspace_group_dict:
         """
+        if isinstance(workspace_group_info, dict):
+            wg_users = workspace_group_info.get("users", [])
+        else:
+            wg_users = workspace_group_info.users or []
+
         user_vos = self.user_mgr.filter_users(
             user_id=workspace_group_user_ids, domain_id=domain_id
         )
@@ -559,18 +564,31 @@ class WorkspaceGroupService(BaseService):
                 "state": user_vo.state,
             }
 
-        wg_users = workspace_group_info.users or []
         users = []
-
         for user in wg_users:
-            user_id = user.user_id or ""
-            user.user_name = user_info_map.get(user_id, {}).get("name", "")
-            user.state = user_info_map.get(user_id, {}).get("state", "")
+            if isinstance(user, dict):
+                user_id = user.get("user_id", "")
+            else:
+                user_id = getattr(user, "user_id", "") or ""
+
+            user_name = user_info_map.get(user_id, {}).get("name", "")
+            user_state = user_info_map.get(user_id, {}).get("state", "")
+
+            if isinstance(user, dict):
+                user["user_name"] = user_name
+                user["state"] = user_state
+            else:
+                setattr(user, "user_name", user_name)
+                setattr(user, "state", user_state)
+
             users.append(user)
 
-        workspace_group_info["users"] = users
-
-        return workspace_group_info.to_dict()
+        if isinstance(workspace_group_info, dict):
+            workspace_group_info["users"] = users
+            return workspace_group_info
+        else:
+            workspace_group_info.users = users
+            return workspace_group_info.to_dict()
 
     def remove_users_from_workspace_group(
         self,
