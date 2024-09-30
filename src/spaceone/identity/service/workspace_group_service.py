@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.service import (
@@ -26,6 +26,7 @@ from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.model import WorkspaceGroup
 from spaceone.identity.model.workspace_group.request import (
     WorkspaceGroupAddUsersRequest,
     WorkspaceGroupCreateRequest,
@@ -208,7 +209,7 @@ class WorkspaceGroupService(BaseService):
         )
 
         workspace_group_info = self.add_user_name_and_state_to_users(
-            workspace_group_user_ids, workspace_group_vo.to_dict(), domain_id
+            workspace_group_user_ids, workspace_group_vo, domain_id
         )
 
         return WorkspaceGroupResponse(**workspace_group_info)
@@ -351,7 +352,7 @@ class WorkspaceGroupService(BaseService):
             workspace_group_user_ids: List[str] = old_users + new_users
 
         workspace_group_dict = self.add_user_name_and_state_to_users(
-            workspace_group_user_ids, workspace_group_vo.to_dict(), domain_id
+            workspace_group_user_ids, workspace_group_vo, domain_id
         )
         return WorkspaceGroupResponse(**workspace_group_dict)
 
@@ -399,7 +400,7 @@ class WorkspaceGroupService(BaseService):
             workspace_group_user_ids: List[str] = old_users + new_users
 
             workspace_group_dict = self.add_user_name_and_state_to_users(
-                workspace_group_user_ids, workspace_group_vo.to_dict(), params.domain_id
+                workspace_group_user_ids, workspace_group_vo, params.domain_id
             )
             workspace_groups_info.append(workspace_group_dict)
 
@@ -534,7 +535,7 @@ class WorkspaceGroupService(BaseService):
     def add_user_name_and_state_to_users(
         self,
         workspace_group_user_ids: List[str],
-        workspace_group_info: Dict[str, Any],
+        workspace_group_info: WorkspaceGroup,
         domain_id: str,
     ) -> Dict[str, str]:
         """Add user's name and state to users in workspace group.
@@ -542,7 +543,7 @@ class WorkspaceGroupService(BaseService):
         we need to add user's name and state to users in the Application layer.
         Args:
             workspace_group_user_ids: 'List[str]'
-            workspace_group_info: 'Dict[str, str]'
+            workspace_group_info: 'WorkspaceGroup'
             domain_id: 'str'
         Returns:
             workspace_group_dict:
@@ -558,18 +559,18 @@ class WorkspaceGroupService(BaseService):
                 "state": user_vo.state,
             }
 
-        wg_users = workspace_group_info.get("users", []) or []
+        wg_users = workspace_group_info.users or []
         users = []
 
         for user in wg_users:
-            user_id = user.get("user_id", "")
-            user["user_name"] = user_info_map.get(user_id, {}).get("name", "")
-            user["state"] = user_info_map.get(user_id, {}).get("state", "")
+            user_id = user.user_id or ""
+            user.user_name = user_info_map.get(user_id, {}).get("name", "")
+            user.state = user_info_map.get(user_id, {}).get("state", "")
             users.append(user)
 
         workspace_group_info["users"] = users
 
-        return workspace_group_info
+        return workspace_group_info.to_dict()
 
     def remove_users_from_workspace_group(
         self,
