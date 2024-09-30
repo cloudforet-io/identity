@@ -474,7 +474,8 @@ class WorkspaceGroupService(BaseService):
             workspace_id=workspace_group_workspace_ids,
             domain_id=domain_id,
         )
-        rb_vos.delete()
+        for rb_vo in rb_vos:
+            self.rb_mgr.delete_role_binding_by_vo(rb_vo)
 
     def add_users_to_workspace_group(
         self,
@@ -534,7 +535,7 @@ class WorkspaceGroupService(BaseService):
     def add_user_name_and_state_to_users(
         self,
         workspace_group_user_ids: List[str],
-        workspace_group_vo: WorkspaceGroup,
+        workspace_group_info: Union[WorkspaceGroup, Dict[str, str]],
         domain_id: str,
     ) -> Dict[str, str]:
         """Add user's name and state to users in workspace group.
@@ -542,11 +543,16 @@ class WorkspaceGroupService(BaseService):
         we need to add user's name and state to users in the Application layer.
         Args:
             workspace_group_user_ids: 'List[str]'
-            workspace_group_vo: 'WorkspaceGroup'
+            workspace_group_info: 'Union[WorkspaceGroup, Dict[str, str]]'
             domain_id: 'str'
         Returns:
             workspace_group_dict:
         """
+        if isinstance(workspace_group_info, dict):
+            wg_users = workspace_group_info.get("users", [])
+        else:
+            wg_users = workspace_group_info.users or []
+
         user_vos = self.user_mgr.filter_users(
             user_id=workspace_group_user_ids, domain_id=domain_id
         )
@@ -557,20 +563,32 @@ class WorkspaceGroupService(BaseService):
                 "name": user_vo.name,
                 "state": user_vo.state,
             }
-
-        workspace_group_info = workspace_group_vo.to_dict()
-
-        if workspace_group_info.get("users", []):
-            users = []
-            for user in workspace_group_info["users"]:
-                user_id = user["user_id"]
-                user["user_name"] = user_info_map[user_id]["name"]
-                user["state"] = user_info_map[user_id]["state"]
+        if wg_users is None:
+            wg_users = []
+        users = []
+        for user in wg_users:
+            if isinstance(user, dict):
+                user_id = user.get("user_id", "")
+                user_name = user_info_map.get(user_id, {}).get("name", "")
+                user_state = user_info_map.get(user_id, {}).get("state", "")
+                user["user_name"] = user_name
+                user["state"] = user_state
                 users.append(user)
+            else:
+                user_id = getattr(user, "user_id", "") or ""
+                user_name = user_info_map.get(user_id, {}).get("name", "")
+                user_state = user_info_map.get(user_id, {}).get("state", "")
+                user_dict = user.to_mongo().to_dict()
+                user_dict["user_name"] = user_name
+                user_dict["state"] = user_state
+                users.append(user_dict)
 
+        if isinstance(workspace_group_info, dict):
             workspace_group_info["users"] = users
-
-        return workspace_group_info
+            return workspace_group_info
+        else:
+            workspace_group_info.users = users
+            return workspace_group_info.to_dict()
 
     def remove_users_from_workspace_group(
         self,
