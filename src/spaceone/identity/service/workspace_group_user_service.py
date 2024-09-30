@@ -180,11 +180,12 @@ class WorkspaceGroupUserService(BaseService):
         self.workspace_group_mgr.check_user_ids_exist_in_workspace_group(
             old_user_ids, user_ids
         )
-
+        params_users_user_id = params.users[0].get("user_id")
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id, user_id=user_id
+            params.workspace_group_id, params.domain_id, user_id=params_users_user_id
         )
         if not workspace_group_vo:
+            _LOGGER.error(f"[remove] Workspace Group not found. ({workspace_group_id})")
             ERROR_NOT_FOUND(key="workspace_group_id", value=params.workspace_group_id)
         workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
 
