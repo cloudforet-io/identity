@@ -39,7 +39,7 @@ class WorkspaceGroupUserManager(BaseManager):
 
         if user_role_type == "WORKSPACE_MEMBER":
             _LOGGER.error(
-                f"User ID {user_id} does not have permission to workspace group."
+                f"[check_user_role_type] User ID {user_id} is WORKSPACE_MEMBER."
             )
             raise ERROR_PERMISSION_DENIED()
 
