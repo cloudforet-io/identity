@@ -245,7 +245,7 @@ class WorkspaceGroupUserService(BaseService):
         self.workspace_group_svc.check_role_type(role_type)
 
         self.workspace_group_svc.update_user_role_of_workspace_group(
-            role_id, role_type, user_id, workspace_group_id, domain_id
+            role_id, role_type, target_user_id, workspace_group_id, domain_id
         )
 
         update_workspace_group_params = {"users": workspace_group_vo.users or []}
