@@ -81,7 +81,7 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        params_data = params.dict()
+        params_data = params.dict(exclude_unset=True)
         params_data["created_by"] = self.transaction.get_meta("authorization.audience")
         params_data["workspace_count"] = 0
         workspace_group_vo = self.workspace_group_mgr.create_workspace_group(
