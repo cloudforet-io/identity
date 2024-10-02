@@ -12,12 +12,9 @@ from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.service_account_manager import \
-    ServiceAccountManager
-from spaceone.identity.manager.trusted_account_manager import \
-    TrustedAccountManager
-from spaceone.identity.manager.workspace_group_manager import \
-    WorkspaceGroupManager
+from spaceone.identity.manager.service_account_manager import ServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
@@ -463,7 +460,7 @@ class WorkspaceService(BaseService):
                 is_updatable = False
         else:
             workspace_group_dict = workspace_group_vo.to_dict()
-            users = workspace_group_dict.get("users", [])
+            users = workspace_group_dict.get("users", []) or []
             user_ids = [user.get("user_id") for user in users]
             self._delete_role_bindings(workspace_id, domain_id, user_ids=user_ids)
             self._create_role_bindings(
