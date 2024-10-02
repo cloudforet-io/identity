@@ -12,9 +12,12 @@ from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.service_account_manager import ServiceAccountManager
-from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.service_account_manager import \
+    ServiceAccountManager
+from spaceone.identity.manager.trusted_account_manager import \
+    TrustedAccountManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
@@ -482,7 +485,6 @@ class WorkspaceService(BaseService):
         self, workspace_vo: Workspace, old_workspace_group_id: str, domain_id: str
     ) -> None:
         workspace_id = workspace_vo.workspace_id
-        self._delete_role_bindings(workspace_id, domain_id, old_workspace_group_id)
 
         workspace_vo.changed_at = datetime.utcnow()
         workspace_vo.workspace_group_id = None
@@ -496,6 +498,9 @@ class WorkspaceService(BaseService):
                 ],
             }
         ).get("results", [])
+        self._delete_role_bindings(
+            workspace_id, domain_id, old_workspace_group_id, user_rb_ids
+        )
         user_rb_total_count = len(user_rb_ids)
 
         self.workspace_mgr.update_workspace_by_vo(
