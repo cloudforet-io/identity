@@ -16,8 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 class WorkspaceGroupManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.workspace_manager = WorkspaceManager()
         self.workspace_group_model = WorkspaceGroup
+        self.workspace_manager = WorkspaceManager()
         self.rb_mgr = RoleBindingManager()
 
     def create_workspace_group(self, params: dict) -> WorkspaceGroup:
