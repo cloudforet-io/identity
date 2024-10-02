@@ -53,7 +53,7 @@ class WorkspaceGroupManager(BaseManager):
             workspace_group_id=workspace_group_vo.workspace_group_id,
             domain_id=workspace_group_vo.domain_id,
         )
-        self._check_existence_of_workspace_and_user(workspace_vos, workspace_group_vo)
+        self._check_existence_of_workspace_or_user(workspace_vos, workspace_group_vo)
 
         workspace_group_vo.delete()
 
@@ -83,7 +83,7 @@ class WorkspaceGroupManager(BaseManager):
         return self.workspace_group_model.stat(**query)
 
     @staticmethod
-    def _check_existence_of_workspace_and_user(
+    def _check_existence_of_workspace_or_user(
         workspace_vos: QuerySet, workspace_group_vo: WorkspaceGroup
     ) -> None:
         for workspace_vo in workspace_vos:
