@@ -27,8 +27,6 @@ class WorkspaceGroupManager(BaseManager):
             )
             vo.delete()
 
-        params["workspace_count"] = 0
-
         workspace_group_vo = self.workspace_group_model.create(params)
         self.transaction.add_rollback(_rollback, workspace_group_vo)
 
