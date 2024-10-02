@@ -5,7 +5,10 @@ from mongoengine import QuerySet
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.manager import BaseManager
 
-from spaceone.identity.error import ERROR_WORKSPACE_EXIST_IN_WORKSPACE_GROUP
+from spaceone.identity.error import (
+    ERROR_USER_EXIST_IN_WORKSPACE_GROUP,
+    ERROR_WORKSPACE_EXIST_IN_WORKSPACE_GROUP,
+)
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.workspace_group.database import WorkspaceGroup
@@ -50,42 +53,7 @@ class WorkspaceGroupManager(BaseManager):
             workspace_group_id=workspace_group_vo.workspace_group_id,
             domain_id=workspace_group_vo.domain_id,
         )
-        for workspace_vo in workspace_vos:
-            if workspace_vo:
-                _LOGGER.error(
-                    f"Workspace exists in WorkspaceGroup. ({workspace_vo.workspace_id}, {workspace_group_vo.workspace_group_id})"
-                    "Remove the workspace from the workspace group before deleting the workspace group."
-                )
-                raise ERROR_WORKSPACE_EXIST_IN_WORKSPACE_GROUP(
-                    workspace_id=workspace_vo.workspace_id,
-                    workspace_group_id=workspace_group_vo.workspace_group_id,
-                )
-
-        if workspace_group_vo.users:
-            user_ids = [user["user_id"] for user in workspace_group_vo.users]
-            rb_vos = self.rb_mgr.filter_role_bindings(
-                user_id=user_ids,
-                workspace_group_id=workspace_group_vo.workspace_group_id,
-                domain_id=workspace_group_vo.domain_id,
-            )
-
-            if rb_vos.count() > 0:
-                _LOGGER.debug(
-                    f"[delete_workspace_group_by_vo] Delete role bindings count with {workspace_group_vo.users}: {rb_vos.count()}"
-                )
-                for rb_vo in rb_vos:
-                    self.rb_mgr.delete_role_binding_by_vo(rb_vo)
-
-        workspace_mgr = WorkspaceManager()
-        workspace_vos = workspace_mgr.filter_workspaces(
-            workspace_group_id=workspace_group_vo.workspace_group_id,
-            domain_id=workspace_group_vo.domain_id,
-        )
-        for workspace_vo in workspace_vos:
-            params = {
-                "workspace_group_id": None,
-            }
-            workspace_mgr.update_workspace_by_vo(params, workspace_vo)
+        self._check_existence_of_workspace_and_user(workspace_vos, workspace_group_vo)
 
         workspace_group_vo.delete()
 
@@ -113,6 +81,32 @@ class WorkspaceGroupManager(BaseManager):
 
     def stat_workspace_group(self, query: dict) -> dict:
         return self.workspace_group_model.stat(**query)
+
+    @staticmethod
+    def _check_existence_of_workspace_and_user(
+        workspace_vos: QuerySet, workspace_group_vo: WorkspaceGroup
+    ) -> None:
+        for workspace_vo in workspace_vos:
+            if workspace_vo:
+                _LOGGER.error(
+                    f"Workspace exists in Workspace Group. ({workspace_vo.workspace_id}, {workspace_group_vo.workspace_group_id})"
+                    "Remove the workspace from the workspace group before deleting the workspace group."
+                )
+                raise ERROR_WORKSPACE_EXIST_IN_WORKSPACE_GROUP(
+                    workspace_id=workspace_vo.workspace_id,
+                    workspace_group_id=workspace_group_vo.workspace_group_id,
+                )
+
+        if users := workspace_group_vo.users:
+            for user in users:
+                _LOGGER.error(
+                    f"User exists in Workspace Group. ({user['user_id']}, {workspace_group_vo.workspace_group_id})"
+                    "Remove the user from the workspace group before deleting the workspace group."
+                )
+                raise ERROR_USER_EXIST_IN_WORKSPACE_GROUP(
+                    user_id=user["user_id"],
+                    workspace_group_id=workspace_group_vo.workspace_group_id,
+                )
 
     @staticmethod
     def check_user_id_in_users(user_id: str, workspace_group_vo: WorkspaceGroup):
