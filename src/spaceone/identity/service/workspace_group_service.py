@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from mongoengine import QuerySet
 from typing import Dict, List, Union, Any
 
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
@@ -268,32 +269,44 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupsResponse:
         """
+        # query = params.query
+        #
+        # workspace_group_vos, total_count = (
+        #     self.workspace_group_mgr.list_workspace_groups(query)
+        # )
+        #
+        # workspace_groups_info = []
+        # for workspace_group_vo in workspace_group_vos:
+        #     workspace_group_users = workspace_group_vo.users or []
+        #     old_users = list(
+        #         set(
+        #             [user_info["user_id"] for user_info in workspace_group_users]
+        #             if workspace_group_users
+        #             else []
+        #         )
+        #     )
+        #     new_users = list(
+        #         set([user_info["user_id"] for user_info in workspace_group_users])
+        #     )
+        #
+        #     workspace_group_user_ids: List[str] = old_users + new_users
+        #
+        #     workspace_group_dict = self.add_user_name_and_state_to_users(
+        #         workspace_group_user_ids, workspace_group_vo, params.domain_id
+        #     )
+        #     workspace_groups_info.append(workspace_group_dict)
+        #
+        # return WorkspaceGroupsResponse(
+        #     results=workspace_groups_info, total_count=total_count
+        # )
         query = params.query
 
         workspace_group_vos, total_count = (
             self.workspace_group_mgr.list_workspace_groups(query)
         )
-
-        workspace_groups_info = []
-        for workspace_group_vo in workspace_group_vos:
-            workspace_group_users = workspace_group_vo.users or []
-            old_users = list(
-                set(
-                    [user_info["user_id"] for user_info in workspace_group_users]
-                    if workspace_group_users
-                    else []
-                )
-            )
-            new_users = list(
-                set([user_info["user_id"] for user_info in workspace_group_users])
-            )
-
-            workspace_group_user_ids: List[str] = old_users + new_users
-
-            workspace_group_dict = self.add_user_name_and_state_to_users(
-                workspace_group_user_ids, workspace_group_vo, params.domain_id
-            )
-            workspace_groups_info.append(workspace_group_dict)
+        workspace_groups_info = self.get_workspace_groups_info(
+            workspace_group_vos, params.domain_id
+        )
 
         return WorkspaceGroupsResponse(
             results=workspace_groups_info, total_count=total_count
@@ -733,6 +746,26 @@ class WorkspaceGroupService(BaseService):
                 )
 
         return updated_users
+
+    def get_workspace_groups_info(
+        self, workspace_group_vos: QuerySet, domain_id
+    ) -> List[Dict[str, Any]]:
+        workspace_groups_info = []
+        for workspace_group_vo in workspace_group_vos:
+            workspace_group_user_ids = self._get_workspace_group_user_ids(
+                workspace_group_vo
+            )
+            workspace_group_dict = self.add_user_name_and_state_to_users(
+                workspace_group_user_ids, workspace_group_vo, domain_id
+            )
+            workspace_groups_info.append(workspace_group_dict)
+        return workspace_groups_info
+
+    @staticmethod
+    def _get_workspace_group_user_ids(workspace_group_vo: WorkspaceGroup) -> List[str]:
+        workspace_group_users = workspace_group_vo.users or []
+        user_ids = set(user_info["user_id"] for user_info in workspace_group_users)
+        return list(user_ids)
 
     @staticmethod
     def check_user_state(old_user_id: str, old_user_state: str) -> None:
