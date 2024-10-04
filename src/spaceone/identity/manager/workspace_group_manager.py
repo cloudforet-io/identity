@@ -58,11 +58,11 @@ class WorkspaceGroupManager(BaseManager):
         workspace_group_vo.delete()
 
     def get_workspace_group(
-        self, workspace_group_id: str, domain_id: str, user_id: str = None
+        self, domain_id: str, workspace_group_id: str, user_id: str = None
     ) -> WorkspaceGroup:
         conditions = {
-            "workspace_group_id": workspace_group_id,
             "domain_id": domain_id,
+            "workspace_group_id": workspace_group_id,
         }
 
         if user_id:
@@ -114,11 +114,11 @@ class WorkspaceGroupManager(BaseManager):
 
     def get_unique_user_ids(
         self,
-        new_users_info_list: List[Dict[str, str]],
-        workspace_group_id: str,
         domain_id: str,
+        workspace_group_id: str,
+        new_users_info_list: List[Dict[str, str]],
     ) -> Tuple[List[str], List[str]]:
-        workspace_group_vo = self.get_workspace_group(workspace_group_id, domain_id)
+        workspace_group_vo = self.get_workspace_group(domain_id, workspace_group_id)
 
         old_user_ids = []
         if users := workspace_group_vo.users:

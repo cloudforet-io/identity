@@ -117,7 +117,7 @@ class WorkspaceGroupService(BaseService):
             WorkspaceGroupResponse:
         """
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
+            params.domain_id, params.workspace_group_id
         )
 
         params_data = params.dict(exclude_unset=True)
@@ -146,7 +146,7 @@ class WorkspaceGroupService(BaseService):
             None
         """
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
+            params.domain_id, params.workspace_group_id
         )
 
         self.workspace_group_mgr.delete_workspace_group_by_vo(workspace_group_vo)
@@ -196,34 +196,7 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        workspace_id = params.workspace_id
-        workspace_group_id = params.workspace_group_id
-        users = params.users
-        domain_id = params.domain_id
-
-        old_user_ids, user_ids = self.workspace_group_mgr.get_unique_user_ids(
-            users, workspace_group_id, domain_id
-        )
-
-        self.workspace_group_mgr.check_user_ids_exist_in_workspace_group(
-            old_user_ids, user_ids
-        )
-
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
-        )
-        workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
-        old_users = workspace_group_dict["users"]
-        updated_users = self.remove_users_from_workspace_group(
-            user_ids, old_users, workspace_group_id, domain_id, workspace_id
-        )
-        params.users = updated_users
-
-        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
-            params.dict(exclude_unset=True), workspace_group_vo
-        )
-
-        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
+        return self.process_remove_users(params, role_type="DOMAIN_ADMIN")
 
     @transaction(
         permission="identity:WorkspaceGroup.write", role_types=["DOMAIN_ADMIN"]
@@ -245,13 +218,13 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
+        domain_id = params.domain_id
         workspace_group_id = params.workspace_group_id
         user_id = params.user_id
         role_id = params.role_id
-        domain_id = params.domain_id
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            workspace_group_id, domain_id
+            domain_id, workspace_group_id
         )
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         old_user_id = user_vo.user_id
@@ -298,13 +271,13 @@ class WorkspaceGroupService(BaseService):
         domain_id = params.domain_id
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            workspace_group_id, domain_id
+            domain_id, workspace_group_id
         )
 
         workspace_group_user_ids = []
         if workspace_group_vo.users:
             old_users, new_users = self.workspace_group_mgr.get_unique_user_ids(
-                workspace_group_vo.users, workspace_group_id, domain_id
+                domain_id, workspace_group_id, workspace_group_vo.users
             )
 
             workspace_group_user_ids: List[str] = old_users + new_users
@@ -397,7 +370,7 @@ class WorkspaceGroupService(BaseService):
         new_users_info_list = params.users
 
         old_user_ids, new_user_ids = self.workspace_group_mgr.get_unique_user_ids(
-            new_users_info_list, workspace_group_id, domain_id
+            domain_id, workspace_group_id, new_users_info_list
         )
         self.workspace_group_mgr.check_new_users_already_in_workspace_group(
             old_user_ids, new_user_ids
@@ -405,7 +378,7 @@ class WorkspaceGroupService(BaseService):
         self.check_new_users_exist_in_domain(new_user_ids, domain_id)
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            workspace_group_id, domain_id
+            domain_id, workspace_group_id
         )
 
         if role_type == "USER":
@@ -448,6 +421,50 @@ class WorkspaceGroupService(BaseService):
         )
 
         return WorkspaceGroupResponse(**workspace_group_user_info)
+
+    def process_remove_users(self, params, role_type: str):
+        domain_id = params.domain_id
+        workspace_group_id = params.workspace_group_id
+        users = params.users
+
+        old_user_ids, user_ids = self.workspace_group_mgr.get_unique_user_ids(
+            domain_id, workspace_group_id, users
+        )
+        self.workspace_group_mgr.check_user_ids_exist_in_workspace_group(
+            old_user_ids, user_ids
+        )
+
+        params_users_user_id = users[0].get("user_id")
+        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+            domain_id, workspace_group_id, user_id=params_users_user_id
+        )
+        if not workspace_group_vo:
+            ERROR_NOT_FOUND(key="workspace_group_id", value=workspace_group_id)
+
+        workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
+
+        if role_type == "USER":
+            user_id = params.user_id
+            user_vo = self.user_mgr.get_user(user_id, domain_id)
+
+            # Role type USER has two roles: DOMAIN_ADMIN and USER
+            if user_vo.role_type == "USER":
+                workspace_group_users = workspace_group_vo.users
+                self.workspace_group_user_mgr.check_user_role_type(
+                    workspace_group_users, user_id
+                )
+
+        old_users = workspace_group_dict["users"]
+        updated_users = self.remove_users_from_workspace_group(
+            user_ids, old_users, workspace_group_id, domain_id
+        )
+        params.users = updated_users
+
+        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
+            params.dict(exclude_unset=True), workspace_group_vo
+        )
+
+        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
 
     def check_new_users_exist_in_domain(
         self, new_users: List[str], domain_id: str

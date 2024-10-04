@@ -115,14 +115,14 @@ class WorkspaceService(BaseService):
         workspace_group_vo = None
         if new_workspace_group_id:
             workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-                new_workspace_group_id, domain_id
+                domain_id, new_workspace_group_id
             )
             is_updatable = self._add_workspace_to_group(
                 workspace_id, new_workspace_group_id, domain_id
             )
         elif old_workspace_group_id:
             workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-                old_workspace_group_id, domain_id
+                domain_id, old_workspace_group_id
             )
             self._remove_workspace_from_group_with_workspace_vo(
                 workspace_vo, old_workspace_group_id, domain_id
@@ -147,7 +147,7 @@ class WorkspaceService(BaseService):
                 )
 
                 workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-                    old_workspace_group_id, domain_id
+                    domain_id, old_workspace_group_id
                 )
 
                 self.workspace_group_mgr.update_workspace_group_by_vo(
@@ -411,7 +411,7 @@ class WorkspaceService(BaseService):
         is_updatable = True
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            workspace_group_id=workspace_group_id, domain_id=domain_id
+            domain_id, workspace_group_id
         )
 
         if old_workspace_group_id:

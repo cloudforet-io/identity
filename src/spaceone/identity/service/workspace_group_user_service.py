@@ -1,46 +1,31 @@
 import logging
 from typing import List, Union
 
-from spaceone.core.error import ERROR_NOT_FOUND
-from spaceone.core.service import (
-    BaseService,
-    authentication_handler,
-    authorization_handler,
-    event_handler,
-    mutation_handler,
-    transaction,
-)
-from spaceone.core.service.utils import (
-    append_keyword_filter,
-    append_query_filter,
-    convert_model,
-)
+from spaceone.core.service import (BaseService, authentication_handler,
+                                   authorization_handler, event_handler,
+                                   mutation_handler, transaction)
+from spaceone.core.service.utils import (append_keyword_filter,
+                                         append_query_filter, convert_model)
 
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
-from spaceone.identity.manager.workspace_group_user_manager import (
-    WorkspaceGroupUserManager,
-)
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_user_manager import \
+    WorkspaceGroupUserManager
 from spaceone.identity.model.workspace_group.response import (
-    WorkspaceGroupResponse,
-    WorkspaceGroupsResponse,
-)
+    WorkspaceGroupResponse, WorkspaceGroupsResponse)
 from spaceone.identity.model.workspace_group_user.request import (
-    WorkspaceGroupUserAddRequest,
-    WorkspaceGroupUserFindRequest,
-    WorkspaceGroupUserGetRequest,
-    WorkspaceGroupUserRemoveRequest,
-    WorkspaceGroupUserSearchQueryRequest,
-    WorkspaceGroupUserStatQueryRequest,
-    WorkspaceGroupUserUpdateRoleRequest,
-)
-from spaceone.identity.model.workspace_group_user.response import (
-    WorkspaceGroupUsersSummaryResponse,
-)
+    WorkspaceGroupUserAddRequest, WorkspaceGroupUserFindRequest,
+    WorkspaceGroupUserGetRequest, WorkspaceGroupUserRemoveRequest,
+    WorkspaceGroupUserSearchQueryRequest, WorkspaceGroupUserStatQueryRequest,
+    WorkspaceGroupUserUpdateRoleRequest)
+from spaceone.identity.model.workspace_group_user.response import \
+    WorkspaceGroupUsersSummaryResponse
 from spaceone.identity.service.role_binding_service import RoleBindingService
-from spaceone.identity.service.workspace_group_service import WorkspaceGroupService
+from spaceone.identity.service.workspace_group_service import \
+    WorkspaceGroupService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,45 +90,7 @@ class WorkspaceGroupUserService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        # user_id = self.transaction.get_meta("authorization.user_id")
-        workspace_group_id = params.workspace_group_id
-        users = params.users
-        user_id = params.user_id
-        domain_id = params.domain_id
-
-        old_user_ids, user_ids = self.workspace_group_mgr.get_unique_user_ids(
-            users, workspace_group_id, domain_id
-        )
-        self.workspace_group_mgr.check_user_ids_exist_in_workspace_group(
-            old_user_ids, user_ids
-        )
-        params_users_user_id = params.users[0].get("user_id")
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id, user_id=params_users_user_id
-        )
-        if not workspace_group_vo:
-            _LOGGER.error(f"[remove] Workspace Group not found. ({workspace_group_id})")
-            ERROR_NOT_FOUND(key="workspace_group_id", value=params.workspace_group_id)
-        workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
-
-        user_vo = self.user_mgr.get_user(user_id, domain_id)
-        if user_vo.role_type == "USER":
-            workspace_group_users = workspace_group_vo.users
-            self.workspace_group_user_mgr.check_user_role_type(
-                workspace_group_users, user_id
-            )
-
-        old_users = workspace_group_dict["users"]
-        updated_users = self.workspace_group_svc.remove_users_from_workspace_group(
-            user_ids, old_users, workspace_group_id, domain_id
-        )
-        params.users = updated_users
-
-        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
-            params.dict(exclude_unset=True), workspace_group_vo
-        )
-
-        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
+        return self.workspace_group_svc.process_remove_users(params, role_type="USER")
 
     @transaction(permission="identity:WorkspaceGroupUser:write", role_types=["USER"])
     @convert_model
@@ -169,7 +116,7 @@ class WorkspaceGroupUserService(BaseService):
         domain_id = params.domain_id
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
+            params.domain_id, params.workspace_group_id
         )
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
@@ -223,7 +170,7 @@ class WorkspaceGroupUserService(BaseService):
             WorkspaceGroupUsersSummaryResponse:
         """
         workspace_group = self.workspace_group_mgr.get_workspace_group(
-            params.workspace_group_id, params.domain_id
+            params.domain_id, params.workspace_group_id
         )
         workspace_group_users = workspace_group.users or []
         workspace_group_user_ids = list(
@@ -277,13 +224,13 @@ class WorkspaceGroupUserService(BaseService):
         domain_id = params.domain_id
 
         workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            workspace_group_id, domain_id
+            domain_id, workspace_group_id
         )
 
         workspace_group_user_ids = []
         if workspace_group_vo.users:
             old_users, new_users = self.workspace_group_mgr.get_unique_user_ids(
-                workspace_group_vo.users, workspace_group_id, domain_id
+                domain_id, workspace_group_id, workspace_group_vo.users
             )
 
             workspace_group_user_ids: List[str] = old_users + new_users
