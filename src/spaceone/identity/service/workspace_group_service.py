@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Union
 
-from mongoengine import QuerySet
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.service import (
     BaseService,
@@ -580,23 +579,6 @@ class WorkspaceGroupService(BaseService):
             workspace_group_info: 'Dict[str, str]'
         """
 
-        def get_users(workspace_group_user_info: Union[WorkspaceGroup, Dict[str, str]]):
-            if isinstance(workspace_group_user_info, dict):
-                return workspace_group_user_info.get("users", [])
-            else:
-                return workspace_group_user_info.users or []
-
-        def create_user_info_map(
-            user_vos_param: QuerySet,
-        ) -> Dict[str, Dict[str, str]]:
-            user_info_dict = {}
-            for user_vo in user_vos_param:
-                user_info_dict[user_vo.user_id] = {
-                    "name": user_vo.name,
-                    "state": user_vo.state,
-                }
-            return user_info_dict
-
         def update_user_info(
             user: Union[WorkspaceGroupUser, Dict[str, str]],
             user_info_dict: Dict[str, Dict[str, str]],
@@ -618,11 +600,20 @@ class WorkspaceGroupService(BaseService):
 
             return user
 
-        workspace_group_users = get_users(workspace_group_info)
+        if isinstance(workspace_group_info, dict):
+            workspace_group_users = workspace_group_info.get("users", [])
+        else:
+            workspace_group_users = workspace_group_info.users or []
+
+        user_info_map = {}
         user_vos = self.user_mgr.filter_users(
             user_id=workspace_group_user_ids, domain_id=domain_id
         )
-        user_info_map = create_user_info_map(user_vos)
+        for user_vo in user_vos:
+            user_info_map[user_vo.user_id] = {
+                "name": user_vo.name,
+                "state": user_vo.state,
+            }
 
         if workspace_group_users:
             updated_users = [
