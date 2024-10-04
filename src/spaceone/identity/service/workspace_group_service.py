@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.service import (
@@ -237,25 +237,15 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        workspace_group_id = params.workspace_group_id
-        domain_id = params.domain_id
-
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            domain_id, workspace_group_id
-        )
-
-        workspace_group_user_ids = []
-        if workspace_group_vo.users:
-            old_users, new_users = self.workspace_group_mgr.get_unique_user_ids(
-                domain_id, workspace_group_id, workspace_group_vo.users
+        workspace_group_vo, workspace_group_user_ids = (
+            self.workspace_group_mgr.get_workspace_group_with_users(
+                params.domain_id, params.workspace_group_id
             )
-
-            workspace_group_user_ids: List[str] = old_users + new_users
-
-        workspace_group_dict = self.add_user_name_and_state_to_users(
-            workspace_group_user_ids, workspace_group_vo, domain_id
         )
-        return WorkspaceGroupResponse(**workspace_group_dict)
+        workspace_group_info = self.add_user_name_and_state_to_users(
+            workspace_group_user_ids, workspace_group_vo, params.domain_id
+        )
+        return WorkspaceGroupResponse(**workspace_group_info)
 
     @transaction(permission="identity:WorkspaceGroup.read", role_types=["DOMAIN_ADMIN"])
     @append_query_filter(["workspace_group_id", "name", "domain_id"])
@@ -599,18 +589,18 @@ class WorkspaceGroupService(BaseService):
     def add_user_name_and_state_to_users(
         self,
         workspace_group_user_ids: List[str],
-        workspace_group_info: Union[WorkspaceGroup, Dict[str, str]],
+        workspace_group_info: Union[WorkspaceGroup, Dict[str, Any]],
         domain_id: str,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Add user's name and state to users in workspace group.
         Since the user's name and state are not in user of workspace group in database,
         we need to add user's name and state to users in the Application layer.
         Args:
             workspace_group_user_ids: 'List[str]'
-            workspace_group_info: 'Union[WorkspaceGroup, Dict[str, str]]'
+            workspace_group_info: 'Union[WorkspaceGroup, Dict[str, Any]]'
             domain_id: 'str'
         Returns:
-            workspace_group_info: 'Dict[str, str]'
+            workspace_group_info: 'Dict[str, Any]'
         """
 
         def update_user_info(
@@ -653,9 +643,15 @@ class WorkspaceGroupService(BaseService):
             updated_users = [
                 update_user_info(user, user_info_map) for user in workspace_group_users
             ]
-            workspace_group_info.users = updated_users
+            if isinstance(workspace_group_info, dict):
+                workspace_group_info["users"] = updated_users
+            else:
+                workspace_group_info.users = updated_users
 
-        return workspace_group_info.to_dict()
+        if not isinstance(workspace_group_info, dict):
+            return workspace_group_info.to_dict()
+        else:
+            return workspace_group_info
 
     def get_users_info_list(
         self,

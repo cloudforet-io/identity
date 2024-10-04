@@ -194,24 +194,15 @@ class WorkspaceGroupUserService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        workspace_group_id = params.workspace_group_id
-        domain_id = params.domain_id
-
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            domain_id, workspace_group_id
-        )
-
-        workspace_group_user_ids = []
-        if workspace_group_vo.users:
-            old_users, new_users = self.workspace_group_mgr.get_unique_user_ids(
-                domain_id, workspace_group_id, workspace_group_vo.users
+        workspace_group_vo, workspace_group_user_ids = (
+            self.workspace_group_mgr.get_workspace_group_with_users(
+                params.domain_id, params.workspace_group_id
             )
-
-            workspace_group_user_ids: List[str] = old_users + new_users
+        )
 
         workspace_group_dict = (
             self.workspace_group_svc.add_user_name_and_state_to_users(
-                workspace_group_user_ids, workspace_group_vo, domain_id
+                workspace_group_user_ids, workspace_group_vo, params.domain_id
             )
         )
         return WorkspaceGroupResponse(**workspace_group_dict)

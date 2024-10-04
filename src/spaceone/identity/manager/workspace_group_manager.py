@@ -79,6 +79,20 @@ class WorkspaceGroupManager(BaseManager):
     def stat_workspace_group(self, query: dict) -> dict:
         return self.workspace_group_model.stat(**query)
 
+    def get_workspace_group_with_users(
+        self, domain_id: str, workspace_group_id: str
+    ) -> Tuple[WorkspaceGroup, List[str]]:
+        workspace_group_vo = self.get_workspace_group(domain_id, workspace_group_id)
+
+        workspace_group_user_ids = []
+        if workspace_group_vo.users:
+            old_users, new_users = self.get_unique_user_ids(
+                domain_id, workspace_group_id, workspace_group_vo.users
+            )
+            workspace_group_user_ids = old_users + new_users
+
+        return workspace_group_vo, workspace_group_user_ids
+
     @staticmethod
     def _check_existence_of_workspace_or_user(
         workspace_vos: QuerySet, workspace_group_vo: WorkspaceGroup
