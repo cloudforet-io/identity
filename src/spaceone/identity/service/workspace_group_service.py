@@ -654,9 +654,8 @@ class WorkspaceGroupService(BaseService):
                 update_user_info(user, user_info_map) for user in workspace_group_users
             ]
             workspace_group_info.users = updated_users
-            return workspace_group_info.to_dict()
 
-        return {}
+        return workspace_group_info.to_dict()
 
     def get_users_info_list(
         self,
