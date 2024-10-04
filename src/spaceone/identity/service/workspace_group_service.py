@@ -728,22 +728,7 @@ class WorkspaceGroupService(BaseService):
                     {"user_count": user_rb_total_count}, workspace_vo
                 )
         else:
-            workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
-            if workspace_vo:
-                user_rb_ids = self.rb_mgr.stat_role_bindings(
-                    query={
-                        "distinct": "user_id",
-                        "filter": [
-                            {"k": "workspace_id", "v": workspace_id, "o": "eq"},
-                            {"k": "domain_id", "v": domain_id, "o": "eq"},
-                        ],
-                    }
-                ).get("results", [])
-                user_rb_total_count = len(user_rb_ids)
-
-                self.workspace_mgr.update_workspace_by_vo(
-                    {"user_count": user_rb_total_count}, workspace_vo
-                )
+            self.rb_svc.update_workspace_user_count(domain_id, workspace_id)
 
         return updated_users
 
