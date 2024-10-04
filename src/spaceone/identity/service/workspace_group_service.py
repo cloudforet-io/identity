@@ -48,6 +48,7 @@ from spaceone.identity.model.workspace_group.response import (
 )
 from spaceone.identity.model.workspace_group_user.request import (
     WorkspaceGroupUserAddRequest,
+    WorkspaceGroupUserRemoveRequest,
 )
 from spaceone.identity.service.role_binding_service import RoleBindingService
 
@@ -421,7 +422,13 @@ class WorkspaceGroupService(BaseService):
 
         return WorkspaceGroupResponse(**workspace_group_user_info)
 
-    def process_remove_users(self, params, role_type: str):
+    def process_remove_users(
+        self,
+        params: Union[
+            WorkspaceGroupRemoveUsersRequest, WorkspaceGroupUserRemoveRequest
+        ],
+        role_type: str,
+    ) -> WorkspaceGroupResponse:
         domain_id = params.domain_id
         workspace_group_id = params.workspace_group_id
         users = params.users
