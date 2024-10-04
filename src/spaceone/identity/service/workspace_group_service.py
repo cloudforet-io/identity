@@ -388,7 +388,9 @@ class WorkspaceGroupService(BaseService):
         return self.workspace_group_mgr.stat_workspace_group(query)
 
     def process_add_users(
-        self, params: WorkspaceGroupUserAddRequest, role_type: str
+        self,
+        params: Union[WorkspaceGroupAddUsersRequest, WorkspaceGroupUserAddRequest],
+        role_type: str,
     ) -> WorkspaceGroupResponse:
         domain_id = params.domain_id
         workspace_group_id = params.workspace_group_id
