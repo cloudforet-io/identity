@@ -656,6 +656,8 @@ class WorkspaceGroupService(BaseService):
             workspace_group_info.users = updated_users
             return workspace_group_info.to_dict()
 
+        return {}
+
     def get_users_info_list(
         self,
         new_users_info_list: List[Dict[str, str]],
