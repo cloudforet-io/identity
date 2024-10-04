@@ -26,5 +26,10 @@ class ERROR_ROLE_IN_USED_AT_ROLE_BINDING(ERROR_INVALID_ARGUMENT):
 
 
 class ERROR_WORKSPACE_EXIST_IN_WORKSPACE_GROUP(ERROR_INVALID_ARGUMENT):
-    _message = """Workspace exists in WorkspaceGroup. (workspace_id = {workspace_id}, workspace_group_id = {workspace_group_id})
+    _message = """Workspace exists in Workspace Group. (workspace_id = {workspace_id}, workspace_group_id = {workspace_group_id})
                Remove the workspace from the workspace group before deleting the workspace group."""
+
+
+class ERROR_USER_EXIST_IN_WORKSPACE_GROUP(ERROR_INVALID_ARGUMENT):
+    _message = """User exists in Workspace Group. (user_id = {user_id}, workspace_group_id = {workspace_group_id})
+               Remove the user from the workspace group before deleting the workspace group."""
