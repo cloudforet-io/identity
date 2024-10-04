@@ -49,6 +49,7 @@ from spaceone.identity.model.workspace_group.response import (
 from spaceone.identity.model.workspace_group_user.request import (
     WorkspaceGroupUserAddRequest,
     WorkspaceGroupUserRemoveRequest,
+    WorkspaceGroupUserUpdateRoleRequest,
 )
 from spaceone.identity.service.role_binding_service import RoleBindingService
 
@@ -218,38 +219,7 @@ class WorkspaceGroupService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        domain_id = params.domain_id
-        workspace_group_id = params.workspace_group_id
-        user_id = params.user_id
-        role_id = params.role_id
-
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            domain_id, workspace_group_id
-        )
-        user_vo = self.user_mgr.get_user(user_id, domain_id)
-        old_user_id = user_vo.user_id
-        old_user_state = user_vo.state
-        self.check_user_state(old_user_id, old_user_state)
-
-        role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
-        role_type = role_vo.role_type
-        self.check_role_type(role_type)
-        self.update_user_role_of_workspace_group(
-            role_id, role_type, user_id, workspace_group_id, domain_id
-        )
-
-        update_workspace_group_params = {"users": workspace_group_vo.users or []}
-        for user_info in update_workspace_group_params.get("users", []):
-            if user_info["user_id"] == user_vo.user_id:
-                user_info["role_id"] = role_id
-                user_info["role_type"] = role_type
-                break
-
-        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
-            update_workspace_group_params, workspace_group_vo
-        )
-
-        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
+        return self.process_update_role(params, role_type="DOMAIN_ADMIN")
 
     @transaction(permission="identity:WorkspaceGroup.read", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -468,6 +438,63 @@ class WorkspaceGroupService(BaseService):
 
         workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
             params.dict(exclude_unset=True), workspace_group_vo
+        )
+
+        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
+
+    def process_update_role(
+        self,
+        params: Union[
+            WorkspaceGroupUpdateRoleRequest, WorkspaceGroupUserUpdateRoleRequest
+        ],
+        role_type: str,
+    ) -> WorkspaceGroupResponse:
+        workspace_group_id = params.workspace_group_id
+        role_id = params.role_id
+        domain_id = params.domain_id
+
+        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+            domain_id, workspace_group_id
+        )
+
+        if role_type == "DOMAIN_ADMIN":
+            target_user_id = params.user_id
+        else:
+            # when role_type is USER, user_id is injected from auth, so the target_user_id is
+            # the target user_id to update role
+            target_user_id = params.target_user_id
+            user_id = params.user_id
+
+            user_vo = self.user_mgr.get_user(user_id, domain_id)
+
+            # Role type USER has two roles: DOMAIN_ADMIN and USER
+            if user_vo.role_type == "USER":
+                workspace_group_users = workspace_group_vo.users
+                self.workspace_group_user_mgr.check_user_role_type(
+                    workspace_group_users, user_id
+                )
+
+        target_user_vo = self.user_mgr.get_user(target_user_id, domain_id)
+        target_user_state = target_user_vo.state
+        self.check_user_state(target_user_id, target_user_state)
+
+        role_vo = self.role_mgr.get_role(role_id, domain_id)
+        role_type = role_vo.role_type
+        self.check_role_type(role_type)
+
+        self.update_user_role_of_workspace_group(
+            role_id, role_type, target_user_id, workspace_group_id, domain_id
+        )
+
+        update_workspace_group_params = {"users": workspace_group_vo.users or []}
+        for user_info in update_workspace_group_params.get("users", []):
+            if user_info["user_id"] == target_user_id:
+                user_info["role_id"] = role_id
+                user_info["role_type"] = role_type
+                break
+
+        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
+            update_workspace_group_params, workspace_group_vo
         )
 
         return WorkspaceGroupResponse(**workspace_group_vo.to_dict())

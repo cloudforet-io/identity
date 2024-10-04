@@ -1,31 +1,45 @@
 import logging
 from typing import List, Union
 
-from spaceone.core.service import (BaseService, authentication_handler,
-                                   authorization_handler, event_handler,
-                                   mutation_handler, transaction)
-from spaceone.core.service.utils import (append_keyword_filter,
-                                         append_query_filter, convert_model)
+from spaceone.core.service import (
+    BaseService,
+    authentication_handler,
+    authorization_handler,
+    event_handler,
+    mutation_handler,
+    transaction,
+)
+from spaceone.core.service.utils import (
+    append_keyword_filter,
+    append_query_filter,
+    convert_model,
+)
 
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.workspace_group_manager import \
-    WorkspaceGroupManager
-from spaceone.identity.manager.workspace_group_user_manager import \
-    WorkspaceGroupUserManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_user_manager import (
+    WorkspaceGroupUserManager,
+)
 from spaceone.identity.model.workspace_group.response import (
-    WorkspaceGroupResponse, WorkspaceGroupsResponse)
+    WorkspaceGroupResponse,
+    WorkspaceGroupsResponse,
+)
 from spaceone.identity.model.workspace_group_user.request import (
-    WorkspaceGroupUserAddRequest, WorkspaceGroupUserFindRequest,
-    WorkspaceGroupUserGetRequest, WorkspaceGroupUserRemoveRequest,
-    WorkspaceGroupUserSearchQueryRequest, WorkspaceGroupUserStatQueryRequest,
-    WorkspaceGroupUserUpdateRoleRequest)
-from spaceone.identity.model.workspace_group_user.response import \
-    WorkspaceGroupUsersSummaryResponse
+    WorkspaceGroupUserAddRequest,
+    WorkspaceGroupUserFindRequest,
+    WorkspaceGroupUserGetRequest,
+    WorkspaceGroupUserRemoveRequest,
+    WorkspaceGroupUserSearchQueryRequest,
+    WorkspaceGroupUserStatQueryRequest,
+    WorkspaceGroupUserUpdateRoleRequest,
+)
+from spaceone.identity.model.workspace_group_user.response import (
+    WorkspaceGroupUsersSummaryResponse,
+)
 from spaceone.identity.service.role_binding_service import RoleBindingService
-from spaceone.identity.service.workspace_group_service import \
-    WorkspaceGroupService
+from spaceone.identity.service.workspace_group_service import WorkspaceGroupService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,47 +123,7 @@ class WorkspaceGroupUserService(BaseService):
         Returns:
             WorkspaceGroupResponse:
         """
-        workspace_group_id = params.workspace_group_id
-        role_id = params.role_id
-        target_user_id = params.target_user_id
-        user_id = params.user_id
-        domain_id = params.domain_id
-
-        workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
-            params.domain_id, params.workspace_group_id
-        )
-
-        user_vo = self.user_mgr.get_user(user_id, domain_id)
-        if user_vo.role_type == "USER":
-            workspace_group_users = workspace_group_vo.users
-            self.workspace_group_user_mgr.check_user_role_type(
-                workspace_group_users, user_id
-            )
-
-        target_user_vo = self.user_mgr.get_user(target_user_id, domain_id)
-        target_user_state = target_user_vo.state
-        self.workspace_group_svc.check_user_state(target_user_id, target_user_state)
-
-        role_vo = self.role_mgr.get_role(role_id, domain_id)
-        role_type = role_vo.role_type
-        self.workspace_group_svc.check_role_type(role_type)
-
-        self.workspace_group_svc.update_user_role_of_workspace_group(
-            role_id, role_type, target_user_id, workspace_group_id, domain_id
-        )
-
-        update_workspace_group_params = {"users": workspace_group_vo.users or []}
-        for user_info in update_workspace_group_params.get("users", []):
-            if user_info["user_id"] == target_user_id:
-                user_info["role_id"] = role_id
-                user_info["role_type"] = role_type
-                break
-
-        workspace_group_vo = self.workspace_group_mgr.update_workspace_group_by_vo(
-            update_workspace_group_params, workspace_group_vo
-        )
-
-        return WorkspaceGroupResponse(**workspace_group_vo.to_dict())
+        return self.workspace_group_svc.process_update_role(params, role_type="USER")
 
     @transaction(permission="identity:WorkspaceGroupUser:read", role_types=["USER"])
     @convert_model
