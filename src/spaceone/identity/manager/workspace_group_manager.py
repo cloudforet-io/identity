@@ -58,10 +58,7 @@ class WorkspaceGroupManager(BaseManager):
         workspace_group_vo.delete()
 
     def get_workspace_group(
-        self,
-        workspace_group_id: str,
-        domain_id: str,
-        user_id: str = None,
+        self, workspace_group_id: str, domain_id: str, user_id: str = None
     ) -> WorkspaceGroup:
         conditions = {
             "workspace_group_id": workspace_group_id,
@@ -115,7 +112,7 @@ class WorkspaceGroupManager(BaseManager):
             for workspace_group_user_id in workspace_group_vo["users"]
         )
 
-    def get_unique_old_users_and_new_users(
+    def get_unique_user_ids(
         self,
         new_users_info_list: List[Dict[str, str]],
         workspace_group_id: str,
@@ -123,30 +120,29 @@ class WorkspaceGroupManager(BaseManager):
     ) -> Tuple[List[str], List[str]]:
         workspace_group_vo = self.get_workspace_group(workspace_group_id, domain_id)
 
-        old_users = list(
-            set(
-                [old_user_info["user_id"] for old_user_info in workspace_group_vo.users]
-                if workspace_group_vo.users
-                else []
-            )
-        )
-        new_users = list(
-            set([new_user_info["user_id"] for new_user_info in new_users_info_list])
-        )
+        old_user_ids = []
+        if users := workspace_group_vo.users:
+            unique_user_ids = {user["user_id"] for user in users}
+            old_user_ids = list(unique_user_ids)
 
-        return old_users, new_users
+        new_user_ids = []
+        for new_user_info in new_users_info_list:
+            unique_user_ids = {new_user_info["user_id"]}
+            new_user_ids = list(unique_user_ids)
+
+        return old_user_ids, new_user_ids
 
     @staticmethod
     def check_new_users_already_in_workspace_group(
-        old_users: List[str], new_users: List[str]
+        old_user_ids: List[str], new_user_ids: List[str]
     ) -> None:
-        if set(old_users) & set(new_users):
+        if set(old_user_ids) & set(new_user_ids):
             _LOGGER.error(
-                f"Users {new_users} is already in workspace group or not registered."
+                f"Users {new_user_ids} is already in workspace group or not registered."
             )
             raise ERROR_INVALID_PARAMETER(
                 key="users",
-                reason=f"User {new_users} is already in the workspace group or not registered.",
+                reason=f"User {new_user_ids} is already in the workspace group or not registered.",
             )
 
     @staticmethod
