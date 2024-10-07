@@ -532,30 +532,24 @@ class WorkspaceGroupService(BaseService):
         unique_user_ids = set()
 
         def add_user(user_info, workspace_group_workspace_id=None):
-            if user_info["user_id"] not in unique_user_ids:
-                role_type = new_users_role_map[user_info["role_id"]]
-                user_data = {
-                    "user_id": user_info["user_id"],
-                    "role_id": user_info["role_id"],
-                    "role_type": role_type,
-                }
+            role_type = new_users_role_map[user_info["role_id"]]
+            user_data = {
+                "user_id": user_info["user_id"],
+                "role_id": user_info["role_id"],
+                "role_type": role_type,
+            }
 
-                if workspace_group_workspace_id:
-                    role_binding_params = {
-                        **user_data,
-                        "resource_group": "WORKSPACE",
-                        "domain_id": domain_id,
-                        "workspace_group_id": workspace_group_id,
-                        "workspace_id": workspace_group_workspace_id,
-                    }
-                    new_user_rb_vo = self.rb_svc.create_role_binding(
-                        role_binding_params
-                    )
-                    user_data = {
-                        "user_id": new_user_rb_vo.user_id,
-                        "role_id": new_user_rb_vo.role_id,
-                        "role_type": new_user_rb_vo.role_type,
-                    }
+            if workspace_group_workspace_id:
+                role_binding_params = {
+                    **user_data,
+                    "resource_group": "WORKSPACE",
+                    "domain_id": domain_id,
+                    "workspace_group_id": workspace_group_id,
+                    "workspace_id": workspace_group_workspace_id,
+                }
+                self.rb_svc.create_role_binding(role_binding_params)
+
+            if user_info["user_id"] not in unique_user_ids:
                 workspace_group_new_users_info_list.append(user_data)
                 unique_user_ids.add(user_data["user_id"])
 
