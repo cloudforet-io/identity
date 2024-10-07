@@ -139,11 +139,9 @@ class WorkspaceGroupManager(BaseManager):
             unique_user_ids = {user["user_id"] for user in users}
             old_user_ids.extend(list(unique_user_ids))
 
-        new_user_ids = []
-        for new_user_info in new_users_info_list:
-            unique_user_ids = {new_user_info["user_id"]}
-            new_user_ids.extend(list(unique_user_ids))
-
+        new_user_ids = list(
+            {new_user_info["user_id"] for new_user_info in new_users_info_list}
+        )
         return old_user_ids, new_user_ids
 
     @staticmethod
