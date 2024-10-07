@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime
-from mongoengine import QuerySet
-from typing import Dict, List, Union, Any
+from typing import Any, Dict, List, Union
 
+from mongoengine import QuerySet
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.service import (
     BaseService,
@@ -244,7 +244,7 @@ class WorkspaceGroupService(BaseService):
             )
         )
         workspace_group_info = self.add_user_name_and_state_to_users(
-            workspace_group_user_ids, workspace_group_vo, params.domain_id
+            workspace_group_vo, params.domain_id, workspace_group_user_ids
         )
         return WorkspaceGroupResponse(**workspace_group_info)
 
@@ -360,7 +360,7 @@ class WorkspaceGroupService(BaseService):
 
         workspace_group_user_ids: List[str] = old_user_ids + new_user_ids
         workspace_group_user_info = self.add_user_name_and_state_to_users(
-            workspace_group_user_ids, workspace_group_vo, domain_id
+            workspace_group_vo, domain_id, workspace_group_user_ids
         )
 
         return WorkspaceGroupResponse(**workspace_group_user_info)
@@ -571,17 +571,17 @@ class WorkspaceGroupService(BaseService):
 
     def add_user_name_and_state_to_users(
         self,
-        workspace_group_user_ids: List[str],
         workspace_group_info: Union[WorkspaceGroup, Dict[str, Any]],
         domain_id: str,
+        workspace_group_user_ids: List[str],
     ) -> Dict[str, Any]:
         """Add user's name and state to users in workspace group.
         Since the user's name and state are not in user of workspace group in database,
         we need to add user's name and state to users in the Application layer.
         Args:
-            workspace_group_user_ids: 'List[str]'
             workspace_group_info: 'Union[WorkspaceGroup, Dict[str, Any]]'
             domain_id: 'str'
+            workspace_group_user_ids: 'List[str]'
         Returns:
             workspace_group_info: 'Dict[str, Any]'
         """
@@ -711,7 +711,7 @@ class WorkspaceGroupService(BaseService):
                 workspace_group_vo
             )
             workspace_group_dict = self.add_user_name_and_state_to_users(
-                workspace_group_user_ids, workspace_group_vo, domain_id
+                workspace_group_vo, domain_id, workspace_group_user_ids
             )
             workspace_groups_info.append(workspace_group_dict)
         return workspace_groups_info

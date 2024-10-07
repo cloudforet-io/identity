@@ -4,6 +4,7 @@ import re
 import string
 from typing import Dict, List, Union
 
+from mongoengine import QuerySet
 from spaceone.core import config
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
@@ -22,6 +23,7 @@ from spaceone.identity.manager.token_manager.local_token_manager import (
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.model import WorkspaceGroup
 from spaceone.identity.model.user.database import User
 from spaceone.identity.model.user.response import *
 from spaceone.identity.model.user_profile.request import *
@@ -416,75 +418,28 @@ class UserProfileService(BaseService):
     ) -> Union[MyWorkspaceGroupsResponse, dict]:
         """Find user
         Args:
-            params (UserWorkspacesRequest): {
-                'user_id': 'str',       # injected from auth (required)
-                'domain_id': 'str'      # injected from auth (required)
+            params (UserProfileGetWorkspaceGroupsRequest): {
+                'user_id': 'str',         # injected from auth (required)
+                'domain_id': 'str'        # injected from auth (required)
             }
         Returns:
-            MyWorkspaceResponse:
+            MyWorkspaceGroupsResponse:
         """
-        rb_mgr = RoleBindingManager()
-        allow_all = False
-
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+        allow_all = user_vo.role_type == "DOMAIN_ADMIN"
 
-        if user_vo.role_type == "DOMAIN_ADMIN":
-            allow_all = True
-
-        if allow_all:
-            workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
-                domain_id=params.domain_id
-            )
-            workspace_group_infos = [
-                workspace_group_vo.to_dict()
-                for workspace_group_vo in workspace_group_vos
-            ]
-        else:
-            query_filter = {
-                "filter": [
-                    {"key": "users.user_id", "value": params.user_id, "operator": "eq"},
-                    {"key": "domain_id", "value": params.domain_id, "operator": "eq"},
-                ]
-            }
-            workspace_group_infos, _ = self.workspace_group_mgr.list_workspace_groups(
-                query_filter
-            )
-
+        workspace_group_infos = self._get_workspace_group_infos(params, allow_all)
         workspace_group_ids = [
-            workspace_group_info["workspace_group_id"]
-            for workspace_group_info in workspace_group_infos
+            info["workspace_group_id"] for info in workspace_group_infos
         ]
-
-        rb_vos = rb_mgr.filter_role_bindings(
-            user_id=params.user_id,
-            domain_id=params.domain_id,
-            workspace_group_id=workspace_group_ids,
-            role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_bindings_info_map = self._get_role_bindings_info(
+            params, workspace_group_ids
         )
-        role_bindings_info_map = {rb.workspace_group_id: rb.to_dict() for rb in rb_vos}
+        workspace_group_user_ids = self._extract_user_ids(workspace_group_infos)
 
-        workspace_group_user_ids = []
-        for workspace_group_info in workspace_group_infos:
-            if not isinstance(workspace_group_info, dict):
-                workspace_group_info = workspace_group_info.to_dict()
-            if users := workspace_group_info.get("users", []) or []:
-                for user in users:
-                    if isinstance(user, dict):
-                        workspace_group_user_ids.append(user.get("user_id"))
-                    elif hasattr(user, "user_id"):
-                        workspace_group_user_ids.append(user.user_id)
-
-        workspace_groups_info = []
-        for workspace_group_info in workspace_group_infos:
-            workspace_group_dict = (
-                self.workspace_group_svc.add_user_name_and_state_to_users(
-                    workspace_group_user_ids,
-                    workspace_group_info,
-                    params.domain_id,
-                )
-            )
-            workspace_groups_info.append(workspace_group_dict)
-
+        workspace_groups_info = self._add_user_name_and_state(
+            workspace_group_infos, params.domain_id, workspace_group_user_ids
+        )
         my_workspace_groups_info = self._get_my_workspace_groups_info(
             workspace_groups_info, role_bindings_info_map
         )
@@ -573,9 +528,72 @@ class UserProfileService(BaseService):
             my_workspaces_info.append(workspace_info)
         return my_workspaces_info
 
+    def _get_workspace_group_infos(
+        self, params: UserProfileGetWorkspaceGroupsRequest, allow_all: bool
+    ) -> Union[QuerySet, List[Dict[str, str]]]:
+        if allow_all:
+            workspace_group_vos = self.workspace_group_mgr.filter_workspace_groups(
+                domain_id=params.domain_id
+            )
+            return [vo.to_dict() for vo in workspace_group_vos]
+        else:
+            query_filter = {
+                "filter": [
+                    {"key": "users.user_id", "value": params.user_id, "operator": "eq"},
+                    {"key": "domain_id", "value": params.domain_id, "operator": "eq"},
+                ]
+            }
+            return self.workspace_group_mgr.list_workspace_groups(query_filter)[0]
+
+    @staticmethod
+    def _get_role_bindings_info(
+        params: UserProfileGetWorkspaceGroupsRequest, workspace_group_ids: List[str]
+    ) -> Dict[str, Dict[str, str]]:
+        rb_mgr = RoleBindingManager()
+        rb_vos = rb_mgr.filter_role_bindings(
+            user_id=params.user_id,
+            domain_id=params.domain_id,
+            workspace_group_id=workspace_group_ids,
+            role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        )
+        return {rb.workspace_group_id: rb.to_dict() for rb in rb_vos}
+
+    @staticmethod
+    def _extract_user_ids(
+        workspace_group_infos: Union[QuerySet, List[Dict[str, str]]]
+    ) -> List[str]:
+        workspace_group_user_ids = []
+        for workspace_group_info in workspace_group_infos:
+            if not isinstance(workspace_group_info, dict):
+                workspace_group_info = workspace_group_info.to_dict()
+            if users := workspace_group_info.get("users", []) or []:
+                for user in users:
+                    if isinstance(user, dict):
+                        workspace_group_user_ids.append(user.get("user_id"))
+                    elif hasattr(user, "user_id"):
+                        workspace_group_user_ids.append(user.user_id)
+
+        return workspace_group_user_ids
+
+    def _add_user_name_and_state(
+        self,
+        workspace_group_infos: Union[QuerySet, List[Dict[str, str]]],
+        domain_id: str,
+        workspace_group_user_ids: List[str],
+    ) -> List[Union[WorkspaceGroup, Dict[str, str]]]:
+        updated_workspace_group_infos = []
+        for workspace_group_info in workspace_group_infos:
+            updated_workspace_group_infos.append(
+                self.workspace_group_svc.add_user_name_and_state_to_users(
+                    workspace_group_info, domain_id, workspace_group_user_ids
+                )
+            )
+        return updated_workspace_group_infos
+
     @staticmethod
     def _get_my_workspace_groups_info(
-        workspace_groups_info: list, role_bindings_info_map: dict = None
+        workspace_groups_info: List[Union[WorkspaceGroup, Dict[str, str]]],
+        role_bindings_info_map: Dict[str, Dict[str, str]] = None,
     ) -> List[Dict[str, str]]:
         my_workspace_groups_info = []
 
