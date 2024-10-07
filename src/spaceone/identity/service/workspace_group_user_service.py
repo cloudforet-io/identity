@@ -1,5 +1,5 @@
 import logging
-from typing import List, Union
+from typing import Union
 
 from spaceone.core.service import (
     BaseService,
@@ -202,7 +202,7 @@ class WorkspaceGroupUserService(BaseService):
 
         workspace_group_dict = (
             self.workspace_group_svc.add_user_name_and_state_to_users(
-                workspace_group_user_ids, workspace_group_vo, params.domain_id
+                workspace_group_vo, params.domain_id, workspace_group_user_ids
             )
         )
         return WorkspaceGroupResponse(**workspace_group_dict)
