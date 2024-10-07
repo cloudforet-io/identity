@@ -588,7 +588,7 @@ class WorkspaceGroupService(BaseService):
                 user_id = user.get("user_id", "")
             else:
                 user_id = getattr(user, "user_id", "") or ""
-                user = user.to_mongo().to_dict()
+                user = user.to_mongo()
 
             user_info = user_info_dict.get(user_id, {})
 
