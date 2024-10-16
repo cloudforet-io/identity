@@ -871,9 +871,11 @@ class JobService(BaseService):
         if secret_data:
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
             secret_id = service_account_vo.secret_id
+            secret_total_count = 0
 
-            response = secret_mgr.list_secrets({"secret_id": secret_id}, domain_id)
-            secret_total_count = response.get("total_count", 0)
+            if secret_id:
+                response = secret_mgr.list_secrets({"secret_id": secret_id}, domain_id)
+                secret_total_count = response.get("total_count", 0)
 
             if secret_total_count > 0:
                 update_secret_params = {
