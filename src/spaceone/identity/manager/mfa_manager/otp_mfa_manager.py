@@ -62,7 +62,13 @@ class OTPMFAManager(MFAManager):
 
         elif mfa_state == "DISABLED":
             otp_secret_key = self.get_cached_otp_secret_key(credentials)
-            user_secret_info = secret_manager.create_user_secret({"otp_secret_key": otp_secret_key})
+            user_secret_params = {
+                "name": f"{credentials['user_id']}_otp_secret_key",
+                "data": {
+                    "otp_secret_key": otp_secret_key
+                }
+            }
+            user_secret_info = secret_manager.create_user_secret(user_secret_params)
             user_mfa["options"]["user_secret_id"] = user_secret_info.get("user_secret_id")
 
         return user_mfa
