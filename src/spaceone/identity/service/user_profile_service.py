@@ -226,22 +226,21 @@ class UserProfileService(BaseService):
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
 
-        if not options:
-            raise ERROR_REQUIRED_PARAMETER(key="options")
+        self._check_mfa_options(options, mfa_type)
 
         if user_mfa.get("state", "DISABLED") == "ENABLED":
             raise ERROR_MFA_ALREADY_ENABLED(user_id=user_id)
 
         mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
 
-        if mfa_type == "EMAIL":
-            user_mfa["mfa_type"] = mfa_type
-            user_mfa["options"] = options
-            user_mfa["state"] = user_mfa.get("state", "DISABLED")
-            mfa_manager.enable_mfa(user_id, domain_id, user_mfa, user_vo.language)
-            user_vo = self.user_mgr.update_user_by_vo({"mfa": user_mfa}, user_vo)
+        user_mfa["mfa_type"] = mfa_type
+        user_mfa["state"] = user_mfa.get("state", "DISABLED")
+        user_mfa["options"] = options
+
+        if mfa_type in ["EMAIL", "OTP"]:
+            user_vo.mfa = mfa_manager.enable_mfa(user_id, domain_id, user_mfa, user_vo)
         else:
-            raise ERROR_NOT_SUPPORTED_MFA_TYPE(support_mfa_types=["EMAIL"])
+            raise ERROR_NOT_SUPPORTED_MFA_TYPE(support_mfa_types=["EMAIL", "OTP"])
 
         return UserResponse(**user_vo.to_dict())
 
@@ -271,7 +270,7 @@ class UserProfileService(BaseService):
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
         mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
-        mfa_manager.disable_mfa(user_id, domain_id, user_mfa, user_vo.language)
+        mfa_manager.disable_mfa(user_id, domain_id, user_mfa, user_vo)
 
         return UserResponse(**user_vo.to_dict())
 
@@ -294,28 +293,39 @@ class UserProfileService(BaseService):
         domain_id = params.domain_id
         verify_code = params.verify_code
 
+        credentials = {
+            "user_id": user_id,
+            "domain_id": domain_id,
+        }
+
         user_vo = self.user_mgr.get_user(user_id, domain_id)
-        mfa_type = user_vo.mfa.mfa_type
+        user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        mfa_state = user_mfa.get("state", "DISABLED")
+
+        if mfa_state == "DISABLED":
+            user_mfa = MFAManager.get_mfa_info(credentials)["user_mfa"]
+
+        mfa_type = user_mfa["mfa_type"]
 
         if not mfa_type:
             raise ERROR_MFA_NOT_ENABLED(user_id=user_id)
 
         mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
 
-        if mfa_type == "EMAIL":
-            credentials = {
-                "user_id": user_id,
-                "domain_id": domain_id,
-            }
-            if mfa_manager.confirm_mfa(credentials, verify_code):
-                user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
-                if user_mfa.get("state", "DISABLED") == "ENABLED":
-                    user_mfa = {"state": "DISABLED"}
-                elif user_mfa.get("state", "DISABLED") == "DISABLED":
-                    user_mfa["state"] = "ENABLED"
-                self.user_mgr.update_user_by_vo({"mfa": user_mfa}, user_vo)
-            else:
-                raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
+        if mfa_manager.confirm_mfa(credentials, verify_code):
+
+            user_mfa = mfa_manager.set_mfa_options(user_mfa, credentials)
+
+            if mfa_state == "ENABLED":
+                user_mfa = {"state": "DISABLED"}
+            elif mfa_state == "DISABLED":
+                user_mfa["state"] = "ENABLED"
+
+            user_vo = self.user_mgr.update_user_by_vo({"mfa": user_mfa}, user_vo)
+
+        else:
+            raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
+
         return UserResponse(**user_vo.to_dict())
 
     @transaction(permission="identity:UserProfile.read", role_types=["USER"])
@@ -605,3 +615,8 @@ class UserProfileService(BaseService):
             my_workspace_groups_info.append(workspace_group_info)
 
         return my_workspace_groups_info
+
+    @staticmethod
+    def _check_mfa_options(options, mfa_type):
+        if mfa_type in ["EMAIL"] and not options:
+            raise ERROR_REQUIRED_PARAMETER(key="options.email")

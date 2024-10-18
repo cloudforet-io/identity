@@ -8,6 +8,7 @@ from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.token_manager.base import TokenManager
+from spaceone.identity.manager import SecretManager
 from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.model.user.database import User
 
@@ -36,20 +37,29 @@ class MFATokenManager(TokenManager):
         self.user: User = self.user_mgr.get_user(user_id, domain_id)
         self._check_user_state()
 
+        user_mfa = self.user.mfa.to_dict()
+        mfa_type = user_mfa.get("mfa_type")
+        mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
+
         if verify_code := kwargs.get("verify_code"):
-            if MFAManager.check_mfa_verify_code(credentials, verify_code):
+            if mfa_manager.check_mfa_verify_code(credentials, verify_code):
                 self.is_authenticated = True
             else:
                 raise ERROR_INVALID_CREDENTIALS()
-        else:
-            user_mfa = self.user.mfa.to_dict()
-            mfa_email = user_mfa["options"].get("email")
 
-            mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get("mfa_type"))
-            mfa_manager.send_mfa_authentication_email(
-                self.user.user_id, domain_id, mfa_email, self.user.language, credentials
-            )
-            raise ERROR_MFA_REQUIRED(user_id=mfa_email)
+        else:
+            if mfa_type == "EMAIL":
+                mfa_email = user_mfa["options"].get("email")
+
+                mfa_manager.send_mfa_authentication_email(
+                    self.user.user_id, domain_id, mfa_email, self.user.language, credentials
+                )
+            elif mfa_type == "OTP":
+                secret_manager: SecretManager = self.locator.get_manager(SecretManager)
+                user_secret_id = user_mfa["options"].get("user_secret_id")
+                otp_secret_key = secret_manager.get_user_otp_secret_key(user_secret_id, domain_id)
+
+                mfa_manager.set_cache_otp_mfa_secret_key(otp_secret_key, self.user.user_id, domain_id, credentials)
 
     def _check_user_state(self) -> None:
         if self.user.state not in ["ENABLED", "PENDING"]:
