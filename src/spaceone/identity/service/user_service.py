@@ -11,6 +11,7 @@ from spaceone.core import config
 
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_user import *
+from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.config_manager import ConfigManager
 from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.domain_manager import DomainManager
@@ -249,6 +250,11 @@ class UserService(BaseService):
 
         if user_mfa.get("state", "DISABLED") == "DISABLED" or mfa_type is None:
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
+
+        if mfa_type == "OTP":
+            user_secret_id = user_mfa["options"]["user_secret_id"]
+            secret_manager: SecretManager = self.locator.get_manager(SecretManager)
+            secret_manager.delete_user_secret(user_secret_id)
 
         user_mfa = {"state": "DISABLED"}
         self.user_mgr.update_user_by_vo({"mfa": user_mfa}, user_vo)
