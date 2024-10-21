@@ -14,7 +14,7 @@ class ERROR_MFA_ALREADY_DISABLED(ERROR_UNKNOWN):
 
 
 class ERROR_MFA_REQUIRED(ERROR_UNKNOWN):
-    _message = "MFA is required. (user_id =  {user_id}) / (mfa_type = {mfa_type})"
+    _message = "MFA is required. (user_id = {user_id}), (mfa_type = {mfa_type})"
 
 
 class ERROR_MFA_NOT_ENABLED(ERROR_UNKNOWN):
