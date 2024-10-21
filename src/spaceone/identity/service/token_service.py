@@ -86,6 +86,8 @@ class TokenService(BaseService):
         mfa_type = user_mfa.get('mfa_type')
         permissions = self._get_permissions_from_required_actions(user_vo)
 
+        mfa_user_id = user_vo.user_id
+
         if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type != "MFA":
             mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
             if mfa_type == "EMAIL":
@@ -93,6 +95,7 @@ class TokenService(BaseService):
                 mfa_manager.send_mfa_authentication_email(
                     user_vo.user_id, domain_id, mfa_email, user_vo.language, credentials
                 )
+                mfa_user_id = mfa_email
 
             elif mfa_type == "OTP":
                 secret_manager: SecretManager = self.locator.get_manager(SecretManager)
@@ -101,7 +104,7 @@ class TokenService(BaseService):
 
                 mfa_manager.set_cache_otp_mfa_secret_key(otp_secret_key, user_vo.user_id, domain_id, credentials)
 
-            raise ERROR_MFA_REQUIRED(user_id=user_vo.user_id)
+            raise ERROR_MFA_REQUIRED(user_id=mfa_user_id, mfa_type=mfa_type)
 
         token_info = token_mgr.issue_token(
             private_jwk,
