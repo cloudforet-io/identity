@@ -252,7 +252,7 @@ class UserService(BaseService):
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
         if mfa_type == "OTP":
-            user_secret_id = user_mfa["options"]["user_secret_id"]
+            user_secret_id = user_mfa.get("options", {}).get("user_secret_id")
             secret_manager: SecretManager = self.locator.get_manager(SecretManager)
             secret_manager.delete_user_secret(user_secret_id)
 
