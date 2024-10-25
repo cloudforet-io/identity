@@ -254,7 +254,7 @@ class UserService(BaseService):
         if mfa_type == "OTP":
             user_secret_id = user_mfa.get("options", {}).get("user_secret_id")
             secret_manager: SecretManager = self.locator.get_manager(SecretManager)
-            secret_manager.delete_user_secret(user_secret_id)
+            secret_manager.delete_user_secret_with_system_token(domain_id, user_secret_id)
 
         user_mfa = {"state": "DISABLED"}
         self.user_mgr.update_user_by_vo({"mfa": user_mfa}, user_vo)
