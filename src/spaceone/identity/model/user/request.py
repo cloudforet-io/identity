@@ -8,6 +8,7 @@ __all__ = [
     "UserVerifyEmailRequest",
     "UserStatQueryRequest",
     "UserSetRequiredActionsRequest",
+    "UserSetRefreshTimeout",
     "UserDisableMFARequest",
     "UserDeleteRequest",
     "UserEnableRequest",
@@ -60,6 +61,12 @@ class UserDisableMFARequest(BaseModel):
 class UserSetRequiredActionsRequest(BaseModel):
     user_id: str
     required_actions: List[str]
+    domain_id: str
+
+
+class UserSetRefreshTimeout(BaseModel):
+    user_id: str
+    refresh_timeout: int
     domain_id: str
 
 

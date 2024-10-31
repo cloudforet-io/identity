@@ -15,12 +15,6 @@ class UserProfile(BaseAPI, user_profile_pb2_grpc.UserProfileServicer):
         response: dict = user_profile_svc.update(params)
         return ParseDict(response, user_pb2.UserInfo())
 
-    def set_refresh_timeout(self, request, context):
-        params, metadata = self.parse_request(request, context)
-        user_profile_svc = UserProfileService(metadata)
-        response: dict = user_profile_svc.set_refresh_timeout(params)
-        return ParseDict(response, user_pb2.UserInfo())
-
     def verify_email(self, request, context):
         params, metadata = self.parse_request(request, context)
         user_profile_svc = UserProfileService(metadata)
