@@ -39,15 +39,15 @@ class TokenManager(BaseManager, ABC):
         raise ERROR_INVALID_AUTHENTICATION_TYPE(auth_type=auth_type)
 
     def issue_token(
-        self,
-        private_jwk,
-        refresh_private_jwk,
-        domain_id,
-        workspace_id=None,
-        timeout=None,
-        permissions=None,
-        projects=None,
-        app_id=None,
+            self,
+            private_jwk,
+            refresh_private_jwk,
+            domain_id,
+            workspace_id=None,
+            timeout=None,
+            permissions=None,
+            projects=None,
+            app_id=None,
     ):
         if self.is_authenticated is False:
             raise ERROR_NOT_AUTHENTICATED()
@@ -80,7 +80,7 @@ class TokenManager(BaseManager, ABC):
         )
 
         refresh_token = key_gen.generate_token(
-            "REFRESH_TOKEN", timeout=self.CONST_REFRESH_TIMEOUT
+            "REFRESH_TOKEN", timeout=self._get_refresh_token_timeout()
         )
         if self.owner_type != "SYSTEM":
             # todo: remove
@@ -89,7 +89,7 @@ class TokenManager(BaseManager, ABC):
         return {"access_token": access_token, "refresh_token": refresh_token}
 
     def issue_temporary_token(
-        self, user_id: str, domain_id: str, private_jwk, timeout: int
+            self, user_id: str, domain_id: str, private_jwk: dict, timeout: int
     ) -> dict:
         permissions = [
             "identity:UserProfile",
@@ -126,6 +126,17 @@ class TokenManager(BaseManager, ABC):
         else:
             timeout = self.CONST_TOKEN_TIMEOUT
         return timeout
+
+    def _get_refresh_token_timeout(self) -> int:
+        refresh_timeout = self.CONST_REFRESH_TIMEOUT
+        if (
+                self.user
+                and self.user.role_type == "DOMAIN_ADMIN"
+                and self.user.refresh_timeout
+        ):
+            refresh_timeout = max(self.user.refresh_timeout, refresh_timeout)
+
+        return refresh_timeout
 
     @staticmethod
     def check_verify_code(user_id, domain_id, verify_code):

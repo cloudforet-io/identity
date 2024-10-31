@@ -27,6 +27,7 @@ class UserResponse(BaseModel):
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     required_actions: Union[List[str], None] = None
+    refresh_timeout: Union[int, None] = None
     tags: Union[dict, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
