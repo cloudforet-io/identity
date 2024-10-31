@@ -4,7 +4,6 @@ from pydantic import BaseModel
 
 __all__ = [
     "UserProfileUpdateRequest",
-    "UserProfileSetRefreshTokenTimeout",
     "UserProfileVerifyEmailRequest",
     "UserProfileConfirmEmailRequest",
     "UserProfileResetPasswordRequest",
@@ -25,12 +24,6 @@ class UserProfileUpdateRequest(BaseModel):
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
-    domain_id: str
-
-
-class UserProfileSetRefreshTokenTimeout(BaseModel):
-    user_id: str
-    refresh_timeout: int
     domain_id: str
 
 

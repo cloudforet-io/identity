@@ -84,38 +84,6 @@ class UserProfileService(BaseService):
 
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
-    def set_refresh_timeout(
-        self, params: UserProfileSetRefreshTokenTimeout
-    ) -> Union[UserResponse, dict]:
-        """
-        Args:
-            params (UserProfileSetRefreshTokenTimeout): {
-                "refresh_timeout": "int",
-                "user_id": "str",           # inject from auth
-                "domain_id": "str"          # inject from auth
-            }
-        Returns:
-            UserResponse:
-        """
-
-        user_id = params.user_id
-        domain_id = params.domain_id
-        user_vo = self.user_mgr.get_user(user_id, domain_id)
-
-        if user_vo.role_type != "DOMAIN_ADMIN":
-            raise ERROR_PERMISSION_DENIED()
-
-        refresh_timeout = self._get_refresh_timeout_from_config(params.refresh_timeout)
-        print(refresh_timeout)
-        user_vo = self.user_mgr.update_user_by_vo(
-            {"refresh_timeout": refresh_timeout}, user_vo
-        )
-
-        print(user_vo.refresh_timeout)
-        return UserResponse(**user_vo.to_dict())
-
-    @transaction(permission="identity:UserProfile.write", role_types=["USER"])
-    @convert_model
     def verify_email(self, params: UserProfileVerifyEmailRequest) -> None:
         """Verify email
 
@@ -652,20 +620,3 @@ class UserProfileService(BaseService):
     def _check_mfa_options(options, mfa_type):
         if mfa_type in ["EMAIL"] and not options:
             raise ERROR_REQUIRED_PARAMETER(key="options.email")
-
-    @staticmethod
-    def _get_refresh_timeout_from_config(refresh_timeout: int) -> int:
-        identity_conf = config.get_global("IDENTITY") or {}
-        token_conf = identity_conf.get("token", {})
-        config_refresh_timeout = token_conf.get("refresh_timeout")
-        if refresh_timeout < config_refresh_timeout:
-            raise ERROR_INVALID_PARAMETER(
-                key="refresh_timeout",
-                reason=f"Minimum value for refresh_timeout is {config_refresh_timeout}",
-            )
-        refresh_timeout = max(refresh_timeout, config_refresh_timeout)
-
-        config_admin_refresh_timeout = token_conf.get("admin_refresh_timeout", 2592000)
-        refresh_timeout = min(refresh_timeout, config_admin_refresh_timeout)
-
-        return refresh_timeout
