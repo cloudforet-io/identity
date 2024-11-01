@@ -88,7 +88,7 @@ class TokenService(BaseService):
 
         mfa_user_id = user_vo.user_id
 
-        if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type != "MFA":
+        if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type == "LOCAL":
             mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
             if mfa_type == "EMAIL":
                 mfa_email = user_mfa["options"].get("email")
