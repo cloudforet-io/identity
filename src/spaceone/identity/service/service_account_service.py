@@ -185,6 +185,17 @@ class ServiceAccountService(BaseService):
                 params.data,
             )
 
+        if (
+            service_account_vo.secret_id
+            and service_account_vo.project_id != params.project_id
+        ):
+            secret_manager = SecretManager()
+            update_secret_params = {
+                "secret_id": service_account_vo.secret_id,
+                "project_id": params.project_id,
+            }
+            secret_manager.update_secret(update_secret_params)
+
         service_account_vo = self.service_account_mgr.update_service_account_by_vo(
             params.dict(exclude_unset=True), service_account_vo
         )
