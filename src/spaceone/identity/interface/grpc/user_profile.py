@@ -1,11 +1,7 @@
 from google.protobuf.json_format import ParseDict
+from spaceone.api.identity.v2 import user_pb2, user_profile_pb2, user_profile_pb2_grpc
 from spaceone.core.pygrpc import BaseAPI
-from spaceone.api.identity.v2 import (
-    user_profile_pb2,
-    user_profile_pb2_grpc,
-    workspace_pb2,
-    user_pb2,
-)
+
 from spaceone.identity.service.user_profile_service import UserProfileService
 
 
@@ -65,4 +61,10 @@ class UserProfile(BaseAPI, user_profile_pb2_grpc.UserProfileServicer):
         params, metadata = self.parse_request(request, context)
         user_profile_svc = UserProfileService(metadata)
         response: dict = user_profile_svc.get_workspaces(params)
+        return self.dict_to_message(response)
+
+    def get_workspace_groups(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        user_profile_svc = UserProfileService(metadata)
+        response: dict = user_profile_svc.get_workspace_groups(params)
         return self.dict_to_message(response)

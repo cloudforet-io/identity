@@ -8,7 +8,7 @@ __all__ = [
     "SchemaGetRequest",
     "SchemaSearchQueryRequest",
     "SchemaStatQueryRequest",
-    "SchemaType"
+    "SchemaType",
 ]
 
 SchemaType = Literal["SERVICE_ACCOUNT", "TRUSTED_ACCOUNT", "SECRET", "TRUSTING_SECRET"]

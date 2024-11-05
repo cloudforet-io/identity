@@ -34,6 +34,7 @@ setup(
         "jinja2",
         "fakeredis",
         "pytz",
+        "pyotp",
     ],
     package_data={
         "spaceone": [

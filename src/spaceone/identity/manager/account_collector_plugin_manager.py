@@ -34,12 +34,12 @@ class AccountCollectorPluginManager(BaseManager):
         return plugin_metadata
 
     def sync(
-            self,
-            endpoint: str,
-            options: dict,
-            secret_data: dict,
-            domain_id: str,
-            schema_id: str = None,
+        self,
+        endpoint: str,
+        options: dict,
+        secret_data: dict,
+        domain_id: str,
+        schema_id: str = None,
     ) -> dict:
         plugin_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", endpoint=endpoint, token="NO_TOKEN"
@@ -72,13 +72,13 @@ class AccountCollectorPluginManager(BaseManager):
         return endpoint
 
     def get_account_collector_plugin_endpoint(
-            self, plugin_info: dict, domain_id: str
+        self, plugin_info: dict, domain_id: str
     ) -> Tuple[str, str]:
         plugin_mgr: PluginManager = self.locator.get_manager("PluginManager")
         return plugin_mgr.get_plugin_endpoint(plugin_info, domain_id)
 
     def upgrade_account_collector_plugin_version(
-            self, provider_vo: Provider, endpoint: str, updated_version: str
+        self, provider_vo: Provider, endpoint: str, updated_version: str
     ) -> None:
         plugin_info = provider_vo.plugin_info
         domain_id = provider_vo.domain_id

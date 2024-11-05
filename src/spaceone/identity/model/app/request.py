@@ -18,8 +18,8 @@ __all__ = [
 ]
 
 State = Literal["ENABLED", "DISABLED", "EXPIRED"]
-ResourceGroup = Literal["DOMAIN", "WORKSPACE"]
-RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER"]
+ResourceGroup = Literal["DOMAIN", "WORKSPACE", "PROJECT"]
+RoleType = Literal["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
 
 
 class AppCreateRequest(BaseModel):
@@ -28,6 +28,8 @@ class AppCreateRequest(BaseModel):
     tags: Union[dict, None] = None
     expired_at: Union[str, None] = None
     resource_group: ResourceGroup
+    project_id: Union[str, None] = None
+    project_group_id: Union[str, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
 

@@ -1,9 +1,11 @@
-from typing import Union, Literal
+from typing import Literal, Union
+
 from pydantic import BaseModel
 
 __all__ = [
     "WorkspaceCreateRequest",
     "WorkspaceUpdateRequest",
+    "WorkspaceChangeWorkspaceGroupRequest",
     "WorkspaceDeleteRequest",
     "WorkspaceEnableRequest",
     "WorkspaceDisableRequest",
@@ -27,6 +29,12 @@ class WorkspaceUpdateRequest(BaseModel):
     workspace_id: str
     name: Union[str, None] = None
     tags: Union[dict, None] = None
+    domain_id: str
+
+
+class WorkspaceChangeWorkspaceGroupRequest(BaseModel):
+    workspace_id: str
+    workspace_group_id: Union[str, None] = None
     domain_id: str
 
 
@@ -64,6 +72,7 @@ class WorkspaceSearchQueryRequest(BaseModel):
     created_by: Union[str, None] = None
     is_managed: Union[bool, None] = None
     is_dormant: Union[bool, None] = None
+    workspace_group_id: Union[str, None] = None
     domain_id: str
 
 

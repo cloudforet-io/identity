@@ -19,14 +19,17 @@ class Workspace(MongoModel):
     is_dormant = BooleanField(default=False)
     dormant_ttl = IntField(default=None, required=True)
     service_account_count = IntField(default=None)
+    user_count = IntField(default=None)
     cost_info = DictField(default=None)
 
     trusted_account_id = StringField(max_length=40, default=None, null=True)
+    workspace_group_id = StringField(max_length=40, default=None, null=True)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     deleted_at = DateTimeField(default=None, null=True)
     last_synced_at = DateTimeField(default=None, null=True)
     dormant_updated_at = DateTimeField(default=None, null=True)
+    changed_at = DateTimeField(default=None, null=True)
 
     meta = {
         "updatable_fields": [
@@ -37,17 +40,22 @@ class Workspace(MongoModel):
             "is_dormant",
             "dormant_ttl",
             "service_account_count",
+            "user_count",
             "cost_info",
             "trusted_account_id",
+            "workspace_group_id",
             "references",
             "deleted_at",
             "last_synced_at",
             "dormant_updated_at",
+            "changed_at",
         ],
         "minimal_fields": [
             "workspace_id",
             "name",
             "state",
+            "service_account_count",
+            "user_count",
             "is_managed",
             "is_dormant",
         ],

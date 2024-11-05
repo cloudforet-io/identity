@@ -4,9 +4,9 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
-from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.model.workspace_user.request import *
 from spaceone.identity.model.workspace_user.response import *
 
@@ -29,7 +29,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def create(
-            self, params: WorkspaceUserCreateRequest
+        self, params: WorkspaceUserCreateRequest
     ) -> Union[WorkspaceUserResponse, dict]:
         """Create user with role binding
         Args:
@@ -60,7 +60,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def find(
-            self, params: WorkspaceUserFindRequest
+        self, params: WorkspaceUserFindRequest
     ) -> Union[UsersSummaryResponse, dict]:
         """Find user
         Args:
@@ -115,7 +115,7 @@ class WorkspaceUserService(BaseService):
     )
     @convert_model
     def get(
-            self, params: WorkspaceUserGetRequest
+        self, params: WorkspaceUserGetRequest
     ) -> Union[WorkspaceUserResponse, dict]:
         """Get user in workspace
 
@@ -145,7 +145,7 @@ class WorkspaceUserService(BaseService):
     @append_keyword_filter(["user_id", "name", "email"])
     @convert_model
     def list(
-            self, params: WorkspaceUserSearchQueryRequest
+        self, params: WorkspaceUserSearchQueryRequest
     ) -> Union[WorkspaceUsersResponse, dict]:
         """List users in workspace
         Args:

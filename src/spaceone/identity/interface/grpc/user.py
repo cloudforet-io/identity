@@ -37,6 +37,12 @@ class User(BaseAPI, user_pb2_grpc.UserServicer):
         response: dict = user_svc.set_required_actions(params)
         return self.dict_to_message(response)
 
+    def set_refresh_timeout(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        user_svc = UserService(metadata)
+        response: dict = user_svc.set_refresh_timeout(params)
+        return self.dict_to_message(response)
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
         user_svc = UserService(metadata)

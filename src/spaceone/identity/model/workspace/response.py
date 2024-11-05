@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Union, List
-from pydantic import BaseModel
+from typing import List, Union
 
+from pydantic import BaseModel
 from spaceone.core import utils
+
 from spaceone.identity.model.workspace.request import State
 
 __all__ = ["WorkspaceResponse", "WorkspacesResponse"]
@@ -19,12 +20,15 @@ class WorkspaceResponse(BaseModel):
     is_dormant: Union[bool, None] = None
     dormant_ttl: Union[int, None] = None
     service_account_count: Union[int, None] = None
+    user_count: Union[int, None] = None
     cost_info: Union[dict, None] = None
     trusted_account_id: Union[str, None] = None
+    workspace_group_id: Union[str, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
     last_synced_at: Union[datetime, None] = None
     dormant_updated_at: Union[datetime, None] = None
+    changed_at: Union[datetime, None] = None
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
@@ -33,6 +37,7 @@ class WorkspaceResponse(BaseModel):
         data["dormant_updated_at"] = utils.datetime_to_iso8601(
             data.get("dormant_updated_at")
         )
+        data["changed_at"] = utils.datetime_to_iso8601(data.get("changed_at"))
         return data
 
 

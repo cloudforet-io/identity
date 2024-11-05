@@ -4,13 +4,15 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
-from spaceone.identity.model.role_binding.request import *
-from spaceone.identity.model.role_binding.response import *
+from spaceone.identity.error import ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING
+from spaceone.identity.error.error_role import *
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.error.error_role import *
+from spaceone.identity.model import RoleBinding
+from spaceone.identity.model.role_binding.request import *
+from spaceone.identity.model.role_binding.response import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,6 +28,7 @@ class RoleBindingService(BaseService):
         super().__init__(*args, **kwargs)
         self.role_binding_manager = RoleBindingManager()
         self.user_mgr = UserManager()
+        self.workspace_mgr = WorkspaceManager()
 
     @transaction(
         permission="identity:RoleBinding.write",
@@ -33,7 +36,7 @@ class RoleBindingService(BaseService):
     )
     @convert_model
     def create(
-            self, params: RoleBindingCreateRequest
+        self, params: RoleBindingCreateRequest
     ) -> Union[RoleBindingResponse, dict]:
         """create role binding
 
@@ -58,15 +61,18 @@ class RoleBindingService(BaseService):
         role_id = params["role_id"]
         resource_group = params["resource_group"]
         domain_id = params["domain_id"]
+        workspace_group_id = params.get("workspace_group_id")
         workspace_id = params.get("workspace_id")
 
         # Check user
         user_vo = self.user_mgr.get_user(user_id, domain_id)
 
+        workspace_vo = None
+
         # Check workspace
         if resource_group == "WORKSPACE":
             workspace_mgr = WorkspaceManager()
-            workspace_mgr.get_workspace(workspace_id, domain_id)
+            workspace_vo = workspace_mgr.get_workspace(workspace_id, domain_id)
         else:
             params["workspace_id"] = "*"
             workspace_id = "*"
@@ -92,7 +98,9 @@ class RoleBindingService(BaseService):
                     request_role_type=role_vo.role_type,
                     supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
                 )
-            self.check_duplicate_workspace_role(domain_id, workspace_id, user_id)
+            self.check_duplicate_workspace_role(
+                domain_id, workspace_group_id, workspace_id, user_id
+            )
 
         params["role_type"] = role_vo.role_type
 
@@ -108,7 +116,12 @@ class RoleBindingService(BaseService):
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
 
         # Create role binding
-        return self.role_binding_manager.create_role_binding(params)
+        rb_vo = self.role_binding_manager.create_role_binding(params)
+
+        if workspace_vo:
+            self.update_workspace_user_count(domain_id, workspace_id)
+
+        return rb_vo
 
     @transaction(
         permission="identity:RoleBinding.write",
@@ -116,7 +129,7 @@ class RoleBindingService(BaseService):
     )
     @convert_model
     def update_role(
-            self, params: RoleBindingUpdateRoleRequest
+        self, params: RoleBindingUpdateRoleRequest
     ) -> Union[RoleBindingResponse, dict]:
         """update role of role binding
 
@@ -139,6 +152,11 @@ class RoleBindingService(BaseService):
         )
 
         self.check_self_update_and_delete(request_user_id, rb_vo.user_id)
+
+        if rb_vo.workspace_group_id:
+            raise ERROR_PERMISSION_DENIED(
+                key="role_binding_id", value=params.role_binding_id
+            )
 
         # Check role
         role_mgr = RoleManager()
@@ -208,12 +226,20 @@ class RoleBindingService(BaseService):
             params.role_binding_id, params.domain_id, params.workspace_id
         )
 
+        if rb_vo.workspace_group_id:
+            raise ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING(
+                workspace_group_id=rb_vo.workspace_group_id,
+                role_binding_id=rb_vo.role_binding_id,
+            )
+
         self.check_self_update_and_delete(request_user_id, rb_vo.user_id)
 
         if rb_vo.role_type == "DOMAIN_ADMIN":
             self.check_last_domain_admin_role_binding(None, rb_vo.domain_id)
         elif rb_vo.role_type == "WORKSPACE_OWNER":
-            self.check_last_workspace_owner_role_binding(None, rb_vo.workspace_id, rb_vo.domain_id)
+            self.check_last_workspace_owner_role_binding(
+                None, rb_vo.workspace_id, rb_vo.domain_id
+            )
 
         # Update user role type
         remain_rb_vos = self.role_binding_manager.filter_role_bindings(
@@ -236,7 +262,7 @@ class RoleBindingService(BaseService):
         user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
 
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
-        self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
+        self.delete_role_binding_by_vo(rb_vo, params.domain_id, params.workspace_id)
 
     @transaction(
         permission="identity:RoleBinding.read",
@@ -279,7 +305,7 @@ class RoleBindingService(BaseService):
     @append_keyword_filter(["role_binding_id", "user_id", "role_id"])
     @convert_model
     def list(
-            self, params: RoleBindingSearchQueryRequest
+        self, params: RoleBindingSearchQueryRequest
     ) -> Union[RoleBindingsResponse, dict]:
         """list role bindings
 
@@ -332,7 +358,7 @@ class RoleBindingService(BaseService):
         return self.role_binding_manager.stat_role_bindings(query)
 
     def check_duplicate_domain_admin_role(
-            self, domain_id: str, user_id: str, role_type: str
+        self, domain_id: str, user_id: str, role_type: str
     ) -> None:
         rb_vos = self.role_binding_manager.filter_role_bindings(
             domain_id=domain_id,
@@ -344,18 +370,26 @@ class RoleBindingService(BaseService):
             raise ERROR_DUPLICATED_ROLE_BINDING(role_type=role_type)
 
     def check_duplicate_workspace_role(
-            self, domain_id: str, workspace_id: str, user_id: str
+        self, domain_id: str, workspace_group_id: str, workspace_id: str, user_id: str
     ) -> None:
-        rb_vos = self.role_binding_manager.filter_role_bindings(
-            domain_id=domain_id, workspace_id=workspace_id, user_id=user_id
-        )
+        conditions = {
+            "domain_id": domain_id,
+            "workspace_id": workspace_id,
+            "user_id": user_id,
+        }
+        if workspace_group_id:
+            conditions["workspace_group_id"] = workspace_group_id
+
+        rb_vos = self.role_binding_manager.filter_role_bindings(**conditions)
 
         if rb_vos.count() >= 1:
             raise ERROR_DUPLICATED_WORKSPACE_ROLE_BINDING(
                 allowed_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]
             )
 
-    def check_last_domain_admin_role_binding(self, new_role_type: Union[str, None], domain_id: str) -> None:
+    def check_last_domain_admin_role_binding(
+        self, new_role_type: Union[str, None], domain_id: str
+    ) -> None:
 
         user_ids = self._get_enabled_user_ids(domain_id)
         rb_vos = self.role_binding_manager.filter_role_bindings(
@@ -368,7 +402,7 @@ class RoleBindingService(BaseService):
             raise ERROR_LAST_DOMAIN_ADMIN_CANNOT_DELETE()
 
     def check_last_workspace_owner_role_binding(
-            self, new_role_type: Union[str, None], workspace_id: str, domain_id: str
+        self, new_role_type: Union[str, None], workspace_id: str, domain_id: str
     ) -> None:
 
         user_ids = self._get_enabled_user_ids(domain_id)
@@ -414,3 +448,36 @@ class RoleBindingService(BaseService):
                 return "USER"
 
             return after
+
+    def update_workspace_user_count(self, domain_id: str, workspace_id: str) -> None:
+        workspace_vo = self.workspace_mgr.get_workspace(
+            domain_id=domain_id, workspace_id=workspace_id
+        )
+
+        if workspace_vo:
+            user_rb_total_count = self._get_workspace_user_count(
+                domain_id, workspace_id
+            )
+            self.workspace_mgr.update_workspace_by_vo(
+                {"user_count": user_rb_total_count}, workspace_vo
+            )
+
+    def delete_role_binding_by_vo(
+        self, rb_vo: RoleBinding, domain_id: str, workspace_id: str = None
+    ):
+        self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
+
+        if workspace_id:
+            self.update_workspace_user_count(domain_id, workspace_id)
+
+    def _get_workspace_user_count(self, domain_id: str, workspace_id: str) -> int:
+        user_rb_ids = self.role_binding_manager.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+        return len(user_rb_ids)

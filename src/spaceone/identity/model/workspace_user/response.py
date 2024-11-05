@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Union, List, Literal
-from pydantic import BaseModel
+from typing import List, Literal, Union
 
+from pydantic import BaseModel
 from spaceone.core import utils
 
-from spaceone.identity.model.workspace_user.request import State, AuthType
 from spaceone.identity.model.role_binding.response import RoleBindingResponse
+from spaceone.identity.model.workspace_user.request import AuthType, State
 
 __all__ = [
     "WorkspaceUserResponse",

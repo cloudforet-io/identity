@@ -1,17 +1,17 @@
 import logging
-from typing import Tuple, List
+from typing import List, Tuple
 
-from spaceone.core.manager import BaseManager
 from spaceone.core.error import *
+from spaceone.core.manager import BaseManager
 
-from spaceone.identity.service.user_service import UserService
-from spaceone.identity.service.role_binding_service import RoleBindingService
-from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.model.user.database import User
 from spaceone.identity.error.error_workspace_user import (
     ERROR_USER_NOT_EXIST_IN_WORKSPACE,
 )
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.model.user.database import User
+from spaceone.identity.service.role_binding_service import RoleBindingService
+from spaceone.identity.service.user_service import UserService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,9 +99,7 @@ class WorkspaceUserManager(BaseManager):
     def stat_workspace_users(
         self, query: dict, domain_id: str, workspace_id: str
     ) -> dict:
-        user_ids, user_rb_map = self._get_role_binding_map_in_workspace(
-            workspace_id, domain_id
-        )
+        user_ids, _ = self._get_role_binding_map_in_workspace(workspace_id, domain_id)
         query["filter"] = query.get("filter", [])
         query["filter"].append({"k": "user_id", "v": user_ids, "o": "in"})
 
@@ -115,7 +113,7 @@ class WorkspaceUserManager(BaseManager):
 
         if role_type and role_type not in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             raise ERROR_INVALID_PARAMETER(
-                message=f"role_type must be one of [WORKSPACE_OWNER, WORKSPACE_MEMBER]"
+                message="role_type must be one of [WORKSPACE_OWNER, WORKSPACE_MEMBER]"
             )
 
         if role_type is None:

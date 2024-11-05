@@ -1,17 +1,19 @@
 import logging
 import re
-import pytz
 from typing import Tuple
-from mongoengine import QuerySet
 
+import pytz
+from mongoengine import QuerySet
 from spaceone.core.manager import BaseManager
 
-from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.error.error_user import *
-from spaceone.identity.model.user.database import User
+from spaceone.identity.lib.cipher import PasswordCipher
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_group_manager import UserGroupManager
-from spaceone.identity.manager.project_manager import ProjectManager
+from spaceone.identity.manager.workspace_group_manager import \
+    WorkspaceGroupManager
+from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ class UserManager(BaseManager):
         super().__init__(*args, **kwargs)
         self.user_model = User
 
-    def create_user(self, params: dict, check_user_id: bool = True) -> User:
+    def create_user(self, params: dict) -> User:
         def _rollback(vo: User):
             _LOGGER.info(
                 f"[create_user._rollback] Delete user: {vo.user_id} ({vo.name})"
@@ -38,9 +40,6 @@ class UserManager(BaseManager):
             params["password"] = None
 
         else:
-            if check_user_id:
-                self._check_user_id_format(params["user_id"])
-
             if password := params.get("password"):
                 self._check_password_format(password)
             else:
@@ -100,6 +99,7 @@ class UserManager(BaseManager):
         rb_mgr = RoleBindingManager()
         user_group_mgr = UserGroupManager()
         project_mgr = ProjectManager()
+        workspace_group_mgr = WorkspaceGroupManager()
 
         # Delete role bindings
         rb_vos = rb_mgr.filter_role_bindings(
@@ -127,6 +127,25 @@ class UserManager(BaseManager):
             users = project_vo.users
             users.remove(user_vo.user_id)
             project_mgr.update_project_by_vo({"users": users}, project_vo=project_vo)
+
+        # Delete workspace groups
+        workspace_group_vos = workspace_group_mgr.filter_workspace_groups(
+            users__user_id=user_vo.user_id, domain_id=user_vo.domain_id
+        )
+
+        for workspace_group_vo in workspace_group_vos:
+            workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
+            users = workspace_group_dict.get("users", [])
+
+            if users:
+                updated_users = [
+                    user for user in users if user.get("user_id") != user_vo.user_id
+                ]
+
+                if len(updated_users) != len(users):
+                    workspace_group_mgr.update_workspace_group_by_vo(
+                        {"users": updated_users}, workspace_group_vo=workspace_group_vo
+                    )
 
         user_vo.delete()
 

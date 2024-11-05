@@ -7,6 +7,8 @@ from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_app import *
 from spaceone.identity.manager.app_manager import AppManager
+from spaceone.identity.manager.project_group_manager import ProjectGroupManager
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.client_secret_manager import ClientSecretManager
@@ -43,6 +45,8 @@ class AppService(BaseService):
                 'tags': 'dict',
                 'expired_at': 'str',
                 'resource_group': 'str',    # required
+                'project_id': 'str',
+                'project_group_id': 'str',
                 'workspace_id': 'str',      # injected from auth
                 'domain_id': 'str',         # injected from auth (required)
             }
@@ -54,13 +58,31 @@ class AppService(BaseService):
         role_mgr = RoleManager()
         role_vo = role_mgr.get_role(params.role_id, params.domain_id)
 
-        # Check workspace
-        if params.resource_group == "WORKSPACE":
+        # Check workspace and project
+        if params.resource_group in ["WORKSPACE", "PROJECT"]:
             if params.workspace_id is None:
                 raise ERROR_REQUIRED_PARAMETER(key="workspace_id")
 
             workspace_mgr = WorkspaceManager()
             workspace_mgr.get_workspace(params.workspace_id, params.domain_id)
+
+            if params.resource_group == "PROJECT":
+                if params.project_id and params.project_group_id:
+                    raise ERROR_INVALID_PARAMETER(
+                        key="project_id or project_group_id",
+                        reason="Both are not allowed",
+                    )
+                elif params.project_group_id:
+                    project_group_mgr = ProjectGroupManager()
+                    project_group_mgr.get_project_group(
+                        params.project_group_id, params.domain_id
+                    )
+                elif params.project_id:
+                    project_mgr = ProjectManager()
+                    project_mgr.get_project(params.project_id, params.domain_id)
+                else:
+                    raise ERROR_REQUIRED_PARAMETER(key="project_id or project_group_id")
+
         else:
             params.workspace_id = "*"
 
@@ -72,12 +94,19 @@ class AppService(BaseService):
                     request_role_type=role_vo.role_type,
                     supported_role_type="DOMAIN_ADMIN",
                 )
-        else:
+        elif params.resource_group == "WORKSPACE":
             if role_vo.role_type != "WORKSPACE_OWNER":
                 raise ERROR_NOT_ALLOWED_ROLE_TYPE(
                     request_role_id=role_vo.role_id,
                     request_role_type=role_vo.role_type,
                     supported_role_type="WORKSPACE_OWNER",
+                )
+        else:
+            if role_vo.role_type != "WORKSPACE_MEMBER":
+                raise ERROR_NOT_ALLOWED_ROLE_TYPE(
+                    request_role_id=role_vo.role_id,
+                    request_role_type=role_vo.role_type,
+                    supported_role_type="WORKSPACE_MEMBER",
                 )
 
         params.expired_at = self._get_expired_at(params.expired_at)
@@ -110,20 +139,18 @@ class AppService(BaseService):
         """Update App
         Args:
             params (dict): {
-                'app_id': 'str',        # required
+                'app_id': 'str',            # required
                 'name': 'str',
                 'tags': 'dict',
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Return:
             AppResponse:
         """
 
         app_vo = self.app_mgr.get_app(
-            params.app_id,
-            params.domain_id,
-            params.workspace_id,
+            params.app_id, params.domain_id, params.workspace_id
         )
         app_vo = self.app_mgr.update_app_by_vo(params.dict(exclude_unset=True), app_vo)
         return AppResponse(**app_vo.to_dict())
@@ -139,10 +166,10 @@ class AppService(BaseService):
         """Generate API Key
         Args:
             params (dict): {
-                'app_id': 'str',        # required
+                'app_id': 'str',            # required
                 'expired_at': 'str',
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Return:
             AppResponse:
@@ -152,9 +179,7 @@ class AppService(BaseService):
         self._check_expired_at(params.expired_at)
 
         app_vo = self.app_mgr.get_app(
-            params.app_id,
-            params.domain_id,
-            params.workspace_id,
+            params.app_id, params.domain_id, params.workspace_id
         )
 
         # Create new client secret
@@ -181,20 +206,20 @@ class AppService(BaseService):
         """Enable App Key
         Args:
             params (dict): {
-                'app_id': 'str',        # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'app_id': 'str',            # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         """
         app_vo = self.app_mgr.get_app(
-            params.app_id,
-            params.domain_id,
-            params.workspace_id,
+            params.app_id, params.domain_id, params.workspace_id
         )
         app_vo = self.app_mgr.enable_app(app_vo)
 
         if app_vo.is_managed:
-            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be enabled.")
+            raise ERROR_PERMISSION_DENIED(
+                key="app_id", _message="Managed App cannot be enabled."
+            )
 
         return AppResponse(**app_vo.to_dict())
 
@@ -207,20 +232,20 @@ class AppService(BaseService):
         """Disable App Key
         Args:
             params (dict): {
-                'app_id': 'str',        # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'app_id': 'str',            # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         """
         app_vo = self.app_mgr.get_app(
-            params.app_id,
-            params.domain_id,
-            params.workspace_id,
+            params.app_id, params.domain_id, params.workspace_id
         )
         app_vo = self.app_mgr.disable_app(app_vo)
 
         if app_vo.is_managed:
-            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be disabled.")
+            raise ERROR_PERMISSION_DENIED(
+                key="app_id", _message="Managed App cannot be disabled."
+            )
 
         return AppResponse(**app_vo.to_dict())
 
@@ -233,21 +258,21 @@ class AppService(BaseService):
         """Delete app
         Args:
             params (dict): {
-                'app_id': 'str',    # required
-                'workspace_id': 'str',  # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'app_id': 'str',            # required
+                'workspace_id': 'str',      # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
             None
         """
         app_vo = self.app_mgr.get_app(
-            params.app_id,
-            params.domain_id,
-            params.workspace_id,
+            params.app_id, params.domain_id, params.workspace_id
         )
 
         if app_vo.is_managed:
-            raise ERROR_PERMISSION_DENIED(key="app_id", _message="Managed App cannot be deleted.")
+            raise ERROR_PERMISSION_DENIED(
+                key="app_id", _message="Managed App cannot be deleted."
+            )
 
         self.app_mgr.delete_app_by_vo(app_vo)
 
@@ -291,6 +316,7 @@ class AppService(BaseService):
             client_id=params.client_id,
             domain_id=params.domain_id,
         )
+        projects = []
 
         if app_vos.count() == 0:
             raise ERROR_PERMISSION_DENIED()
@@ -304,7 +330,7 @@ class AppService(BaseService):
         if domain_vo.state != "ENABLED":
             raise ERROR_PERMISSION_DENIED()
 
-        if app_vo.role_type == "WORKSPACE_OWNER":
+        if app_vo.role_type in ["WORKSPACE_OWNER", "WORKSPACE_MEMBER"]:
             workspace_mgr = WorkspaceManager()
             workspace_vo = workspace_mgr.get_workspace(
                 app_vo.workspace_id, app_vo.domain_id
@@ -312,12 +338,28 @@ class AppService(BaseService):
             if workspace_vo.state != "ENABLED":
                 raise ERROR_PERMISSION_DENIED()
 
+            if app_vo.project_group_id:
+                project_group_mgr = ProjectGroupManager()
+                project_group_vo = project_group_mgr.get_project_group(
+                    app_vo.project_group_id, app_vo.domain_id
+                )
+                projects = project_group_mgr.get_projects_in_project_groups(
+                    project_group_vo.domain_id, project_group_vo.project_group_id
+                )
+
+            elif app_vo.project_id:
+                project_mgr = ProjectManager()
+                project_vo = project_mgr.get_project(
+                    app_vo.project_id, app_vo.domain_id
+                )
+                projects = [project_vo.project_id]
+
         role_mgr = RoleManager()
         role_vo = role_mgr.get_role(app_vo.role_id, app_vo.domain_id)
 
         self.app_mgr.update_app_by_vo({"last_accessed_at": datetime.utcnow()}, app_vo)
 
-        return CheckAppResponse(permissions=role_vo.permissions)
+        return CheckAppResponse(permissions=role_vo.permissions, projects=projects)
 
     @transaction(
         permission="identity:App.read",
@@ -348,7 +390,7 @@ class AppService(BaseService):
                 'role_type': 'str',
                 'role_id': 'str',
                 'client_id': 'str',
-                'workspace_id': 'list'      # injected from auth
+                'workspace_id': 'str'       # injected from auth
                 'domain_id': 'str'          # injected from auth (required)
             }
         Returns:
@@ -370,9 +412,9 @@ class AppService(BaseService):
         """Stat API Keys
         Args:
             params (dict): {
-                'query': 'dict',        # required
-                'workspace_id': 'list', # injected from auth
-                'domain_id': 'str'      # injected from auth (required)
+                'query': 'dict',            # required
+                'workspace_id': 'list',     # injected from auth
+                'domain_id': 'str'          # injected from auth (required)
             }
             Returns:
                 dict:

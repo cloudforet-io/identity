@@ -1,15 +1,16 @@
 import logging
 from typing import Union
-from spaceone.core import config
 
+from spaceone.core.error import *
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-from spaceone.core.error import *
 
-from spaceone.identity.model.role.request import *
-from spaceone.identity.model.role.response import *
+from spaceone.identity.error.custom import ERROR_ROLE_IN_USED_AT_ROLE_BINDING
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.model.role.request import *
+from spaceone.identity.model.role.request import BasicRoleSearchQueryRequest
+from spaceone.identity.model.role.response import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class RoleService(BaseService):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.role_mgr = RoleManager()
+        self.rb_mgr = RoleBindingManager()
 
     @transaction(permission="identity:Role.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -134,6 +136,13 @@ class RoleService(BaseService):
         if role_vo.is_managed:
             raise ERROR_PERMISSION_DENIED()
 
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            role_id=role_vo.role_id, domain_id=role_vo.domain_id
+        )
+
+        if rb_vos.count() > 0:
+            raise ERROR_ROLE_IN_USED_AT_ROLE_BINDING(role_id=role_vo.role_id)
+
         self.role_mgr.delete_role_by_vo(role_vo)
 
     @transaction(
@@ -186,6 +195,38 @@ class RoleService(BaseService):
 
         roles_info = [role_vo.to_dict() for role_vo in role_vos]
         return RolesResponse(results=roles_info, total_count=total_count)
+
+    @transaction(
+        permission="identity:Role.read",
+        role_types=["USER"],
+    )
+    @append_query_filter(["role_id", "name", "state", "role_type", "domain_id"])
+    @append_keyword_filter(["role_id", "name"])
+    @convert_model
+    def list_basic_role(
+        self, params: BasicRoleSearchQueryRequest
+    ) -> Union[BasicRolesResponse, dict]:
+        """list basic roles
+
+        Args:
+            params (RoleSearchQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
+                'role_id': 'str',
+                'name': 'str',
+                'state': 'str',
+                'role_type': 'str',
+                'domain_id': 'str',        # injected from auth (required)
+            }
+
+        Returns:
+            BasicRolesResponse:
+        """
+
+        query = params.query or {}
+        role_vos, total_count = self.role_mgr.list_roles(query, params.domain_id)
+
+        basic_roles_info = [role_vo.to_dict() for role_vo in role_vos]
+        return BasicRolesResponse(results=basic_roles_info, total_count=total_count)
 
     @transaction(
         permission="identity:Role.read",

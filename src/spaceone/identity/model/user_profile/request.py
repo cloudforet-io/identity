@@ -1,4 +1,5 @@
 from typing import Union
+
 from pydantic import BaseModel
 
 __all__ = [
@@ -11,6 +12,7 @@ __all__ = [
     "UserProfileConfirmMFARequest",
     "UserProfileGetRequest",
     "UserProfileGetWorkspacesRequest",
+    "UserProfileGetWorkspaceGroupsRequest",
 ]
 
 
@@ -66,5 +68,11 @@ class UserProfileGetRequest(BaseModel):
 
 
 class UserProfileGetWorkspacesRequest(BaseModel):
+    workspace_group_id: Union[str, None] = None
+    user_id: str
+    domain_id: str
+
+
+class UserProfileGetWorkspaceGroupsRequest(BaseModel):
     user_id: str
     domain_id: str

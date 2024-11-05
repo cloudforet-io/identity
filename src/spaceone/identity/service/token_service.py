@@ -1,32 +1,32 @@
 import logging
+from typing import List, Tuple
 
-from typing import Tuple, List
 from spaceone.core import cache
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
-
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import ERROR_DOMAIN_STATE
-from spaceone.identity.error.error_workspace import ERROR_WORKSPACE_STATE
 from spaceone.identity.error.error_mfa import *
-from spaceone.identity.manager.system_manager import SystemManager
+from spaceone.identity.error.error_workspace import ERROR_WORKSPACE_STATE
+from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
-from spaceone.identity.manager.token_manager.base import TokenManager
-from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.app_manager import AppManager
+from spaceone.identity.manager.project_group_manager import ProjectGroupManager
+from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
-from spaceone.identity.manager.project_manager import ProjectManager
-from spaceone.identity.manager.project_group_manager import ProjectGroupManager
+from spaceone.identity.manager.system_manager import SystemManager
+from spaceone.identity.manager.token_manager.base import TokenManager
+from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.model.app.database import App
 from spaceone.identity.model.token.request import *
 from spaceone.identity.model.token.response import *
 from spaceone.identity.model.user.database import User
-from spaceone.identity.model.app.database import App
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,15 +83,28 @@ class TokenService(BaseService):
 
         user_vo = token_mgr.user
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        mfa_type = user_mfa.get('mfa_type')
         permissions = self._get_permissions_from_required_actions(user_vo)
 
-        if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type != "MFA":
-            mfa_manager = MFAManager.get_manager_by_mfa_type(user_mfa.get("mfa_type"))
-            mfa_email = user_mfa["options"].get("email")
-            mfa_manager.send_mfa_authentication_email(
-                user_vo.user_id, domain_id, mfa_email, user_vo.language, credentials
-            )
-            raise ERROR_MFA_REQUIRED(user_id=mfa_email)
+        mfa_user_id = user_vo.user_id
+
+        if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type == "LOCAL":
+            mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
+            if mfa_type == "EMAIL":
+                mfa_email = user_mfa["options"].get("email")
+                mfa_manager.send_mfa_authentication_email(
+                    user_vo.user_id, domain_id, mfa_email, user_vo.language, credentials
+                )
+                mfa_user_id = mfa_email
+
+            elif mfa_type == "OTP":
+                secret_manager: SecretManager = self.locator.get_manager(SecretManager)
+                user_secret_id = user_mfa["options"].get("user_secret_id")
+                otp_secret_key = secret_manager.get_user_otp_secret_key(user_secret_id, domain_id)
+
+                mfa_manager.set_cache_otp_mfa_secret_key(otp_secret_key, user_vo.user_id, domain_id, credentials)
+
+            raise ERROR_MFA_REQUIRED(user_id=mfa_user_id, mfa_type=mfa_type)
 
         token_info = token_mgr.issue_token(
             private_jwk,
@@ -209,29 +222,12 @@ class TokenService(BaseService):
         elif role_id:
             permissions = self._get_role_permissions(role_id, domain_id)
         else:
-            permissions = None
+            permissions = []
 
         if role_type == "WORKSPACE_MEMBER":
-            user_projects = []
-            project_groups = self.project_group_mgr.filter_project_groups(
-                domain_id=domain_id,
-                workspace_id=params.workspace_id,
-                users=user_vo.user_id,
+            user_projects = self._get_user_projects_in_project_group(
+                domain_id, params.workspace_id, user_vo.user_id
             )
-
-            for project_group in project_groups:
-                project_group_id = project_group.project_group_id
-                user_projects.extend(
-                    self.project_group_mgr.get_projects_in_project_groups(
-                        domain_id, project_group_id
-                    )
-                )
-
-            user_projects.extend(
-                self._get_user_projects(user_vo.user_id, params.workspace_id, domain_id)
-            )
-
-            user_projects = list(set(user_projects))
         else:
             user_projects = None
 
@@ -330,9 +326,6 @@ class TokenService(BaseService):
                 role_type=user_vo.role_type,
             )
 
-            if rb_vos.count() > 0:
-                return rb_vos[0].role_type, rb_vos[0].role_id
-
         else:
             rb_vos = self.rb_mgr.filter_role_bindings(
                 user_id=user_vo.user_id,
@@ -341,8 +334,8 @@ class TokenService(BaseService):
                 workspace_id=workspace_id,
             )
 
-            if rb_vos.count() > 0:
-                return rb_vos[0].role_type, rb_vos[0].role_id
+        if rb_vos.count() > 0:
+            return rb_vos[0].role_type, rb_vos[0].role_id
 
         return "USER", None
 
@@ -351,9 +344,30 @@ class TokenService(BaseService):
         return app_vo.role_type, app_vo.role_id
 
     @cache.cacheable(key="identity:role-permissions:{domain_id}:{role_id}", expire=600)
-    def _get_role_permissions(self, role_id: str, domain_id: str) -> List[str]:
+    def _get_role_permissions(self, role_id: str, domain_id: str) -> list:
         role_vo = self.role_mgr.get_role(role_id=role_id, domain_id=domain_id)
         return role_vo.permissions
+
+    def _get_user_projects_in_project_group(
+        self, domain_id: str, workspace_id: str, user_id: str
+    ) -> List[str]:
+        user_projects = []
+        project_groups = self.project_group_mgr.filter_project_groups(
+            domain_id=domain_id, workspace_id=workspace_id, users=user_id
+        )
+
+        for project_group in project_groups:
+            project_group_id = project_group.project_group_id
+            user_projects.extend(
+                self.project_group_mgr.get_projects_in_project_groups(
+                    domain_id, project_group_id
+                )
+            )
+
+        user_projects.extend(self._get_user_projects(user_id, workspace_id, domain_id))
+
+        user_projects = list(set(user_projects))
+        return user_projects
 
     def _get_user_projects(
         self, user_id: str, workspace_id: str, domain_id: str

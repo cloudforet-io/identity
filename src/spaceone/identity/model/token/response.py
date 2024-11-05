@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal, Union, List
 from pydantic import BaseModel
 
 __all__ = ["TokenResponse", "GrantTokenResponse"]

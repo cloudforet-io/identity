@@ -1,6 +1,7 @@
 # Email Settings
 EMAIL_CONSOLE_DOMAIN = ""
 EMAIL_SERVICE_NAME = "Cloudforet"
+MFA_OTP_ISSUER_NAME = "Cloudforet"
 
 # Enums: ACCESS_TOKEN (default) | PASSWORD
 RESET_PASSWORD_TYPE = "ACCESS_TOKEN"
@@ -53,6 +54,7 @@ IDENTITY = {
         "token_timeout": 1800,  # 30 minutes
         "token_max_timeout": 604800,  # 7 days
         "refresh_timeout": 10800,  # 3 hours
+        "admin_refresh_timeout": 2592000,  # 30days
     },
     "mfa": {"verify_code_timeout": 300},
 }
