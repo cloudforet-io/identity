@@ -83,12 +83,12 @@ class TokenService(BaseService):
 
         user_vo = token_mgr.user
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
-        mfa_type = user_mfa.get('mfa_type')
+        mfa_type = user_mfa.get("mfa_type")
         permissions = self._get_permissions_from_required_actions(user_vo)
 
         mfa_user_id = user_vo.user_id
 
-        if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type == "LOCAL":
+        if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type != "MFA":
             mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
             if mfa_type == "EMAIL":
                 mfa_email = user_mfa["options"].get("email")
@@ -100,9 +100,13 @@ class TokenService(BaseService):
             elif mfa_type == "OTP":
                 secret_manager: SecretManager = self.locator.get_manager(SecretManager)
                 user_secret_id = user_mfa["options"].get("user_secret_id")
-                otp_secret_key = secret_manager.get_user_otp_secret_key(user_secret_id, domain_id)
+                otp_secret_key = secret_manager.get_user_otp_secret_key(
+                    user_secret_id, domain_id
+                )
 
-                mfa_manager.set_cache_otp_mfa_secret_key(otp_secret_key, user_vo.user_id, domain_id, credentials)
+                mfa_manager.set_cache_otp_mfa_secret_key(
+                    otp_secret_key, user_vo.user_id, domain_id, credentials
+                )
 
             raise ERROR_MFA_REQUIRED(user_id=mfa_user_id, mfa_type=mfa_type)
 
