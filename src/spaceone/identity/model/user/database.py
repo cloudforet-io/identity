@@ -36,7 +36,8 @@ class User(MongoModel):
     required_actions = ListField(StringField(choices=("UPDATE_PASSWORD",)), default=[])
     language = StringField(max_length=7, default="en")
     timezone = StringField(max_length=50, default="UTC")
-    tags = DictField(Default=None)
+    refresh_timeout = IntField(default=None, min_value=1800, max_value=2592000)
+    tags = DictField(default=None)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     last_accessed_at = DateTimeField(default=None, null=True)
@@ -54,6 +55,7 @@ class User(MongoModel):
             "language",
             "timezone",
             "required_actions",
+            "refresh_timeout",
             "tags",
             "last_accessed_at",
         ],

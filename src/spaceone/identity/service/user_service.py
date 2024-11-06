@@ -254,7 +254,9 @@ class UserService(BaseService):
         if mfa_type == "OTP":
             user_secret_id = user_mfa.get("options", {}).get("user_secret_id")
             secret_manager: SecretManager = self.locator.get_manager(SecretManager)
-            secret_manager.delete_user_secret_with_system_token(domain_id, user_secret_id)
+            secret_manager.delete_user_secret_with_system_token(
+                domain_id, user_secret_id
+            )
 
         user_mfa = {"state": "DISABLED"}
         self.user_mgr.update_user_by_vo({"mfa": user_mfa}, user_vo)
@@ -287,6 +289,36 @@ class UserService(BaseService):
         required_actions = list(set(user_vo.required_actions + new_actions))
         user_vo = self.user_mgr.update_user_by_vo(
             {"required_actions": required_actions}, user_vo
+        )
+
+        return UserResponse(**user_vo.to_dict())
+
+    @transaction(permission="identity:User.write", role_types=["DOMAIN_ADMIN"])
+    @convert_model
+    def set_refresh_timeout(
+        self, params: UserSetRefreshTimeout
+    ) -> Union[UserResponse, dict]:
+        """
+        Args:
+            params (UserProfileSetRefreshTimeout): {
+                "user_id": "str",
+                "refresh_timeout": "int",
+                "domain_id": "str"          # inject from auth
+            }
+        Returns:
+            UserResponse:
+        """
+
+        user_id = params.user_id
+        domain_id = params.domain_id
+        user_vo = self.user_mgr.get_user(user_id, domain_id)
+
+        if user_vo.role_type != "DOMAIN_ADMIN":
+            raise ERROR_PERMISSION_DENIED()
+
+        refresh_timeout = self._get_refresh_timeout_from_config(params.refresh_timeout)
+        user_vo = self.user_mgr.update_user_by_vo(
+            {"refresh_timeout": refresh_timeout}, user_vo
         )
 
         return UserResponse(**user_vo.to_dict())
@@ -525,3 +557,20 @@ class UserService(BaseService):
             else:
                 language = "en"
         return language
+
+    @staticmethod
+    def _get_refresh_timeout_from_config(refresh_timeout: int) -> int:
+        identity_conf = config.get_global("IDENTITY") or {}
+        token_conf = identity_conf.get("token", {})
+        config_refresh_timeout = token_conf.get("refresh_timeout")
+        if refresh_timeout < config_refresh_timeout:
+            raise ERROR_INVALID_PARAMETER(
+                key="refresh_timeout",
+                reason=f"Minimum value for refresh_timeout is {config_refresh_timeout}",
+            )
+        refresh_timeout = max(refresh_timeout, config_refresh_timeout)
+
+        config_admin_refresh_timeout = token_conf.get("admin_refresh_timeout", 2592000)
+        refresh_timeout = min(refresh_timeout, config_admin_refresh_timeout)
+
+        return refresh_timeout

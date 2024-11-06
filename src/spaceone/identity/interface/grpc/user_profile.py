@@ -1,6 +1,5 @@
 from google.protobuf.json_format import ParseDict
-from spaceone.api.identity.v2 import (user_pb2, user_profile_pb2,
-                                      user_profile_pb2_grpc)
+from spaceone.api.identity.v2 import user_pb2, user_profile_pb2, user_profile_pb2_grpc
 from spaceone.core.pygrpc import BaseAPI
 
 from spaceone.identity.service.user_profile_service import UserProfileService
