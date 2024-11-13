@@ -419,8 +419,6 @@ class UserProfileService(BaseService):
             results=my_workspaces_info, total_count=len(my_workspaces_info)
         )
 
-    # my_workspaces_info = self._get_my_workspaces_info(workspaces_info, role_bindings_info_map)
-
     @transaction(permission="identity:UserProfile.read", role_types=["USER"])
     @convert_model
     def get_workspace_groups(
