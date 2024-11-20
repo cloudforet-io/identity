@@ -18,6 +18,7 @@ class UserGroupResponse(BaseModel):
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
         data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
+
         return data
 
 

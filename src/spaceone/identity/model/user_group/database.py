@@ -10,19 +10,22 @@ class UserGroup(MongoModel):
     tags = DictField(Default=None)
     workspace_id = StringField(max_length=40, required=True)
     domain_id = StringField(max_length=40)
+    created_at = DateTimeField(auto_now_add=True)
 
     meta = {
         "updatable_fields": ["name", "description", "users", "tags"],
         "minimal_fields": [
             "user_group_id",
             "name",
-            "users",
             "workspace_id",
             "domain_id",
         ],
-        "ordering": ["name", "user_group_id"],
+        "change_query_keys": {"user_id": "users"},
+        "ordering": ["name"],
         "indexes": [
             "name",
             "workspace_id",
+            "domain_id",
+            "users",
         ],
     }
