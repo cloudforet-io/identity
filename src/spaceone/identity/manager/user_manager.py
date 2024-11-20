@@ -11,8 +11,7 @@ from spaceone.identity.lib.cipher import PasswordCipher
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_group_manager import UserGroupManager
-from spaceone.identity.manager.workspace_group_manager import \
-    WorkspaceGroupManager
+from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
@@ -108,7 +107,7 @@ class UserManager(BaseManager):
         for rb_vo in rb_vos:
             rb_mgr.delete_role_binding_by_vo(rb_vo)
 
-        # Delete user groups
+        # Delete user from user groups
         user_group_vos = user_group_mgr.filter_user_groups(
             users=user_vo.user_id, domain_id=user_vo.domain_id
         )
