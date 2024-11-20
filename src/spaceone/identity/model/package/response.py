@@ -3,25 +3,27 @@ from typing import Union, List
 from pydantic import BaseModel
 from spaceone.core import utils
 
-__all__ = ["UserGroupResponse", "UserGroupsResponse"]
+__all__ = ["PackageResponse", "PackagesResponse"]
 
 
-class UserGroupResponse(BaseModel):
-    user_group_id: Union[str, None] = None
+class PackageResponse(BaseModel):
+    package_id: Union[str, None] = None
     name: Union[str, None] = None
     description: Union[str, None] = None
-    users: Union[List[str], None] = None
+    order: Union[int, None] = None
+    is_default: Union[bool, None] = None
     tags: Union[dict, None] = None
     domain_id: Union[str, None] = None
     created_at: Union[datetime, None] = None
+    updated_at: Union[datetime, None] = None
 
     def dict(self, *args, **kwargs):
         data = super().dict(*args, **kwargs)
         data["created_at"] = utils.datetime_to_iso8601(data["created_at"])
-
+        data["updated_at"] = utils.datetime_to_iso8601(data["updated_at"])
         return data
 
 
-class UserGroupsResponse(BaseModel):
-    results: List[UserGroupResponse]
+class PackagesResponse(BaseModel):
+    results: List[PackageResponse]
     total_count: int

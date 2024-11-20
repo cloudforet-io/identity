@@ -9,6 +9,7 @@ from spaceone.identity.interface.grpc.job import Job
 from spaceone.identity.interface.grpc.project import Project
 from spaceone.identity.interface.grpc.project_group import ProjectGroup
 from spaceone.identity.interface.grpc.provider import Provider
+from spaceone.identity.interface.grpc.package import Package
 from spaceone.identity.interface.grpc.role import Role
 from spaceone.identity.interface.grpc.role_binding import RoleBinding
 from spaceone.identity.interface.grpc.schema import Schema
@@ -21,8 +22,7 @@ from spaceone.identity.interface.grpc.user_group import UserGroup
 from spaceone.identity.interface.grpc.user_profile import UserProfile
 from spaceone.identity.interface.grpc.workspace import Workspace
 from spaceone.identity.interface.grpc.workspace_group import WorkspaceGroup
-from spaceone.identity.interface.grpc.workspace_group_user import \
-    WorkspaceGroupUser
+from spaceone.identity.interface.grpc.workspace_group_user import WorkspaceGroupUser
 from spaceone.identity.interface.grpc.workspace_user import WorkspaceUser
 
 _all_ = ["app"]
@@ -36,6 +36,7 @@ app.add_service(Workspace)
 app.add_service(ProjectGroup)
 app.add_service(Project)
 app.add_service(Provider)
+app.add_service(Package)
 app.add_service(Schema)
 app.add_service(TrustedAccount)
 app.add_service(ServiceAccount)

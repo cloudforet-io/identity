@@ -5,7 +5,7 @@ from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
 from spaceone.identity.error.error_user_group import *
-from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.user_group_manager import UserGroupManager
 from spaceone.identity.model.user_group.request import *
 from spaceone.identity.model.user_group.response import *
@@ -31,7 +31,8 @@ class UserGroupService(BaseService):
         Args:
             params (dict): {
                 'name': 'str',          # required
-                'tags': 'dict',         # required
+                'description': 'str',
+                'tags': 'dict',
                 'workspace_id': 'str',  # injected from auth (required)
                 'domain_id': 'str'      # injected from auth (required)
             }
@@ -47,6 +48,7 @@ class UserGroupService(BaseService):
             params (dict): {
                 'user_group_id': 'str', # required
                 'name': 'str',
+                'description': 'str',
                 'tags': 'dict',
                 'workspace_id': 'str',  # injected from auth (required)
                 'domain_id': 'str'      # injected from auth (required)
@@ -107,16 +109,17 @@ class UserGroupService(BaseService):
             params.workspace_id,
         )
 
-        user_mgr = UserManager()
-        users_vo = user_mgr.filter_users(
+        rb_mgr = RoleBindingManager()
+        rb_vos = rb_mgr.filter_role_bindings(
             user_id=params.users,
+            resource_group="WORKSPACE",
             domain_id=params.domain_id,
             workspace_id=params.workspace_id,
         )
 
-        if users_vo.count() != len(params.users):
+        if rb_vos.count() != len(params.users):
             raise ERROR_USERS_NOT_FOUND(
-                users=list(set(params.users) - set(users_vo.values_list("user_id")))
+                users=list(set(params.users) - set(rb_vos.values_list("user_id")))
             )
 
         params.users = list(set(user_group_vo.users + params.users))
@@ -149,7 +152,6 @@ class UserGroupService(BaseService):
             params.workspace_id,
         )
 
-        user_mgr = UserManager()
         params.users = list(set(user_group_vo.users) - set(params.users))
         users_vo = self.user_group_mgr.update_user_group_by_vo(
             params.dict(exclude_unset=True), user_group_vo
@@ -193,7 +195,7 @@ class UserGroupService(BaseService):
             "domain_id",
         ]
     )
-    @append_keyword_filter(["trusted_account_id", "name"])
+    @append_keyword_filter(["user_group_id", "name"])
     @convert_model
     def list(
         self, params: UserGroupSearchQueryRequest

@@ -20,7 +20,7 @@ class DormancyScheduler(HourlyScheduler):
         self._token = config.get_global("TOKEN")
         if self._token is None:
             raise ERROR_CONFIGURATION(key="TOKEN")
-        self._dormancy_check_hours = config.get_global("DORMANCY_CHECK_HOUR", 0)
+        self._dormancy_check_hour = config.get_global("DORMANCY_CHECK_HOUR", 0)
 
     def create_task(self) -> list:
         tasks = []
@@ -29,7 +29,7 @@ class DormancyScheduler(HourlyScheduler):
 
     def _create_dormancy_task(self):
         current_hour = datetime.utcnow().hour
-        if current_hour == self._dormancy_check_hours:
+        if current_hour == self._dormancy_check_hour:
             stp = {
                 "name": "dormancy_schedule",
                 "version": "v1",
@@ -45,14 +45,14 @@ class DormancyScheduler(HourlyScheduler):
                 ],
             }
             print(
-                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] check_dormancy_by_domains => START"
+                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] check_dormancy => START"
             )
             return [stp]
         else:
             print(
-                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] check_dormancy_by_domains => SKIP"
+                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] check_dormancy => SKIP"
             )
             print(
-                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] check_dormancy_by_domains: {self._dormancy_check_hours} hour (UTC)"
+                f"{utils.datetime_to_iso8601(datetime.utcnow())} [INFO] [create_task] check_dormancy_by: {self._dormancy_check_hour} hour (UTC)"
             )
             return []

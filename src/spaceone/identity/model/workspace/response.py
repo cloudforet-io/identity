@@ -17,6 +17,7 @@ class WorkspaceResponse(BaseModel):
     created_by: Union[str, None] = None
     references: Union[list, None] = None
     is_managed: Union[bool, None] = None
+    packages: Union[list, None] = None
     is_dormant: Union[bool, None] = None
     dormant_ttl: Union[int, None] = None
     service_account_count: Union[int, None] = None

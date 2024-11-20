@@ -45,7 +45,7 @@ class UserGroupManager(BaseManager):
 
     def get_user_group(
         self, user_group_id: str, domain_id: str, workspace_id: str = None
-    ):
+    ) -> UserGroup:
         conditions = {"user_group_id": user_group_id, "domain_id": domain_id}
 
         if workspace_id:

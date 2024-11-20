@@ -15,6 +15,7 @@ __all__ = [
 
 class UserGroupCreateRequest(BaseModel):
     name: str
+    description: Union[str, None] = None
     tags: Union[dict, None] = None
     workspace_id: str
     domain_id: str
@@ -23,6 +24,7 @@ class UserGroupCreateRequest(BaseModel):
 class UserGroupUpdateRequest(BaseModel):
     user_group_id: str
     name: Union[str, None] = None
+    description: Union[str, None] = None
     tags: Union[dict, None] = None
     workspace_id: str
     domain_id: str
