@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Union
 
-from spaceone.core.error import *
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
@@ -16,9 +15,11 @@ from spaceone.identity.manager.service_account_manager import ServiceAccountMana
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.manager.package_manager import PackageManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
 from spaceone.identity.model.workspace.response import *
+from spaceone.identity.error.error_workspace import *
 from spaceone.identity.service.role_binding_service import RoleBindingService
 
 _LOGGER = logging.getLogger(__name__)
@@ -240,6 +241,72 @@ class WorkspaceService(BaseService):
         workspace_vo = self.workspace_mgr.disable_workspace(workspace_vo)
         return WorkspaceResponse(**workspace_vo.to_dict())
 
+    @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
+    @convert_model
+    def add_package(
+        self, params: WorkspaceAddPackageRequest
+    ) -> Union[WorkspaceResponse, dict]:
+        """Add package to workspace
+        Args:
+            params (WorkspaceAddPackageRequest): {
+                'package_id': 'str',    # required
+                'workspace_id': 'str',  # required
+                'domain_id': 'str'      # injected from auth (required)
+            }
+        Returns:
+            WorkspaceResponse:
+        """
+
+        workspace_vo = self.workspace_mgr.get_workspace(
+            params.workspace_id, params.domain_id
+        )
+
+        package_mgr = PackageManager()
+        package_vo = package_mgr.get_package(params.package_id, params.domain_id)
+
+        if package_vo.is_default:
+            raise ERROR_DEFAULT_PACKAGE_NOT_ALLOWED(package_id=params.package_id)
+
+        packages = workspace_vo.packages or []
+        if params.package_id not in packages:
+            packages.append(params.package_id)
+
+        workspace_vo = self.workspace_mgr.update_workspace_by_vo(
+            {"packages": packages}, workspace_vo
+        )
+
+        return WorkspaceResponse(**workspace_vo.to_dict())
+
+    @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
+    @convert_model
+    def remove_package(
+        self, params: WorkspaceRemovePackageRequest
+    ) -> Union[WorkspaceResponse, dict]:
+        """Remove package from workspace
+        Args:
+            params (WorkspaceRemovePackageRequest): {
+                'package_id': 'str',    # required
+                'workspace_id': 'str',  # required
+                'domain_id': 'str'      # injected from auth (required)
+            }
+        Returns:
+            WorkspaceResponse:
+        """
+
+        workspace_vo = self.workspace_mgr.get_workspace(
+            params.workspace_id, params.domain_id
+        )
+
+        packages = workspace_vo.packages or []
+        if params.package_id in packages:
+            packages.remove(params.package_id)
+
+        workspace_vo = self.workspace_mgr.update_workspace_by_vo(
+            {"packages": packages}, workspace_vo
+        )
+
+        return WorkspaceResponse(**workspace_vo.to_dict())
+
     @transaction(permission="identity:Workspace.read", role_types=["DOMAIN_ADMIN"])
     @convert_model
     def get(self, params: WorkspaceGetRequest) -> Union[WorkspaceResponse, dict]:
@@ -315,11 +382,12 @@ class WorkspaceService(BaseService):
 
             workspaces_info = [workspace_vo.to_dict() for workspace_vo in workspace_vos]
         else:
-            workspaces_info, total_count = (
-                self.workspace_mgr.list_workspace_group_workspaces(
-                    params.workspace_group_id,
-                    params.domain_id,
-                )
+            (
+                workspaces_info,
+                total_count,
+            ) = self.workspace_mgr.list_workspace_group_workspaces(
+                params.workspace_group_id,
+                params.domain_id,
             )
 
         return WorkspacesResponse(results=workspaces_info, total_count=total_count)
@@ -427,11 +495,12 @@ class WorkspaceService(BaseService):
                     domain_id,
                 )
 
-                workspaces_info, total_count = (
-                    self.workspace_mgr.list_workspace_group_workspaces(
-                        old_workspace_group_id,
-                        domain_id,
-                    )
+                (
+                    workspaces_info,
+                    total_count,
+                ) = self.workspace_mgr.list_workspace_group_workspaces(
+                    old_workspace_group_id,
+                    domain_id,
                 )
                 for workspace_info in workspaces_info:
                     workspace_vo = self.workspace_mgr.get_workspace(

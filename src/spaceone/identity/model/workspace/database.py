@@ -15,6 +15,7 @@ class Workspace(MongoModel):
     created_by = StringField(max_length=255)
     references = ListField(StringField(max_length=255), default=None, null=True)
     is_managed = BooleanField(default=False)
+    packages = ListField(StringField(max_length=40), default=[])
 
     is_dormant = BooleanField(default=False)
     dormant_ttl = IntField(default=None, required=True)
@@ -37,6 +38,7 @@ class Workspace(MongoModel):
             "state",
             "tags",
             "is_managed",
+            "packages",
             "is_dormant",
             "dormant_ttl",
             "service_account_count",
@@ -66,6 +68,7 @@ class Workspace(MongoModel):
         "indexes": [
             "name",
             "state",
+            "packages",
             "domain_id",
             "created_by",
             "is_managed",

@@ -9,6 +9,8 @@ __all__ = [
     "WorkspaceDeleteRequest",
     "WorkspaceEnableRequest",
     "WorkspaceDisableRequest",
+    "WorkspaceAddPackageRequest",
+    "WorkspaceRemovePackageRequest",
     "WorkspaceGetRequest",
     "WorkspaceCheckRequest",
     "WorkspaceSearchQueryRequest",
@@ -50,6 +52,18 @@ class WorkspaceEnableRequest(BaseModel):
 
 
 class WorkspaceDisableRequest(BaseModel):
+    workspace_id: str
+    domain_id: str
+
+
+class WorkspaceAddPackageRequest(BaseModel):
+    package_id: str
+    workspace_id: str
+    domain_id: str
+
+
+class WorkspaceRemovePackageRequest(BaseModel):
+    package_id: str
     workspace_id: str
     domain_id: str
 

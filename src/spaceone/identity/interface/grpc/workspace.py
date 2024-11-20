@@ -44,6 +44,18 @@ class Workspace(BaseAPI, workspace_pb2_grpc.WorkspaceServicer):
         response: dict = workspace_svc.disable(params)
         return self.dict_to_message(response)
 
+    def add_package(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        workspace_svc = WorkspaceService(metadata)
+        response: dict = workspace_svc.add_package(params)
+        return self.dict_to_message(response)
+
+    def remove_package(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        workspace_svc = WorkspaceService(metadata)
+        response: dict = workspace_svc.remove_package(params)
+        return self.dict_to_message(response)
+
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
         workspace_svc = WorkspaceService(metadata)
