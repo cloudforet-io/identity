@@ -9,6 +9,7 @@ __all__ = ["UserGroupResponse", "UserGroupsResponse"]
 class UserGroupResponse(BaseModel):
     user_group_id: Union[str, None] = None
     name: Union[str, None] = None
+    description: Union[str, None] = None
     users: Union[List[str], None] = None
     tags: Union[dict, None] = None
     domain_id: Union[str, None] = None

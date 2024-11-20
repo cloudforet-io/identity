@@ -31,6 +31,7 @@ class UserGroupService(BaseService):
         Args:
             params (dict): {
                 'name': 'str',          # required
+                'description': 'str',
                 'tags': 'dict',         # required
                 'workspace_id': 'str',  # injected from auth (required)
                 'domain_id': 'str'      # injected from auth (required)
@@ -47,6 +48,7 @@ class UserGroupService(BaseService):
             params (dict): {
                 'user_group_id': 'str', # required
                 'name': 'str',
+                'description': 'str',
                 'tags': 'dict',
                 'workspace_id': 'str',  # injected from auth (required)
                 'domain_id': 'str'      # injected from auth (required)
@@ -149,7 +151,6 @@ class UserGroupService(BaseService):
             params.workspace_id,
         )
 
-        user_mgr = UserManager()
         params.users = list(set(user_group_vo.users) - set(params.users))
         users_vo = self.user_group_mgr.update_user_group_by_vo(
             params.dict(exclude_unset=True), user_group_vo
