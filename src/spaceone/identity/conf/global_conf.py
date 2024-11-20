@@ -54,7 +54,7 @@ IDENTITY = {
         "token_timeout": 1800,  # 30 minutes
         "token_max_timeout": 604800,  # 7 days
         "refresh_timeout": 10800,  # 3 hours
-        "admin_refresh_timeout": 2592000,  # 30days
+        "admin_refresh_max_timeout": 2419200,  # 28 days
     },
     "mfa": {"verify_code_timeout": 300},
 }
@@ -139,3 +139,6 @@ WORKERS = {}
 
 # System Token Settings
 TOKEN = ""
+
+# IDENTITY BASE URL for TOKEN PAYLOAD
+IDENTITY_BASE_URL = ""

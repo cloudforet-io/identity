@@ -42,6 +42,8 @@ class KeyGenerator:
         permissions: list = None,
         projects: list = None,
         injected_params: dict = None,
+        endpoints: list = None,
+        identity_base_url: str = None,
     ) -> str:
         payload = {
             "iss": "spaceone.identity",
@@ -74,6 +76,12 @@ class KeyGenerator:
         if injected_params:
             payload["injected_params"] = injected_params
 
+        if endpoints:
+            payload["endpoints"] = endpoints
+
+        if identity_base_url:
+            payload["identity_base_url"] = identity_base_url
+
         if token_type == "REFRESH_TOKEN":
             return JWTUtil.encode(payload, self.refresh_prv_jwk)
         else:
@@ -96,5 +104,7 @@ class KeyGenerator:
             f'projects: {payload.get("projects")},'
             f'permissions: {payload.get("permissions")},'
             f'injected_params: {payload.get("injected_params")},'
+            f'endpoints: {payload.get("endpoints")},'
+            f'identity_base_url: {payload.get("identity_base_url")},'
             f'ver: {payload.get("ver")} )'
         )

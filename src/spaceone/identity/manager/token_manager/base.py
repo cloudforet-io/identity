@@ -69,6 +69,8 @@ class TokenManager(BaseManager, ABC):
         )
 
         timeout = self.set_timeout(timeout)
+        endpoints = config.get_global("ENDPOINTS")
+        identity_base_url = config.get_global("IDENTITY_BASE_URL")
 
         access_token = key_gen.generate_token(
             "ACCESS_TOKEN",
@@ -77,6 +79,8 @@ class TokenManager(BaseManager, ABC):
             workspace_id=workspace_id,
             permissions=permissions,
             projects=projects,
+            endpoints=endpoints,
+            identity_base_url=identity_base_url,
         )
 
         refresh_token = key_gen.generate_token(
@@ -136,6 +140,9 @@ class TokenManager(BaseManager, ABC):
         ):
             refresh_timeout = max(self.user.refresh_timeout, refresh_timeout)
 
+        if refresh_timeout > self.CONST_MAX_REFRESH_TIMEOUT:
+            refresh_timeout = self.CONST_MAX_REFRESH_TIMEOUT
+
         return refresh_timeout
 
     @staticmethod
@@ -158,4 +165,7 @@ class TokenManager(BaseManager, ABC):
         self.CONST_TOKEN_TIMEOUT = token_conf.get("token_timeout", 1800)
         self.CONST_VERIFY_CODE_TIMEOUT = token_conf.get("verify_code_timeout", 3600)
         self.CONST_REFRESH_TIMEOUT = token_conf.get("refresh_timeout", 10800)
+        self.CONST_MAX_REFRESH_TIMEOUT = token_conf.get(
+            "admin_refresh_max_timeout", 2592000
+        )
         self.CONST_MAX_TOKEN_TIMEOUT = token_conf.get("token_max_timeout", 604800)

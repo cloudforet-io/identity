@@ -570,7 +570,9 @@ class UserService(BaseService):
             )
         refresh_timeout = max(refresh_timeout, config_refresh_timeout)
 
-        config_admin_refresh_timeout = token_conf.get("admin_refresh_timeout", 2592000)
-        refresh_timeout = min(refresh_timeout, config_admin_refresh_timeout)
+        config_admin_refresh_max_timeout = token_conf.get(
+            "admin_refresh_max_timeout", 2419200
+        )
+        refresh_timeout = min(refresh_timeout, config_admin_refresh_max_timeout)
 
         return refresh_timeout
