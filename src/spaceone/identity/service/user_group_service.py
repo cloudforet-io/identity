@@ -32,7 +32,7 @@ class UserGroupService(BaseService):
             params (dict): {
                 'name': 'str',          # required
                 'description': 'str',
-                'tags': 'dict',         # required
+                'tags': 'dict',
                 'workspace_id': 'str',  # injected from auth (required)
                 'domain_id': 'str'      # injected from auth (required)
             }
