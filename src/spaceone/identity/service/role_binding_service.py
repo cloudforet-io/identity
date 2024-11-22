@@ -10,8 +10,6 @@ from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.manager.user_group_manager import UserGroupManager
-from spaceone.identity.model import RoleBinding
 from spaceone.identity.model.role_binding.request import *
 from spaceone.identity.model.role_binding.response import *
 
@@ -263,7 +261,11 @@ class RoleBindingService(BaseService):
         user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
 
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
-        self.delete_role_binding_by_vo(rb_vo)
+
+        if rb_vo.workspace_id:
+            self.update_workspace_user_count(rb_vo.domain_id, rb_vo.workspace_id)
+
+        self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
 
     @transaction(
         permission="identity:RoleBinding.read",
@@ -460,25 +462,6 @@ class RoleBindingService(BaseService):
             self.workspace_mgr.update_workspace_by_vo(
                 {"user_count": user_rb_total_count}, workspace_vo
             )
-
-    def delete_role_binding_by_vo(self, rb_vo: RoleBinding) -> None:
-        self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
-
-        if rb_vo.workspace_id:
-            # Delete user from user groups
-            user_group_mgr = UserGroupManager()
-            user_group_vos = user_group_mgr.filter_user_groups(
-                users=rb_vo.user_id, domain_id=rb_vo.domain_id
-            )
-            for user_group_vo in user_group_vos:
-                users = user_group_vo.users
-                users.remove(rb_vo.user_id)
-                user_group_mgr.update_user_group_by_vo(
-                    {"users": users}, user_group_vo=user_group_vo
-                )
-
-            # Update workspace user count
-            self.update_workspace_user_count(rb_vo.domain_id, rb_vo.workspace_id)
 
     def _get_workspace_user_count(self, domain_id: str, workspace_id: str) -> int:
         user_rb_ids = self.role_binding_manager.stat_role_bindings(
