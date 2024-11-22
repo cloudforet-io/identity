@@ -5,12 +5,12 @@ from mongoengine import QuerySet
 from spaceone.core.manager import BaseManager
 
 from spaceone.identity.model.role_binding.database import RoleBinding
+from spaceone.identity.manager.user_group_manager import UserGroupManager
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class RoleBindingManager(BaseManager):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.role_binding_model = RoleBinding
@@ -45,6 +45,19 @@ class RoleBindingManager(BaseManager):
             f"[delete_role_binding_by_vo] Delete role binding info: {role_binding_vo.to_dict()}"
         )
         role_binding_vo.delete()
+
+        if role_binding_vo.workspace_id:
+            # Delete user from user groups
+            user_group_mgr = UserGroupManager()
+            user_group_vos = user_group_mgr.filter_user_groups(
+                users=role_binding_vo.user_id, domain_id=role_binding_vo.domain_id
+            )
+            for user_group_vo in user_group_vos:
+                users = user_group_vo.users
+                users.remove(role_binding_vo.user_id)
+                user_group_mgr.update_user_group_by_vo(
+                    {"users": users}, user_group_vo=user_group_vo
+                )
 
     def get_role_binding(
         self, role_binding_id: str, domain_id: str, workspace_id: str = None
