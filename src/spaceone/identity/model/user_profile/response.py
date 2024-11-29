@@ -40,6 +40,7 @@ class MyWorkspaceResponse(BaseModel):
 
 class MyWorkspacesResponse(BaseModel):
     results: List[MyWorkspaceResponse]
+    total_count: int
 
 
 class MyWorkspaceGroupResponse(BaseModel):
