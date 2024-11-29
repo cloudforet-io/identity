@@ -461,6 +461,38 @@ class ServiceAccountService(BaseService):
         permission="identity:ServiceAccount.read",
         role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
+    @append_query_filter(
+        [
+            "workspace_id",
+            "domain_id",
+            "user_projects",
+        ]
+    )
+    @append_keyword_filter(["service_account_id", "name"])
+    @set_query_page_limit(2000)
+    @convert_model
+    def analyze(self, params: ServiceAccountAnalyzeQueryRequest) -> dict:
+        """analyze service accounts
+        Args:
+            params (ServiceAccountsAnalyzeQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
+                'workspace_id': 'str',                  # injected from auth
+                'domain_id': 'str',                     # injected from auth (required)
+                'user_projects': 'list'                 # injected from auth
+            }
+        Returns:
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
+        """
+        query = params.query or {}
+        return self.service_account_mgr.analyze_service_accounts(query)
+
+    @transaction(
+        permission="identity:ServiceAccount.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+    )
     @append_query_filter(["user_projects", "workspace_id", "domain_id"])
     @append_keyword_filter(["service_account_id", "name"])
     @set_query_page_limit(1000)

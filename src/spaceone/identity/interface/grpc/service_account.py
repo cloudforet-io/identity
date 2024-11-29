@@ -56,6 +56,12 @@ class ServiceAccount(BaseAPI, service_account_pb2_grpc.ServiceAccountServicer):
         response: dict = service_account_svc.list(params)
         return self.dict_to_message(response)
 
+    def analyze(self, request, context):
+        params, metadata = self.parse_request(request, context)
+        service_account_svc = ServiceAccountService(metadata)
+        response: dict = service_account_svc.analyze(params)
+        return self.dict_to_message(response)
+
     def stat(self, request, context):
         params, metadata = self.parse_request(request, context)
         service_account_svc = ServiceAccountService(metadata)

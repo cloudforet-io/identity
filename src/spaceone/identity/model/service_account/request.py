@@ -10,6 +10,7 @@ __all__ = [
     "ServiceAccountGetRequest",
     "ServiceAccountSearchQueryRequest",
     "ServiceAccountStatQueryRequest",
+    "ServiceAccountAnalyzeQueryRequest",
     "State",
 ]
 
@@ -81,6 +82,13 @@ class ServiceAccountSearchQueryRequest(BaseModel):
     secret_id: Union[str, None] = None
     trusted_account_id: Union[str, None] = None
     project_id: Union[str, None] = None
+    workspace_id: Union[str, None] = None
+    domain_id: str
+    user_projects: Union[list, None] = None
+
+
+class ServiceAccountAnalyzeQueryRequest(BaseModel):
+    query: Union[dict, None] = None
     workspace_id: Union[str, None] = None
     domain_id: str
     user_projects: Union[list, None] = None
