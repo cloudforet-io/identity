@@ -69,7 +69,6 @@ class TokenManager(BaseManager, ABC):
         )
 
         timeout = self.set_timeout(timeout)
-        endpoints = config.get_global("ENDPOINTS")
         identity_base_url = config.get_global("IDENTITY_BASE_URL")
 
         access_token = key_gen.generate_token(
@@ -79,7 +78,6 @@ class TokenManager(BaseManager, ABC):
             workspace_id=workspace_id,
             permissions=permissions,
             projects=projects,
-            endpoints=endpoints,
             identity_base_url=identity_base_url,
         )
 
