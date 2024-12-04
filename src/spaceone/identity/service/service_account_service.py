@@ -468,7 +468,6 @@ class ServiceAccountService(BaseService):
             "user_projects",
         ]
     )
-    @append_keyword_filter(["service_account_id", "name"])
     @set_query_page_limit(2000)
     @convert_model
     def analyze(self, params: ServiceAccountAnalyzeQueryRequest) -> dict:
