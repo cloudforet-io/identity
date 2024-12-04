@@ -84,6 +84,9 @@ class ServiceAccountManager(BaseManager):
     def list_service_accounts(self, query: dict) -> Tuple[list, int]:
         return self.service_account_model.query(**query)
 
+    def analyze_service_accounts(self, query: dict) -> dict:
+        return self.service_account_model.analyze(**query)
+
     def stat_service_accounts(self, query: dict) -> dict:
         return self.service_account_model.stat(**query)
 
@@ -167,3 +170,6 @@ class ServiceAccountManager(BaseManager):
                 "workspace_id": workspace_id,
             },
         )
+
+    def analyze_data(self, query: dict) -> list:
+        return self.service_account_model.analyze(**query)
