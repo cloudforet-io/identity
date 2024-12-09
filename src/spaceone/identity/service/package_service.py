@@ -6,6 +6,7 @@ from spaceone.core.service.utils import *
 from spaceone.identity.error import *
 
 from spaceone.identity.manager.package_manager import PackageManager
+from spaceone.identity.manager.opsflow_manager import OpsflowManager
 from spaceone.identity.model.package.request import *
 from spaceone.identity.model.package.response import *
 
@@ -83,6 +84,15 @@ class PackageService(BaseService):
             params.package_id,
             params.domain_id,
         )
+
+        if package_vo.is_default:
+            raise ERROR_INVALID_PARAMETER(
+                key="package_id",
+                reason=f"Cannot delete default package.",
+            )
+
+        self._check_existence_of_task_category(params.domain_id, params.package_id)
+
         self.package_mgr.delete_package_by_vo(package_vo)
 
     @transaction(permission="identity:Package.write", role_types=["DOMAIN_ADMIN"])
@@ -257,3 +267,15 @@ class PackageService(BaseService):
         package_vos = self.package_mgr.filter_packages(domain_id=domain_id)
 
         return package_vos.count()
+
+    @staticmethod
+    def _check_existence_of_task_category(domain_id: str, package_id: str):
+        opsflow_mgr = OpsflowManager()
+        category_vos = opsflow_mgr.list_task_categories_by_package(domain_id, package_id)
+
+        if category_vos:
+            existing_categories = [category_vo["category_id"] for category_vo in category_vos["results"]]
+            if existing_categories:
+                raise ERROR_EXIST_RESOURCE(
+                    child="Package", parent=f"TaskCategory({', '.join(existing_categories)})"
+                )
