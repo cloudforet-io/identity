@@ -1,6 +1,5 @@
 import logging
 
-from spaceone.core import config
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 

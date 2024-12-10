@@ -271,10 +271,13 @@ class PackageService(BaseService):
     @staticmethod
     def _check_existence_of_task_category(domain_id: str, package_id: str):
         opsflow_mgr = OpsflowManager()
-        category_vos = opsflow_mgr.list_task_categories_by_package(domain_id, package_id)
+        response = opsflow_mgr.list_task_categories_by_package(domain_id, package_id)
+        total_count = response.get('total_count', 0)
 
-        if category_vos:
-            existing_categories = [category_vo["category_id"] for category_vo in category_vos["results"]]
+        if total_count > 0:
+            categories_info = response.get("results", [])
+            existing_categories = [category_info["category_id"] for category_info in categories_info]
+
             if existing_categories:
                 raise ERROR_EXIST_RESOURCE(
                     child="Package", parent=f"TaskCategory({', '.join(existing_categories)})"
