@@ -1,4 +1,5 @@
 import logging
+import pyotp
 from collections import OrderedDict
 
 from spaceone.core import utils, cache
@@ -23,7 +24,7 @@ class OTPMFAManager(MFAManager):
             "domain_id": domain_id
         }
 
-        otp_secret_key = self.generate_otp_secret_key()
+        otp_secret_key = self._generate_otp_secret_key()
         otp_qrcode_uri = self._generate_otp_qrcode_uri(self.generate_otp(otp_secret_key), user_id)
 
         self.set_cache_otp_mfa_secret_key(otp_secret_key, user_id, domain_id, credentials, user_mfa)
@@ -106,6 +107,10 @@ class OTPMFAManager(MFAManager):
             cached_mfa_info = cache.get(f"identity:mfa:{hashed_credentials}")
             cache.delete(f"identity:mfa:{hashed_credentials}")
             return cached_mfa_info["otp_secret_key"]
+
+    @staticmethod
+    def _generate_otp_secret_key() -> str:
+        return pyotp.random_base32()
 
     def _generate_otp_qrcode_uri(self, otp, user_id: str) -> str:
         otp_qrcode_uri = otp.provisioning_uri(name=user_id, issuer_name=self.CONST_MFA_OTP_ISSUER_NAME)

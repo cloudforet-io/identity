@@ -1,4 +1,5 @@
 import logging
+import secrets
 import pyotp
 from abc import abstractmethod, ABC, ABCMeta
 from collections import OrderedDict
@@ -59,8 +60,8 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
 
     def create_mfa_verify_code(self, user_id: str, domain_id: str, credentials: dict, user_mfa: dict = None):
         if cache.is_set():
-            verify_code = self._generate_verify_code()
-
+            verify_code_length = 6
+            verify_code = self._generate_verify_code(verify_code_length)
             ordered_credentials = OrderedDict(sorted(credentials.items()))
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
             cache.delete(f"identity:mfa:{hashed_credentials}")
@@ -108,16 +109,12 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
             return cached_mfa_info
         raise ERROR_INVALID_CREDENTIALS()
 
-    def _generate_verify_code(self):
-        otp_secret_key = self.generate_otp_secret_key()
-        otp = self.generate_otp(otp_secret_key)
-        verify_code = otp.now()
-
-        return verify_code
-
     @staticmethod
-    def generate_otp_secret_key() -> str:
-        return pyotp.random_base32()
+    def _generate_verify_code(length):
+        first_digit = str(secrets.randbelow(9) + 1)
+        remaining_digits = ''.join(str(secrets.randbelow(10)) for _ in range(length - 1))
+        verify_code = first_digit + remaining_digits
+        return verify_code
 
     @staticmethod
     def generate_otp(otp_secret_key: str):
