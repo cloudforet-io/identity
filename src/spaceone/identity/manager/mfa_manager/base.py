@@ -110,7 +110,7 @@ class MFAManager(BaseMFAManager, metaclass=ABCMeta):
         raise ERROR_INVALID_CREDENTIALS()
 
     @staticmethod
-    def _generate_verify_code(length):
+    def _generate_verify_code(length: int = 6) -> str:
         first_digit = str(secrets.randbelow(9) + 1)
         remaining_digits = ''.join(str(secrets.randbelow(10)) for _ in range(length - 1))
         verify_code = first_digit + remaining_digits

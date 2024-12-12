@@ -1,5 +1,5 @@
 import logging
-import random
+import secrets
 from abc import abstractmethod, ABC
 from datetime import datetime
 from typing import Union
@@ -154,8 +154,11 @@ class TokenManager(BaseManager, ABC):
         return False
 
     @staticmethod
-    def _generate_verify_code():
-        return str(random.randint(100000, 999999))
+    def _generate_verify_code(length: int = 6) -> str:
+        first_digit = str(secrets.randbelow(9) + 1)
+        remaining_digits = ''.join(str(secrets.randbelow(10)) for _ in range(length - 1))
+        verify_code = first_digit + remaining_digits
+        return verify_code
 
     def _load_conf(self):
         identity_conf = config.get_global("IDENTITY") or {}
