@@ -1,6 +1,6 @@
 import copy
 import logging
-import random
+import secrets
 import re
 import string
 from typing import Union
@@ -71,6 +71,7 @@ class UserService(BaseService):
         auth_type = params["auth_type"]
         reset_password = params["reset_password"]
         domain_id = params["domain_id"]
+        domain_display_name = self._get_domain_display_name(domain_id)
         email = params.get("email")
         language = self._get_domain_default_language(domain_id, params.get("language"))
         params["language"] = language
@@ -102,7 +103,7 @@ class UserService(BaseService):
                 user_vo = self.user_mgr.create_user(params)
                 user_id = user_vo.user_id
                 email_manager.send_reset_password_email_when_user_added(
-                    user_id, email, reset_password_link, language
+                    domain_display_name, user_id, email, reset_password_link, language
                 )
             else:
                 console_link = self._get_console_url(domain_id)
@@ -111,7 +112,7 @@ class UserService(BaseService):
                 user_id = user_vo.user_id
 
                 email_manager.send_temporary_password_email_when_user_added(
-                    user_id, email, console_link, temp_password, language
+                    domain_display_name, user_id, email, console_link, temp_password, language
                 )
         else:
             user_vo = self.user_mgr.create_user(params)
@@ -508,7 +509,7 @@ class UserService(BaseService):
     def _generate_temporary_password():
         while True:
             random_password = "".join(
-                random.choice(
+                secrets.choice(
                     string.ascii_uppercase + string.ascii_lowercase + string.digits
                 )
                 for _ in range(12)
@@ -557,6 +558,17 @@ class UserService(BaseService):
             else:
                 language = "en"
         return language
+
+    def _get_domain_display_name(self, domain_id: str, ) -> str:
+        config_mgr = ConfigManager()
+        domain_config_data_info = config_mgr.get_auth_config(domain_id)
+        settings = domain_config_data_info.get("settings", {})
+        domain_display_name = settings.get("display_name", "")
+
+        if not domain_display_name:
+            domain_display_name = self._get_domain_name(domain_id)
+
+        return domain_display_name
 
     @staticmethod
     def _get_refresh_timeout_from_config(refresh_timeout: int) -> int:
