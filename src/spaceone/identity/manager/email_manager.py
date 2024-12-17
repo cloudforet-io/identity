@@ -119,6 +119,7 @@ class EmailManager(BaseManager):
 
     def send_invite_email_when_external_user_added(
         self,
+        domain_display_name: str,
         user_id: str,
         email: str,
         console_link: str,
@@ -131,6 +132,7 @@ class EmailManager(BaseManager):
         template = JINJA_ENV.get_template(f"sso_invite_user_link_{language}.html")
 
         email_contents = template.render(
+            domain_display_name=domain_display_name,
             user_name=user_id,
             auth_type=external_auth_provider,
             service_name=service_name,
