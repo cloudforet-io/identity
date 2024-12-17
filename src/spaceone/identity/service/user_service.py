@@ -76,9 +76,6 @@ class UserService(BaseService):
         params["language"] = language
         params["timezone"] = params.get("timezone", "UTC")
 
-        domain_name = self._get_domain_name(domain_id)
-        domain_display_name = self._get_domain_display_name(domain_id, domain_name)
-
         if reset_password:
             self._check_reset_password_eligibility(user_id, auth_type, email)
 
@@ -89,6 +86,9 @@ class UserService(BaseService):
             reset_password_type = config.get_global(
                 "RESET_PASSWORD_TYPE", "ACCESS_TOKEN"
             )
+
+            domain_name = self._get_domain_name(domain_id)
+            domain_display_name = self._get_domain_display_name(domain_id, domain_name)
 
             if reset_password_type == "ACCESS_TOKEN":
                 identity_conf = config.get_global("IDENTITY", {}) or {}
@@ -125,6 +125,9 @@ class UserService(BaseService):
                 and self._check_invite_external_user_eligibility(user_id, user_id)
             ):
                 email_mgr = EmailManager()
+
+                domain_name = self._get_domain_name(domain_id)
+                domain_display_name = self._get_domain_display_name(domain_id, domain_name)
 
                 console_link = self._get_console_url(domain_name)
                 external_auth_provider = self._get_external_auth_provider(domain_id)
