@@ -1,5 +1,5 @@
 import logging
-import random
+import secrets
 from datetime import datetime, timedelta
 from typing import Union, List
 
@@ -958,7 +958,7 @@ class JobService(BaseService):
 
     @staticmethod
     def _set_workspace_theme(tags: dict = None) -> dict:
-        theme = random.choice(WORKSPACE_COLORS_NAME)
+        theme = secrets.choice(WORKSPACE_COLORS_NAME)
         if tags:
             tags.update({"theme": theme})
         else:

@@ -1,5 +1,5 @@
 import logging
-import random
+import secrets
 import re
 import string
 from typing import Dict, List, Union
@@ -506,7 +506,7 @@ class UserProfileService(BaseService):
     def _generate_temporary_password():
         while True:
             random_password = "".join(
-                random.choice(
+                secrets.choice(
                     string.ascii_uppercase + string.ascii_lowercase + string.digits
                 )
                 for _ in range(12)
