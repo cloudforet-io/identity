@@ -1,6 +1,6 @@
 import copy
 import logging
-import random
+import secrets
 import re
 import string
 from typing import Union
@@ -87,6 +87,9 @@ class UserService(BaseService):
                 "RESET_PASSWORD_TYPE", "ACCESS_TOKEN"
             )
 
+            domain_name = self._get_domain_name(domain_id)
+            domain_display_name = self._get_domain_display_name(domain_id, domain_name)
+
             if reset_password_type == "ACCESS_TOKEN":
                 identity_conf = config.get_global("IDENTITY", {}) or {}
                 token_conf = identity_conf.get("token", {})
@@ -94,7 +97,7 @@ class UserService(BaseService):
 
                 token = self._issue_temporary_token(user_id, domain_id, timeout)
                 reset_password_link = self._get_console_sso_url(
-                    domain_id, token["access_token"]
+                    domain_name, token["access_token"]
                 )
 
                 params["required_actions"] = ["UPDATE_PASSWORD"]
@@ -102,16 +105,16 @@ class UserService(BaseService):
                 user_vo = self.user_mgr.create_user(params)
                 user_id = user_vo.user_id
                 email_manager.send_reset_password_email_when_user_added(
-                    user_id, email, reset_password_link, language
+                    domain_display_name, user_id, email, reset_password_link, language
                 )
             else:
-                console_link = self._get_console_url(domain_id)
+                console_link = self._get_console_url(domain_name)
 
                 user_vo = self.user_mgr.create_user(params)
                 user_id = user_vo.user_id
 
                 email_manager.send_temporary_password_email_when_user_added(
-                    user_id, email, console_link, temp_password, language
+                    domain_display_name, user_id, email, console_link, temp_password, language
                 )
         else:
             user_vo = self.user_mgr.create_user(params)
@@ -123,11 +126,14 @@ class UserService(BaseService):
             ):
                 email_mgr = EmailManager()
 
-                console_link = self._get_console_url(domain_id)
+                domain_name = self._get_domain_name(domain_id)
+                domain_display_name = self._get_domain_display_name(domain_id, domain_name)
+
+                console_link = self._get_console_url(domain_name)
                 external_auth_provider = self._get_external_auth_provider(domain_id)
 
                 email_mgr.send_invite_email_when_external_user_added(
-                    user_id, user_id, console_link, language, external_auth_provider
+                    domain_display_name, user_id, user_id, console_link, language, external_auth_provider
                 )
 
         return user_vo
@@ -157,6 +163,7 @@ class UserService(BaseService):
 
         if params.reset_password:
             domain_id = params.domain_id
+            domain_name = self._get_domain_name(domain_id)
             user_id = user_vo.user_id
             auth_type = user_vo.auth_type
             email = params.email or user_vo.email
@@ -184,14 +191,14 @@ class UserService(BaseService):
             if reset_password_type == "ACCESS_TOKEN":
                 token = self._issue_temporary_token(user_id, domain_id)
                 reset_password_link = self._get_console_sso_url(
-                    domain_id, token["access_token"]
+                    domain_name, token["access_token"]
                 )
 
                 email_manager.send_reset_password_email(
                     user_id, email, reset_password_link, language
                 )
             elif reset_password_type == "PASSWORD":
-                console_link = self._get_console_url(domain_id)
+                console_link = self._get_console_url(domain_name)
 
                 email_manager.send_temporary_password_email(
                     user_id, email, console_link, temp_password, language
@@ -475,9 +482,8 @@ class UserService(BaseService):
             user_id, domain_id, private_jwk, timeout=timeout
         )
 
-    def _get_console_sso_url(self, domain_id: str, token: str) -> str:
-        domain_name = self._get_domain_name(domain_id)
-
+    @staticmethod
+    def _get_console_sso_url(domain_name: str, token: str) -> str:
         console_domain = config.get_global("EMAIL_CONSOLE_DOMAIN")
         console_domain = console_domain.format(domain_name=domain_name)
 
@@ -491,9 +497,8 @@ class UserService(BaseService):
         if user_vos.count() == 1:
             raise ERROR_LAST_ADMIN_CANNOT_DISABLED_DELETED(user_id=user_vo.user_id)
 
-    def _get_console_url(self, domain_id):
-        domain_name = self._get_domain_name(domain_id)
-
+    @staticmethod
+    def _get_console_url(domain_name: str) -> str:
         console_domain = config.get_global("EMAIL_CONSOLE_DOMAIN")
         return console_domain.format(domain_name=domain_name)
 
@@ -508,7 +513,7 @@ class UserService(BaseService):
     def _generate_temporary_password():
         while True:
             random_password = "".join(
-                random.choice(
+                secrets.choice(
                     string.ascii_uppercase + string.ascii_lowercase + string.digits
                 )
                 for _ in range(12)
@@ -557,6 +562,18 @@ class UserService(BaseService):
             else:
                 language = "en"
         return language
+
+    @staticmethod
+    def _get_domain_display_name(domain_id: str, domain_name: str) -> str:
+        config_mgr = ConfigManager()
+        domain_config_data_info = config_mgr.get_auth_config(domain_id)
+        settings = domain_config_data_info.get("settings", {})
+        domain_display_name = settings.get("display_name", "")
+
+        if not domain_display_name:
+            domain_display_name = domain_name
+
+        return domain_display_name
 
     @staticmethod
     def _get_refresh_timeout_from_config(refresh_timeout: int) -> int:
