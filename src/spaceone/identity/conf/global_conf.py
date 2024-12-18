@@ -57,6 +57,8 @@ IDENTITY = {
         "admin_refresh_max_timeout": 2419200,  # 28 days
     },
     "mfa": {"verify_code_timeout": 300},
+    "max_issue_attempts": 10,
+    "issue_block_time": 300,
 }
 
 # Handler Settings

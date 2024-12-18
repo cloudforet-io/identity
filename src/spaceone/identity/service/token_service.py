@@ -1,10 +1,12 @@
 import logging
 from typing import List, Tuple
+from collections import OrderedDict
 
-from spaceone.core import cache
+from spaceone.core import cache, config, utils
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
+
 
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import ERROR_DOMAIN_STATE
@@ -48,6 +50,7 @@ class TokenService(BaseService):
         self.project_mgr = ProjectManager()
         self.project_group_mgr = ProjectGroupManager()
         self.workspace_mgr = WorkspaceManager()
+        self._load_conf()
 
     @transaction()
     @convert_model
@@ -78,34 +81,51 @@ class TokenService(BaseService):
         # Check Domain state is ENABLED
         self._check_domain_state(domain_id)
 
-        token_mgr = TokenManager.get_token_manager_by_auth_type(params.auth_type)
-        token_mgr.authenticate(
-            domain_id, verify_code=verify_code, credentials=credentials
-        )
+        try:
+            token_mgr = TokenManager.get_token_manager_by_auth_type(params.auth_type)
+            token_mgr.authenticate(
+                domain_id, verify_code=verify_code, credentials=credentials
+            )
+        except Exception as e:
+            self._increment_issue_attempts(domain_id, credentials)
+            raise e
 
         user_vo = token_mgr.user
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
-        mfa_type = user_mfa.get('mfa_type')
+        mfa_type = user_mfa.get("mfa_type")
         permissions = self._get_permissions_from_required_actions(user_vo)
 
         mfa_user_id = user_vo.user_id
 
         if self._check_login_protocol_with_user_auth_type(params.auth_type, domain_id):
-            if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type != "MFA":
+            if (
+                user_mfa.get("state", "DISABLED") == "ENABLED"
+                and params.auth_type != "MFA"
+            ):
                 mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
                 if mfa_type == "EMAIL":
                     mfa_email = user_mfa["options"].get("email")
                     mfa_manager.send_mfa_authentication_email(
-                        user_vo.user_id, domain_id, mfa_email, user_vo.language, credentials
+                        user_vo.user_id,
+                        domain_id,
+                        mfa_email,
+                        user_vo.language,
+                        credentials,
                     )
                     mfa_user_id = mfa_email
 
                 elif mfa_type == "OTP":
-                    secret_manager: SecretManager = self.locator.get_manager(SecretManager)
+                    secret_manager: SecretManager = self.locator.get_manager(
+                        SecretManager
+                    )
                     user_secret_id = user_mfa["options"].get("user_secret_id")
-                    otp_secret_key = secret_manager.get_user_otp_secret_key(user_secret_id, domain_id)
+                    otp_secret_key = secret_manager.get_user_otp_secret_key(
+                        user_secret_id, domain_id
+                    )
 
-                    mfa_manager.set_cache_otp_mfa_secret_key(otp_secret_key, user_vo.user_id, domain_id, credentials)
+                    mfa_manager.set_cache_otp_mfa_secret_key(
+                        otp_secret_key, user_vo.user_id, domain_id, credentials
+                    )
 
                 raise ERROR_MFA_REQUIRED(user_id=mfa_user_id, mfa_type=mfa_type)
 
@@ -116,6 +136,8 @@ class TokenService(BaseService):
             timeout=timeout,
             permissions=permissions,
         )
+
+        self._clear_issue_attempts(domain_id, credentials)
 
         return TokenResponse(**token_info)
 
@@ -396,11 +418,17 @@ class TokenService(BaseService):
 
         return user_projects
 
-    def _check_login_protocol_with_user_auth_type(self, user_auth_type: str, domain_id: str) -> bool:
+    def _check_login_protocol_with_user_auth_type(
+        self, user_auth_type: str, domain_id: str
+    ) -> bool:
         if user_auth_type == "EXTERNAL":
             domain: Domain = self.domain_mgr.get_domain(domain_id)
             external_auth_mgr = ExternalAuthManager()
-            external_metadata_protocol = external_auth_mgr.get_auth_info(domain).get('metadata', {}).get('protocol')
+            external_metadata_protocol = (
+                external_auth_mgr.get_auth_info(domain)
+                .get("metadata", {})
+                .get("protocol")
+            )
 
             if external_metadata_protocol == "saml":
                 return False
@@ -413,3 +441,36 @@ class TokenService(BaseService):
             for required_action in required_actions:
                 if required_action == "UPDATE_PASSWORD":
                     raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
+
+    def _increment_issue_attempts(self, domain_id: str, credentials: dict) -> None:
+        if cache.is_set():
+            ordered_credentials = OrderedDict(sorted(credentials.items()))
+            hashed_credentials = utils.dict_to_hash(ordered_credentials)
+            cache_key = f"identity:token:issue-attempt:{domain_id}:{hashed_credentials}"
+
+            issue_attempts: int = cache.get(cache_key) or 0
+
+            if issue_attempts == 0:
+                cache.set(cache_key, value=0, expire=self.ISSUE_BLOCK_TIME)
+            elif issue_attempts == self.MAX_ISSUE_ATTEMPTS:
+                cache.set(cache_key, value=issue_attempts, expire=self.ISSUE_BLOCK_TIME)
+                _LOGGER.debug(f"[_increment_login_attempts] {issue_attempts} attempts")
+            elif issue_attempts > self.MAX_ISSUE_ATTEMPTS:
+                raise ERROR_LOGIN_BLOCKED()
+
+            cache.increment(cache_key)
+
+    @staticmethod
+    def _clear_issue_attempts(domain_id: str, credentials: dict) -> None:
+        if cache.is_set():
+            ordered_credentials = OrderedDict(sorted(credentials.items()))
+            hashed_credentials = utils.dict_to_hash(ordered_credentials)
+            cache_key = f"identity:token:issue-attempt:{domain_id}:{hashed_credentials}"
+            cache.delete(cache_key)
+
+    def _load_conf(self):
+        identity_conf = config.get_global("IDENTITY") or {}
+        token_conf = identity_conf.get("token", {})
+
+        self.ISSUE_BLOCK_TIME = token_conf.get("issue_block_time", 300)
+        self.MAX_ISSUE_ATTEMPTS = token_conf.get("max_issue_attempts", 10)
