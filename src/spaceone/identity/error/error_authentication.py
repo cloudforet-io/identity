@@ -23,3 +23,7 @@ class ERROR_INVALID_GRANT_TYPE(ERROR_INVALID_ARGUMENT):
 
 class ERROR_UPDATE_PASSWORD_REQUIRED(ERROR_INVALID_ARGUMENT):
     _message = "Password reset is required.(user_id = {user_id})"
+
+
+class ERROR_LOGIN_BLOCKED(ERROR_AUTHENTICATE_FAILURE):
+    _message = "Login is blocked. Please try again later."
