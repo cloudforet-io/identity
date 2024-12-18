@@ -1,3 +1,4 @@
+import copy
 import logging
 from typing import List, Tuple
 from collections import OrderedDict
@@ -72,6 +73,7 @@ class TokenService(BaseService):
         timeout = params.timeout
         verify_code = params.verify_code
         credentials = params.credentials
+        auth_type = params.auth_type
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(
@@ -82,12 +84,12 @@ class TokenService(BaseService):
         self._check_domain_state(domain_id)
 
         try:
-            token_mgr = TokenManager.get_token_manager_by_auth_type(params.auth_type)
+            token_mgr = TokenManager.get_token_manager_by_auth_type(auth_type)
             token_mgr.authenticate(
                 domain_id, verify_code=verify_code, credentials=credentials
             )
         except Exception as e:
-            self._increment_issue_attempts(domain_id, credentials)
+            self._increment_issue_attempts(domain_id, credentials, auth_type)
             raise e
 
         user_vo = token_mgr.user
@@ -97,11 +99,8 @@ class TokenService(BaseService):
 
         mfa_user_id = user_vo.user_id
 
-        if self._check_login_protocol_with_user_auth_type(params.auth_type, domain_id):
-            if (
-                user_mfa.get("state", "DISABLED") == "ENABLED"
-                and params.auth_type != "MFA"
-            ):
+        if self._check_login_protocol_with_user_auth_type(auth_type, domain_id):
+            if user_mfa.get("state", "DISABLED") == "ENABLED" and auth_type != "MFA":
                 mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
                 if mfa_type == "EMAIL":
                     mfa_email = user_mfa["options"].get("email")
@@ -137,7 +136,7 @@ class TokenService(BaseService):
             permissions=permissions,
         )
 
-        self._clear_issue_attempts(domain_id, credentials)
+        self._clear_issue_attempts(domain_id, credentials, auth_type)
 
         return TokenResponse(**token_info)
 
@@ -435,16 +434,23 @@ class TokenService(BaseService):
 
         return True
 
-    @staticmethod
-    def _check_user_required_actions(required_actions: list, user_id: str) -> None:
-        if required_actions:
-            for required_action in required_actions:
-                if required_action == "UPDATE_PASSWORD":
-                    raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
+    def _load_conf(self):
+        identity_conf = config.get_global("IDENTITY") or {}
+        token_conf = identity_conf.get("token", {})
 
-    def _increment_issue_attempts(self, domain_id: str, credentials: dict) -> None:
+        self.ISSUE_BLOCK_TIME = token_conf.get("issue_block_time", 300)
+        self.MAX_ISSUE_ATTEMPTS = token_conf.get("max_issue_attempts", 10)
+
+    def _increment_issue_attempts(
+        self, domain_id: str, credentials: dict, auth_type: str
+    ) -> None:
+
         if cache.is_set():
-            ordered_credentials = OrderedDict(sorted(credentials.items()))
+            copied_credentials = self._get_credentials_without_password(
+                credentials, auth_type
+            )
+
+            ordered_credentials = OrderedDict(sorted(copied_credentials.items()))
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
             cache_key = f"identity:token:issue-attempt:{domain_id}:{hashed_credentials}"
 
@@ -452,25 +458,34 @@ class TokenService(BaseService):
 
             if issue_attempts == 0:
                 cache.set(cache_key, value=0, expire=self.ISSUE_BLOCK_TIME)
+            elif issue_attempts < self.MAX_ISSUE_ATTEMPTS:
+                _LOGGER.debug(f"[_increment_login_attempts] {issue_attempts} attempts")
             elif issue_attempts == self.MAX_ISSUE_ATTEMPTS:
                 cache.set(cache_key, value=issue_attempts, expire=self.ISSUE_BLOCK_TIME)
-                _LOGGER.debug(f"[_increment_login_attempts] {issue_attempts} attempts")
             elif issue_attempts > self.MAX_ISSUE_ATTEMPTS:
                 raise ERROR_LOGIN_BLOCKED()
 
             cache.increment(cache_key)
 
-    @staticmethod
-    def _clear_issue_attempts(domain_id: str, credentials: dict) -> None:
+    def _clear_issue_attempts(
+        self, domain_id: str, credentials: dict, auth_type: str
+    ) -> None:
         if cache.is_set():
+            credentials = self._get_credentials_without_password(credentials, auth_type)
             ordered_credentials = OrderedDict(sorted(credentials.items()))
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
             cache_key = f"identity:token:issue-attempt:{domain_id}:{hashed_credentials}"
             cache.delete(cache_key)
 
-    def _load_conf(self):
-        identity_conf = config.get_global("IDENTITY") or {}
-        token_conf = identity_conf.get("token", {})
+    @staticmethod
+    def _check_user_required_actions(required_actions: list, user_id: str) -> None:
+        if required_actions:
+            for required_action in required_actions:
+                if required_action == "UPDATE_PASSWORD":
+                    raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
 
-        self.ISSUE_BLOCK_TIME = token_conf.get("issue_block_time", 300)
-        self.MAX_ISSUE_ATTEMPTS = token_conf.get("max_issue_attempts", 10)
+    @staticmethod
+    def _get_credentials_without_password(credentials: dict, auth_type: str) -> dict:
+        if auth_type == "LOCAL":
+            credentials.pop("password", None)
+        return credentials
