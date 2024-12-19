@@ -93,6 +93,33 @@ class UserManager(BaseManager):
 
         return user_vo.update(params)
 
+    def update_user_password_by_vo(self, user_vo: User, params: dict) -> User:
+        def _rollback(old_data):
+            _LOGGER.info(
+                f'[update_user_by_vo._rollback] Revert Data: {old_data["user_id"]}'
+            )
+            user_vo.update(old_data)
+
+        new_password = params["new_password"]
+        self._check_password_format(new_password)
+
+        required_actions = list(user_vo.required_actions)
+
+        if "UPDATE_PASSWORD" in required_actions:
+            required_actions.remove("UPDATE_PASSWORD")
+        elif not PasswordCipher().checkpw(params["current_password"], user_vo.password):
+            raise ERROR_PASSWORD_NOT_MATCHED(user_id=user_vo.user_id)
+
+        if PasswordCipher().checkpw(new_password, user_vo.password):
+            raise ERROR_PASSWORD_NOT_CHANGED(user_id=user_vo.user_id)
+
+        hashed_pw = PasswordCipher().hashpw(new_password)
+        update_params = {"password": hashed_pw, "required_actions": required_actions}
+
+        self.transaction.add_rollback(_rollback, user_vo.to_dict())
+
+        return user_vo.update(update_params)
+
     @staticmethod
     def delete_user_by_vo(user_vo: User) -> None:
         rb_mgr = RoleBindingManager()

@@ -43,6 +43,10 @@ class ERROR_PASSWORD_NOT_CHANGED(ERROR_UNABLE_TO_RESET_PASSWORD):
     )
 
 
+class ERROR_PASSWORD_NOT_MATCHED(ERROR_UNABLE_TO_RESET_PASSWORD):
+    _message = "Password does not match. (user_id = {user_id})"
+
+
 class ERROR_UNABLE_TO_RESET_PASSWORD_IN_EXTERNAL_AUTH(ERROR_UNABLE_TO_RESET_PASSWORD):
     _message = "Unable to reset password in external authentication system. (user_id = {user_id})"
 

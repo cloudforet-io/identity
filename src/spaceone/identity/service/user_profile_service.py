@@ -84,6 +84,35 @@ class UserProfileService(BaseService):
 
     @transaction(permission="identity:UserProfile.write", role_types=["USER"])
     @convert_model
+    def update_password(
+        self, params: UserProfileUpdatePasswordRequest
+    ) -> Union[UserResponse, dict]:
+        """Update password
+        Args:
+            params (UserProfileUpdatePasswordRequest): {
+                'current_password': 'str',
+                'new_password': 'str',      # required
+                'user_id': 'str',           # injected from auth (required)
+                'domain_id': 'str'          # injected from auth (required)
+            }
+        Returns:
+            None
+        """
+
+        user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+
+        required_actions = list(user_vo.required_actions)
+        if "UPDATE_PASSWORD" not in required_actions and not params.current_password:
+            raise ERROR_REQUIRED_PARAMETER(key="current_password")
+
+        user_vo = self.user_mgr.update_user_password_by_vo(
+            user_vo, params.dict(exclude_unset=True)
+        )
+
+        return UserResponse(**user_vo.to_dict())
+
+    @transaction(permission="identity:UserProfile.write", role_types=["USER"])
+    @convert_model
     def verify_email(self, params: UserProfileVerifyEmailRequest) -> None:
         """Verify email
 
