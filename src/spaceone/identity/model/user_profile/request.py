@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 __all__ = [
     "UserProfileUpdateRequest",
+    "UserProfileUpdatePasswordRequest",
     "UserProfileVerifyEmailRequest",
     "UserProfileConfirmEmailRequest",
     "UserProfileResetPasswordRequest",
@@ -24,6 +25,13 @@ class UserProfileUpdateRequest(BaseModel):
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
+    domain_id: str
+
+
+class UserProfileUpdatePasswordRequest(BaseModel):
+    user_id: str
+    current_password: Union[str, None] = None
+    new_password: str
     domain_id: str
 
 

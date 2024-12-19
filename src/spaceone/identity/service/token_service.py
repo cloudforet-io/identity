@@ -1,4 +1,3 @@
-import copy
 import logging
 from typing import List, Tuple
 from collections import OrderedDict
@@ -454,10 +453,10 @@ class TokenService(BaseService):
             hashed_credentials = utils.dict_to_hash(ordered_credentials)
             cache_key = f"identity:token:issue-attempt:{domain_id}:{hashed_credentials}"
 
-            issue_attempts: int = cache.get(cache_key) or 0
+            issue_attempts: int = cache.get(cache_key) or 1
 
-            if issue_attempts == 0:
-                cache.set(cache_key, value=0, expire=self.ISSUE_BLOCK_TIME)
+            if issue_attempts == 1:
+                cache.set(cache_key, value=issue_attempts, expire=self.ISSUE_BLOCK_TIME)
             elif issue_attempts < self.MAX_ISSUE_ATTEMPTS:
                 _LOGGER.debug(f"[_increment_login_attempts] {issue_attempts} attempts")
             elif issue_attempts == self.MAX_ISSUE_ATTEMPTS:
