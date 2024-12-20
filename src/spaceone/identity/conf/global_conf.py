@@ -88,6 +88,7 @@ LOG = {
                 "Token.issue": ["credentials"],
                 "Token.grant": ["token"],
                 "Job.sync_service_accounts": ["secret_data"],
+                "ServiceAccount.create": ["secret_data"],
             }
         }
     }
