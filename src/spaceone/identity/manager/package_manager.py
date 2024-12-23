@@ -3,8 +3,10 @@ from typing import Tuple
 
 from mongoengine import QuerySet
 from spaceone.core.manager import BaseManager
+from spaceone.core import cache
 
 from spaceone.identity.model.package.database import Package
+from spaceone.identity.manager.managed_resource_manager import ManagedResourceManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,8 +49,24 @@ class PackageManager(BaseManager):
     def filter_packages(self, **conditions) -> QuerySet:
         return self.package_model.filter(**conditions)
 
-    def list_packages(self, query: dict) -> Tuple[QuerySet, int]:
+    def list_packages(self, query: dict, domain_id: str) -> Tuple[QuerySet, int]:
+        self._create_managed_package(domain_id)
         return self.package_model.query(**query)
 
     def stat_package(self, query: dict) -> dict:
         return self.package_model.stat(**query)
+
+    @cache.cacheable(key="identity:managed-package:{domain_id}:sync", expire=300)
+    def _create_managed_package(self, domain_id: str) -> bool:
+        managed_resource_mgr = ManagedResourceManager()
+
+        package_vos = self.filter_packages(domain_id=domain_id)
+
+        if package_vos.count() == 0:
+            managed_package_map = managed_resource_mgr.get_managed_packages()
+
+            for managed_package, managed_package_info in managed_package_map.items():
+                managed_package_info["domain_id"] = domain_id
+                self.create_package(managed_package_info)
+
+        return True

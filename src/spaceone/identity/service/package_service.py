@@ -221,7 +221,9 @@ class PackageService(BaseService):
         """
 
         query = params.query or {}
-        package_vos, total_count = self.package_mgr.list_packages(query)
+        package_vos, total_count = self.package_mgr.list_packages(
+            query, params.domain_id
+        )
 
         packages_info = [package_vo.to_dict() for package_vo in package_vos]
         return PackagesResponse(results=packages_info, total_count=total_count)
@@ -272,13 +274,16 @@ class PackageService(BaseService):
     def _check_existence_of_task_category(domain_id: str, package_id: str):
         opsflow_mgr = OpsflowManager()
         response = opsflow_mgr.list_task_categories_by_package(domain_id, package_id)
-        total_count = response.get('total_count', 0)
+        total_count = response.get("total_count", 0)
 
         if total_count > 0:
             categories_info = response.get("results", [])
-            existing_categories = [category_info["category_id"] for category_info in categories_info]
+            existing_categories = [
+                category_info["category_id"] for category_info in categories_info
+            ]
 
             if existing_categories:
                 raise ERROR_EXIST_RESOURCE(
-                    child="Package", parent=f"TaskCategory({', '.join(existing_categories)})"
+                    child="Package",
+                    parent=f"TaskCategory({', '.join(existing_categories)})",
                 )

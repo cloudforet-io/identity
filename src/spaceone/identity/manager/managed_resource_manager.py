@@ -10,10 +10,10 @@ CURRENT_DIR = os.path.dirname(__file__)
 _PROVIDER_DIR = os.path.join(CURRENT_DIR, "../managed_resource/provider/")
 _SCHEMA_DIR = os.path.join(CURRENT_DIR, "../managed_resource/schema/")
 _ROLE_DIR = os.path.join(CURRENT_DIR, "../managed_resource/role/")
+_PACKAGE_DIR = os.path.join(CURRENT_DIR, "../managed_resource/package/")
 
 
 class ManagedResourceManager(BaseManager):
-
     def get_managed_providers(self) -> dict:
         provider_map = {}
         for provider in self._load_managed_resources(_PROVIDER_DIR):
@@ -34,6 +34,13 @@ class ManagedResourceManager(BaseManager):
             role_map[role["role_id"]] = role
 
         return role_map
+
+    def get_managed_packages(self) -> dict:
+        package_map = {}
+        for package in self._load_managed_resources(_PACKAGE_DIR):
+            package_map[package["name"]] = package
+
+        return package_map
 
     @staticmethod
     def _load_managed_resources(dir_path: str) -> List[dict]:
