@@ -3,6 +3,7 @@ from spaceone.identity.model.app.database import App
 from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.model.external_auth.database import ExternalAuth
 from spaceone.identity.model.job.database import Job
+from spaceone.identity.model.package.database import Package
 from spaceone.identity.model.project.database import Project
 from spaceone.identity.model.project_group.database import ProjectGroup
 from spaceone.identity.model.provider.database import Provider
