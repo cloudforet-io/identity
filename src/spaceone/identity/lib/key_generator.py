@@ -40,6 +40,7 @@ class KeyGenerator:
         role_type: str = None,
         workspace_id: str = None,
         permissions: list = None,
+        users_group: list = None,
         projects: list = None,
         injected_params: dict = None,
         identity_base_url: str = None,
@@ -72,6 +73,9 @@ class KeyGenerator:
         if projects and len(projects) > 0:
             payload["projects"] = projects
 
+        if users_group and len(users_group) > 0:
+            payload["user_groups"] = users_group
+
         if injected_params:
             payload["injected_params"] = injected_params
 
@@ -98,6 +102,7 @@ class KeyGenerator:
             f'iat: {payload.get("iat")}, '
             f'jti: {payload.get("jti")}, '
             f'projects: {payload.get("projects")},'
+            f'user_groups: {payload.get("user_groups")},'
             f'permissions: {payload.get("permissions")},'
             f'injected_params: {payload.get("injected_params")},'
             f'identity_base_url: {payload.get("identity_base_url")},'

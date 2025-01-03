@@ -47,6 +47,7 @@ class TokenManager(BaseManager, ABC):
         timeout=None,
         permissions=None,
         projects=None,
+        user_groups=None,
         app_id=None,
     ):
         if self.is_authenticated is False:
@@ -78,6 +79,7 @@ class TokenManager(BaseManager, ABC):
             workspace_id=workspace_id,
             permissions=permissions,
             projects=projects,
+            users_group=user_groups,
             identity_base_url=identity_base_url,
         )
 
@@ -156,7 +158,9 @@ class TokenManager(BaseManager, ABC):
     @staticmethod
     def _generate_verify_code(length: int = 6) -> str:
         first_digit = str(secrets.randbelow(9) + 1)
-        remaining_digits = ''.join(str(secrets.randbelow(10)) for _ in range(length - 1))
+        remaining_digits = "".join(
+            str(secrets.randbelow(10)) for _ in range(length - 1)
+        )
         verify_code = first_digit + remaining_digits
         return verify_code
 
