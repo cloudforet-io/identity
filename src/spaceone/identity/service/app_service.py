@@ -193,7 +193,9 @@ class AppService(BaseService):
         )
 
         # Update app info
-        app_vo = self.app_mgr.update_app_by_vo({"client_id": client_id}, app_vo)
+        app_vo = self.app_mgr.update_app_by_vo(
+            {"client_id": client_id, "expired_at": params.expired_at}, app_vo
+        )
 
         return AppResponse(**app_vo.to_dict(), client_secret=client_secret)
 
