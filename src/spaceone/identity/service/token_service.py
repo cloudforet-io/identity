@@ -24,6 +24,7 @@ from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.system_manager import SystemManager
 from spaceone.identity.manager.token_manager.base import TokenManager
+from spaceone.identity.manager.user_group_manager import UserGroupManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.app.database import App
@@ -44,6 +45,7 @@ class TokenService(BaseService):
         self.domain_mgr = DomainManager()
         self.domain_secret_mgr = DomainSecretManager()
         self.user_mgr = UserManager()
+        self.user_group_mgr = UserGroupManager()
         self.app_mgr = AppManager()
         self.rb_mgr = RoleBindingManager()
         self.role_mgr = RoleManager()
@@ -254,6 +256,14 @@ class TokenService(BaseService):
         else:
             user_projects = None
 
+        # get user groups in workspace
+        if params.scope == "WORKSPACE":
+            user_groups = self._get_user_groups_in_workspace(
+                domain_id, params.workspace_id, user_vo.user_id
+            )
+        else:
+            user_groups = None
+
         token_info = token_mgr.issue_token(
             private_jwk,
             refresh_private_jwk,
@@ -262,6 +272,7 @@ class TokenService(BaseService):
             workspace_id=params.workspace_id,
             permissions=permissions,
             projects=user_projects,
+            user_groups=user_groups,
             app_id=app_id,  # todo : remove
         )
 
@@ -391,6 +402,16 @@ class TokenService(BaseService):
 
         user_projects = list(set(user_projects))
         return user_projects
+
+    def _get_user_groups_in_workspace(
+        self, domain_id: str, workspace_id: str, user_id: str
+    ) -> list:
+        user_group_vos = self.user_group_mgr.filter_user_groups(
+            domain_id=domain_id, workspace_id=workspace_id, users=[user_id]
+        )
+        user_groups = [user_group_vo.user_group_id for user_group_vo in user_group_vos]
+
+        return user_groups
 
     def _get_user_projects(
         self, user_id: str, workspace_id: str, domain_id: str
