@@ -7,3 +7,4 @@ __all__ = ["EndpointSearchQueryRequest"]
 class EndpointSearchQueryRequest(BaseModel):
     query: Union[dict, None] = None
     service: Union[str, None] = None
+    endpoint_type: Union[str, None] = None
