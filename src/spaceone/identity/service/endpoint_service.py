@@ -35,6 +35,6 @@ class EndpointService(BaseService):
         """
 
         endpoint_mgr: EndpointManager = EndpointManager()
-        endpoints_info, total_count = endpoint_mgr.list_endpoints(params.service)
+        endpoints_info, total_count = endpoint_mgr.list_endpoints(params.service, params.endpoint_type)
 
         return EndpointsResponse(results=endpoints_info, total_count=total_count)
