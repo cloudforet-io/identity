@@ -262,7 +262,7 @@ class RoleBindingService(BaseService):
 
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
 
-        if rb_vo.workspace_id:
+        if rb_vo.workspace_id and not rb_vo.resource_group == "DOMAIN":
             self.update_workspace_user_count(rb_vo.domain_id, rb_vo.workspace_id)
 
         self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
