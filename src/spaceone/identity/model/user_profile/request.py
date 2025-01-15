@@ -19,7 +19,6 @@ __all__ = [
 
 class UserProfileUpdateRequest(BaseModel):
     user_id: str
-    password: Union[str, None] = None
     name: Union[str, None] = None
     email: Union[str, None] = None
     language: Union[str, None] = None

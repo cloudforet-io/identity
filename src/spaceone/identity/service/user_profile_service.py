@@ -60,7 +60,6 @@ class UserProfileService(BaseService):
         """
         Args:
             params (UserProfileUpdateRequest): {
-                'password': 'str',
                 'name': 'str',
                 'email': 'str',
                 'language': 'str',
