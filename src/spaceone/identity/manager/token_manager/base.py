@@ -93,7 +93,12 @@ class TokenManager(BaseManager, ABC):
         return {"access_token": access_token, "refresh_token": refresh_token}
 
     def issue_temporary_token(
-        self, user_id: str, domain_id: str, private_jwk: dict, timeout: int
+        self,
+        user_id: str,
+        domain_id: str,
+        private_jwk: dict,
+        timeout: int,
+        injected_params: dict,
     ) -> dict:
         permissions = [
             "identity:UserProfile",
@@ -108,7 +113,11 @@ class TokenManager(BaseManager, ABC):
 
         # Issue token
         access_token = key_gen.generate_token(
-            "ACCESS_TOKEN", timeout=timeout, role_type="USER", permissions=permissions
+            "ACCESS_TOKEN",
+            timeout=timeout,
+            role_type="USER",
+            permissions=permissions,
+            injected_params=injected_params,
         )
 
         return {"access_token": access_token}

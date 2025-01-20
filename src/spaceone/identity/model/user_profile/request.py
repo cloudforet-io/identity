@@ -31,6 +31,7 @@ class UserProfileUpdatePasswordRequest(BaseModel):
     user_id: str
     current_password: Union[str, None] = None
     new_password: str
+    required_actions: Union[list, None] = None
     domain_id: str
 
 
