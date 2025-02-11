@@ -1,7 +1,9 @@
 import logging
+import pytz
 from datetime import datetime, timedelta
 from typing import Union
 
+from spaceone.core import config
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
@@ -10,9 +12,12 @@ from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.manager.workspace_user_manager import WorkspaceUserManager
 from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.client_secret_manager import ClientSecretManager
 from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.model.app.request import *
 from spaceone.identity.model.app.response import *
 from spaceone.identity.error.error_role import ERROR_NOT_ALLOWED_ROLE_TYPE
@@ -423,6 +428,160 @@ class AppService(BaseService):
         """
         query = params.query or {}
         return self.app_mgr.stat_apps(query)
+
+    @transaction(exclude=["authentication", "authorization", "mutation"])
+    def check_expiring_apps(self, params: dict) -> None:
+        """Check expiring app
+        Args:
+            params (dict): {
+                'params':
+            }
+        """
+
+        expiring_app_check_days_list = config.get_global("EXPIRING_APP_CHECK_DAYS", [1, 7, 30])
+
+        for days in expiring_app_check_days_list:
+            apps_info = self._get_apps_expiring_on_day(days)
+
+            for app_info in apps_info:
+                domain_id = app_info["domain_id"]
+                role_type = app_info["role_type"]
+
+                users_info = []
+                workspace_name = None
+                console_link = ""
+
+                if role_type == "DOMAIN_ADMIN":
+                    users_info = self._get_domain_admin_users(domain_id)
+                    console_link = self._get_domain_app_console_url(domain_id)
+
+                elif role_type == "WORKSPACE_OWNER" or role_type == "WORKSPACE_MEMBER":
+                    workspace_mgr = WorkspaceManager()
+                    workspace_id = app_info["workspace_id"]
+
+                    workspace_vo = workspace_mgr.get_workspace(workspace_id, domain_id)
+
+                    workspace_name = workspace_vo.name
+                    users_info = self._get_workspace_owner_users(domain_id, workspace_id)
+                    users_info.extend(self._get_domain_admin_users(domain_id))
+                    console_link = self._get_workspace_app_console_url(domain_id, workspace_id)
+
+                for user_info in users_info:
+                    if user_info["email"]:
+                        user_id = user_info["user_id"]
+                        app_id = app_info["app_id"]
+                        app_name = app_info["name"]
+                        expired_at = self._convert_app_expired_at_to_user_timezone(app_info["expired_at"], user_info["timezone"])
+                        email = user_info["email"]
+                        language = user_info["language"]
+
+                        email_mgr = EmailManager()
+
+                        if workspace_name:
+                            email_mgr.send_workspace_app_expiration_email(user_id, days, app_id, app_name, workspace_name, expired_at, console_link, email, language)
+                        else :
+                            email_mgr.send_domain_app_expiration_email(user_id, days, app_id, app_name, expired_at, console_link, email, language)
+
+    def _get_apps_expiring_on_day(self, days: int = 1 ) -> list:
+        now = datetime.utcnow()
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=days)
+        end_date = start_date + timedelta(days=1)
+
+        query = {
+            "filter": [
+                {
+                    "k": "expired_at",
+                    "v": start_date.strftime("%Y-%m-%d %H:%M:%S"),
+                    "o": "gte",
+                },
+                {
+                    "k": "expired_at",
+                    "v": end_date.strftime("%Y-%m-%d %H:%M:%S"),
+                    "o": "lt",
+                }
+            ]
+        }
+
+        app_vos, _ = self.app_mgr.list_apps(query)
+
+        apps_info = [app_vo.to_dict() for app_vo in app_vos]
+
+        return apps_info
+
+    def _get_domain_app_console_url(self, domain_id: str) -> str:
+        domain_name = self._get_domain_name(domain_id)
+
+        console_domain = config.get_global("EMAIL_CONSOLE_DOMAIN")
+        console_domain = console_domain.format(domain_name=domain_name)
+
+        return f"{console_domain}admin/iam/app"
+
+    def _get_workspace_app_console_url(self, domain_id: str, workspace_id: str) -> str:
+        domain_name = self._get_domain_name(domain_id)
+
+        console_domain = config.get_global("EMAIL_CONSOLE_DOMAIN")
+        console_domain = console_domain.format(domain_name=domain_name)
+
+        return f"{console_domain}workspace/{workspace_id}/iam/app"
+
+    @staticmethod
+    def _get_domain_name(domain_id: str) -> str:
+        domain_mgr = DomainManager()
+        domain_vo = domain_mgr.get_domain(domain_id)
+        return domain_vo.name
+
+    @staticmethod
+    def _get_domain_admin_users(domain_id: str) -> list:
+        user_mgr = UserManager()
+
+        query = {
+            "filter": [
+                {
+                    "k": "domain_id",
+                    "v": domain_id,
+                    "o": "eq",
+                },
+                {
+                    "k": "role_type",
+                    "v": "DOMAIN_ADMIN",
+                    "o": "eq",
+                }
+            ]
+        }
+
+        user_vos, _ = user_mgr.list_users(query)
+
+        users_info = [user_vo.to_dict() for user_vo in user_vos]
+
+        return users_info
+
+    @staticmethod
+    def _get_workspace_owner_users(domain_id: str, workspace_id: str) -> list:
+        workspace_user_mgr = WorkspaceUserManager()
+
+        query = {
+            "filter": [
+                {
+                    "k": "domain_id",
+                    "v": domain_id,
+                    "o": "eq",
+                }
+            ]}
+
+        users_info, _ = workspace_user_mgr.list_workspace_users(
+            query=query, domain_id=domain_id, workspace_id=workspace_id, role_type="WORKSPACE_OWNER"
+        )
+
+        return users_info
+
+    @staticmethod
+    def _convert_app_expired_at_to_user_timezone(expired_at: datetime , timezone: str) -> str:
+        expired_at = expired_at.replace(tzinfo=pytz.utc)
+        user_tz = pytz.timezone(timezone)
+
+        user_time = expired_at.astimezone(user_tz)
+
+        return f"{user_time.strftime('%Y-%m-%d %H:%M:%S')} ({user_tz})"
 
     @staticmethod
     def _get_expired_at(expired_at: str) -> str:
