@@ -482,7 +482,7 @@ class AppService(BaseService):
                         else :
                             email_mgr.send_domain_app_expiration_email(user_id, days, app_id, app_name, expired_at, console_link, email, language)
 
-    def _get_apps_expiring_on_day(self, days: int = 1 ) -> list:
+    def _get_apps_expiring_on_day(self, days: int) -> list:
         now = datetime.utcnow()
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=days)
         end_date = start_date + timedelta(days=1)
