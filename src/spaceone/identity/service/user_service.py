@@ -114,7 +114,12 @@ class UserService(BaseService):
                 user_id = user_vo.user_id
 
                 email_manager.send_temporary_password_email_when_user_added(
-                    domain_display_name, user_id, email, console_link, temp_password, language
+                    domain_display_name,
+                    user_id,
+                    email,
+                    console_link,
+                    temp_password,
+                    language,
                 )
         else:
             user_vo = self.user_mgr.create_user(params)
@@ -127,13 +132,20 @@ class UserService(BaseService):
                 email_mgr = EmailManager()
 
                 domain_name = self._get_domain_name(domain_id)
-                domain_display_name = self._get_domain_display_name(domain_id, domain_name)
+                domain_display_name = self._get_domain_display_name(
+                    domain_id, domain_name
+                )
 
                 console_link = self._get_console_url(domain_name)
                 external_auth_provider = self._get_external_auth_provider(domain_id)
 
                 email_mgr.send_invite_email_when_external_user_added(
-                    domain_display_name, user_id, user_id, console_link, language, external_auth_provider
+                    domain_display_name,
+                    user_id,
+                    user_id,
+                    console_link,
+                    language,
+                    external_auth_provider,
                 )
 
         return user_vo
@@ -468,7 +480,11 @@ class UserService(BaseService):
         return domain_vo.name
 
     def _issue_temporary_token(
-        self, user_id: str, domain_id: str, timeout: int = None
+        self,
+        user_id: str,
+        domain_id: str,
+        timeout: int = None,
+        injected_params: dict = None,
     ) -> dict:
         if timeout is None:
             identity_conf = config.get_global("IDENTITY", {}) or {}
@@ -479,7 +495,11 @@ class UserService(BaseService):
 
         local_token_manager = LocalTokenManager()
         return local_token_manager.issue_temporary_token(
-            user_id, domain_id, private_jwk, timeout=timeout
+            user_id,
+            domain_id,
+            private_jwk,
+            timeout=timeout,
+            injected_params=injected_params,
         )
 
     @staticmethod

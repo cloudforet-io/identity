@@ -91,6 +91,7 @@ class UserProfileService(BaseService):
             params (UserProfileUpdatePasswordRequest): {
                 'current_password': 'str',
                 'new_password': 'str',      # required
+                'required_actions': 'list', # injected from auth (required)
                 'user_id': 'str',           # injected from auth (required)
                 'domain_id': 'str'          # injected from auth (required)
             }
@@ -101,6 +102,11 @@ class UserProfileService(BaseService):
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
 
         required_actions = list(user_vo.required_actions)
+
+        if params.required_actions:
+            required_actions.extend(params.required_actions)
+            user_vo.required_actions = list(set(required_actions))
+
         if "UPDATE_PASSWORD" not in required_actions and not params.current_password:
             raise ERROR_REQUIRED_PARAMETER(key="current_password")
 
@@ -209,7 +215,8 @@ class UserProfileService(BaseService):
         reset_password_type = config.get_global("RESET_PASSWORD_TYPE", "ACCESS_TOKEN")
         email_manager = EmailManager()
         if reset_password_type == "ACCESS_TOKEN":
-            token = self._issue_temporary_token(user_id, domain_id)
+            injected_params = {"required_actions": ["UPDATE_PASSWORD"]}
+            token = self._issue_temporary_token(user_id, domain_id, injected_params)
             reset_password_link = self._get_console_sso_url(
                 domain_id, token["access_token"]
             )
@@ -488,7 +495,9 @@ class UserProfileService(BaseService):
         domain_vo = self.domain_mgr.get_domain(domain_id)
         return domain_vo.name
 
-    def _issue_temporary_token(self, user_id: str, domain_id: str) -> dict:
+    def _issue_temporary_token(
+        self, user_id: str, domain_id: str, injected_params: dict
+    ) -> dict:
         identity_conf = config.get_global("IDENTITY") or {}
         token_conf = identity_conf.get("token", {})
         timeout = token_conf.get("temporary_token_timeout", 86400)
@@ -497,7 +506,11 @@ class UserProfileService(BaseService):
 
         local_token_manager = LocalTokenManager()
         return local_token_manager.issue_temporary_token(
-            user_id, domain_id, private_jwk=private_jwk, timeout=timeout
+            user_id,
+            domain_id,
+            private_jwk=private_jwk,
+            timeout=timeout,
+            injected_params=injected_params,
         )
 
     def _get_console_sso_url(self, domain_id: str, token: str) -> str:

@@ -257,7 +257,7 @@ class TokenService(BaseService):
             user_projects = None
 
         # get user groups in workspace
-        if params.scope == "WORKSPACE":
+        if params.scope == "WORKSPACE" and user_vo:
             user_groups = self._get_user_groups_in_workspace(
                 domain_id, params.workspace_id, user_vo.user_id
             )
