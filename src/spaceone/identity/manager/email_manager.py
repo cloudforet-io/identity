@@ -20,24 +20,28 @@ LANGUAGE_MAPPER = {
         "temp_password": "Your password has been changed",
         "verify_email": "Verify your notification email",
         "invite_external_user": "You've been invited to join.",
+        "app_expiration_email": "Your App is expiring",
     },
     "ko": {
         "reset_password": "비밀번호 재설정 안내",
         "temp_password": "임시 비밀번호 발급 안내",
         "verify_email": "알림전용 이메일 계정 인증 안내",
         "invite_external_user": "계정 초대 안내.",
+        "app_expiration_email": "앱 만료 안내",
     },
     "en": {
         "reset_password": "Reset your password",
         "temp_password": "Your password has been changed",
         "verify_email": "Verify your notification email",
         "invite_external_user": "You've been invited to join.",
+        "app_expiration_email": "Your App is expiring",
     },
     "ja": {
         "reset_password": "パスワードリセットのご案内",
         "temp_password": "仮パスワード発行のご案内",
         "verify_email": "通知メールアカウント認証のご案内",
         "invite_external_user": "参加するように招待されました",
+        "app_expiration_email": "Your App is expiring",
     },
 }
 
@@ -155,6 +159,45 @@ class EmailManager(BaseManager):
         subject = f'[{service_name}] {language_map_info["verify_email"]}'
 
         self.smtp_connector.send_email(email, subject, email_contents)
+
+    def send_domain_app_expiration_email(self, user_id: str, days_left: int, app_id: str, app_name: str, expired_at: str, console_link: str, email: str, language: str):
+        service_name = config.get_global("EMAIL_SERVICE_NAME")
+        language_map_info = LANGUAGE_MAPPER.get(language, "default")
+
+        template = JINJA_ENV.get_template(f"domain_app_expiration_{language}.html")
+        email_contents = template.render(
+            user_name = user_id,
+            days_left = days_left,
+            app_id=app_id,
+            app_name = app_name,
+            expired_at = expired_at,
+            console_link=console_link,
+            service_name = service_name,
+        )
+        subject = f'[{service_name}] {language_map_info["app_expiration_email"]}'
+
+        self.smtp_connector.send_email(email, subject, email_contents)
+
+    def send_workspace_app_expiration_email(self, user_id: str, days_left: int, app_id: str, app_name: str, workspace_name: str,  expired_at: str, console_link: str, email: str, language: str):
+        service_name = config.get_global("EMAIL_SERVICE_NAME")
+        language_map_info = LANGUAGE_MAPPER.get(language, "default")
+
+        template = JINJA_ENV.get_template(f"workspace_app_expiration_{language}.html")
+        email_contents = template.render(
+            user_name=user_id,
+            days_left=days_left,
+            app_id=app_id,
+            app_name=app_name,
+            workspace_name=workspace_name,
+            expired_at=expired_at,
+            console_link=console_link,
+            service_name=service_name,
+        )
+        subject = f'[{service_name}] {language_map_info["app_expiration_email"]}'
+
+        self.smtp_connector.send_email(email, subject, email_contents)
+
+
 
     @staticmethod
     def _get_service_name():
