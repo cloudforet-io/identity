@@ -41,7 +41,7 @@ LANGUAGE_MAPPER = {
         "temp_password": "仮パスワード発行のご案内",
         "verify_email": "通知メールアカウント認証のご案内",
         "invite_external_user": "参加するように招待されました",
-        "app_expiration_email": "",
+        "app_expiration_email": "Your App is expiring",
     },
 }
 
