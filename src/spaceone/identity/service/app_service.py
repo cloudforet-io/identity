@@ -437,7 +437,6 @@ class AppService(BaseService):
                 'params':
             }
         """
-
         expiring_app_check_days_list = config.get_global("EXPIRING_APP_CHECK_DAYS", [1, 7, 30])
 
         for days in expiring_app_check_days_list:
@@ -447,40 +446,32 @@ class AppService(BaseService):
                 domain_id = app_info["domain_id"]
                 role_type = app_info["role_type"]
 
-                users_info = []
-                workspace_name = None
-                console_link = ""
+                users_info = self._get_domain_admin_users(domain_id)
 
-                if role_type == "DOMAIN_ADMIN":
-                    users_info = self._get_domain_admin_users(domain_id)
-                    console_link = self._get_domain_app_console_url(domain_id)
-
-                elif role_type == "WORKSPACE_OWNER" or role_type == "WORKSPACE_MEMBER":
-                    workspace_mgr = WorkspaceManager()
-                    workspace_id = app_info["workspace_id"]
-
-                    workspace_vo = workspace_mgr.get_workspace(workspace_id, domain_id)
-
-                    workspace_name = workspace_vo.name
-                    users_info = self._get_workspace_owner_users(domain_id, workspace_id)
-                    users_info.extend(self._get_domain_admin_users(domain_id))
-                    console_link = self._get_workspace_app_console_url(domain_id, workspace_id)
+                if role_type == "WORKSPACE_OWNER" or role_type == "WORKSPACE_MEMBER":
+                    users_info.extend(self._get_workspace_owner_users(domain_id, app_info["workspace_id"]))
 
                 for user_info in users_info:
-                    if user_info["email"]:
-                        user_id = user_info["user_id"]
-                        app_id = app_info["app_id"]
-                        app_name = app_info["name"]
-                        expired_at = self._convert_app_expired_at_to_user_timezone(app_info["expired_at"], user_info["timezone"])
-                        email = user_info["email"]
-                        language = user_info["language"]
+                    user_id = user_info["user_id"]
+                    app_id = app_info["app_id"]
+                    app_name = app_info["name"]
+                    expired_at = self._convert_app_expired_at_to_user_timezone(app_info["expired_at"], user_info["timezone"])
+                    email = user_info["email"]
+                    language = user_info["language"]
 
-                        email_mgr = EmailManager()
+                    email_mgr = EmailManager()
 
-                        if workspace_name:
-                            email_mgr.send_workspace_app_expiration_email(user_id, days, app_id, app_name, workspace_name, expired_at, console_link, email, language)
-                        else :
-                            email_mgr.send_domain_app_expiration_email(user_id, days, app_id, app_name, expired_at, console_link, email, language)
+                    if role_type == "DOMAIN_ADMIN":
+                        console_link = self._get_domain_app_console_url(domain_id)
+                        email_mgr.send_domain_app_expiration_email(user_id, days, app_id, app_name, expired_at, console_link, email, language)
+                    else:
+                        workspace_mgr = WorkspaceManager()
+                        workspace_id = app_info["workspace_id"]
+                        workspace_vo = workspace_mgr.get_workspace(workspace_id, domain_id)
+                        workspace_name = workspace_vo.name
+
+                        console_link = self._get_workspace_app_console_url(domain_id, workspace_id)
+                        email_mgr.send_workspace_app_expiration_email(user_id, days, app_id, app_name, workspace_name, expired_at, console_link, email, language)
 
     def _get_apps_expiring_on_day(self, days: int) -> list:
         now = datetime.utcnow()
@@ -545,6 +536,11 @@ class AppService(BaseService):
                     "k": "role_type",
                     "v": "DOMAIN_ADMIN",
                     "o": "eq",
+                },
+                {
+                    "k": "email_verified",
+                    "v": True,
+                    "o": "eq",
                 }
             ]
         }
@@ -564,6 +560,11 @@ class AppService(BaseService):
                 {
                     "k": "domain_id",
                     "v": domain_id,
+                    "o": "eq",
+                },
+                {
+                    "k": "email_verified",
+                    "v": True,
                     "o": "eq",
                 }
             ]}
