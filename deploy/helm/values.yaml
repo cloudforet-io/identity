@@ -111,6 +111,11 @@ application_scheduler:
       queue: identity_q
       interval: 1
       minute: ':30'
+    expiring_app_check_scheduler:
+      backend: spaceone.identity.interface.task.v1.expiring_app_check_scheduler.ExpiringAppCheckScheduler
+      queue: identity_q
+      interval: 1
+      minute: ':00'
 
 # Overwrite worker config
 application_worker:
