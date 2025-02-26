@@ -186,7 +186,8 @@ class ServiceAccountService(BaseService):
             )
 
         if (
-            service_account_vo.secret_id and params.project_id
+            service_account_vo.secret_id
+            and params.project_id
             and service_account_vo.project_id != params.project_id
         ):
             secret_manager = SecretManager()
