@@ -187,6 +187,7 @@ class ServiceAccountService(BaseService):
 
         if (
             service_account_vo.secret_id
+            and params.project_id
             and service_account_vo.project_id != params.project_id
         ):
             secret_manager = SecretManager()
@@ -468,7 +469,7 @@ class ServiceAccountService(BaseService):
             "user_projects",
         ]
     )
-    @set_query_page_limit(2000)
+    # @set_query_page_limit(2000)
     @convert_model
     def analyze(self, params: ServiceAccountAnalyzeQueryRequest) -> dict:
         """analyze service accounts
