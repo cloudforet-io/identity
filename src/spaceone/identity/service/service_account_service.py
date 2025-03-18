@@ -10,6 +10,8 @@ from spaceone.identity.error.custom import *
 from spaceone.identity.manager.agent_manager import AgentManager
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.client_secret_manager import ClientSecretManager
+from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.model import App, ServiceAccount
 from spaceone.identity.model.app.response import AppResponse
 from spaceone.identity.model.service_account.request import *
@@ -36,7 +38,10 @@ class ServiceAccountService(BaseService):
         self.service_account_mgr = ServiceAccountManager()
         self.app_mgr = AppManager()
         self.agent_mgr = AgentManager()
+        self.project_mgr = ProjectManager()
         self.resource_mgr = ResourceManager()
+        self.rb_mgr = RoleBindingManager()
+        self.user_mgr = UserManager()
 
     @transaction(
         permission="identity:ServiceAccount.write",
@@ -73,8 +78,7 @@ class ServiceAccountService(BaseService):
         )
 
         # Check project
-        project_mgr = ProjectManager()
-        project_mgr.get_project(
+        self.project_mgr.get_project(
             params.project_id, params.domain_id, params.workspace_id
         )
 
@@ -95,6 +99,29 @@ class ServiceAccountService(BaseService):
             trusted_account_vo = None
             params.trusted_account_id = None
             secret_type = "SECRET"
+
+        if user_id := params.service_account_mgr_id:
+            # check user_id is valid
+            self.user_mgr.get_user(user_id=user_id, domain_id=params.domain_id)
+
+            rb_vos = self.rb_mgr.filter_role_bindings(
+                user_id=user_id,
+                workspace_id=params.workspace_id,
+                domain_id=params.domain_id,
+            )
+            if rb_vos.count() == 0:
+                raise ERROR_NOT_FOUND(key="service_account_mgr_id", value=user_id)
+
+            if rb_vos.count() > 0:
+                project_vo = self.project_mgr.get_project(
+                    params.project_id, params.domain_id, params.workspace_id
+                )
+
+                if project_vo.project_type == "PRIVATE":
+                    project_users = project_vo.users or []
+                    users = list(set(project_users + [params.service_account_mgr_id]))
+                    add_member_params = {"users": users}
+                    self.project_mgr.update_project_by_vo(add_member_params, project_vo)
 
         service_account_vo = self.service_account_mgr.create_service_account(
             params.dict()
@@ -185,6 +212,26 @@ class ServiceAccountService(BaseService):
                 params.data,
             )
 
+        # check service_account_mgr_id is valid in changed project
+        if (
+            params.project_id
+            and service_account_vo.service_account_mgr_id
+            and service_account_vo.project_id != params.project_id
+        ):
+            project_vo = self.project_mgr.get_project(
+                project_id=params.project_id,
+                domain_id=params.domain_id,
+                workspace_id=params.workspace_id,
+                user_projects=params.user_projects,
+            )
+
+            if (
+                project_vo.project_type == "PRIVATE"
+                and service_account_vo.service_account_mgr_id not in project_vo.users
+            ):
+                params.service_account_mgr_id = None
+
+        # change secret's project_id
         if (
             service_account_vo.secret_id
             and params.project_id
