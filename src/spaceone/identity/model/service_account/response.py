@@ -16,6 +16,7 @@ class ServiceAccountResponse(BaseModel):
     tags: Union[dict, None] = None
     reference_id: Union[str, None] = None
     is_managed: Union[bool, None] = None
+    service_account_mgr_id: Union[str, None] = None
     secret_schema_id: Union[str, None] = None
     secret_id: Union[str, None] = None
     trusted_account_id: Union[str, None] = None

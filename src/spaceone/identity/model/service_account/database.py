@@ -18,6 +18,7 @@ class ServiceAccount(MongoModel):
     reference_id = StringField(max_length=255, default=None, null=True)
     is_managed = BooleanField(default=False)
     cost_info = DictField(default=None)
+    service_account_mgr_id = StringField(max_length=40, null=True, default=None)
     secret_schema_id = StringField(max_length=40)
     secret_id = StringField(max_length=40)
     trusted_account_id = StringField(max_length=40, null=True, default=None)
@@ -50,6 +51,7 @@ class ServiceAccount(MongoModel):
             "state",
             "provider",
             "is_managed",
+            "service_account_mgr_id",
             "trusted_account_id",
             "project_id",
             "workspace_id",

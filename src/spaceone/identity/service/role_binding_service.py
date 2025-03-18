@@ -4,10 +4,14 @@ from typing import Union
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 
-from spaceone.identity.error import ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING
+from spaceone.identity.error import (
+    ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING,
+    ERROR_SERVICE_ACCOUNT_MANAGER_REGISTERED,
+)
 from spaceone.identity.error.error_role import *
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 from spaceone.identity.manager.role_manager import RoleManager
+from spaceone.identity.manager.service_account_manager import ServiceAccountManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.role_binding.request import *
@@ -224,6 +228,18 @@ class RoleBindingService(BaseService):
         rb_vo = self.role_binding_manager.get_role_binding(
             params.role_binding_id, params.domain_id, params.workspace_id
         )
+
+        if rb_vo.resource_group == "WORKSPACE":
+            service_account_mgr = ServiceAccountManager()
+            service_account_vos = service_account_mgr.filter_service_accounts(
+                domain_id=params.domain_id,
+                workspace_id=rb_vo.workspace_id,
+                service_account_mgr_id=rb_vo.user_id,
+            )
+            if service_account_vos.count() > 0:
+                raise ERROR_SERVICE_ACCOUNT_MANAGER_REGISTERED(
+                    service_account_id=service_account_vos[0].service_account_id
+                )
 
         if rb_vo.workspace_group_id:
             raise ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING(
