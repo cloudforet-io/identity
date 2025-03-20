@@ -213,23 +213,23 @@ class ServiceAccountService(BaseService):
             )
 
         # check service_account_mgr_id is valid in changed project
-        if (
-            params.project_id
-            and service_account_vo.service_account_mgr_id
-            and service_account_vo.project_id != params.project_id
-        ):
-            project_vo = self.project_mgr.get_project(
-                project_id=params.project_id,
-                domain_id=params.domain_id,
-                workspace_id=params.workspace_id,
-                user_projects=params.user_projects,
+        if params.service_account_mgr_id:
+            self._check_service_account_mgr_exist(
+                params.service_account_mgr_id, params.domain_id, params.workspace_id
             )
 
-            if (
-                project_vo.project_type == "PRIVATE"
-                and service_account_vo.service_account_mgr_id not in project_vo.users
-            ):
-                params.service_account_mgr_id = None
+            project_vo = self.project_mgr.get_project(
+                service_account_vo.project_id,
+                params.domain_id,
+                params.workspace_id,
+                params.user_projects,
+            )
+
+            if project_vo.project_type == "PRIVATE":
+                project_users = project_vo.users or []
+                users = list(set(project_users + [params.service_account_mgr_id]))
+                add_member_params = {"users": users}
+                self.project_mgr.update_project_by_vo(add_member_params, project_vo)
 
         # change secret's project_id
         if (
@@ -627,3 +627,23 @@ class ServiceAccountService(BaseService):
     @staticmethod
     def _get_expired_at() -> str:
         return (datetime.utcnow() + timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S")
+
+    def _check_service_account_mgr_exist(
+        self,
+        service_account_mgr_id: str,
+        domain_id: str,
+        workspace_id: str,
+    ) -> None:
+
+        # check user_id is valid
+        self.user_mgr.get_user(user_id=service_account_mgr_id, domain_id=domain_id)
+
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            user_id=service_account_mgr_id,
+            workspace_id=workspace_id,
+            domain_id=domain_id,
+        )
+        if rb_vos.count() == 0:
+            raise ERROR_NOT_FOUND(
+                key="service_account_mgr_id", value=service_account_mgr_id
+            )
