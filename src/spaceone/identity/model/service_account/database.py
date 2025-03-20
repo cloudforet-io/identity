@@ -38,6 +38,7 @@ class ServiceAccount(MongoModel):
             "tags",
             "is_managed",
             "cost_info",
+            "service_account_mgr_id",
             "secret_schema_id",
             "secret_id",
             "trusted_account_id",
