@@ -102,26 +102,20 @@ class ServiceAccountService(BaseService):
 
         if user_id := params.service_account_mgr_id:
             # check user_id is valid
-            self.user_mgr.get_user(user_id=user_id, domain_id=params.domain_id)
 
-            rb_vos = self.rb_mgr.filter_role_bindings(
-                user_id=user_id,
-                workspace_id=params.workspace_id,
-                domain_id=params.domain_id,
+            self._check_service_account_mgr_exist(
+                user_id, params.domain_id, params.workspace_id
             )
-            if rb_vos.count() == 0:
-                raise ERROR_NOT_FOUND(key="service_account_mgr_id", value=user_id)
 
-            if rb_vos.count() > 0:
-                project_vo = self.project_mgr.get_project(
-                    params.project_id, params.domain_id, params.workspace_id
-                )
+            project_vo = self.project_mgr.get_project(
+                params.project_id, params.domain_id, params.workspace_id
+            )
 
-                if project_vo.project_type == "PRIVATE":
-                    project_users = project_vo.users or []
-                    users = list(set(project_users + [params.service_account_mgr_id]))
-                    add_member_params = {"users": users}
-                    self.project_mgr.update_project_by_vo(add_member_params, project_vo)
+            if project_vo.project_type == "PRIVATE":
+                project_users = project_vo.users or []
+                users = list(set(project_users + [params.service_account_mgr_id]))
+                add_member_params = {"users": users}
+                self.project_mgr.update_project_by_vo(add_member_params, project_vo)
 
         service_account_vo = self.service_account_mgr.create_service_account(
             params.dict()
@@ -636,7 +630,12 @@ class ServiceAccountService(BaseService):
     ) -> None:
 
         # check user_id is valid
-        self.user_mgr.get_user(user_id=service_account_mgr_id, domain_id=domain_id)
+        user_vo = self.user_mgr.get_user(
+            user_id=service_account_mgr_id, domain_id=domain_id
+        )
+
+        if not user_vo.email_verified:
+            raise ERROR_USER_EMAIL_NOT_VERIFIED(user_id=user_vo.user_id)
 
         rb_vos = self.rb_mgr.filter_role_bindings(
             user_id=service_account_mgr_id,
