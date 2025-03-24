@@ -37,3 +37,7 @@ class ERROR_USER_EXIST_IN_WORKSPACE_GROUP(ERROR_INVALID_ARGUMENT):
 
 class ERROR_SERVICE_ACCOUNT_MANAGER_REGISTERED(ERROR_INVALID_ARGUMENT):
     _message = "Not allowed to delete because of registered service account manager. (service_account_id = {service_account_id})"
+
+
+class ERROR_USER_EMAIL_NOT_VERIFIED(ERROR_INVALID_ARGUMENT):
+    _message = "User email is not verified. (user_id = {user_id})"
