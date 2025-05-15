@@ -634,8 +634,9 @@ class ServiceAccountService(BaseService):
             user_id=service_account_mgr_id, domain_id=domain_id
         )
 
-        if not user_vo.email_verified:
-            raise ERROR_USER_EMAIL_NOT_VERIFIED(user_id=user_vo.user_id)
+        # Temporary comment due to assignment scenario
+        # if not user_vo.email_verified:
+        #     raise ERROR_USER_EMAIL_NOT_VERIFIED(user_id=user_vo.user_id)
 
         rb_vos = self.rb_mgr.filter_role_bindings(
             user_id=service_account_mgr_id,
