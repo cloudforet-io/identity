@@ -105,6 +105,7 @@ CONNECTORS = {
             "secret": "grpc://secret:50051",
             "repository": "grpc://repository:50051",
         },
+        "client_timeout": 3600,
     },
     "SMTPConnector": {
         # "host": "smtp.mail.com",
