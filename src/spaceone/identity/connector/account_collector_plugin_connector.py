@@ -20,12 +20,13 @@ class AccountCollectorPluginConnector(BaseConnector):
 
     def initialize(self, endpoint: str) -> None:
         static_endpoint = self.config.get("endpoint")
+        timeout = self.config.get("client_timeout", 3600)
 
         if static_endpoint:
             endpoint = static_endpoint
 
         self.client = self.locator.get_connector(
-            "SpaceConnector", endpoint=endpoint, token="NO_TOKEN"
+            "SpaceConnector", endpoint=endpoint, token="NO_TOKEN", timeout=timeout
         )
 
         self.secret_data = self.config.get("secret_data")
