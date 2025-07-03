@@ -32,7 +32,7 @@ class ProjectService(BaseService):
         self.resource_mgr = ResourceManager()
         self.workspace_mgr = WorkspaceManager()
 
-    @transaction(permission="identity:Project.write", role_types=["WORKSPACE_OWNER"])
+    @transaction(permission="identity:Project.write", role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"])
     @convert_model
     def create(self, params: ProjectCreateRequest) -> Union[ProjectResponse, dict]:
         """Create project
