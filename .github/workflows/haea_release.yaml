@@ -1,4 +1,4 @@
-name: "[Dispatch] Release"
+name: "HEAE Release"
 
 on:
   workflow_dispatch:
@@ -47,48 +47,8 @@ jobs:
           fields: repo,workflow,job
           author_name: Github Action Slack
 
-  pypi:
-    needs: tagging
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-
-      - name: Set python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-
-      - name: Install dependencies
-        run: |
-            python -m pip install --upgrade pip
-            pip install setuptools wheel twine
-
-      - name: Make all and Packaging
-        run: |
-          cd src
-          python setup.py sdist bdist_wheel
-
-      - name: Publish a Python distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          verbose: true
-          packages-dir: src/dist/
-
-      - name: Notice when job fails
-        if: failure()
-        uses: 8398a7/action-slack@v3.15.0
-        with:
-          status: ${{job.status}}
-          fields: repo,workflow,job
-          author_name: Github Action Slack
-
   docker:
-    needs: pypi
+    needs: tagging
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
