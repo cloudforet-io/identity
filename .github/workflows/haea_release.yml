@@ -1,4 +1,4 @@
-name: "HEAE Release"
+name: "HAEA Release"
 
 on:
   workflow_dispatch:
@@ -107,16 +107,4 @@ jobs:
         with:
           status: ${{job.status}}
           fields: repo,workflow,job
-          author_name: Github Action Slack
-
-  notification:
-    needs: docker
-    runs-on: ubuntu-latest
-    steps:
-      - name: Slack
-        if: always()
-        uses: 8398a7/action-slack@v3.15.0
-        with:
-          status: ${{job.status}}
-          fields: repo,message,commit,author,action,ref,workflow,job
           author_name: Github Action Slack
