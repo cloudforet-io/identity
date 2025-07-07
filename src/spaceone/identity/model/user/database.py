@@ -37,7 +37,7 @@ class User(MongoModel):
     language = StringField(max_length=7, default="en")
     timezone = StringField(max_length=50, default="UTC")
     refresh_timeout = IntField(default=None, min_value=1800, max_value=2592000)
-    tags = DictField(default=None)
+    tags = DictField(default={})
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
     last_accessed_at = DateTimeField(default=None, null=True)
