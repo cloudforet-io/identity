@@ -17,7 +17,7 @@ WORKDIR ${SRC_DIR}
 
 RUN python3 setup.py install && rm -rf /tmp/*
 
-RUN pip install --upgrade spaceone-api====2.0.283
+RUN pip install --upgrade spaceone-api==2.0.283
 
 EXPOSE ${SPACEONE_PORT}
 
