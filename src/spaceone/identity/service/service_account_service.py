@@ -40,7 +40,7 @@ class ServiceAccountService(BaseService):
 
     @transaction(
         permission="identity:ServiceAccount.write",
-        role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
     @convert_model
     def create(
