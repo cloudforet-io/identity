@@ -28,7 +28,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "spaceone-core",
-        "spaceone-api==2.0.283",
+        "spaceone-api",
         "langcodes",
         "bcrypt",
         "jinja2",
