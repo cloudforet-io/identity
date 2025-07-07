@@ -27,8 +27,8 @@ setup(
     license="Apache License 2.0",
     packages=find_packages(),
     install_requires=[
-        "spaceone-core",
-        "spaceone-api",
+        "spaceone-core==2.0.98",
+        "spaceone-api==2.0.283",
         "langcodes",
         "bcrypt",
         "jinja2",

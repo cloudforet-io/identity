@@ -391,13 +391,7 @@ class UserService(BaseService):
         query = params.query or {}
         user_vos, total_count = self.user_mgr.list_users(query)
 
-        users_info=[]
-        for user_vo in user_vos:
-            user_dict = user_vo.to_dict()
-            if "tags" not in user_dict or user_dict["tags"] is None:
-                user_dict["tags"] = {}
-            users_info.extend(user_dict)
-
+        users_info = [user_vo.to_dict() for user_vo in user_vos]
         return UsersResponse(results=users_info, total_count=total_count)
 
     @transaction(permission="identity:User.read", role_types=["DOMAIN_ADMIN"])
