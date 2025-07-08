@@ -411,6 +411,7 @@ class JobService(BaseService):
                 # Merge plugin options and trusted_account plugin options
                 options = plugin_info.get("options", {})
                 options.update(plugin_options)
+                options.update(sync_options)
                 schema_id = plugin_info.get("schema_id")
 
                 (
