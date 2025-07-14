@@ -3,6 +3,7 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Union, List
 
+from dateutil.relativedelta import relativedelta
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 from spaceone.core import config
@@ -246,7 +247,7 @@ class JobService(BaseService):
 
             update_params["service_account_count"] = service_account_vos.count()
 
-            month_cost = self._get_this_month_cost(
+            month_cost = self._get_month_cost_from_cost_report(
                 cost_analysis_mgr, domain_id, workspace_id
             )
 
@@ -301,36 +302,38 @@ class JobService(BaseService):
         else:
             return False
 
-    @staticmethod
-    def _get_this_month_cost(
+    def _get_month_cost_from_cost_report(
+        self,
         cost_analysis_mgr: CostAnalysisManager,
         domain_id: str,
         workspace_id: str,
     ) -> float:
-        system_token = config.get_global("TOKEN")
-        now = datetime.utcnow()
-        report_month = now.strftime("%Y-%m")
+        for month_delta in [-1, -2]:
+            report_month = (datetime.utcnow() + relativedelta(months=month_delta)).strftime("%Y-%m")
+            cost = self.get_monthly_cost(cost_analysis_mgr, domain_id, workspace_id, report_month)
+            if cost > 0:
+                return cost
+        return 0
 
-        # Get Monthly Cost
+    @staticmethod
+    def get_monthly_cost(cost_analysis_mgr: CostAnalysisManager, domain_id: str, workspace_id: str, report_month: str) -> float:
         params = {
-            "status": "IN_PROGRESS",
             "query": {
                 "filter": [
                     {"k": "report_month", "v": report_month, "o": "eq"},
                     {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "status", "v": "EXPIRED", "o": "not"},
                 ]
             },
         }
-
         response = cost_analysis_mgr.list_cost_reports(
-            params, token=system_token, x_domain_id=domain_id
+            params, token=config.get_global("TOKEN"), x_domain_id=domain_id
         )
         results = response.get("results", [])
-        if len(results) > 0:
+        if results:
             currency = results[0]["currency"]
             return results[0]["cost"][currency]
-        else:
-            return 0
+        return 0
 
     @staticmethod
     def _get_dormancy_settings(domain_id: str) -> dict:
