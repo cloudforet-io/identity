@@ -1,7 +1,7 @@
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Union, List
+from typing import Union, List, Optional
 
 from dateutil.relativedelta import relativedelta
 from spaceone.core.service import *
@@ -311,12 +311,12 @@ class JobService(BaseService):
         for month_delta in [-1, -2]:
             report_month = (datetime.utcnow() + relativedelta(months=month_delta)).strftime("%Y-%m")
             cost = self.get_monthly_cost(cost_analysis_mgr, domain_id, workspace_id, report_month)
-            if cost > 0:
+            if cost is not None:
                 return cost
         return 0
 
     @staticmethod
-    def get_monthly_cost(cost_analysis_mgr: CostAnalysisManager, domain_id: str, workspace_id: str, report_month: str) -> float:
+    def get_monthly_cost(cost_analysis_mgr: CostAnalysisManager, domain_id: str, workspace_id: str, report_month: str) -> Optional[float]:
         params = {
             "query": {
                 "filter": [
@@ -333,7 +333,7 @@ class JobService(BaseService):
         if results:
             currency = results[0]["currency"]
             return results[0]["cost"][currency]
-        return 0
+        return None
 
     @staticmethod
     def _get_dormancy_settings(domain_id: str) -> dict:
