@@ -260,6 +260,10 @@ class UserProfileService(BaseService):
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        user_vo_mfa_enforce = user_mfa.get("options", {}).get("enforce") == True
+
+        if user_vo_mfa_enforce is True and user_mfa.get('mfa_type') is not None and mfa_type != user_mfa.get('mfa_type'):
+            raise ERROR_INVALID_PARAMETER(key="mfa.mfa_type", reason="Can only request with the enforced MFA type.")
 
         self._check_mfa_options(options, mfa_type)
 
@@ -270,7 +274,7 @@ class UserProfileService(BaseService):
 
         user_mfa["mfa_type"] = mfa_type
         user_mfa["state"] = user_mfa.get("state", "DISABLED")
-        user_mfa["options"] = options
+        user_mfa["options"] = { **user_mfa.get("options", {}), **options }
 
         if mfa_type in ["EMAIL", "OTP"]:
             user_vo.mfa = mfa_manager.enable_mfa(user_id, domain_id, user_mfa, user_vo)
@@ -336,6 +340,7 @@ class UserProfileService(BaseService):
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         mfa_state = user_mfa.get("state", "DISABLED")
+        mfa_enforce = user_mfa.get("options", {}).get("enforce") == True
 
         if mfa_state == "DISABLED":
             user_mfa = MFAManager.get_mfa_info(credentials)["user_mfa"]
@@ -346,17 +351,25 @@ class UserProfileService(BaseService):
             raise ERROR_MFA_NOT_ENABLED(user_id=user_id)
 
         mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
+        update_require_actions_model = list(user_vo.required_actions)
 
         if mfa_manager.confirm_mfa(credentials, verify_code):
 
             user_mfa = mfa_manager.set_mfa_options(user_mfa, credentials)
 
             if mfa_state == "ENABLED":
-                user_mfa = {"state": "DISABLED"}
+                user_mfa = {"state": "DISABLED", **({"options": {"enforce": mfa_enforce}} if mfa_enforce else {})}
+                update_require_actions_model = [
+                    action for action in update_require_actions_model if action != "ENFORCE_MFA"
+                ]
             elif mfa_state == "DISABLED":
                 user_mfa["state"] = "ENABLED"
+                if mfa_enforce is True:
+                    update_require_actions_model = [
+                        action for action in update_require_actions_model if action != "ENFORCE_MFA"
+                    ]
 
-            user_vo = self.user_mgr.update_user_by_vo({"mfa": user_mfa}, user_vo)
+            user_vo = self.user_mgr.update_user_by_vo({"mfa": user_mfa, "required_actions": update_require_actions_model}, user_vo)
 
         else:
             raise ERROR_INVALID_VERIFY_CODE(verify_code=verify_code)
