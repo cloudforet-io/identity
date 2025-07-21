@@ -304,7 +304,7 @@ class TokenService(BaseService):
 
     @staticmethod
     def _get_permissions_from_required_actions(user_vo: User) -> Union[List[str], None]:
-        if "UPDATE_PASSWORD" in user_vo.required_actions:
+        if set(user_vo.required_actions) & {"UPDATE_PASSWORD", "ENFORCE_MFA"}:
             return [
                 "identity:UserProfile",
             ]
@@ -441,16 +441,17 @@ class TokenService(BaseService):
         self, user_auth_type: str, domain_id: str
     ) -> bool:
         if user_auth_type == "EXTERNAL":
-            domain: Domain = self.domain_mgr.get_domain(domain_id)
-            external_auth_mgr = ExternalAuthManager()
-            external_metadata_protocol = (
-                external_auth_mgr.get_auth_info(domain)
-                .get("metadata", {})
-                .get("protocol")
-            )
+            return False
+            # domain: Domain = self.domain_mgr.get_domain(domain_id)
+            # external_auth_mgr = ExternalAuthManager()
+            # external_metadata_protocol = (
+            #     external_auth_mgr.get_auth_info(domain)
+            #     .get("metadata", {})
+            #     .get("protocol")
+            # )
 
-            if external_metadata_protocol == "saml":
-                return False
+            # if external_metadata_protocol == "saml":
+            #     return False
 
         return True
 
