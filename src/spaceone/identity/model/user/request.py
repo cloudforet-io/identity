@@ -33,6 +33,7 @@ class UserCreateRequest(BaseModel):
     tags: Union[dict, None] = None
     reset_password: Union[bool, None] = False
     domain_id: str
+    mfa: Union[dict, None] = None
 
 
 class UserUpdateRequest(BaseModel):
@@ -45,6 +46,7 @@ class UserUpdateRequest(BaseModel):
     tags: Union[dict, None] = None
     reset_password: Union[bool, None] = None
     domain_id: str
+    mfa: Union[dict, None] = None
 
 
 class UserVerifyEmailRequest(BaseModel):

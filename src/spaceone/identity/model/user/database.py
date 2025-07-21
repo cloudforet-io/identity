@@ -33,7 +33,7 @@ class User(MongoModel):
         ),
     )
     mfa = EmbeddedDocumentField(MFA)
-    required_actions = ListField(StringField(choices=("UPDATE_PASSWORD",)), default=[])
+    required_actions = ListField(StringField(choices=("UPDATE_PASSWORD", "ENFORCE_MFA")), default=[])
     language = StringField(max_length=7, default="en")
     timezone = StringField(max_length=50, default="UTC")
     refresh_timeout = IntField(default=None, min_value=1800, max_value=2592000)
