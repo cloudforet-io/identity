@@ -37,7 +37,7 @@ class UserCreateRequest(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    user_id: str 
+    user_id: str
     password: Union[str, None] = None
     name: Union[str, None] = None
     email: Union[str, None] = None
@@ -47,7 +47,6 @@ class UserUpdateRequest(BaseModel):
     reset_password: Union[bool, None] = None
     domain_id: str
     mfa: Union[dict, None] = None
-    required_actions: Union[List[str], None] = None
 
 
 class UserVerifyEmailRequest(BaseModel):

@@ -194,7 +194,6 @@ class UserService(BaseService):
             UserResponse:
 
         """
-
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
         update_user_data_model = {}
         update_require_actions_model = list(user_vo.required_actions or [])
@@ -358,15 +357,14 @@ class UserService(BaseService):
                 )
 
         update_user_data_model: dict = {}
+        update_required_actions_model = set(user_vo.required_actions)
 
         if mfa_enforce:
-            update_user_data_model["required_actions"] = list(
-                set(user_vo.required_actions + ["ENFORCE_MFA"])
-            )
+            update_required_actions_model.add("ENFORCE_MFA")
         else:
-            update_user_data_model["required_actions"] = list(
-                set(user_vo.required_actions - ["ENFORCE_MFA"])
-            )
+            update_required_actions_model.discard("ENFORCE_MFA")
+
+        update_user_data_model["required_actions"] = list(update_required_actions_model)
 
         update_user_data_model["mfa"] = {
             "state": "DISABLED",
