@@ -71,7 +71,7 @@ class UserManager(BaseManager):
         if email := params.get("email"):
             self._check_email_format(email)
 
-        required_actions = list(user_vo.required_actions)
+        required_actions = list(params.get("required_actions", user_vo.required_actions or []))
         is_change_required_actions = False
 
         if new_password := params.get("password"):
