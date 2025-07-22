@@ -392,6 +392,35 @@ class WorkspaceService(BaseService):
 
         return WorkspacesResponse(results=workspaces_info, total_count=total_count)
 
+    @transaction(
+        permission="identity:Workspace.read",
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER"],
+    )
+    @append_query_filter(
+        [
+            "workspace_id",
+            "domain_id",
+        ]
+    )
+    # @set_query_page_limit(2000)
+    @convert_model
+    def analyze(self, params: WorkspaceAnalyzeQueryRequest) -> dict:
+        """analyze workspaces
+        Args:
+            params (WorkspaceAnalyzeQueryRequest): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
+                'workspace_id': 'str',                  # injected from auth
+                'domain_id': 'str',                     # injected from auth (required)
+            }
+        Returns:
+            dict: {
+                'results': 'list',
+                'total_count': 'int'
+            }
+        """
+        query = params.query or {}
+        return self.workspace_mgr.analyze_workspaces(query)
+
     @transaction(permission="identity:Workspace.read", role_types=["DOMAIN_ADMIN"])
     @append_query_filter(["domain_id"])
     @append_keyword_filter(["workspace_id", "name"])

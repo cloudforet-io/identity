@@ -14,6 +14,7 @@ __all__ = [
     "WorkspaceGetRequest",
     "WorkspaceCheckRequest",
     "WorkspaceSearchQueryRequest",
+    "WorkspaceAnalyzeQueryRequest",
     "WorkspaceStatQueryRequest",
     "State",
 ]
@@ -89,6 +90,10 @@ class WorkspaceSearchQueryRequest(BaseModel):
     workspace_group_id: Union[str, None] = None
     domain_id: str
 
+class WorkspaceAnalyzeQueryRequest(BaseModel):
+    query: Union[dict, None] = None
+    workspace_id: Union[str, None] = None
+    domain_id: str
 
 class WorkspaceStatQueryRequest(BaseModel):
     query: dict

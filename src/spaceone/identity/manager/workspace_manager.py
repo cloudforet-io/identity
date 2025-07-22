@@ -107,5 +107,8 @@ class WorkspaceManager(BaseManager):
 
         return workspace_group_workspaces, total_count
 
+    def analyze_workspaces(self, query: dict) -> dict:
+        return self.workspace_model.analyze(**query)
+
     def stat_workspaces(self, query: dict) -> dict:
         return self.workspace_model.stat(**query)
