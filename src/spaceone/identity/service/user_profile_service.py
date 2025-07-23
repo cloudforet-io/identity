@@ -362,7 +362,6 @@ class UserProfileService(BaseService):
         update_require_actions = list(user_vo.required_actions)
 
         if mfa_manager.confirm_mfa(credentials, verify_code):
-
             user_mfa = mfa_manager.set_mfa_options(user_mfa, credentials)
 
             if mfa_state == "ENABLED" or (mfa_state == "DISABLED" and mfa_enforce):
@@ -375,7 +374,7 @@ class UserProfileService(BaseService):
             if mfa_state == "ENABLED":
                 user_mfa = {
                     "state": "DISABLED",
-                    **({"options": {"enforce": mfa_enforce}} if mfa_enforce else {}),
+                    **({"mfa_type": mfa_type, "options": {"enforce": mfa_enforce}} if mfa_enforce else {}),
                 }
 
             elif mfa_state == "DISABLED":

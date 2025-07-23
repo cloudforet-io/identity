@@ -346,17 +346,18 @@ class UserService(BaseService):
         update_user_vo: dict = {}
         update_required_actions = set(user_vo.required_actions)
 
+        update_user_vo["mfa"] = {
+            "state": "DISABLED",
+            "mfa_type": mfa_type,
+        }
+
         if mfa_enforce:
             update_required_actions.add("ENFORCE_MFA")
+            update_user_vo["mfa"]["options"] = {"enforce": mfa_enforce}
         else:
             update_required_actions.discard("ENFORCE_MFA")
 
         update_user_vo["required_actions"] = list(update_required_actions)
-
-        update_user_vo["mfa"] = {
-            "state": "DISABLED",
-            **({"options": {"enforce": mfa_enforce}} if mfa_enforce else {}),
-        }
         user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
 
         return UserResponse(**user_vo.to_dict())
