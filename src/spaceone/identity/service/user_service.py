@@ -1,31 +1,28 @@
 import copy
 import logging
-import secrets
 import re
+import secrets
 import string
 from typing import Union
 
+from spaceone.core import config
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-from spaceone.core import config
-
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_user import *
 from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.config_manager import ConfigManager
-from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
+from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
-from spaceone.identity.manager.mfa_manager.base import MFAManager
-
 from spaceone.identity.manager.token_manager.local_token_manager import (
     LocalTokenManager,
 )
 from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.model.user.database import User
 from spaceone.identity.model.user.request import *
 from spaceone.identity.model.user.response import *
-from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,7 +57,7 @@ class UserService(BaseService):
                 'reset_password': 'bool',
                 'domain_id': 'str',          # injected from auth (required)
                 'enforce_mfa_state': 'ENABLED | DISABLED',
-                'enforce_mfa_type': 'OTP | EMAIL'    # optional required
+                'enforce_mfa_type': 'OTP | EMAIL'    # conditionally required
             }
         Returns:
             UserResponse:
@@ -188,16 +185,17 @@ class UserService(BaseService):
                 'reset_password': 'bool',
                 'domain_id': 'str',          # injected from auth (required)
                 'enforce_mfa_state': 'ENABLED | DISABLED',
-                'enforce_mfa_type': 'OTP | EMAIL'    # optional required
+                'enforce_mfa_type': 'OTP | EMAIL'    # conditionally required
             }
         Returns:
             UserResponse:
 
         """
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
-        update_user_vo_model = {}
-        update_require_actions_model = list(user_vo.required_actions)
         domain_id = params.domain_id
+
+        update_user_vo = {}
+        update_require_actions = list(user_vo.required_actions)
 
         if params.reset_password:
             domain_name = self._get_domain_name(domain_id)
@@ -216,10 +214,10 @@ class UserService(BaseService):
             reset_password_type = config.get_global("RESET_PASSWORD_TYPE")
             email_manager = EmailManager()
             temp_password = self._generate_temporary_password()
-            update_user_vo_model["password"] = temp_password
+            update_user_vo["password"] = temp_password
 
-            if "UPDATE_PASSWORD" not in update_require_actions_model:
-                update_require_actions_model.append("UPDATE_PASSWORD")
+            if "UPDATE_PASSWORD" not in update_require_actions:
+                update_require_actions.append("UPDATE_PASSWORD")
 
             if reset_password_type == "ACCESS_TOKEN":
                 token = self._issue_temporary_token(user_id, domain_id)
@@ -245,7 +243,7 @@ class UserService(BaseService):
             user_vo_mfa_state = user_vo_mfa.get("state", "DISABLED")
             user_vo_mfa_options = user_vo_mfa.get("options", {})
 
-            update_mfa_model = {
+            update_mfa = {
                 "state": user_vo_mfa_state,
                 "mfa_type": user_vo_mfa_type,
                 "options": user_vo_mfa_options,
@@ -259,10 +257,10 @@ class UserService(BaseService):
                 if mfa_type != user_vo_mfa_type:
                     if user_vo_mfa_type == "OTP":
                         self.__delete_otp_secret(user_vo, domain_id)
-                    update_mfa_model["mfa_type"] = mfa_type
-                    update_mfa_model["state"] = "DISABLED"
-                    update_mfa_model["options"] = {"enforce": mfa_enforce}
-                    update_require_actions_model.append("ENFORCE_MFA")
+                    update_mfa["mfa_type"] = mfa_type
+                    update_mfa["state"] = "DISABLED"
+                    update_mfa["options"] = {"enforce": mfa_enforce}
+                    update_require_actions.append("ENFORCE_MFA")
 
             else:
                 if mfa_type is not None:
@@ -270,24 +268,24 @@ class UserService(BaseService):
                         key="mfa.mfa_type",
                         reason="Type can only be set when mfa enforce is True.",
                     )
-                update_mfa_model["options"].pop("enforce", None)
-                update_require_actions_model = [
+                update_mfa["options"].pop("enforce", None)
+                update_require_actions = [
                     actions
-                    for actions in update_require_actions_model
+                    for actions in update_require_actions
                     if actions != "ENFORCE_MFA"
                 ]
 
-            update_user_vo_model["mfa"] = update_mfa_model
+            update_user_vo["mfa"] = update_mfa
 
         general_params = params.dict(
             exclude_unset=True, exclude={"reset_password", "mfa"}
         )
-        update_user_vo_model.update(general_params)
-        update_user_vo_model["required_actions"] = list(
-            set(update_require_actions_model)
+        update_user_vo.update(general_params)
+        update_user_vo["required_actions"] = list(
+            set(update_require_actions)
         )
 
-        user_vo = self.user_mgr.update_user_by_vo(update_user_vo_model, user_vo)
+        user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
 
         return UserResponse(**user_vo.to_dict())
 
@@ -345,21 +343,21 @@ class UserService(BaseService):
         if mfa_type == "OTP" and user_mfa.get("state", "DISABLED") == "ENABLED":
             self.__delete_otp_secret(user_vo, domain_id)
 
-        update_user_data_model: dict = {}
-        update_required_actions_model = set(user_vo.required_actions)
+        update_user_vo: dict = {}
+        update_required_actions = set(user_vo.required_actions)
 
         if mfa_enforce:
-            update_required_actions_model.add("ENFORCE_MFA")
+            update_required_actions.add("ENFORCE_MFA")
         else:
-            update_required_actions_model.discard("ENFORCE_MFA")
+            update_required_actions.discard("ENFORCE_MFA")
 
-        update_user_data_model["required_actions"] = list(update_required_actions_model)
+        update_user_vo["required_actions"] = list(update_required_actions)
 
-        update_user_data_model["mfa"] = {
+        update_user_vo["mfa"] = {
             "state": "DISABLED",
             **({"options": {"enforce": mfa_enforce}} if mfa_enforce else {}),
         }
-        user_vo = self.user_mgr.update_user_by_vo(update_user_data_model, user_vo)
+        user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
 
         return UserResponse(**user_vo.to_dict())
 
