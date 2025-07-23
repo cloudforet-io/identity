@@ -1,14 +1,14 @@
 import logging
-import secrets
 import re
+import secrets
 import string
 from typing import Dict, List, Union
 
 from mongoengine import QuerySet
+
 from spaceone.core import config
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_user import *
 from spaceone.identity.manager.domain_manager import DomainManager
@@ -359,30 +359,29 @@ class UserProfileService(BaseService):
             raise ERROR_MFA_NOT_ENABLED(user_id=user_id)
 
         mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
-        update_require_actions_model = list(user_vo.required_actions)
+        update_require_actions = list(user_vo.required_actions)
 
         if mfa_manager.confirm_mfa(credentials, verify_code):
-
             user_mfa = mfa_manager.set_mfa_options(user_mfa, credentials)
 
             if mfa_state == "ENABLED" or (mfa_state == "DISABLED" and mfa_enforce):
-                update_require_actions_model = [
+                update_require_actions = [
                     action
-                    for action in update_require_actions_model
+                    for action in update_require_actions
                     if action != "ENFORCE_MFA"
                 ]
 
             if mfa_state == "ENABLED":
                 user_mfa = {
                     "state": "DISABLED",
-                    **({"options": {"enforce": mfa_enforce}} if mfa_enforce else {}),
+                    **({"mfa_type": mfa_type, "options": {"enforce": mfa_enforce}} if mfa_enforce else {}),
                 }
 
             elif mfa_state == "DISABLED":
                 user_mfa["state"] = "ENABLED"
 
             user_vo = self.user_mgr.update_user_by_vo(
-                {"mfa": user_mfa, "required_actions": update_require_actions_model},
+                {"mfa": user_mfa, "required_actions": update_require_actions},
                 user_vo,
             )
 
