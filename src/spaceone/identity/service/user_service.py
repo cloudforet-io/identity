@@ -259,8 +259,8 @@ class UserService(BaseService):
                         self.__delete_otp_secret(user_vo, domain_id)
                     update_mfa["mfa_type"] = mfa_type
                     update_mfa["state"] = "DISABLED"
-                    update_mfa["options"] = {"enforce": mfa_enforce}
-                    update_require_actions.append("ENFORCE_MFA")
+                update_mfa["options"] = {"enforce": mfa_enforce}
+                update_require_actions.append("ENFORCE_MFA")
 
             else:
                 if mfa_type is not None:
@@ -698,7 +698,9 @@ class UserService(BaseService):
         user_vo_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         user_vo_mfa_options = user_vo_mfa.get("options", {})
 
-        user_secret_id: str | None = user_vo_mfa_options.get("user_secret_id", None)
+        user_secret_id: Union[str, None] = user_vo_mfa_options.get(
+            "user_secret_id", None
+        )
         if user_secret_id is not None:
             secret_manager: SecretManager = self.locator.get_manager(SecretManager)
             secret_manager.delete_user_secret_with_system_token(

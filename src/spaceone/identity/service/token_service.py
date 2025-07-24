@@ -1,21 +1,18 @@
 import logging
-from typing import List, Tuple
 from collections import OrderedDict
+from typing import List, Tuple
 
 from spaceone.core import cache, config, utils
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-
-
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import ERROR_DOMAIN_STATE
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_workspace import ERROR_WORKSPACE_STATE
+from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.domain_manager import DomainManager
-from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
-from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
@@ -28,7 +25,6 @@ from spaceone.identity.manager.user_group_manager import UserGroupManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.app.database import App
-from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.model.token.request import *
 from spaceone.identity.model.token.response import *
 from spaceone.identity.model.user.database import User
@@ -304,12 +300,16 @@ class TokenService(BaseService):
 
     @staticmethod
     def _get_permissions_from_required_actions(user_vo: User) -> Union[List[str], None]:
-        if set(user_vo.required_actions) & {"UPDATE_PASSWORD", "ENFORCE_MFA"}:
-            return [
-                "identity:UserProfile",
-            ]
+        actions = set(user_vo.required_actions)
+        if actions.isdisjoint({"UPDATE_PASSWORD", "ENFORCE_MFA"}):
+            return None
 
-        return None
+        permissions = {"identity:UserProfile"}
+        
+        if "ENFORCE_MFA" in actions:
+            permissions.add("secret:UserSecret.write")
+
+        return list(permissions)
 
     @staticmethod
     def _extract_domain_id(token: str) -> str:
