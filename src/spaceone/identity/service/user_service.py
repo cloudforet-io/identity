@@ -259,7 +259,9 @@ class UserService(BaseService):
                         self.__delete_otp_secret(user_vo, domain_id)
                     update_mfa["mfa_type"] = mfa_type
                     update_mfa["state"] = "DISABLED"
-                update_mfa["options"] = {"enforce": mfa_enforce}
+                    update_mfa["options"].clear()
+
+                update_mfa["options"].update({"enforce": mfa_enforce})
                 update_require_actions.append("ENFORCE_MFA")
 
             else:
