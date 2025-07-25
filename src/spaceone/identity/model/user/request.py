@@ -47,7 +47,7 @@ class UserUpdateRequest(BaseModel):
     language: Union[str, None] = None
     timezone: Union[str, None] = None
     tags: Union[dict, None] = None
-    reset_password: Union[bool, None] = None
+    reset_password: Union[bool, None] = False
     domain_id: str
     enforce_mfa_state: Union[MFAEnforceState, None] = None
     enforce_mfa_type: Union[MFAType, None] = None
