@@ -348,7 +348,7 @@ class UserProfileService(BaseService):
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         mfa_state = user_mfa.get("state", "DISABLED")
-        mfa_enforce = user_mfa.get("options", {}).get("enforce") == True
+        mfa_enforce = user_mfa.get("options", {}).get("enforce", False)
 
         if mfa_state == "DISABLED":
             user_mfa = MFAManager.get_mfa_info(credentials)["user_mfa"]
@@ -359,25 +359,22 @@ class UserProfileService(BaseService):
             raise ERROR_MFA_NOT_ENABLED(user_id=user_id)
 
         mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
-        update_require_actions = list(user_vo.required_actions)
+        update_require_actions = set(user_vo.required_actions)
 
         if mfa_manager.confirm_mfa(credentials, verify_code):
             user_mfa = mfa_manager.set_mfa_options(user_mfa, credentials)
 
-            if mfa_state == "ENABLED" or (mfa_state == "DISABLED" and mfa_enforce):
-                update_require_actions = [
-                    action
-                    for action in update_require_actions
-                    if action != "ENFORCE_MFA"
-                ]
-
             if mfa_state == "ENABLED":
+                if mfa_enforce:
+                    update_require_actions.add("ENFORCE_MFA")
+
                 user_mfa = {
                     "state": "DISABLED",
                     **({"mfa_type": mfa_type, "options": {"enforce": mfa_enforce}} if mfa_enforce else {}),
                 }
 
             elif mfa_state == "DISABLED":
+                update_require_actions.discard("ENFORCE_MFA")
                 user_mfa["state"] = "ENABLED"
 
             user_vo = self.user_mgr.update_user_by_vo(
