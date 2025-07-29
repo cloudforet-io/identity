@@ -267,8 +267,10 @@ class UserService(BaseService):
                 if mfa_type is not None:
                     raise ERROR_INVALID_PARAMETER(
                         key="mfa.mfa_type",
-                        reason="Type can only be set when mfa enforce is True.",
+                        reason="Type can only be set when mfa enforce is ENABLED.",
                     )
+                if user_vo_mfa_state == "DISABLED":
+                    update_mfa.pop("mfa_type", None)
                 update_mfa["options"].pop("enforce", None)
                 update_require_actions.discard("ENFORCE_MFA")
 
@@ -330,9 +332,7 @@ class UserService(BaseService):
         mfa_type = user_mfa.get("mfa_type")
         mfa_enforce = user_mfa.get("options", {}).get("enforce", False)
 
-        if (
-            user_mfa.get("state", "DISABLED") == "DISABLED" or mfa_type is None
-        ) and mfa_enforce is None:
+        if user_mfa.get("state", "DISABLED") == "DISABLED":
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
         if mfa_type == "OTP" and user_mfa.get("state", "DISABLED") == "ENABLED":
@@ -351,6 +351,7 @@ class UserService(BaseService):
             update_user_vo["mfa"]["options"] = {"enforce": mfa_enforce}
         else:
             update_required_actions.discard("ENFORCE_MFA")
+            update_user_vo["mfa"].pop("mfa_type", None)
 
         update_user_vo["required_actions"] = list(update_required_actions)
         user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
