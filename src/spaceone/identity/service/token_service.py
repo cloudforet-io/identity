@@ -5,14 +5,13 @@ from spaceone.core import cache
 from spaceone.core.auth.jwt import JWTAuthenticator, JWTUtil
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-
 from spaceone.identity.error.error_authentication import *
 from spaceone.identity.error.error_domain import ERROR_DOMAIN_STATE
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_workspace import ERROR_WORKSPACE_STATE
+from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.app_manager import AppManager
 from spaceone.identity.manager.domain_manager import DomainManager
-from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
@@ -83,7 +82,7 @@ class TokenService(BaseService):
 
         user_vo = token_mgr.user
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
-        mfa_type = user_mfa.get('mfa_type')
+        mfa_type = user_mfa.get("mfa_type")
         permissions = self._get_permissions_from_required_actions(user_vo)
 
         mfa_user_id = user_vo.user_id
@@ -100,9 +99,13 @@ class TokenService(BaseService):
             elif mfa_type == "OTP":
                 secret_manager: SecretManager = self.locator.get_manager(SecretManager)
                 user_secret_id = user_mfa["options"].get("user_secret_id")
-                otp_secret_key = secret_manager.get_user_otp_secret_key(user_secret_id, domain_id)
+                otp_secret_key = secret_manager.get_user_otp_secret_key(
+                    user_secret_id, domain_id
+                )
 
-                mfa_manager.set_cache_otp_mfa_secret_key(otp_secret_key, user_vo.user_id, domain_id, credentials)
+                mfa_manager.set_cache_otp_mfa_secret_key(
+                    otp_secret_key, user_vo.user_id, domain_id, credentials
+                )
 
             raise ERROR_MFA_REQUIRED(user_id=mfa_user_id, mfa_type=mfa_type)
 
@@ -270,12 +273,16 @@ class TokenService(BaseService):
 
     @staticmethod
     def _get_permissions_from_required_actions(user_vo: User) -> Union[List[str], None]:
-        if "UPDATE_PASSWORD" in user_vo.required_actions:
-            return [
-                "identity:UserProfile",
-            ]
+        actions = set(user_vo.required_actions)
+        if actions.isdisjoint({"UPDATE_PASSWORD", "ENFORCE_MFA"}):
+            return None
 
-        return None
+        permissions = {"identity:UserProfile"}
+
+        if "ENFORCE_MFA" in actions:
+            permissions.add("secret:UserSecret.write")
+
+        return list(permissions)
 
     @staticmethod
     def _extract_domain_id(token: str) -> str:

@@ -5,26 +5,23 @@ import re
 import string
 from typing import Union
 
+from spaceone.core import config
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-from spaceone.core import config
-
 from spaceone.identity.error.error_mfa import *
 from spaceone.identity.error.error_user import *
-from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.config_manager import ConfigManager
-from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
+from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
-
 from spaceone.identity.manager.token_manager.local_token_manager import (
     LocalTokenManager,
 )
 from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.model.user.database import User
 from spaceone.identity.model.user.request import *
 from spaceone.identity.model.user.response import *
-from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,6 +55,8 @@ class UserService(BaseService):
                 'tags': 'dict',
                 'reset_password': 'bool',
                 'domain_id': 'str'          # injected from auth (required)
+                'enforce_mfa_state': 'ENABLED' | 'DISABLED'
+                'enforce_mfa_type': 'OTP' | 'EMAIL' # conditionally required
             }
         Returns:
             UserResponse:
@@ -73,8 +72,31 @@ class UserService(BaseService):
         domain_id = params["domain_id"]
         email = params.get("email")
         language = self._get_domain_default_language(domain_id, params.get("language"))
+        mfa_enforce = params.get("enforce_mfa_state") == "ENABLED"
+        mfa_enforce_type = params.get("enforce_mfa_type")
         params["language"] = language
         params["timezone"] = params.get("timezone", "UTC")
+
+        if mfa_enforce:
+            if auth_type == "EXTERNAL":
+                raise ERROR_NOT_ALLOWED_ACTIONS(action="MFA")
+
+            if mfa_enforce_type is None:
+                raise ERROR_REQUIRED_PARAMETER(key="enforce_mfa_type")
+            else:
+                params["mfa"] = {
+                    "mfa_type": mfa_enforce_type,
+                    "state": "DISABLED",
+                    "options": {"enforce": mfa_enforce},
+                }
+                params["required_actions"] = ["ENFORCE_MFA"]
+
+        else:
+            if mfa_enforce_type is not None:
+                raise ERROR_INVALID_PARAMETER(
+                    key="enforce_mfa_type",
+                    reason="Type can only be set when mfa enforce is ENABLED.",
+                )
 
         if reset_password:
             self._check_reset_password_eligibility(user_id, auth_type, email)
@@ -97,7 +119,7 @@ class UserService(BaseService):
                     domain_id, token["access_token"]
                 )
 
-                params["required_actions"] = ["UPDATE_PASSWORD"]
+                params.get("required_actions", []).append("UPDATE_PASSWORD")
 
                 user_vo = self.user_mgr.create_user(params)
                 user_id = user_vo.user_id
@@ -117,9 +139,8 @@ class UserService(BaseService):
             user_vo = self.user_mgr.create_user(params)
             user_id = user_vo.user_id
 
-            if (
-                auth_type == "EXTERNAL"
-                and self._check_invite_external_user_eligibility(user_id, user_id)
+            if auth_type == "EXTERNAL" and self._check_invite_external_user_eligibility(
+                user_id, user_id
             ):
                 email_mgr = EmailManager()
 
@@ -147,6 +168,8 @@ class UserService(BaseService):
                 'tags': 'dict',
                 'reset_password': 'bool',
                 'domain_id': 'str'          # injected from auth (required)
+                'enforce_mfa_state': 'ENABLED' | 'DISABLED'
+                'enforce_mfa_type': 'OTP' | 'EMAIL' # conditionally required
             }
         Returns:
             UserResponse:
@@ -154,6 +177,9 @@ class UserService(BaseService):
         """
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+
+        update_user_vo = {}
+        update_require_actions = set(user_vo.required_actions)
 
         if params.reset_password:
             domain_id = params.domain_id
@@ -172,14 +198,8 @@ class UserService(BaseService):
             reset_password_type = config.get_global("RESET_PASSWORD_TYPE")
             email_manager = EmailManager()
             temp_password = self._generate_temporary_password()
-            params.password = temp_password
-
-            user_vo = self.user_mgr.update_user_by_vo(
-                params.dict(exclude_unset=True), user_vo
-            )
-            user_vo = self.user_mgr.update_user_by_vo(
-                {"required_actions": ["UPDATE_PASSWORD"]}, user_vo
-            )
+            update_user_vo["password"] = temp_password
+            update_require_actions.add("UPDATE_PASSWORD")
 
             if reset_password_type == "ACCESS_TOKEN":
                 token = self._issue_temporary_token(user_id, domain_id)
@@ -196,10 +216,58 @@ class UserService(BaseService):
                 email_manager.send_temporary_password_email(
                     user_id, email, console_link, temp_password, language
                 )
-        else:
-            user_vo = self.user_mgr.update_user_by_vo(
-                params.dict(exclude_unset=True), user_vo
-            )
+        if params.enforce_mfa_state is not None:
+            mfa_enforce = params.enforce_mfa_state == "ENABLED"
+            mfa_type = params.enforce_mfa_type
+            user_vo_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+            user_vo_mfa_type = user_vo_mfa.get("mfa_type", None)
+            user_vo_mfa_state = user_vo_mfa.get("state", "DISABLED")
+            user_vo_mfa_options = user_vo_mfa.get("options", {})
+
+            update_mfa = {
+                "state": user_vo_mfa_state,
+                "mfa_type": user_vo_mfa_type,
+                "options": user_vo_mfa_options,
+            }
+
+            if auth_type == "EXTERNAL":
+                raise ERROR_NOT_ALLOWED_ACTIONS(action="MFA")
+
+            if mfa_enforce:
+                if mfa_type is None:
+                    raise ERROR_REQUIRED_PARAMETER(
+                        key="enforce_mfa_type",
+                    )
+                if mfa_type != user_vo_mfa_type:
+                    if user_vo_mfa_type == "OTP":
+                        self.__delete_otp_secret(user_vo, domain_id)
+                    update_mfa["mfa_type"] = mfa_type
+                    update_mfa["state"] = "DISABLED"
+                    update_mfa["options"].clear()
+
+                update_mfa["options"].update({"enforce": mfa_enforce})
+                update_require_actions.add("ENFORCE_MFA")
+
+            else:
+                if mfa_type is not None:
+                    raise ERROR_INVALID_PARAMETER(
+                        key="mfa.mfa_type",
+                        reason="Type can only be set when mfa enforce is ENABLED.",
+                    )
+                if user_vo_mfa_state == "DISABLED":
+                    update_mfa.pop("mfa_type", None)
+                update_mfa["options"].pop("enforce", None)
+                update_require_actions.discard("ENFORCE_MFA")
+
+            update_user_vo["mfa"] = update_mfa
+
+        general_params = params.dict(
+            exclude_unset=True, exclude={"reset_password", "mfa"}
+        )
+        update_user_vo.update(general_params)
+        update_user_vo["required_actions"] = list(update_require_actions)
+
+        user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
 
         return UserResponse(**user_vo.to_dict())
 
@@ -246,18 +314,31 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        mfa_state = user_mfa.get("state", "DISABLED")
         mfa_type = user_mfa.get("mfa_type")
+        mfa_enforce = user_mfa.get("options", {}).get("enforce", False)
 
         if user_mfa.get("state", "DISABLED") == "DISABLED" or mfa_type is None:
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
-        if mfa_type == "OTP":
-            user_secret_id = user_mfa.get("options", {}).get("user_secret_id")
-            secret_manager: SecretManager = self.locator.get_manager(SecretManager)
-            secret_manager.delete_user_secret_with_system_token(domain_id, user_secret_id)
+        if mfa_type == "OTP" and mfa_state == "ENABLED":
+            self.__delete_otp_secret(user_vo, domain_id)
 
-        user_mfa = {"state": "DISABLED"}
-        self.user_mgr.update_user_by_vo({"mfa": user_mfa}, user_vo)
+        update_user_vo: dict = {}
+        update_required_actions = set(user_vo.required_actions)
+
+        update_user_vo["mfa"] = {"state": "DISABLED", "mfa_type": mfa_type}
+
+        if mfa_enforce:
+            update_required_actions.add("ENFORCE_MFA")
+            update_user_vo["mfa"]["options"] = {"enforce": mfa_enforce}
+
+        else:
+            update_required_actions.discard("ENFORCE_MFA")
+            update_user_vo["mfa"].pop("mfa_type", None)
+
+        update_user_vo["required_actions"] = list(update_required_actions)
+        user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
 
         return UserResponse(**user_vo.to_dict())
 
@@ -525,3 +606,16 @@ class UserService(BaseService):
             else:
                 language = "en"
         return language
+
+    def __delete_otp_secret(self, user_vo: User, domain_id: str):
+        user_vo_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        user_vo_mfa_options = user_vo_mfa.get("options", {})
+
+        user_secret_id: Union[str, None] = user_vo_mfa_options.get(
+            "user_secret_id", None
+        )
+        if user_secret_id is not None:
+            secret_manager: SecretManager = self.locator.get_manager(SecretManager)
+            secret_manager.delete_user_secret_with_system_token(
+                domain_id, user_secret_id
+            )

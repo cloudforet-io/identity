@@ -19,7 +19,8 @@ __all__ = [
 
 State = Literal["ENABLED", "DISABLED", "PENDING"]
 AuthType = Literal["LOCAL", "EXTERNAL"]
-
+MFAType = Literal["OTP", "EMAIL"]
+MFAEnforceType = Literal["ENABLED", "DISABLED"]
 
 class UserCreateRequest(BaseModel):
     user_id: str
@@ -32,6 +33,8 @@ class UserCreateRequest(BaseModel):
     tags: Union[dict, None] = None
     reset_password: Union[bool, None] = False
     domain_id: str
+    enforce_mfa_state: Union[MFAEnforceType, None]
+    enforce_mfa_type: Union[MFAType, None]
 
 
 class UserUpdateRequest(BaseModel):
@@ -44,6 +47,8 @@ class UserUpdateRequest(BaseModel):
     tags: Union[dict, None] = None
     reset_password: Union[bool, None] = None
     domain_id: str
+    enforce_mfa_state: Union[MFAEnforceType, None]
+    enforce_mfa_type: Union[MFAType, None]
 
 
 class UserVerifyEmailRequest(BaseModel):

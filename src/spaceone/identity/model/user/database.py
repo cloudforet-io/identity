@@ -1,4 +1,5 @@
 from mongoengine import *
+
 from spaceone.core.model.mongo_model import MongoModel
 
 
@@ -33,7 +34,7 @@ class User(MongoModel):
         ),
     )
     mfa = EmbeddedDocumentField(MFA)
-    required_actions = ListField(StringField(choices=("UPDATE_PASSWORD",)), default=[])
+    required_actions = ListField(StringField(choices=("UPDATE_PASSWORD","ENFORCE_MFA")), default=[])
     language = StringField(max_length=7, default="en")
     timezone = StringField(max_length=50, default="UTC")
     tags = DictField(Default=None)
