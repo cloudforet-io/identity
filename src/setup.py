@@ -14,7 +14,8 @@
 #   limitations under the License.
 
 import os
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 setup(
     name="spaceone-identity",
@@ -27,8 +28,8 @@ setup(
     license="Apache License 2.0",
     packages=find_packages(),
     install_requires=[
-        "spaceone-core==2.0.98",
-        "spaceone-api==2.0.283",
+        "spaceone-core==2.0.100",
+        "spaceone-api==2.0.283.post1",
         "langcodes",
         "bcrypt",
         "jinja2",

@@ -1,4 +1,4 @@
-spaceone-api==2.0.283
+spaceone-api==2.0.283.post1
 langcodes
 bcrypt
 jinja2
