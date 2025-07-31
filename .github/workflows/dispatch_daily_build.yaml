@@ -63,7 +63,7 @@ jobs:
 
   scan:
     needs: docker
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Run Trivy vulnerability scanner
         id: trivy-scan
