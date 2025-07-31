@@ -1,1 +1,2 @@
 from spaceone.identity.manager.mfa_manager.email_mfa_manger import EmailMFAManager
+from spaceone.identity.manager.mfa_manager.otp_mfa_manager import OTPMFAManager

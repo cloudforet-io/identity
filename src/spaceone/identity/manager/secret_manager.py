@@ -118,3 +118,21 @@ class SecretManager(BaseManager):
             )
         else:
             return self.secret_conn.dispatch("Secret.list", params)
+
+    def create_user_secret(self, params: dict) -> dict:
+        return self.secret_conn.dispatch("UserSecret.create", params)
+
+    def get_user_secret_data(self, user_secret_id: str, domain_id: str = None) -> dict:
+        response = self.secret_conn.dispatch("UserSecret.get_data", {"user_secret_id": user_secret_id, "domain_id": domain_id})
+        return response["data"]
+
+    def delete_user_secret(self, user_secret_id: str) -> None:
+        self.secret_conn.dispatch("UserSecret.delete", {"user_secret_id": user_secret_id})
+
+    def delete_user_secret_with_system_token(self, domain_id: str, user_secret_id: str) -> None:
+        system_token = config.get_global("TOKEN")
+        self.secret_conn.dispatch("UserSecret.delete", {"user_secret_id": user_secret_id}, x_domain_id=domain_id, token=system_token)
+
+    def get_user_otp_secret_key(self, user_secret_id: str, domain_id: str = None) -> str:
+        user_secret_info = self.get_user_secret_data(user_secret_id, domain_id)
+        return user_secret_info["otp_secret_key"]

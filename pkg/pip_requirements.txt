@@ -4,3 +4,4 @@ bcrypt
 jinja2
 fakeredis
 pytz
+pyotp
