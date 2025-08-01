@@ -33,8 +33,8 @@ class UserCreateRequest(BaseModel):
     tags: Union[dict, None] = None
     reset_password: Union[bool, None] = False
     domain_id: str
-    enforce_mfa_state: Union[MFAEnforceType, None]
-    enforce_mfa_type: Union[MFAType, None]
+    enforce_mfa_state: Union[MFAEnforceType, None] = None
+    enforce_mfa_type: Union[MFAType, None] = None
 
 
 class UserUpdateRequest(BaseModel):
@@ -47,8 +47,8 @@ class UserUpdateRequest(BaseModel):
     tags: Union[dict, None] = None
     reset_password: Union[bool, None] = None
     domain_id: str
-    enforce_mfa_state: Union[MFAEnforceType, None]
-    enforce_mfa_type: Union[MFAType, None]
+    enforce_mfa_state: Union[MFAEnforceType, None] = None
+    enforce_mfa_type: Union[MFAType, None] = None
 
 
 class UserVerifyEmailRequest(BaseModel):
