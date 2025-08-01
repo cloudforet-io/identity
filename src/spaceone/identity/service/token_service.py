@@ -81,20 +81,22 @@ class TokenService(BaseService):
         )
 
         user_vo = token_mgr.user
+        user_id = user_vo.user_id
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         mfa_type = user_mfa.get("mfa_type")
+        enforce_mfa = user_mfa.get("options", {}).get("enforce", False)
+        mfa_state = user_mfa.get("state", "DISABLED")
+
         permissions = self._get_permissions_from_required_actions(user_vo)
 
-        mfa_user_id = user_vo.user_id
-
-        if user_mfa.get("state", "DISABLED") == "ENABLED" and params.auth_type != "MFA":
+        if mfa_state == "ENABLED" and params.auth_type != "MFA":
             mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
             if mfa_type == "EMAIL":
                 mfa_email = user_mfa["options"].get("email")
                 mfa_manager.send_mfa_authentication_email(
                     user_vo.user_id, domain_id, mfa_email, user_vo.language, credentials
                 )
-                mfa_user_id = mfa_email
+                user_id = mfa_email
 
             elif mfa_type == "OTP":
                 secret_manager: SecretManager = self.locator.get_manager(SecretManager)
@@ -107,7 +109,9 @@ class TokenService(BaseService):
                     otp_secret_key, user_vo.user_id, domain_id, credentials
                 )
 
-            raise ERROR_MFA_REQUIRED(user_id=mfa_user_id, mfa_type=mfa_type)
+            raise ERROR_MFA_REQUIRED(
+                user_id=user_id, mfa_type=mfa_type, mfa_state=mfa_state
+            )
 
         token_info = token_mgr.issue_token(
             private_jwk,
@@ -116,6 +120,14 @@ class TokenService(BaseService):
             timeout=timeout,
             permissions=permissions,
         )
+
+        if mfa_state == "DISABLED" and enforce_mfa and mfa_type is not None:
+            raise ERROR_MFA_NOT_ACTIVATED(
+                user_id=user_vo.user_id,
+                mfa_type=mfa_type,
+                mfa_state=mfa_state,
+                access_token=token_info["access_token"],
+            )
 
         return TokenResponse(**token_info)
 
@@ -402,8 +414,7 @@ class TokenService(BaseService):
 
     @staticmethod
     def _check_user_required_actions(required_actions: list, user_id: str) -> None:
-        if "UPDATE_PASSWORD" in required_actions:
-            raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
-
-        if "ENFORCE_MFA" in required_actions:
-            raise ERROR_MFA_NOT_ENABLED(user_id=user_id)
+        if required_actions:
+            for required_action in required_actions:
+                if required_action == "UPDATE_PASSWORD":
+                    raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
