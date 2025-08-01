@@ -402,7 +402,8 @@ class TokenService(BaseService):
 
     @staticmethod
     def _check_user_required_actions(required_actions: list, user_id: str) -> None:
-        if required_actions:
-            for required_action in required_actions:
-                if required_action == "UPDATE_PASSWORD":
-                    raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
+        if "UPDATE_PASSWORD" in required_actions:
+            raise ERROR_UPDATE_PASSWORD_REQUIRED(user_id=user_id)
+
+        if "ENFORCE_MFA" in required_actions:
+            raise ERROR_MFA_NOT_ENABLED(user_id=user_id)
