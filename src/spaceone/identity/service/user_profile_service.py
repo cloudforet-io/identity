@@ -237,7 +237,7 @@ class UserProfileService(BaseService):
                 reason="Only requests using the MFA type enforced by admin are allowed.",
             )
 
-        self._check_mfa_options(options, mfa_type)
+        self._check_mfa_options(options, mfa_type)  
 
         if user_mfa.get("state", "DISABLED") == "ENABLED":
             raise ERROR_MFA_ALREADY_ENABLED(user_id=user_id)

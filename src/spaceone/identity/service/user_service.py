@@ -15,6 +15,7 @@ from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
 from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
+from spaceone.identity.manager.secret_manager import SecretManager
 from spaceone.identity.manager.token_manager.local_token_manager import (
     LocalTokenManager,
 )
