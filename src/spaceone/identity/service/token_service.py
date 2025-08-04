@@ -66,7 +66,6 @@ class TokenService(BaseService):
         timeout = params.timeout
         verify_code = params.verify_code
         credentials = params.credentials
-        _LOGGER.info(f"params: {params}")
 
         private_jwk = self.domain_secret_mgr.get_domain_private_key(domain_id=domain_id)
         refresh_private_jwk = self.domain_secret_mgr.get_domain_refresh_private_key(
@@ -89,14 +88,6 @@ class TokenService(BaseService):
         mfa_state = user_mfa.get("state", "DISABLED")
 
         permissions = self._get_permissions_from_required_actions(user_vo)
-
-        _LOGGER.info(f"mfa_state: {mfa_state}")
-        _LOGGER.info(f"enforce_mfa: {enforce_mfa}")
-        _LOGGER.info(f"mfa_type: {mfa_type}")
-        _LOGGER.info(f"params.auth_type: {params.auth_type}")
-        _LOGGER.info(f"user_mfa: {user_mfa}")
-        _LOGGER.info(f"user_vo: {user_vo}")
-        _LOGGER.info(f"user_mfa: {user_mfa}")
 
         if mfa_state == "ENABLED" and params.auth_type != "MFA":
             mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)

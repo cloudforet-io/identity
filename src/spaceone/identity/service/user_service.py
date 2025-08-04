@@ -230,7 +230,7 @@ class UserService(BaseService):
                 "options": user_vo_mfa_options,
             }
 
-            if auth_type == "EXTERNAL":
+            if user_vo.auth_type == "EXTERNAL":
                 raise ERROR_NOT_ALLOWED_ACTIONS(action="MFA")
 
             if mfa_enforce:
