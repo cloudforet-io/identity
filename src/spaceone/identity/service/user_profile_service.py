@@ -261,16 +261,15 @@ class UserProfileService(BaseService):
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         user_mfa_type = user_mfa.get("mfa_type", None)
-        user_vo_mfa_enforce = user_mfa.get("options", {}).get("enforce", False)
+        user_mfa_enforce = user_mfa.get("options", {}).get("enforce", False)
 
-        if (
-            user_vo_mfa_enforce
-            and user_mfa_type is not None
-            and mfa_type != user_mfa_type
-        ):
+        if user_vo.auth_type == "EXTERNAL":
+            raise ERROR_NOT_ALLOWED_ACTIONS(action="MFA")
+
+        if user_mfa_enforce and user_mfa_type is not None and mfa_type != user_mfa_type:
             raise ERROR_INVALID_PARAMETER(
-                key="mfa.mfa_type",
-                reason="Can only request with the enforced MFA type.",
+                key="mfa_type",
+                reason="Only requests using the MFA type enforced by admin are allowed.",
             )
 
         self._check_mfa_options(options, mfa_type)
@@ -367,18 +366,16 @@ class UserProfileService(BaseService):
             if mfa_state == "ENABLED":
                 if mfa_enforce:
                     update_require_actions.add("ENFORCE_MFA")
-
-                user_mfa = {
-                    "state": "DISABLED",
-                    **({"mfa_type": mfa_type, "options": {"enforce": mfa_enforce}} if mfa_enforce else {}),
-                }
+                    user_mfa["options"] = {"enforce": mfa_enforce}
+                    user_mfa["mfa_type"] = mfa_type
+                user_mfa["state"] = "DISABLED"
 
             elif mfa_state == "DISABLED":
                 update_require_actions.discard("ENFORCE_MFA")
                 user_mfa["state"] = "ENABLED"
 
             user_vo = self.user_mgr.update_user_by_vo(
-                {"mfa": user_mfa, "required_actions": update_require_actions},
+                {"mfa": user_mfa, "required_actions": list(update_require_actions)},
                 user_vo,
             )
 
@@ -633,7 +630,7 @@ class UserProfileService(BaseService):
 
     @staticmethod
     def _extract_user_ids(
-        workspace_group_infos: Union[QuerySet, List[Dict[str, str]]]
+        workspace_group_infos: Union[QuerySet, List[Dict[str, str]]],
     ) -> List[str]:
         workspace_group_user_ids = []
         for workspace_group_info in workspace_group_infos:

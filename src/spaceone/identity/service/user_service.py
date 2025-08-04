@@ -56,8 +56,8 @@ class UserService(BaseService):
                 'tags': 'dict',
                 'reset_password': 'bool',
                 'domain_id': 'str',          # injected from auth (required)
-                'enforce_mfa_state': 'ENABLED | DISABLED',
-                'enforce_mfa_type': 'OTP | EMAIL'    # conditionally required
+                'enforce_mfa_state': 'ENABLED' | 'DISABLED',
+                'enforce_mfa_type': 'OTP' | 'EMAIL'    # conditionally required
             }
         Returns:
             UserResponse:
@@ -73,14 +73,17 @@ class UserService(BaseService):
         domain_id = params["domain_id"]
         email = params.get("email")
         language = self._get_domain_default_language(domain_id, params.get("language"))
+        mfa_enforce = params.get("enforce_mfa_state") == "ENABLED"
+        mfa_enforce_type = params.get("enforce_mfa_type")
         params["language"] = language
         params["timezone"] = params.get("timezone", "UTC")
-        mfa_enforce = params.get("enforce_mfa_state")
-        mfa_enforce_type = params.get("enforce_mfa_type")
 
         if mfa_enforce:
+            if auth_type == "EXTERNAL":
+                raise ERROR_NOT_ALLOWED_ACTIONS(action="MFA")
+
             if mfa_enforce_type is None:
-                raise ERROR_REQUIRED_PARAMETER(key="mfa.mfa_type")
+                raise ERROR_REQUIRED_PARAMETER(key="enforce_mfa_type")
             else:
                 params["mfa"] = {
                     "mfa_type": mfa_enforce_type,
@@ -88,11 +91,12 @@ class UserService(BaseService):
                     "options": {"enforce": mfa_enforce},
                 }
                 params["required_actions"] = ["ENFORCE_MFA"]
-        elif mfa_enforce is not None:
+
+        else:
             if mfa_enforce_type is not None:
                 raise ERROR_INVALID_PARAMETER(
-                    key="mfa.mfa_type",
-                    reason="Type can only be set when mfa enforce is True.",
+                    key="enforce_mfa_type",
+                    reason="Type can only be set when mfa enforce is ENABLED.",
                 )
 
         if reset_password:
@@ -144,9 +148,8 @@ class UserService(BaseService):
             user_vo = self.user_mgr.create_user(params)
             user_id = user_vo.user_id
 
-            if (
-                auth_type == "EXTERNAL"
-                and self._check_invite_external_user_eligibility(user_id, user_id)
+            if auth_type == "EXTERNAL" and self._check_invite_external_user_eligibility(
+                user_id, user_id
             ):
                 email_mgr = EmailManager()
 
@@ -184,8 +187,8 @@ class UserService(BaseService):
                 'tags': 'dict',
                 'reset_password': 'bool',
                 'domain_id': 'str',          # injected from auth (required)
-                'enforce_mfa_state': 'ENABLED | DISABLED',
-                'enforce_mfa_type': 'OTP | EMAIL'    # conditionally required
+                'enforce_mfa_state': 'ENABLED' | 'DISABLED',
+                'enforce_mfa_type': 'OTP' | 'EMAIL'    # conditionally required
             }
         Returns:
             UserResponse:
@@ -247,6 +250,9 @@ class UserService(BaseService):
                 "mfa_type": user_vo_mfa_type,
                 "options": user_vo_mfa_options,
             }
+
+            if user_vo.auth_type == "EXTERNAL":
+                raise ERROR_NOT_ALLOWED_ACTIONS(action="MFA")
 
             if mfa_enforce:
                 if mfa_type is None:
@@ -329,13 +335,14 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        mfa_state = user_mfa.get("state", "DISABLED")
         mfa_type = user_mfa.get("mfa_type")
         mfa_enforce = user_mfa.get("options", {}).get("enforce", False)
 
-        if user_mfa.get("state", "DISABLED") == "DISABLED":
+        if mfa_state == "DISABLED":
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
-        if mfa_type == "OTP" and user_mfa.get("state", "DISABLED") == "ENABLED":
+        if mfa_type == "OTP" and mfa_state == "ENABLED":
             self.__delete_otp_secret(user_vo, domain_id)
 
         update_user_vo: dict = {}
