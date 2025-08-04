@@ -19,3 +19,7 @@ class ERROR_MFA_REQUIRED(ERROR_UNKNOWN):
 
 class ERROR_MFA_NOT_ACTIVATED(ERROR_UNKNOWN):
     _message = "MFA is not activated. (user_id = {user_id}), (mfa_type = {mfa_type}), (mfa_state = {mfa_state}), (access_token = {access_token})"
+
+
+class ERROR_MFA_NOT_ENABLED(ERROR_UNKNOWN):
+    _message = "MFA is not enabled. (user_id = {user_id})"
