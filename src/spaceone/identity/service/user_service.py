@@ -177,14 +177,14 @@ class UserService(BaseService):
         """
 
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+        user_id = user_vo.user_id
+        auth_type = user_vo.auth_type
+        domain_id = params.domain_id
 
         update_user_vo = {}
         update_require_actions = set(user_vo.required_actions)
 
         if params.reset_password:
-            domain_id = params.domain_id
-            user_id = user_vo.user_id
-            auth_type = user_vo.auth_type
             email = params.email or user_vo.email
             email_verified = user_vo.email_verified
 
@@ -230,7 +230,7 @@ class UserService(BaseService):
                 "options": user_vo_mfa_options,
             }
 
-            if user_vo.auth_type == "EXTERNAL":
+            if auth_type == "EXTERNAL":
                 raise ERROR_NOT_ALLOWED_ACTIONS(action="MFA")
 
             if mfa_enforce:
