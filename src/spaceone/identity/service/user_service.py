@@ -120,7 +120,7 @@ class UserService(BaseService):
                     domain_id, token["access_token"]
                 )
 
-                params.get("required_actions", []).append("UPDATE_PASSWORD")
+                params.setdefault("required_actions", []).append("UPDATE_PASSWORD")
 
                 user_vo = self.user_mgr.create_user(params)
                 user_id = user_vo.user_id
