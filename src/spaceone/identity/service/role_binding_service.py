@@ -401,10 +401,11 @@ class RoleBindingService(BaseService):
             user_id=user_ids,
         )
 
+        if not rb_vos.filter(user_id=user_id):
+            return None
+
         if rb_vos.count() == 1 and new_role_type != "DOMAIN_ADMIN":
-            last_admin_rb = rb_vos[0]
-            if last_admin_rb.user_id == user_id:
-                raise ERROR_LAST_DOMAIN_ADMIN_CANNOT_DELETE()
+            raise ERROR_LAST_DOMAIN_ADMIN_CANNOT_DELETE()
 
     def check_last_workspace_owner_role_binding(
         self,
@@ -421,10 +422,11 @@ class RoleBindingService(BaseService):
             role_type="WORKSPACE_OWNER",
         )
 
+        if not rb_vos.filter(user_id=user_id):
+            return None
+
         if rb_vos.count() == 1 and new_role_type != "WORKSPACE_OWNER":
-            last_owner_rb = rb_vos[0]
-            if last_owner_rb.user_id == user_id:
-                raise ERROR_LAST_WORKSPACE_OWNER_CANNOT_DELETE()
+            raise ERROR_LAST_WORKSPACE_OWNER_CANNOT_DELETE()
 
     def _get_enabled_user_ids(self, domain_id: str) -> list:
         user_vos = self.user_mgr.filter_users(
