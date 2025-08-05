@@ -75,8 +75,8 @@ class UserService(BaseService):
         language = self._get_domain_default_language(domain_id, params.get("language"))
         params["language"] = language
         params["timezone"] = params.get("timezone", "UTC")
-        mfa_enforce = params["enforce_mfa_state"]
-        mfa_enforce_type = params["enforce_mfa_type"]
+        mfa_enforce = params.get("enforce_mfa_state")
+        mfa_enforce_type = params.get("enforce_mfa_type")
 
         if mfa_enforce:
             if mfa_enforce_type is None:
@@ -88,7 +88,7 @@ class UserService(BaseService):
                     "options": {"enforce": mfa_enforce},
                 }
                 params["required_actions"] = ["ENFORCE_MFA"]
-        else:
+        elif mfa_enforce is not None:
             if mfa_enforce_type is not None:
                 raise ERROR_INVALID_PARAMETER(
                     key="mfa.mfa_type",
@@ -195,7 +195,7 @@ class UserService(BaseService):
         domain_id = params.domain_id
 
         update_user_vo = {}
-        update_require_actions = list(user_vo.required_actions)
+        update_require_actions = set(user_vo.required_actions)
 
         if params.reset_password:
             domain_name = self._get_domain_name(domain_id)
@@ -216,8 +216,7 @@ class UserService(BaseService):
             temp_password = self._generate_temporary_password()
             update_user_vo["password"] = temp_password
 
-            if "UPDATE_PASSWORD" not in update_require_actions:
-                update_require_actions.append("UPDATE_PASSWORD")
+            update_require_actions.add("UPDATE_PASSWORD")
 
             if reset_password_type == "ACCESS_TOKEN":
                 token = self._issue_temporary_token(user_id, domain_id)
@@ -262,20 +261,18 @@ class UserService(BaseService):
                     update_mfa["options"].clear()
 
                 update_mfa["options"].update({"enforce": mfa_enforce})
-                update_require_actions.append("ENFORCE_MFA")
+                update_require_actions.add("ENFORCE_MFA")
 
             else:
                 if mfa_type is not None:
                     raise ERROR_INVALID_PARAMETER(
                         key="mfa.mfa_type",
-                        reason="Type can only be set when mfa enforce is True.",
+                        reason="Type can only be set when mfa enforce is ENABLED.",
                     )
+                if user_vo_mfa_state == "DISABLED":
+                    update_mfa.pop("mfa_type", None)
                 update_mfa["options"].pop("enforce", None)
-                update_require_actions = [
-                    actions
-                    for actions in update_require_actions
-                    if actions != "ENFORCE_MFA"
-                ]
+                update_require_actions.discard("ENFORCE_MFA")
 
             update_user_vo["mfa"] = update_mfa
 
@@ -283,9 +280,7 @@ class UserService(BaseService):
             exclude_unset=True, exclude={"reset_password", "mfa"}
         )
         update_user_vo.update(general_params)
-        update_user_vo["required_actions"] = list(
-            set(update_require_actions)
-        )
+        update_user_vo["required_actions"] = list(update_require_actions)
 
         user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
 
@@ -337,9 +332,7 @@ class UserService(BaseService):
         mfa_type = user_mfa.get("mfa_type")
         mfa_enforce = user_mfa.get("options", {}).get("enforce", False)
 
-        if (
-            user_mfa.get("state", "DISABLED") == "DISABLED" or mfa_type is None
-        ) and mfa_enforce is None:
+        if user_mfa.get("state", "DISABLED") == "DISABLED":
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
         if mfa_type == "OTP" and user_mfa.get("state", "DISABLED") == "ENABLED":
@@ -358,6 +351,7 @@ class UserService(BaseService):
             update_user_vo["mfa"]["options"] = {"enforce": mfa_enforce}
         else:
             update_required_actions.discard("ENFORCE_MFA")
+            update_user_vo["mfa"].pop("mfa_type", None)
 
         update_user_vo["required_actions"] = list(update_required_actions)
         user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
