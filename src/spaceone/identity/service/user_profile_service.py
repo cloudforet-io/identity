@@ -206,6 +206,7 @@ class UserProfileService(BaseService):
         auth_type = user_vo.auth_type
         email = user_vo.email
         language = user_vo.language
+        required_actions = set(user_vo.required_actions)
 
         self._check_reset_password_eligibility(user_id, auth_type, email)
 
@@ -225,10 +226,11 @@ class UserProfileService(BaseService):
             )
 
         elif reset_password_type == "PASSWORD":
+            required_actions.add("UPDATE_PASSWORD")
             temp_password = self._generate_temporary_password()
             self.user_mgr.update_user_by_vo({"password": temp_password}, user_vo)
             self.user_mgr.update_user_by_vo(
-                {"required_actions": ["UPDATE_PASSWORD"]}, user_vo
+                {"required_actions": list(required_actions)}, user_vo
             )
             console_link = self._get_console_url(domain_id)
             email_manager.send_temporary_password_email(

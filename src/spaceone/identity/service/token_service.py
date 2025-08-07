@@ -93,7 +93,6 @@ class TokenService(BaseService):
         user_id = user_vo.user_id
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         mfa_type = user_mfa.get("mfa_type")
-        enforce_mfa = user_mfa.get("options", {}).get("enforce", False)
         mfa_state = user_mfa.get("state", "DISABLED")
 
         permissions = self._get_permissions_from_required_actions(user_vo)
@@ -137,7 +136,7 @@ class TokenService(BaseService):
             permissions=permissions,
         )
 
-        if mfa_state == "DISABLED" and enforce_mfa and mfa_type is not None:
+        if "ENFORCE_MFA" in user_vo.required_actions:
             raise ERROR_MFA_NOT_ACTIVATED(
                 user_id=user_id,
                 mfa_type=mfa_type,

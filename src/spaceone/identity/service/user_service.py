@@ -195,6 +195,7 @@ class UserService(BaseService):
 
         """
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+        auth_type = user_vo.auth_type
         domain_id = params.domain_id
 
         update_user_vo = {}
@@ -203,7 +204,6 @@ class UserService(BaseService):
         if params.reset_password:
             domain_name = self._get_domain_name(domain_id)
             user_id = user_vo.user_id
-            auth_type = user_vo.auth_type
             email = params.email or user_vo.email
             email_verified = user_vo.email_verified
 
@@ -251,7 +251,7 @@ class UserService(BaseService):
                 "options": user_vo_mfa_options,
             }
 
-            if user_vo.auth_type == "EXTERNAL":
+            if auth_type == "EXTERNAL":
                 raise ERROR_NOT_ALLOWED_ACTIONS(action="MFA")
 
             if mfa_enforce:
@@ -261,7 +261,7 @@ class UserService(BaseService):
                     )
                 if mfa_type != user_vo_mfa_type:
                     if user_vo_mfa_type == "OTP":
-                        self.__delete_otp_secret(user_vo, domain_id)
+                        self._delete_otp_secret(user_vo, domain_id)
                     update_mfa["mfa_type"] = mfa_type
                     update_mfa["state"] = "DISABLED"
                     update_mfa["options"].clear()
@@ -343,7 +343,7 @@ class UserService(BaseService):
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
         if mfa_type == "OTP" and mfa_state == "ENABLED":
-            self.__delete_otp_secret(user_vo, domain_id)
+            self._delete_otp_secret(user_vo, domain_id)
 
         update_user_vo: dict = {}
         update_required_actions = set(user_vo.required_actions)
@@ -697,7 +697,7 @@ class UserService(BaseService):
 
         return refresh_timeout
 
-    def __delete_otp_secret(self, user_vo: User, domain_id: str):
+    def _delete_otp_secret(self, user_vo: User, domain_id: str):
         user_vo_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         user_vo_mfa_options = user_vo_mfa.get("options", {})
 
