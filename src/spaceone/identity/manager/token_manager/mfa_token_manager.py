@@ -1,15 +1,15 @@
 import logging
 
 from spaceone.identity.error.error_authentication import *
-from spaceone.identity.error.error_user import *
 from spaceone.identity.error.error_mfa import *
-from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
+from spaceone.identity.error.error_user import *
+from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.domain_manager import DomainManager
-from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.token_manager.base import TokenManager
-from spaceone.identity.manager import SecretManager
-from spaceone.identity.model.domain.database import Domain
+from spaentity.manager.user_manager import UserManager
+from spaceone.identity.modceone.idel.domain.database import Domain
 from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,6 +44,8 @@ class MFATokenManager(TokenManager):
         if verify_code := kwargs.get("verify_code"):
             if mfa_manager.check_mfa_verify_code(credentials, verify_code):
                 self.is_authenticated = True
+                if self.user.state == "PENDING":
+                   self.user_mgr.update_user_by_vo({"state": "ENABLED"}, self.user)
             else:
                 raise ERROR_INVALID_CREDENTIALS()
 
@@ -52,14 +54,22 @@ class MFATokenManager(TokenManager):
                 mfa_email = user_mfa["options"].get("email")
 
                 mfa_manager.send_mfa_authentication_email(
-                    self.user.user_id, domain_id, mfa_email, self.user.language, credentials
+                    self.user.user_id,
+                    domain_id,
+                    mfa_email,
+                    self.user.language,
+                    credentials,
                 )
             elif mfa_type == "OTP":
                 secret_manager: SecretManager = self.locator.get_manager(SecretManager)
                 user_secret_id = user_mfa["options"].get("user_secret_id")
-                otp_secret_key = secret_manager.get_user_otp_secret_key(user_secret_id, domain_id)
+                otp_secret_key = secret_manager.get_user_otp_secret_key(
+                    user_secret_id, domain_id
+                )
 
-                mfa_manager.set_cache_otp_mfa_secret_key(otp_secret_key, self.user.user_id, domain_id, credentials)
+                mfa_manager.set_cache_otp_mfa_secret_key(
+                    otp_secret_key, self.user.user_id, domain_id, credentials
+                )
 
     def _check_user_state(self) -> None:
         if self.user.state not in ["ENABLED", "PENDING"]:
