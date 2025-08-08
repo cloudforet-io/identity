@@ -3,7 +3,6 @@ from typing import Union
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-
 from spaceone.identity.error import (
     ERROR_NOT_ALLOWED_TO_DELETE_ROLE_BINDING,
     ERROR_SERVICE_ACCOUNT_MANAGER_REGISTERED,
@@ -173,11 +172,16 @@ class RoleBindingService(BaseService):
                     supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
                 )
             self.check_last_workspace_owner_role_binding(
-                new_role_vo.role_type, rb_vo.workspace_id, rb_vo.domain_id
+                rb_vo.user_id,
+                new_role_vo.role_type,
+                rb_vo.workspace_id,
+                rb_vo.domain_id,
             )
         elif rb_vo.role_type == new_role_vo.role_type:
             self.check_last_domain_admin_role_binding(
-                new_role_vo.role_type, rb_vo.domain_id
+                rb_vo.user_id,
+                new_role_vo.role_type,
+                rb_vo.domain_id,
             )
         else:
             raise ERROR_NOT_ALLOWED_ROLE_TYPE(
@@ -250,10 +254,12 @@ class RoleBindingService(BaseService):
         self.check_self_update_and_delete(request_user_id, rb_vo.user_id)
 
         if rb_vo.role_type == "DOMAIN_ADMIN":
-            self.check_last_domain_admin_role_binding(None, rb_vo.domain_id)
+            self.check_last_domain_admin_role_binding(
+                rb_vo.user_id, None, rb_vo.domain_id
+            )
         elif rb_vo.role_type == "WORKSPACE_OWNER":
             self.check_last_workspace_owner_role_binding(
-                None, rb_vo.workspace_id, rb_vo.domain_id
+                rb_vo.user_id, None, rb_vo.workspace_id, rb_vo.domain_id
             )
 
         # Update user role type
@@ -407,7 +413,7 @@ class RoleBindingService(BaseService):
             )
 
     def check_last_domain_admin_role_binding(
-        self, new_role_type: Union[str, None], domain_id: str
+        self, user_id: str, new_role_type: Union[str, None], domain_id: str
     ) -> None:
         user_ids = self._get_enabled_user_ids(domain_id)
         rb_vos = self.role_binding_manager.filter_role_bindings(
@@ -416,11 +422,18 @@ class RoleBindingService(BaseService):
             user_id=user_ids,
         )
 
+        if not rb_vos.filter(user_id=user_id):
+            return None
+
         if rb_vos.count() == 1 and new_role_type != "DOMAIN_ADMIN":
             raise ERROR_LAST_DOMAIN_ADMIN_CANNOT_DELETE()
 
     def check_last_workspace_owner_role_binding(
-        self, new_role_type: Union[str, None], workspace_id: str, domain_id: str
+        self,
+        user_id: str,
+        new_role_type: Union[str, None],
+        workspace_id: str,
+        domain_id: str,
     ) -> None:
         user_ids = self._get_enabled_user_ids(domain_id)
         rb_vos = self.role_binding_manager.filter_role_bindings(
@@ -429,6 +442,9 @@ class RoleBindingService(BaseService):
             user_id=user_ids,
             role_type="WORKSPACE_OWNER",
         )
+
+        if not rb_vos.filter(user_id=user_id):
+            return None
 
         if rb_vos.count() == 1 and new_role_type != "WORKSPACE_OWNER":
             raise ERROR_LAST_WORKSPACE_OWNER_CANNOT_DELETE()

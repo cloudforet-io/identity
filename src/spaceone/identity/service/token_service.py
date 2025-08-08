@@ -90,14 +90,17 @@ class TokenService(BaseService):
             raise e
 
         user_vo = token_mgr.user
+        user_id = user_vo.user_id
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         mfa_type = user_mfa.get("mfa_type")
+        mfa_state = user_mfa.get("state", "DISABLED")
+
         permissions = self._get_permissions_from_required_actions(user_vo)
 
         mfa_user_id = user_vo.user_id
 
         if self._check_login_protocol_with_user_auth_type(auth_type, domain_id):
-            if user_mfa.get("state", "DISABLED") == "ENABLED" and auth_type != "MFA":
+            if mfa_state == "ENABLED" and auth_type != "MFA":
                 mfa_manager = MFAManager.get_manager_by_mfa_type(mfa_type)
                 if mfa_type == "EMAIL":
                     mfa_email = user_mfa["options"].get("email")
@@ -132,6 +135,14 @@ class TokenService(BaseService):
             timeout=timeout,
             permissions=permissions,
         )
+
+        if "ENFORCE_MFA" in user_vo.required_actions:
+            raise ERROR_MFA_NOT_ACTIVATED(
+                user_id=user_id,
+                mfa_type=mfa_type,
+                mfa_state=mfa_state,
+                access_token=token_info["access_token"],
+            )
 
         self._clear_issue_attempts(domain_id, credentials, auth_type)
 
@@ -305,7 +316,7 @@ class TokenService(BaseService):
             return None
 
         permissions = {"identity:UserProfile"}
-        
+
         if "ENFORCE_MFA" in actions:
             permissions.add("secret:UserSecret.write")
 
@@ -465,7 +476,6 @@ class TokenService(BaseService):
     def _increment_issue_attempts(
         self, domain_id: str, credentials: dict, auth_type: str
     ) -> None:
-
         if cache.is_set():
             copied_credentials = self._get_credentials_without_password(
                 credentials, auth_type
