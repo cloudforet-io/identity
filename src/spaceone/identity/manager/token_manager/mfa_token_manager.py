@@ -8,8 +8,8 @@ from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.mfa_manager.base import MFAManager
 from spaceone.identity.manager.token_manager.base import TokenManager
-from spaentity.manager.user_manager import UserManager
-from spaceone.identity.modceone.idel.domain.database import Domain
+from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.model.domain.database import Domain
 from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class MFATokenManager(TokenManager):
             if mfa_manager.check_mfa_verify_code(credentials, verify_code):
                 self.is_authenticated = True
                 if self.user.state == "PENDING":
-                   self.user_mgr.update_user_by_vo({"state": "ENABLED"}, self.user)
+                    self.user_mgr.update_user_by_vo({"state": "ENABLED"}, self.user)
             else:
                 raise ERROR_INVALID_CREDENTIALS()
 
