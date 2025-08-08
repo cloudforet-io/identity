@@ -375,6 +375,8 @@ class UserProfileService(BaseService):
             elif mfa_state == "DISABLED":
                 update_require_actions.discard("ENFORCE_MFA")
                 user_mfa["state"] = "ENABLED"
+                if not mfa_enforce:
+                    user_mfa.pop("mfa_type", None)
 
             user_vo = self.user_mgr.update_user_by_vo(
                 {"mfa": user_mfa, "required_actions": list(update_require_actions)},
