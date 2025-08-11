@@ -73,8 +73,7 @@ class RoleBindingService(BaseService):
 
         # Check workspace
         if resource_group == "WORKSPACE":
-            workspace_mgr = WorkspaceManager()
-            workspace_vo = workspace_mgr.get_workspace(workspace_id, domain_id)
+            workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
         else:
             params["workspace_id"] = "*"
             workspace_id = "*"
@@ -119,9 +118,6 @@ class RoleBindingService(BaseService):
 
         # Create role binding
         rb_vo = self.role_binding_manager.create_role_binding(params)
-
-        if workspace_vo:
-            self.update_workspace_user_count(domain_id, workspace_id)
 
         return rb_vo
 
@@ -283,9 +279,6 @@ class RoleBindingService(BaseService):
         user_vo = self.user_mgr.get_user(rb_vo.user_id, rb_vo.domain_id)
 
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
-
-        if rb_vo.workspace_id and not rb_vo.resource_group == "DOMAIN":
-            self.update_workspace_user_count(rb_vo.domain_id, rb_vo.workspace_id)
 
         self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
 
@@ -481,28 +474,3 @@ class RoleBindingService(BaseService):
                 return "USER"
 
             return after
-
-    def update_workspace_user_count(self, domain_id: str, workspace_id: str) -> None:
-        workspace_vo = self.workspace_mgr.get_workspace(
-            domain_id=domain_id, workspace_id=workspace_id
-        )
-
-        if workspace_vo:
-            user_rb_total_count = self._get_workspace_user_count(
-                domain_id, workspace_id
-            )
-            self.workspace_mgr.update_workspace_by_vo(
-                {"user_count": user_rb_total_count}, workspace_vo
-            )
-
-    def _get_workspace_user_count(self, domain_id: str, workspace_id: str) -> int:
-        user_rb_ids = self.role_binding_manager.stat_role_bindings(
-            query={
-                "distinct": "user_id",
-                "filter": [
-                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
-                    {"k": "domain_id", "v": domain_id, "o": "eq"},
-                ],
-            }
-        ).get("results", [])
-        return len(user_rb_ids)

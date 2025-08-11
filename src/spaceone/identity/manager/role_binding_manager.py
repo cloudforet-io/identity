@@ -2,10 +2,11 @@ import logging
 from typing import Tuple
 
 from mongoengine import QuerySet
-from spaceone.core.manager import BaseManager
 
-from spaceone.identity.model.role_binding.database import RoleBinding
+from spaceone.core.manager import BaseManager
 from spaceone.identity.manager.user_group_manager import UserGroupManager
+from spaceone.identity.manager.workspace_manager import WorkspaceManager
+from spaceone.identity.model.role_binding.database import RoleBinding
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +24,11 @@ class RoleBindingManager(BaseManager):
         role_binding_vo = self.role_binding_model.create(params)
         self.transaction.add_rollback(_rollback, role_binding_vo)
 
+        if role_binding_vo.resource_group != "DOMAIN":
+            self._update_workspace_user_count(
+                role_binding_vo.workspace_id, role_binding_vo.domain_id
+            )
+
         return role_binding_vo
 
     def update_role_binding_by_vo(
@@ -31,7 +37,7 @@ class RoleBindingManager(BaseManager):
         def _rollback(old_data):
             _LOGGER.info(
                 f"[update_role_binding_by_vo._rollback] Revert Data: "
-                f'{old_data["role_binding_id"]}'
+                f"{old_data['role_binding_id']}"
             )
             role_binding_vo.update(old_data)
 
@@ -39,8 +45,10 @@ class RoleBindingManager(BaseManager):
 
         return role_binding_vo.update(params)
 
-    @staticmethod
-    def delete_role_binding_by_vo(role_binding_vo: RoleBinding) -> None:
+    def delete_role_binding_by_vo(
+        self,
+        role_binding_vo: RoleBinding,
+    ) -> None:
         _LOGGER.debug(
             f"[delete_role_binding_by_vo] Delete role binding info: {role_binding_vo.to_dict()}"
         )
@@ -58,6 +66,11 @@ class RoleBindingManager(BaseManager):
                 user_group_mgr.update_user_group_by_vo(
                     {"users": users}, user_group_vo=user_group_vo
                 )
+
+        if role_binding_vo.workspace_id and role_binding_vo.workspace_id != "*":
+            self._update_workspace_user_count(
+                role_binding_vo.workspace_id, role_binding_vo.domain_id
+            )
 
     def get_role_binding(
         self, role_binding_id: str, domain_id: str, workspace_id: str = None
@@ -80,3 +93,32 @@ class RoleBindingManager(BaseManager):
 
     def stat_role_bindings(self, query: dict) -> dict:
         return self.role_binding_model.stat(**query)
+
+    def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> int:
+        workspace_mgr = WorkspaceManager()
+
+        workspace_vo = workspace_mgr.get_workspace(workspace_id, domain_id)
+
+        if workspace_vo and workspace_vo.workspace_id != "*":
+            user_rb_total_count = self._get_workspace_user_count(
+                workspace_id, domain_id
+            )
+
+            workspace_mgr.update_workspace_by_vo(
+                {"user_count": user_rb_total_count}, workspace_vo
+            )
+
+        return user_rb_total_count
+
+    def _get_workspace_user_count(self, workspace_id: str, domain_id: str) -> int:
+        user_rb_ids = self.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+
+        return len(user_rb_ids)
