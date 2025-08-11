@@ -4,9 +4,10 @@ from typing import Dict, List, Union
 
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
-
+from spaceone.identity.error.error_workspace import *
 from spaceone.identity.manager import SecretManager
 from spaceone.identity.manager.domain_manager import DomainManager
+from spaceone.identity.manager.package_manager import PackageManager
 from spaceone.identity.manager.project_group_manager import ProjectGroupManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.resource_manager import ResourceManager
@@ -15,11 +16,9 @@ from spaceone.identity.manager.service_account_manager import ServiceAccountMana
 from spaceone.identity.manager.trusted_account_manager import TrustedAccountManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.manager.workspace_manager import WorkspaceManager
-from spaceone.identity.manager.package_manager import PackageManager
 from spaceone.identity.model import Workspace
 from spaceone.identity.model.workspace.request import *
 from spaceone.identity.model.workspace.response import *
-from spaceone.identity.error.error_workspace import *
 from spaceone.identity.service.role_binding_service import RoleBindingService
 
 _LOGGER = logging.getLogger(__name__)
@@ -192,7 +191,7 @@ class WorkspaceService(BaseService):
         else:
             self._delete_related_resources_in_workspace(workspace_vo)
 
-        self.workspace_mgr.delete_workspace_by_vo(workspace_vo)
+        self.workspace_mgr.delete_workspace_by_vo(workspace_vo, self.rb_mgr)
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model

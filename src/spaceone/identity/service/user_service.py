@@ -3,7 +3,7 @@ import logging
 import re
 import secrets
 import string
-from typing import Union
+from typing import List, Optional, Union
 
 from spaceone.core import config
 from spaceone.core.service import *
@@ -56,8 +56,8 @@ class UserService(BaseService):
                 'tags': 'dict',
                 'reset_password': 'bool',
                 'domain_id': 'str',          # injected from auth (required)
-                'enforce_mfa_state': 'ENABLED | DISABLED',
-                'enforce_mfa_type': 'OTP | EMAIL'    # conditionally required
+                'enforce_mfa_state': 'ENABLED' | 'DISABLED',
+                'enforce_mfa_type': 'OTP' | 'EMAIL'    # conditionally required
             }
         Returns:
             UserResponse:
@@ -73,27 +73,19 @@ class UserService(BaseService):
         domain_id = params["domain_id"]
         email = params.get("email")
         language = self._get_domain_default_language(domain_id, params.get("language"))
+        mfa_enforce = params.get("enforce_mfa_state") == "ENABLED"
+        mfa_enforce_type = params.get("enforce_mfa_type")
         params["language"] = language
         params["timezone"] = params.get("timezone", "UTC")
-        mfa_enforce = params.get("enforce_mfa_state")
-        mfa_enforce_type = params.get("enforce_mfa_type")
+
+        self._validate_mfa_enforce_params(mfa_enforce, mfa_enforce_type, auth_type)
 
         if mfa_enforce:
-            if mfa_enforce_type is None:
-                raise ERROR_REQUIRED_PARAMETER(key="mfa.mfa_type")
-            else:
-                params["mfa"] = {
-                    "mfa_type": mfa_enforce_type,
-                    "state": "DISABLED",
-                    "options": {"enforce": mfa_enforce},
-                }
-                params["required_actions"] = ["ENFORCE_MFA"]
-        elif mfa_enforce is not None:
-            if mfa_enforce_type is not None:
-                raise ERROR_INVALID_PARAMETER(
-                    key="mfa.mfa_type",
-                    reason="Type can only be set when mfa enforce is True.",
-                )
+            params["mfa"] = self._get_mfa_base_status(
+                {}, mfa_enforce, mfa_enforce_type, False
+            )
+            params["mfa"]["options"] = {"enforce": mfa_enforce}
+            params.setdefault("required_actions", []).append("ENFORCE_MFA")
 
         if reset_password:
             self._check_reset_password_eligibility(user_id, auth_type, email)
@@ -119,7 +111,7 @@ class UserService(BaseService):
                     domain_name, token["access_token"]
                 )
 
-                params.get("required_actions", []).append("UPDATE_PASSWORD")
+                params.setdefault("required_actions", []).append("UPDATE_PASSWORD")
 
                 user_vo = self.user_mgr.create_user(params)
                 user_id = user_vo.user_id
@@ -144,9 +136,8 @@ class UserService(BaseService):
             user_vo = self.user_mgr.create_user(params)
             user_id = user_vo.user_id
 
-            if (
-                auth_type == "EXTERNAL"
-                and self._check_invite_external_user_eligibility(user_id, user_id)
+            if auth_type == "EXTERNAL" and self._check_invite_external_user_eligibility(
+                user_id, user_id
             ):
                 email_mgr = EmailManager()
 
@@ -184,14 +175,15 @@ class UserService(BaseService):
                 'tags': 'dict',
                 'reset_password': 'bool',
                 'domain_id': 'str',          # injected from auth (required)
-                'enforce_mfa_state': 'ENABLED | DISABLED',
-                'enforce_mfa_type': 'OTP | EMAIL'    # conditionally required
+                'enforce_mfa_state': 'ENABLED' | 'DISABLED',
+                'enforce_mfa_type': 'OTP' | 'EMAIL'    # conditionally required
             }
         Returns:
             UserResponse:
 
         """
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
+        auth_type = user_vo.auth_type
         domain_id = params.domain_id
 
         update_user_vo = {}
@@ -200,7 +192,6 @@ class UserService(BaseService):
         if params.reset_password:
             domain_name = self._get_domain_name(domain_id)
             user_id = user_vo.user_id
-            auth_type = user_vo.auth_type
             email = params.email or user_vo.email
             email_verified = user_vo.email_verified
 
@@ -234,47 +225,36 @@ class UserService(BaseService):
                     user_id, email, console_link, temp_password, language
                 )
 
-        if params.enforce_mfa_state is not None:
+        if params.enforce_mfa_state is not None or params.enforce_mfa_type is not None:
             mfa_enforce = params.enforce_mfa_state == "ENABLED"
-            mfa_type = params.enforce_mfa_type
+            enforce_mfa_type = params.enforce_mfa_type
             user_vo_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
             user_vo_mfa_type = user_vo_mfa.get("mfa_type", None)
-            user_vo_mfa_state = user_vo_mfa.get("state", "DISABLED")
-            user_vo_mfa_options = user_vo_mfa.get("options", {})
 
-            update_mfa = {
-                "state": user_vo_mfa_state,
-                "mfa_type": user_vo_mfa_type,
-                "options": user_vo_mfa_options,
-            }
+            self._validate_mfa_enforce_params(
+                mfa_enforce, params.enforce_mfa_type, auth_type
+            )
 
-            if mfa_enforce:
-                if mfa_type is None:
-                    raise ERROR_REQUIRED_PARAMETER(
-                        key="enforce_mfa_type",
-                    )
-                if mfa_type != user_vo_mfa_type:
-                    if user_vo_mfa_type == "OTP":
-                        self.__delete_otp_secret(user_vo, domain_id)
-                    update_mfa["mfa_type"] = mfa_type
-                    update_mfa["state"] = "DISABLED"
-                    update_mfa["options"].clear()
+            update_user_vo["mfa"] = self._get_mfa_base_status(
+                user_vo_mfa, mfa_enforce, enforce_mfa_type, False
+            )
+            update_user_vo["mfa"]["options"] = self._get_mfa_options_config(
+                user_vo,
+                domain_id,
+                mfa_enforce,
+                self._should_reset_current_mfa(
+                    mfa_enforce, enforce_mfa_type, user_vo_mfa_type
+                ),
+            )
 
-                update_mfa["options"].update({"enforce": mfa_enforce})
-                update_require_actions.add("ENFORCE_MFA")
+            update_require_actions = self._get_updated_required_actions(
+                user_vo_mfa,
+                list(update_require_actions),
+                mfa_enforce,
+                enforce_mfa_type,
+            )
 
-            else:
-                if mfa_type is not None:
-                    raise ERROR_INVALID_PARAMETER(
-                        key="mfa.mfa_type",
-                        reason="Type can only be set when mfa enforce is ENABLED.",
-                    )
-                if user_vo_mfa_state == "DISABLED":
-                    update_mfa.pop("mfa_type", None)
-                update_mfa["options"].pop("enforce", None)
-                update_require_actions.discard("ENFORCE_MFA")
-
-            update_user_vo["mfa"] = update_mfa
+            update_user_vo["required_actions"] = list(update_require_actions)
 
         general_params = params.dict(
             exclude_unset=True, exclude={"reset_password", "mfa"}
@@ -329,31 +309,30 @@ class UserService(BaseService):
 
         user_vo = self.user_mgr.get_user(user_id, domain_id)
         user_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        mfa_state = user_mfa.get("state", "DISABLED")
         mfa_type = user_mfa.get("mfa_type")
         mfa_enforce = user_mfa.get("options", {}).get("enforce", False)
 
-        if user_mfa.get("state", "DISABLED") == "DISABLED":
+        if mfa_state == "DISABLED":
             raise ERROR_MFA_ALREADY_DISABLED(user_id=user_id)
 
-        if mfa_type == "OTP" and user_mfa.get("state", "DISABLED") == "ENABLED":
-            self.__delete_otp_secret(user_vo, domain_id)
-
         update_user_vo: dict = {}
-        update_required_actions = set(user_vo.required_actions)
 
-        update_user_vo["mfa"] = {
-            "state": "DISABLED",
-            "mfa_type": mfa_type,
-        }
+        # mfa base 처리
+        update_user_vo["mfa"] = self._get_mfa_base_status(
+            user_mfa, mfa_enforce, mfa_type, True
+        )
 
-        if mfa_enforce:
-            update_required_actions.add("ENFORCE_MFA")
-            update_user_vo["mfa"]["options"] = {"enforce": mfa_enforce}
-        else:
-            update_required_actions.discard("ENFORCE_MFA")
-            update_user_vo["mfa"].pop("mfa_type", None)
+        # option 처리
+        update_user_vo["mfa"]["options"] = self._get_mfa_options_config(
+            user_vo, domain_id, mfa_enforce, True
+        )
 
-        update_user_vo["required_actions"] = list(update_required_actions)
+        # required_action 처리
+        update_user_vo["required_actions"] = self._get_updated_required_actions(
+            user_mfa, user_vo.required_actions, mfa_enforce, None
+        )
+
         user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
 
         return UserResponse(**user_vo.to_dict())
@@ -671,7 +650,6 @@ class UserService(BaseService):
 
         return domain_display_name
 
-    @staticmethod
     def _get_refresh_timeout_from_config(refresh_timeout: int) -> int:
         identity_conf = config.get_global("IDENTITY") or {}
         token_conf = identity_conf.get("token", {})
@@ -690,7 +668,7 @@ class UserService(BaseService):
 
         return refresh_timeout
 
-    def __delete_otp_secret(self, user_vo: User, domain_id: str):
+    def _delete_otp_secret(self, user_vo: User, domain_id: str):
         user_vo_mfa = user_vo.mfa.to_dict() if user_vo.mfa else {}
         user_vo_mfa_options = user_vo_mfa.get("options", {})
 
@@ -702,3 +680,233 @@ class UserService(BaseService):
             secret_manager.delete_user_secret_with_system_token(
                 domain_id, user_secret_id
             )
+
+    def _get_updated_required_actions(
+        self,
+        user_mfa: dict,
+        current_required_actions: List[str],
+        is_enforced_mfa: bool,
+        enforce_mfa_type: Optional[str],
+    ) -> List[str]:
+        """
+        Calculate updated required_actions based on MFA enforcement policy.
+
+        ENFORCE_MFA addition conditions:
+            1. MFA enforcement is enabled (is_enforced_mfa=True) AND
+            2. One of the following conditions is met:
+               - User's MFA type differs from the enforced type
+               - User's MFA type matches but is in DISABLED state
+               - User has no MFA configured
+
+        ENFORCE_MFA removal conditions (priority order):
+            1. MFA enforcement is disabled (is_enforced_mfa=False)
+            2. User has correct MFA type in ENABLED state
+
+        Args:
+            user_mfa: Current user's MFA configuration
+            current_required_actions: Current required actions list
+            is_enforced_mfa: Whether MFA enforcement is enabled
+            enforce_mfa_type: The MFA type to enforce (if enforcement is enabled)
+
+        Returns:
+            Updated required_actions list with ENFORCE_MFA properly managed
+        """
+        user_mfa_type = user_mfa.get("mfa_type", None)
+        user_mfa_state = user_mfa.get("state", None)
+        required_actions: set = set(current_required_actions)
+
+        # Remove ENFORCE_MFA if MFA enforcement is disabled
+        if not is_enforced_mfa:
+            required_actions.discard("ENFORCE_MFA")
+            return list(required_actions)
+
+        # Remove ENFORCE_MFA if user has correct MFA type in enabled state
+        if user_mfa_type == enforce_mfa_type and user_mfa_state == "ENABLED":
+            required_actions.discard("ENFORCE_MFA")
+            return list(required_actions)
+
+        # Add ENFORCE_MFA in other cases when enforcement is enabled:
+        # - MFA type differs from enforced type
+        # - MFA type matches but is disabled
+        # - No MFA is configured
+        required_actions.add("ENFORCE_MFA")
+        return list(required_actions)
+
+    def _get_mfa_options_config(
+        self,
+        user_vo: User,
+        domain_id: str,
+        is_enforced_mfa: bool,
+        is_explicit_reset: bool,
+    ) -> dict:
+        """
+        Calculate MFA options configuration based on enforcement policy and reset requirements.
+
+        This function manages MFA-related options in the user's MFA configuration:
+        - Adds/removes 'enforce' flag based on MFA enforcement policy
+        - Cleans up type-specific options (user_secret_id for OTP, email for EMAIL) when reset is needed
+        - Handles OTP secret deletion when transitioning away from OTP MFA
+
+        Args:
+            user_vo: User object containing current MFA configuration
+            domain_id: Domain ID for OTP secret deletion operations
+            is_enforced_mfa: Whether MFA enforcement is enabled
+            is_explicit_reset: Whether to explicitly reset current MFA options
+
+        Returns:
+            Updated MFA options dictionary
+
+        Note:
+            When MFA is enabled, options contain type-specific data:
+            - OTP type: options.user_secret_id exists
+            - EMAIL type: options.email exists
+            These are cleaned up when MFA is disabled or reset.
+        """
+        user_mfa: dict = user_vo.mfa.to_dict() if user_vo.mfa else {}
+        user_mfa_options: dict = user_mfa.get("options", {})
+        user_mfa_state = user_mfa.get("state", None)
+        user_mfa_type = user_mfa.get("mfa_type", None)
+
+        new_options = copy.deepcopy(user_mfa_options)
+
+        # Clean up MFA-specific options when explicit reset is required
+        if is_explicit_reset:
+            delete_field_map = {"OTP": "user_secret_id", "EMAIL": "email"}
+            if user_mfa_type in delete_field_map:
+                if user_mfa_type == "OTP" and user_mfa_state == "ENABLED":
+                    self._delete_otp_secret(user_vo, domain_id)
+                new_options.pop(delete_field_map[user_mfa_type], None)
+
+        # Manage enforcement flag based on policy
+        if is_enforced_mfa:
+            new_options["enforce"] = True
+        else:
+            new_options.pop("enforce", None)
+
+        return new_options
+
+    def _get_mfa_base_status(
+        self,
+        user_mfa: dict,
+        is_enforced_mfa: bool,
+        enforce_mfa_type: Optional[str],
+        is_explicit_reset: bool,
+    ) -> dict:
+        """
+        Calculate MFA base configuration (state and mfa_type) based on enforcement policy.
+
+        This function determines the appropriate MFA state and type based on:
+        - Current MFA configuration
+        - MFA enforcement policy
+        - Whether explicit reset is requested (e.g., from disable_mfa API)
+
+        Logic:
+        - When enforcement is enabled and type changes: Reset to DISABLED with new type
+        - When enforcement is disabled and MFA is already disabled: Remove mfa_type
+        - When explicit reset is requested: Force DISABLED state
+        - Otherwise: Maintain current state and type
+
+        Args:
+            user_mfa: Current user's MFA configuration
+            is_enforced_mfa: Whether MFA enforcement is enabled
+            enforce_mfa_type: The MFA type to enforce (if enforcement is enabled)
+            is_explicit_reset: Whether explicit disable is requested (e.g., disable_mfa API)
+
+        Returns:
+            Dictionary containing updated 'state' and optionally 'mfa_type'
+        """
+        current_state = user_mfa.get("state", "DISABLED")
+        current_type = user_mfa.get("mfa_type")
+
+        # Handle explicit reset requests (e.g., disable_mfa API)
+        if is_explicit_reset:
+            if is_enforced_mfa:
+                # Keep type even with explicit disable if enforcement policy exists
+                return {"state": "DISABLED", "mfa_type": current_type}
+            else:
+                # Remove type when no enforcement policy and explicit disable
+                return {"state": "DISABLED"}
+
+        # Handle normal MFA state calculation
+        if is_enforced_mfa:
+            # Reset to DISABLED when MFA type changes under enforcement
+            if current_type != enforce_mfa_type:
+                return {"state": "DISABLED", "mfa_type": enforce_mfa_type}
+            else:
+                # Maintain current state when type matches
+                return {"state": current_state, "mfa_type": current_type}
+        else:
+            # Handle enforcement removal
+            if current_state == "DISABLED":
+                # Remove type when already disabled and no enforcement
+                return {"state": current_state}
+            else:
+                # Preserve user's personal MFA settings when active
+                return {"state": current_state, "mfa_type": current_type}
+
+    def _validate_mfa_enforce_params(
+        self,
+        is_enforced_mfa: bool,
+        enforce_mfa_type: Optional[str],
+        auth_type: str,
+    ) -> None:
+        """
+        Validate MFA enforcement parameters for consistency and business rules.
+
+        Validation rules:
+        - When MFA enforcement is enabled: enforce_mfa_type must be provided
+        - When MFA enforcement is disabled: enforce_mfa_type must not be provided
+        - EXTERNAL auth type: MFA enforcement is not allowed
+
+        Args:
+            is_enforced_mfa: Whether MFA enforcement is enabled
+            enforce_mfa_type: The MFA type to enforce (required when enforcement is enabled)
+            auth_type: User's authentication type
+
+        Raises:
+            ERROR_REQUIRED_PARAMETER: When enforce_mfa_type is missing but required
+            ERROR_INVALID_PARAMETER: When parameters violate business rules
+        """
+        if is_enforced_mfa:
+            if not enforce_mfa_type:
+                raise ERROR_REQUIRED_PARAMETER(key="enforce_mfa_type")
+
+            if auth_type == "EXTERNAL":
+                raise ERROR_INVALID_PARAMETER(
+                    key="enforce_mfa",
+                    reason="MFA enforcement is not allowed for external authentication",
+                )
+        else:
+            if enforce_mfa_type:
+                raise ERROR_INVALID_PARAMETER(
+                    key="enforce_mfa_type",
+                    reason="MFA type can only be specified when enforcement is enabled",
+                )
+
+    def _should_reset_current_mfa(
+        self,
+        is_enforced_mfa: bool,
+        enforce_mfa_type: str | None,
+        user_mfa_type: str | None,
+    ) -> bool:
+        """
+        Determine if current MFA configuration should be reset due to type mismatch.
+
+        Reset is required when:
+        - MFA enforcement is enabled AND
+        - Enforced MFA type differs from user's current MFA type AND
+        - User has an existing MFA type configured
+
+        Args:
+            is_enforced_mfa: Whether MFA enforcement is enabled
+            enforce_mfa_type: The MFA type to enforce
+            user_mfa_type: User's current MFA type
+
+        Returns:
+            True if MFA reset is required, False otherwise
+        """
+        return (
+            is_enforced_mfa
+            and enforce_mfa_type != user_mfa_type
+            and user_mfa_type is not None
+        )
