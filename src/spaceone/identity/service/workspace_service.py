@@ -579,7 +579,7 @@ class WorkspaceService(BaseService):
         self, workspace_vo: Workspace, old_workspace_group_id: str, domain_id: str
     ) -> None:
         workspace_id = workspace_vo.workspace_id
-
+        
         workspace_vo.changed_at = datetime.utcnow()
         workspace_vo.workspace_group_id = None
 
@@ -595,11 +595,9 @@ class WorkspaceService(BaseService):
         self._delete_role_bindings(
             workspace_id, domain_id, old_workspace_group_id, user_rb_ids
         )
-        user_rb_total_count = len(user_rb_ids)
 
         self.workspace_mgr.update_workspace_by_vo(
             {
-                "user_count": user_rb_total_count,
                 "changed_at": workspace_vo.changed_at,
                 "workspace_group_id": None,
             },
