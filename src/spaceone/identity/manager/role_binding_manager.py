@@ -24,7 +24,7 @@ class RoleBindingManager(BaseManager):
         role_binding_vo = self.role_binding_model.create(params)
         self.transaction.add_rollback(_rollback, role_binding_vo)
 
-        if role_binding_vo.resource_group != "DOMAIN":
+        if role_binding_vo.workspace_id and role_binding_vo.workspace_id != "*":
             self._update_workspace_user_count(
                 role_binding_vo.workspace_id, role_binding_vo.domain_id
             )
