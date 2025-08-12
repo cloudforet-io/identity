@@ -69,12 +69,8 @@ class RoleBindingService(BaseService):
         # Check user
         user_vo = self.user_mgr.get_user(user_id, domain_id)
 
-        workspace_vo = None
-
         # Check workspace
-        if resource_group == "WORKSPACE":
-            workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
-        else:
+        if resource_group != "WORKSPACE":
             params["workspace_id"] = "*"
             workspace_id = "*"
 
