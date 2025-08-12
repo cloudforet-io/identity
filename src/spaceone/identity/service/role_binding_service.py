@@ -148,7 +148,7 @@ class RoleBindingService(BaseService):
         self.check_self_update_and_delete(request_user_id, rb_vo.user_id)
 
         if rb_vo.workspace_group_id:
-            raise ERROR_PERMISSION_DENIED(
+            raise ERROR_NOT_ALLOWED_TO_UPDATE_ROLE_ASSIGNED_BY_WORKSPACE_GROUP(
                 key="role_binding_id", value=params.role_binding_id
             )
 
