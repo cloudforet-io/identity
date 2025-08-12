@@ -39,3 +39,9 @@ class ERROR_LAST_WORKSPACE_OWNER_CANNOT_DELETE(ERROR_INVALID_ARGUMENT):
 
 class ERROR_LAST_DOMAIN_ADMIN_CANNOT_DELETE(ERROR_INVALID_ARGUMENT):
     _message = "Last domain admin cannot be deleted."
+
+
+class ERROR_NOT_ALLOWED_TO_UPDATE_ROLE_ASSIGNED_BY_WORKSPACE_GROUP(
+    ERROR_INVALID_ARGUMENT
+):
+    _message = "Roles assigned by a Workspace Group cannot be updated from the User menu. (role_binding_id = {role_binding_id})"
