@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Union
 
 from mongoengine import QuerySet
+
 from spaceone.core.error import ERROR_INVALID_PARAMETER, ERROR_NOT_FOUND
 from spaceone.core.service import (
     BaseService,
@@ -17,7 +18,6 @@ from spaceone.core.service.utils import (
     append_query_filter,
     convert_model,
 )
-
 from spaceone.identity.error.error_role import (
     ERROR_NOT_ALLOWED_ROLE_TYPE,
     ERROR_NOT_ALLOWED_USER_STATE,
@@ -691,8 +691,6 @@ class WorkspaceGroupService(BaseService):
                 self.workspace_mgr.update_workspace_by_vo(
                     {"user_count": user_rb_total_count}, workspace_vo
                 )
-        else:
-            self.rb_svc.update_workspace_user_count(domain_id, workspace_id)
 
         return updated_users
 
