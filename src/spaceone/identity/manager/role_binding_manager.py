@@ -94,7 +94,7 @@ class RoleBindingManager(BaseManager):
     def stat_role_bindings(self, query: dict) -> dict:
         return self.role_binding_model.stat(**query)
 
-    def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> int:
+    def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
         workspace_mgr = WorkspaceManager()
 
         workspace_vo = workspace_mgr.get_workspace(workspace_id, domain_id)
@@ -107,8 +107,6 @@ class RoleBindingManager(BaseManager):
             workspace_mgr.update_workspace_by_vo(
                 {"user_count": user_rb_total_count}, workspace_vo
             )
-
-        return user_rb_total_count
 
     def _get_workspace_user_count(self, workspace_id: str, domain_id: str) -> int:
         user_rb_ids = self.stat_role_bindings(

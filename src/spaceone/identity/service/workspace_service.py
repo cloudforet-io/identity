@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Union
 
+from spaceone.core import cache
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 from spaceone.identity.error.error_workspace import *
@@ -191,7 +192,18 @@ class WorkspaceService(BaseService):
         else:
             self._delete_related_resources_in_workspace(workspace_vo)
 
-        self.workspace_mgr.delete_workspace_by_vo(workspace_vo, self.rb_mgr)
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            workspace_id=workspace_vo.workspace_id, domain_id=workspace_vo.domain_id
+        )
+
+        if rb_vos.count() > 0:
+            _LOGGER.debug(
+                f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}"
+            )
+            for rb_vo in rb_vos:
+                self.rb_mgr.delete_role_binding_by_vo(rb_vo)
+
+        self.workspace_mgr.delete_workspace_by_vo(workspace_vo) 
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -579,7 +591,7 @@ class WorkspaceService(BaseService):
         self, workspace_vo: Workspace, old_workspace_group_id: str, domain_id: str
     ) -> None:
         workspace_id = workspace_vo.workspace_id
-        
+
         workspace_vo.changed_at = datetime.utcnow()
         workspace_vo.workspace_group_id = None
 

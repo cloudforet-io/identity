@@ -1,14 +1,11 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 from mongoengine import QuerySet
 
 from spaceone.core import cache
 from spaceone.core.manager import BaseManager
 from spaceone.identity.model.workspace.database import Workspace
-
-if TYPE_CHECKING:
-    from spaceone.identity.manager.role_binding_manager import RoleBindingManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,22 +48,8 @@ class WorkspaceManager(BaseManager):
 
         return workspace_vo.update(params)
 
-    def delete_workspace_by_vo(
-        self, workspace_vo: Workspace, rb_mgr: "RoleBindingManager"
-    ) -> None:
-        rb_vos = rb_mgr.filter_role_bindings(
-            workspace_id=workspace_vo.workspace_id, domain_id=workspace_vo.domain_id
-        )
-
-        if rb_vos.count() > 0:
-            _LOGGER.debug(
-                f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}"
-            )
-            for rb_vo in rb_vos:
-                rb_mgr.delete_role_binding_by_vo(rb_vo)
-
+    def delete_workspace_by_vo(self, workspace_vo: Workspace) -> None:
         workspace_vo.delete()
-
         cache.delete_pattern(
             f"identity:workspace-state:{workspace_vo.domain_id}:{workspace_vo.workspace_id}"
         )
