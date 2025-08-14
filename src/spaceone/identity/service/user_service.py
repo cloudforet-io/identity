@@ -247,11 +247,13 @@ class UserService(BaseService):
                 ),
             )
 
-            update_require_actions = self._get_updated_required_actions(
-                user_vo_mfa,
-                list(update_require_actions),
-                mfa_enforce,
-                enforce_mfa_type,
+            update_require_actions = set(
+                self._get_updated_required_actions(
+                    user_vo_mfa,
+                    list(update_require_actions),
+                    mfa_enforce,
+                    enforce_mfa_type,
+                )
             )
 
             update_user_vo["required_actions"] = list(update_require_actions)
