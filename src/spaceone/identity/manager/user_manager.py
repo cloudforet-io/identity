@@ -4,14 +4,10 @@ from typing import Tuple
 
 import pytz
 from mongoengine import QuerySet
-from spaceone.core.manager import BaseManager
 
+from spaceone.core.manager import BaseManager
 from spaceone.identity.error.error_user import *
 from spaceone.identity.lib.cipher import PasswordCipher
-from spaceone.identity.manager.project_manager import ProjectManager
-from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.user_group_manager import UserGroupManager
-from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
 from spaceone.identity.model.user.database import User
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,7 +57,7 @@ class UserManager(BaseManager):
     def update_user_by_vo(self, params: dict, user_vo: User) -> User:
         def _rollback(old_data):
             _LOGGER.info(
-                f'[update_user_by_vo._rollback] Revert Data: {old_data["user_id"]}'
+                f"[update_user_by_vo._rollback] Revert Data: {old_data['user_id']}"
             )
             user_vo.update(old_data)
 
@@ -71,7 +67,9 @@ class UserManager(BaseManager):
         if email := params.get("email"):
             self._check_email_format(email)
 
-        required_actions = list(params.get("required_actions", user_vo.required_actions or []))
+        required_actions = list(
+            params.get("required_actions", user_vo.required_actions or [])
+        )
         is_change_required_actions = False
 
         if new_password := params.get("password"):
@@ -96,7 +94,7 @@ class UserManager(BaseManager):
     def update_user_password_by_vo(self, user_vo: User, params: dict) -> User:
         def _rollback(old_data):
             _LOGGER.info(
-                f'[update_user_by_vo._rollback] Revert Data: {old_data["user_id"]}'
+                f"[update_user_by_vo._rollback] Revert Data: {old_data['user_id']}"
             )
             user_vo.update(old_data)
 
@@ -120,59 +118,7 @@ class UserManager(BaseManager):
 
         return user_vo.update(update_params)
 
-    @staticmethod
-    def delete_user_by_vo(user_vo: User) -> None:
-        rb_mgr = RoleBindingManager()
-        user_group_mgr = UserGroupManager()
-        project_mgr = ProjectManager()
-        workspace_group_mgr = WorkspaceGroupManager()
-
-        # Delete role bindings
-        rb_vos = rb_mgr.filter_role_bindings(
-            user_id=user_vo.user_id, domain_id=user_vo.domain_id
-        )
-        for rb_vo in rb_vos:
-            rb_mgr.delete_role_binding_by_vo(rb_vo)
-
-        # Delete user from user groups
-        user_group_vos = user_group_mgr.filter_user_groups(
-            users=user_vo.user_id, domain_id=user_vo.domain_id
-        )
-        for user_group_vo in user_group_vos:
-            users = user_group_vo.users
-            users.remove(user_vo.user_id)
-            user_group_mgr.update_user_group_by_vo(
-                {"users": users}, user_group_vo=user_group_vo
-            )
-
-        # Delete projects
-        project_vos = project_mgr.filter_projects(
-            users=user_vo.user_id, domain_id=user_vo.domain_id
-        )
-        for project_vo in project_vos:
-            users = project_vo.users
-            users.remove(user_vo.user_id)
-            project_mgr.update_project_by_vo({"users": users}, project_vo=project_vo)
-
-        # Delete workspace groups
-        workspace_group_vos = workspace_group_mgr.filter_workspace_groups(
-            users__user_id=user_vo.user_id, domain_id=user_vo.domain_id
-        )
-
-        for workspace_group_vo in workspace_group_vos:
-            workspace_group_dict = workspace_group_vo.to_mongo().to_dict()
-            users = workspace_group_dict.get("users", [])
-
-            if users:
-                updated_users = [
-                    user for user in users if user.get("user_id") != user_vo.user_id
-                ]
-
-                if len(updated_users) != len(users):
-                    workspace_group_mgr.update_workspace_group_by_vo(
-                        {"users": updated_users}, workspace_group_vo=workspace_group_vo
-                    )
-
+    def delete_user(self, user_vo: User) -> None:
         user_vo.delete()
 
     def get_user(self, user_id: str, domain_id: str) -> User:

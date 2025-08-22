@@ -115,6 +115,8 @@ class RoleBindingService(BaseService):
         # Create role binding
         rb_vo = self.role_binding_manager.create_role_binding(params)
 
+        self._update_workspace_user_count(rb_vo.workspace_id, rb_vo.domain_id)
+
         return rb_vo
 
     @transaction(
@@ -271,6 +273,7 @@ class RoleBindingService(BaseService):
         self.user_mgr.update_user_by_vo(user_role_info, user_vo)
 
         self.role_binding_manager.delete_role_binding_by_vo(rb_vo)
+        self._update_workspace_user_count(rb_vo.workspace_id, rb_vo.domain_id)
 
     @transaction(
         permission="identity:RoleBinding.read",
@@ -448,3 +451,26 @@ class RoleBindingService(BaseService):
                 return "USER"
 
             return after
+
+    def _get_workspace_user_count(self, workspace_id: str, domain_id: str) -> int:
+        user_rb_ids = self.role_binding_manager.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+        return len(user_rb_ids)
+
+    def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
+        workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
+
+        if workspace_vo and workspace_vo.workspace_id != "*":
+            user_rb_total_count = self._get_workspace_user_count(
+                workspace_id, domain_id
+            )
+            self.workspace_mgr.update_workspace_by_vo(
+                {"user_count": user_rb_total_count}, workspace_vo
+            )
