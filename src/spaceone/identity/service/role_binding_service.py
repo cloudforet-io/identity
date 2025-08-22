@@ -163,12 +163,6 @@ class RoleBindingService(BaseService):
                     request_role_type=new_role_vo.role_type,
                     supported_role_type=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
                 )
-            self.check_last_workspace_owner_role_binding(
-                rb_vo.user_id,
-                new_role_vo.role_type,
-                rb_vo.workspace_id,
-                rb_vo.domain_id,
-            )
         elif rb_vo.role_type == new_role_vo.role_type:
             self.check_last_domain_admin_role_binding(
                 rb_vo.user_id,
@@ -249,12 +243,12 @@ class RoleBindingService(BaseService):
             self.check_last_domain_admin_role_binding(
                 rb_vo.user_id, None, rb_vo.domain_id
             )
-        elif rb_vo.role_type == "WORKSPACE_OWNER":
-            self.check_last_workspace_owner_role_binding(
-                rb_vo.user_id, None, rb_vo.workspace_id, rb_vo.domain_id
-            )
 
-        # Update user role type
+        # Update the user's representative role_type.
+        # A user's role_type is a single, domain-level field that summarizes their highest-priority role.
+        # Since deleting a role binding (even a workspace-specific one) might change this representative role,
+        # we must re-evaluate all of the user's remaining role bindings across the entire domain
+        # to determine their new, correct role_type.
         remain_rb_vos = self.role_binding_manager.filter_role_bindings(
             domain_id=params.domain_id, user_id=rb_vo.user_id
         )
@@ -417,27 +411,6 @@ class RoleBindingService(BaseService):
         if rb_vos.count() == 1 and new_role_type != "DOMAIN_ADMIN":
             raise ERROR_LAST_DOMAIN_ADMIN_CANNOT_DELETE()
 
-    def check_last_workspace_owner_role_binding(
-        self,
-        user_id: str,
-        new_role_type: Union[str, None],
-        workspace_id: str,
-        domain_id: str,
-    ) -> None:
-        user_ids = self._get_enabled_user_ids(domain_id)
-        rb_vos = self.role_binding_manager.filter_role_bindings(
-            domain_id=domain_id,
-            workspace_id=workspace_id,
-            user_id=user_ids,
-            role_type="WORKSPACE_OWNER",
-        )
-
-        if not rb_vos.filter(user_id=user_id):
-            return None
-
-        if rb_vos.count() == 1 and new_role_type != "WORKSPACE_OWNER":
-            raise ERROR_LAST_WORKSPACE_OWNER_CANNOT_DELETE()
-
     def _get_enabled_user_ids(self, domain_id: str) -> list:
         user_vos = self.user_mgr.filter_users(
             domain_id=domain_id,
@@ -453,6 +426,11 @@ class RoleBindingService(BaseService):
 
     @staticmethod
     def _get_latest_role_type(before: str, after: str) -> str:
+        # Determines the user's representative role by comparing priorities (lower number is higher).
+        # Policy: Workspace-level roles (OWNER, MEMBER) grant permissions within a workspace
+        # but do not elevate the user's fundamental role at the domain level.
+        # Therefore, if a user's highest role is a workspace role, their representative
+        # role_type defaults to 'USER'. Only 'DOMAIN_ADMIN' elevates this status.
         priority = {
             "DOMAIN_ADMIN": 1,
             "WORKSPACE_OWNER": 2,
