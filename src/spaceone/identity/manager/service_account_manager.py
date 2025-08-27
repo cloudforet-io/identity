@@ -136,21 +136,24 @@ class ServiceAccountManager(BaseManager):
             )
 
     def get_all_service_account_ids_using_secret(
-        self, domain_id: str, workspace_id: str
+        self, domain_id: str, workspace_id: str = None
     ) -> List[str]:
+        params = {
+            "query": {
+                "distinct": "service_account_id",
+                "filter": [{"k": "service_account_id", "v": None, "o": "not"}],
+            },
+            "domain_id": domain_id,
+        }
+        if workspace_id:
+            params["workspace_id"]: workspace_id
+
         secret_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="secret"
         )
         response = secret_connector.dispatch(
             "Secret.stat",
-            {
-                "query": {
-                    "distinct": "service_account_id",
-                    "filter": [{"k": "service_account_id", "v": None, "o": "not"}],
-                },
-                "domain_id": domain_id,
-                "workspace_id": workspace_id,
-            },
+            params,
         )
 
         return response.get("results", [])
