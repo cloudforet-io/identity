@@ -486,15 +486,17 @@ class ServiceAccountService(BaseService):
             ServiceAccountsResponse:
         """
 
+
         query = params.query or {}
-        (
-            service_account_vos,
-            total_count,
-        ) = self.service_account_mgr.list_service_accounts(query)
 
         has_secret = params.has_secret or False
         if has_secret:
             query = self._append_secret_filter(query, params.domain_id, params.workspace_id)
+
+        (
+            service_account_vos,
+            total_count,
+        ) = self.service_account_mgr.list_service_accounts(query)
 
         service_accounts_info = [
             service_account_vo.to_dict() for service_account_vo in service_account_vos
