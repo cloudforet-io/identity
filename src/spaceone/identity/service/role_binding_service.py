@@ -465,6 +465,9 @@ class RoleBindingService(BaseService):
         return len(user_rb_ids)
 
     def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
+        if not workspace_id and not domain_id:
+            return
+
         workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
 
         if workspace_vo and workspace_vo.workspace_id != "*":

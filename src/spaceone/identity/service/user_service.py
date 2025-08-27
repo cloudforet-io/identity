@@ -425,7 +425,7 @@ class UserService(BaseService):
         if user_vo.role_type == "DOMAIN_ADMIN" and user_vo.state == "ENABLED":
             self._check_last_admin_user(params.domain_id, user_vo)
 
-        self.delete_user_by_vo(user_vo)
+        self._delete_user_by_vo(user_vo)
 
     @transaction(permission="identity:User.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -920,7 +920,7 @@ class UserService(BaseService):
             and user_mfa_type is not None
         )
 
-    def delete_user_by_vo(self, user_vo: User) -> None:
+    def _delete_user_by_vo(self, user_vo: User) -> None:
         # Delete role bindings
         rb_vos = self.rb_mgr.filter_role_bindings(
             user_id=user_vo.user_id, domain_id=user_vo.domain_id
@@ -985,6 +985,9 @@ class UserService(BaseService):
         return len(user_rb_ids)
 
     def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
+        if not workspace_id and not domain_id:
+            return
+
         workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
 
         if workspace_vo and workspace_vo.workspace_id != "*":

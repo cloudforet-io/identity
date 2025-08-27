@@ -96,7 +96,7 @@ class SystemService(BaseService):
                 _LOGGER.debug(
                     f"[init] Delete existing user in root domain: {user_vo.user_id}"
                 )
-                self.delete_user_by_vo(user_vo)
+                self._delete_user_by_vo(user_vo)
 
         # create admin user
         _LOGGER.debug(f"[init] Create admin user: {params.admin.user_id}")
@@ -144,7 +144,7 @@ class SystemService(BaseService):
 
         return SystemResponse(**response)
 
-    def delete_user_by_vo(self, user_vo: User) -> None:
+    def _delete_user_by_vo(self, user_vo: User) -> None:
         # Delete role bindings
         rb_vos = self.role_binding_manager.filter_role_bindings(
             user_id=user_vo.user_id, domain_id=user_vo.domain_id
@@ -209,6 +209,9 @@ class SystemService(BaseService):
         return len(user_rb_ids)
 
     def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
+        if not workspace_id and not domain_id:
+            return
+
         workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
 
         if workspace_vo and workspace_vo.workspace_id != "*":
