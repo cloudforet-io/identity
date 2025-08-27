@@ -298,6 +298,9 @@ class DomainService(BaseService):
         if not workspace_id and not domain_id:
             return
 
+        if workspace_id == "*":
+            return
+
         workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
 
         if workspace_vo and workspace_vo.workspace_id != "*":
