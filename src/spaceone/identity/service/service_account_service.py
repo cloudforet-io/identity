@@ -492,6 +492,10 @@ class ServiceAccountService(BaseService):
             total_count,
         ) = self.service_account_mgr.list_service_accounts(query)
 
+        has_secret = params.has_secret or False
+        if has_secret:
+            query = self._append_secret_filter(query, params.domain_id, params.workspace_id)
+
         service_accounts_info = [
             service_account_vo.to_dict() for service_account_vo in service_account_vos
         ]
@@ -587,6 +591,17 @@ class ServiceAccountService(BaseService):
         secret_mgr.delete_related_secrets(service_account_vo.service_account_id)
 
         self.service_account_mgr.delete_service_account_by_vo(service_account_vo)
+
+    def _append_secret_filter(self, query: dict, domain_id: str, workspace_id: str = None) -> dict:
+        service_account_ids = self.service_account_mgr.get_all_service_account_ids_using_secret(domain_id, workspace_id)
+        query['filter'] = query.get('filter', [])
+        query['filter'].append({
+            'k': 'service_account_id',
+            'v': service_account_ids,
+            'o': 'in'
+        })
+
+        return query
 
     def _create_service_account_app_client_secret(
         self, app_vo: App, service_account_id: str

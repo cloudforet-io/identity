@@ -80,6 +80,7 @@ class ServiceAccountSearchQueryRequest(BaseModel):
     name: Union[str, None] = None
     state: Union[State, None] = None
     provider: Union[str, None] = None
+    has_secret: Union[bool, None] = None
     secret_schema_id: Union[str, None] = None
     secret_id: Union[str, None] = None
     trusted_account_id: Union[str, None] = None
