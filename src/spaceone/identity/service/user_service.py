@@ -18,6 +18,9 @@ from spaceone.identity.manager.email_manager import EmailManager
 from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.project_manager import ProjectManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
+from spaceone.identity.manager.token_manager.local_token_manager import (
+    LocalTokenManager,
+)
 from spaceone.identity.manager.user_group_manager import UserGroupManager
 from spaceone.identity.manager.user_manager import UserManager
 from spaceone.identity.manager.workspace_group_manager import WorkspaceGroupManager
@@ -895,8 +898,8 @@ class UserService(BaseService):
     def _should_reset_current_mfa(
         self,
         is_enforced_mfa: bool,
-        enforce_mfa_type: str | None,
-        user_mfa_type: str | None,
+        enforce_mfa_type: Union[str, None],
+        user_mfa_type: Union[str, None],
     ) -> bool:
         """
         Determine if current MFA configuration should be reset due to type mismatch.
