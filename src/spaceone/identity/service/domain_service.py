@@ -1,22 +1,22 @@
 import logging
 from typing import Union
 
-from spaceone.core.service import *
-from spaceone.core.service.utils import *
 from spaceone.core import utils
 from spaceone.core.auth.jwt import JWTAuthenticator
-
-from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
+from spaceone.core.service import *
+from spaceone.core.service.utils import *
+from spaceone.identity.error.error_domain import *
+from spaceone.identity.manager.config_manager import ConfigManager
 from spaceone.identity.manager.domain_manager import DomainManager
 from spaceone.identity.manager.domain_secret_manager import DomainSecretManager
-from spaceone.identity.manager.role_manager import RoleManager
+from spaceone.identity.manager.external_auth_manager import ExternalAuthManager
 from spaceone.identity.manager.role_binding_manager import RoleBindingManager
-from spaceone.identity.manager.user_manager import UserManager
-from spaceone.identity.manager.config_manager import ConfigManager
+from spaceone.identity.manager.role_manager import RoleManager
 from spaceone.identity.manager.system_manager import SystemManager
+from spaceone.identity.manager.user_manager import UserManager
+from spaceone.identity.manager.workspace_manager import WorkspaceManager
 from spaceone.identity.model.domain.request import *
 from spaceone.identity.model.domain.response import *
-from spaceone.identity.error.error_domain import *
 from spaceone.identity.service.user_service import UserService
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,6 +35,8 @@ class DomainService(BaseService):
         self.domain_secret_mgr = DomainSecretManager()
         self.user_mgr = UserManager()
         self.role_manager = RoleManager()
+        self.rb_mgr = RoleBindingManager()
+        self.workspace_mgr = WorkspaceManager()
 
     @transaction(permission="identity:Domain.write", role_types=["SYSTEM_ADMIN"])
     @convert_model
@@ -87,6 +89,7 @@ class DomainService(BaseService):
             "domain_id": user_vo.domain_id,
             "role_type": role_vos[0].role_type,
         }
+
         role_binding_mgr.create_role_binding(params_rb)
 
         return DomainResponse(**domain_vo.to_dict())
@@ -228,7 +231,7 @@ class DomainService(BaseService):
             root_domain_id = SystemManager.get_root_domain_id()
             root_pub_jwk = self.domain_secret_mgr.get_domain_public_key(root_domain_id)
             JWTAuthenticator(root_pub_jwk).validate(token)
-        except Exception as e:
+        except Exception:
             raise ERROR_UNKNOWN(message="Invalid System Token")
 
         # Get Public Key from Domain
@@ -278,3 +281,29 @@ class DomainService(BaseService):
 
         query = params.query or {}
         return self.domain_mgr.stat_domains(query)
+
+    def _get_workspace_user_count(self, workspace_id: str, domain_id: str) -> int:
+        user_rb_ids = self.rb_mgr.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+        return len(user_rb_ids)
+
+    def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
+        if not workspace_id and not domain_id:
+            return
+
+        workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
+
+        if workspace_vo and workspace_vo.workspace_id != "*":
+            user_rb_total_count = self._get_workspace_user_count(
+                workspace_id, domain_id
+            )
+            self.workspace_mgr.update_workspace_by_vo(
+                {"user_count": user_rb_total_count}, workspace_vo
+            )

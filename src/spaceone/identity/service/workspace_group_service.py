@@ -517,8 +517,10 @@ class WorkspaceGroupService(BaseService):
             workspace_id=workspace_group_workspace_ids,
             domain_id=domain_id,
         )
+
         for rb_vo in rb_vos:
             self.rb_mgr.delete_role_binding_by_vo(rb_vo)
+            self._update_workspace_user_count(rb_vo.workspace_id, rb_vo.domain_id)
 
     def add_users_to_workspace_group(
         self,
@@ -665,6 +667,7 @@ class WorkspaceGroupService(BaseService):
         if rb_vos.count() > 0:
             for rb_vo in rb_vos:
                 self.rb_mgr.delete_role_binding_by_vo(rb_vo)
+                self._update_workspace_user_count(rb_vo.workspace_id, rb_vo.domain_id)
 
         updated_users = [user for user in old_users if user["user_id"] not in user_ids]
 
@@ -743,3 +746,29 @@ class WorkspaceGroupService(BaseService):
 
         for role_binding_vo in role_binding_vos:
             role_binding_vo.update({"role_id": role_id, "role_type": role_type})
+
+    def _get_workspace_user_count(self, workspace_id: str, domain_id: str) -> int:
+        user_rb_ids = self.rb_mgr.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+        return len(user_rb_ids)
+
+    def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
+        if not workspace_id and not domain_id:
+            return
+
+        workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
+
+        if workspace_vo and workspace_vo.workspace_id != "*":
+            user_rb_total_count = self._get_workspace_user_count(
+                workspace_id, domain_id
+            )
+            self.workspace_mgr.update_workspace_by_vo(
+                {"user_count": user_rb_total_count}, workspace_vo
+            )

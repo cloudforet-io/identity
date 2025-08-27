@@ -113,6 +113,14 @@ class RoleService(BaseService):
         """
 
         role_vo = self.role_mgr.get_role(params.role_id, params.domain_id)
+
+        rb_vos = self.rb_mgr.filter_role_bindings(
+            role_id=role_vo.role_id, domain_id=role_vo.domain_id
+        )
+
+        if rb_vos.count() > 0:
+            raise ERROR_ROLE_IN_USED_AT_ROLE_BINDING(role_id=role_vo.role_id)
+
         role_vo = self.role_mgr.disable_role_by_vo(role_vo)
 
         return RoleResponse(**role_vo.to_dict())

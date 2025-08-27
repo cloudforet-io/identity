@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Union
 
-from spaceone.core import cache
 from spaceone.core.service import *
 from spaceone.core.service.utils import *
 from spaceone.identity.error.error_workspace import *
@@ -203,7 +202,7 @@ class WorkspaceService(BaseService):
             for rb_vo in rb_vos:
                 self.rb_mgr.delete_role_binding_by_vo(rb_vo)
 
-        self.workspace_mgr.delete_workspace_by_vo(workspace_vo) 
+        self.workspace_mgr.delete_workspace_by_vo(workspace_vo)
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -631,6 +630,7 @@ class WorkspaceService(BaseService):
         )
         for rb_vo in rb_vos:
             self.rb_mgr.delete_role_binding_by_vo(rb_vo)
+            self._update_workspace_user_count(rb_vo.workspace_id, rb_vo.domain_id)
 
     @staticmethod
     def _create_role_bindings(
@@ -650,4 +650,30 @@ class WorkspaceService(BaseService):
                     "workspace_group_id": workspace_group_id,
                     "workspace_id": workspace_id,
                 }
+            )
+
+    def _get_workspace_user_count(self, workspace_id: str, domain_id: str) -> int:
+        user_rb_ids = self.rb_mgr.stat_role_bindings(
+            query={
+                "distinct": "user_id",
+                "filter": [
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
+                    {"k": "domain_id", "v": domain_id, "o": "eq"},
+                ],
+            }
+        ).get("results", [])
+        return len(user_rb_ids)
+
+    def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
+        if not workspace_id and not domain_id:
+            return
+
+        workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
+
+        if workspace_vo and workspace_vo.workspace_id != "*":
+            user_rb_total_count = self._get_workspace_user_count(
+                workspace_id, domain_id
+            )
+            self.workspace_mgr.update_workspace_by_vo(
+                {"user_count": user_rb_total_count}, workspace_vo
             )
