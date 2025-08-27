@@ -39,6 +39,7 @@ class WorkspaceService(BaseService):
         self.service_account_mgr = ServiceAccountManager()
         self.rb_mgr = RoleBindingManager()
         self.workspace_group_mgr = WorkspaceGroupManager()
+        self.workspace_mgr = WorkspaceManager()
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -191,18 +192,19 @@ class WorkspaceService(BaseService):
         else:
             self._delete_related_resources_in_workspace(workspace_vo)
 
-        rb_vos = self.rb_mgr.filter_role_bindings(
-            workspace_id=workspace_vo.workspace_id, domain_id=workspace_vo.domain_id
-        )
-
-        if rb_vos.count() > 0:
-            _LOGGER.debug(
-                f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}"
-            )
-            for rb_vo in rb_vos:
-                self.rb_mgr.delete_role_binding_by_vo(rb_vo)
-
         self.workspace_mgr.delete_workspace_by_vo(workspace_vo)
+
+        if workspace_vo.workspace_group_id:
+            workspace_vos = self.workspace_mgr.filter_workspaces(
+                workspace_group_id=workspace_vo.workspace_group_id,
+                domain_id=workspace_vo.domain_id,
+            )
+            workspace_group_vo = self.workspace_group_mgr.get_workspace_group(
+                workspace_vo.domain_id, workspace_vo.workspace_group_id
+            )
+            self.workspace_group_mgr.update_workspace_group_by_vo(
+                {"workspace_count": len(workspace_vos)}, workspace_group_vo
+            )
 
     @transaction(permission="identity:Workspace.write", role_types=["DOMAIN_ADMIN"])
     @convert_model
@@ -459,6 +461,7 @@ class WorkspaceService(BaseService):
         trusted_account_mgr = TrustedAccountManager()
         service_account_mgr = ServiceAccountManager()
         secret_mgr = SecretManager()
+        rb_mgr = RoleBindingManager()
 
         project_group_vos = project_group_mgr.filter_project_groups(
             domain_id=workspace_vo.domain_id, workspace_id=workspace_vo.workspace_id
@@ -474,6 +477,10 @@ class WorkspaceService(BaseService):
 
         service_account_vos = service_account_mgr.filter_service_accounts(
             domain_id=workspace_vo.domain_id, workspace_id=workspace_vo.workspace_id
+        )
+
+        rb_vos = rb_mgr.filter_role_bindings(
+            workspace_id=workspace_vo.workspace_id, domain_id=workspace_vo.domain_id
         )
 
         _LOGGER.debug(
@@ -507,6 +514,12 @@ class WorkspaceService(BaseService):
                 f"[_delete_related_resources_in_workspace] Delete trusted account: {trusted_account_vo.name} ({trusted_account_vo.trusted_account_id})"
             )
             trusted_account_mgr.delete_trusted_account_by_vo(trusted_account_vo)
+
+        for rb_vo in rb_vos:
+            rb_mgr.delete_role_binding_by_vo(rb_vo)
+            _LOGGER.debug(
+                f"[delete_workspace_by_vo] Delete role bindings count with {workspace_vo.workspace_id} : {rb_vos.count()}"
+            )
 
     def _add_workspace_to_group(
         self, workspace_id: str, workspace_group_id: str, domain_id: str
@@ -666,6 +679,9 @@ class WorkspaceService(BaseService):
 
     def _update_workspace_user_count(self, workspace_id: str, domain_id: str) -> None:
         if not workspace_id and not domain_id:
+            return
+
+        if workspace_id == "*":
             return
 
         workspace_vo = self.workspace_mgr.get_workspace(workspace_id, domain_id)
