@@ -147,7 +147,7 @@ class TokenService(BaseService):
         self._clear_issue_attempts(domain_id, credentials, auth_type)
 
         # DO NOT DELETE!!
-        _LOGGER.info(f"Login Success: domain_id = {domain_id}, user_id = {user_id}")
+        _LOGGER.info(f"login success: domain_id = {domain_id}, user_id = {user_id}")
 
         return TokenResponse(**token_info)
 

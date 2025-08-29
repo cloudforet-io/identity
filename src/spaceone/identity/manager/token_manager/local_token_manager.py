@@ -38,7 +38,9 @@ class LocalTokenManager(TokenManager):
 
         else:
             # DO NOT DELETE!!
-            _LOGGER.error(f"Login failed: domain_id = {domain_id}, user_id = {user_id}")
+            _LOGGER.error(
+                f"login failure: domain_id = {domain_id}, user_id = {user_id}"
+            )
             raise ERROR_AUTHENTICATION_FAILURE(user_id=self.user.user_id)
 
     def _check_user_state(self):
