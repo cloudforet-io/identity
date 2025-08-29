@@ -37,9 +37,8 @@ class LocalTokenManager(TokenManager):
                 self.user_mgr.update_user_by_vo({"state": "ENABLED"}, self.user)
 
         else:
-            _LOGGER.error(
-                f"[authenticate] Authentication failed: domain_id = {domain_id}, user_id = {user_id}"
-            )
+            # DO NOT DELETE!!
+            _LOGGER.error(f"Login failed: domain_id = {domain_id}, user_id = {user_id}")
             raise ERROR_AUTHENTICATION_FAILURE(user_id=self.user.user_id)
 
     def _check_user_state(self):
