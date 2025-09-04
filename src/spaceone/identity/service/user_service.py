@@ -195,9 +195,10 @@ class UserService(BaseService):
         user_vo = self.user_mgr.get_user(params.user_id, params.domain_id)
         auth_type = user_vo.auth_type
         domain_id = params.domain_id
+        required_actions = user_vo.required_actions
 
         update_user_vo = {}
-        update_require_actions = set(user_vo.required_actions)
+        update_require_actions = set(required_actions)
 
         if params.reset_password:
             domain_name = self._get_domain_name(domain_id)
@@ -266,15 +267,18 @@ class UserService(BaseService):
                 )
             )
 
-            update_user_vo["required_actions"] = list(update_require_actions)
-
         general_params = params.dict(
-            exclude_unset=True, exclude={"reset_password", "mfa"}
+            exclude_unset=True,
+            exclude={"reset_password", "enforce_mfa_state", "enforce_mfa_type"},
         )
         update_user_vo.update(general_params)
-        update_user_vo["required_actions"] = list(update_require_actions)
 
         user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
+
+        if update_require_actions != (set(required_actions)):
+            user_vo = self.user_mgr.update_user_by_vo(
+                {"required_actions": list(update_require_actions)}, user_vo
+            )
 
         return UserResponse(**user_vo.to_dict())
 
