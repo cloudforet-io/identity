@@ -17,7 +17,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(
-    name="spaceone-identity",
+    name="spaceone_identity",
     version=os.environ.get("PACKAGE_VERSION"),
     description="SpaceONE identity service",
     long_description="",
