@@ -269,16 +269,20 @@ class UserService(BaseService):
 
         general_params = params.dict(
             exclude_unset=True,
-            exclude={"reset_password", "enforce_mfa_state", "enforce_mfa_type"},
+            exclude={
+                "reset_password",
+                "enforce_mfa_state",
+                "enforce_mfa_type",
+                "required_actions",
+            },
         )
         update_user_vo.update(general_params)
 
         user_vo = self.user_mgr.update_user_by_vo(update_user_vo, user_vo)
 
-        if update_require_actions != (set(required_actions)):
-            user_vo = self.user_mgr.update_user_by_vo(
-                {"required_actions": list(update_require_actions)}, user_vo
-            )
+        user_vo = self.user_mgr.update_user_by_vo(
+            {"required_actions": list(update_require_actions)}, user_vo
+        )
 
         return UserResponse(**user_vo.to_dict())
 

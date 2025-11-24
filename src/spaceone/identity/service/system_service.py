@@ -129,8 +129,7 @@ class SystemService(BaseService):
             "domain_id": user_vo.domain_id,
             "role_type": role_vos[0].role_type,
         }
-        rb_vo = role_binding_mgr.create_role_binding(params_rb)
-        self._update_workspace_user_count(rb_vo.workspace_id, rb_vo.domain_id)
+        role_binding_mgr.create_role_binding(params_rb)
 
         system_token = system_mgr.create_system_token(
             root_domain_vo.domain_id, user_vo.user_id
